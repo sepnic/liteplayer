@@ -1,0 +1,182 @@
+/*
+ * Copyright 2019-2020 LUOYUN <sysu.zqlong@gmail.com>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published
+ * by the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#include <stdio.h>
+#include <string.h>
+
+#include "esp_adf/esp_log.h"
+#include "esp_adf/audio_element.h"
+#include "esp_adf/audio_common.h"
+#include "audio_decoder/mp3_decoder.h"
+
+#define TAG "MP3_DECODER"
+
+#define MP3_DECODER_INPUT_TIMEOUT_MAX  200
+
+static esp_err_t mp3_decoder_destroy(audio_element_handle_t self)
+{
+    mp3_decoder_handle_t decoder = (mp3_decoder_handle_t)audio_element_getdata(self);
+    ESP_LOGV(TAG, "Destroy mp3 decoder");
+
+    if (decoder->handle != NULL)
+        mp3_wrapper_deinit(decoder);
+    if (decoder->buf_in.data != NULL)
+        audio_free(decoder->buf_in.data);
+    if (decoder->buf_out.data != NULL)
+        audio_free(decoder->buf_out.data);
+    audio_free(decoder);
+    return ESP_OK;
+}
+
+static esp_err_t mp3_decoder_open(audio_element_handle_t self)
+{
+    esp_err_t status = ESP_OK;
+    mp3_decoder_handle_t decoder = (mp3_decoder_handle_t)audio_element_getdata(self);
+
+    if (decoder->handle != NULL) {
+        ESP_LOGD(TAG, "MP3 decoder already opened");
+        return ESP_OK;
+    }
+
+    ESP_LOGV(TAG, "Open mp3 decoder");
+
+    decoder->buf_in.data = audio_calloc(MP3_DECODER_INPUT_BUFFER_SIZE, sizeof(char));
+    if (decoder->buf_in.data == NULL) {
+        ESP_LOGE(TAG, "Failed to allocate input buffer");
+        return ESP_ERR_NO_MEM;
+    }
+
+    decoder->buf_out.data = audio_calloc(MP3_DECODER_OUTPUT_BUFFER_SIZE, sizeof(char));
+    if (decoder->buf_out.data == NULL) {
+        ESP_LOGE(TAG, "Failed to allocate output buffer");
+        return ESP_ERR_NO_MEM;
+    }
+
+    if(mp3_wrapper_init(decoder) != 0) {
+        ESP_LOGE(TAG, "Failed to init mp3 wrapper");
+        status = ESP_FAIL;
+    }
+
+    return status;
+}
+
+static esp_err_t mp3_decoder_close(audio_element_handle_t self)
+{
+    mp3_decoder_handle_t decoder = (mp3_decoder_handle_t)audio_element_getdata(self);
+
+    if (audio_element_get_state(self) != AEL_STATE_PAUSED) {
+        ESP_LOGV(TAG, "Close mp3 decoder");
+        mp3_wrapper_deinit(decoder);
+        if (decoder->buf_in.data != NULL)
+            audio_free(decoder->buf_in.data);
+        memset(&decoder->buf_in, 0x0, sizeof(mp3_buf_in_t));
+        if (decoder->buf_out.data != NULL)
+            audio_free(decoder->buf_out.data);
+        memset(&decoder->buf_out, 0x0, sizeof(mp3_buf_out_t));
+
+        decoder->handle = NULL;
+        decoder->parsed_header = false;
+
+        audio_element_info_t info = {0};
+        audio_element_getinfo(self, &info);
+        info.byte_pos = 0;
+        info.total_bytes = 0;
+        audio_element_setinfo(self, &info);
+    }
+
+    return ESP_OK;
+}
+
+static int mp3_decoder_process(audio_element_handle_t self, char *in_buffer, int in_len)
+{
+    int byte_write = 0;
+    int ret = AEL_IO_OK;
+    mp3_decoder_handle_t decoder = (mp3_decoder_handle_t)audio_element_getdata(self);
+
+    if(decoder->buf_out.length > 0) {
+        /* Output buffer have remain data */
+        byte_write = audio_element_output(self,
+                decoder->buf_out.data+decoder->buf_out.offset,
+                decoder->buf_out.length);
+    }
+    else {
+        /* More data need to be wrote */
+        ret = mp3_wrapper_run(decoder);
+        if (ret < 0) {
+            if (ret == AEL_IO_TIMEOUT) {
+                ESP_LOGW(TAG, "mp3_wrapper_run AEL_IO_TIMEOUT");
+            }
+            else if (ret != AEL_IO_DONE) {
+                ESP_LOGE(TAG, "mp3_wrapper_run failed:%d", ret);
+            }
+            return ret;
+        }
+
+        //ESP_LOGV(TAG, "ret=%d, length=%d", ret, decoder->buf_out.length);
+        decoder->buf_out.offset = 0;
+        byte_write = audio_element_output(self, decoder->buf_out.data, decoder->buf_out.length);
+    }
+
+    decoder->buf_out.length -= byte_write;
+    decoder->buf_out.offset += byte_write;
+
+    audio_element_info_t audio_info = {0};
+    audio_element_getinfo(self, &audio_info);
+    audio_info.byte_pos += byte_write;
+    audio_element_setinfo(self, &audio_info);
+
+    return byte_write;
+}
+
+audio_element_handle_t mp3_decoder_init(mp3_decoder_cfg_t *config)
+{
+    ESP_LOGV(TAG, "Init mp3 decoder");
+
+    mp3_decoder_handle_t decoder = audio_calloc(1, sizeof(struct mp3_decoder));
+    AUDIO_MEM_CHECK(TAG, decoder, return NULL);
+
+    audio_element_cfg_t cfg = DEFAULT_AUDIO_ELEMENT_CONFIG();
+    cfg.destroy = mp3_decoder_destroy;
+    cfg.process = mp3_decoder_process;
+    cfg.open    = mp3_decoder_open;
+    cfg.close   = mp3_decoder_close;
+    cfg.buffer_len = MP3_DECODER_BUFFER_SIZE;
+   
+    cfg.task_stack  = config->task_stack;
+    cfg.task_prio   = config->task_prio;
+    cfg.out_rb_size = config->out_rb_size;
+    if (cfg.task_stack == 0)
+        cfg.task_stack = MP3_DECODER_TASK_STACK;
+
+    cfg.tag = "mp3_dec";
+
+    audio_element_handle_t el = audio_element_init(&cfg);
+    AUDIO_MEM_CHECK(TAG, el, goto mp3_init_error);
+
+    decoder->el = el;
+    audio_element_setdata(el, decoder);
+    
+    audio_element_info_t info = {0};
+    audio_element_setinfo(el, &info);
+
+    audio_element_set_input_timeout(el, MP3_DECODER_INPUT_TIMEOUT_MAX);
+    return el;
+
+mp3_init_error:
+    audio_free(decoder);
+    return NULL;
+}
