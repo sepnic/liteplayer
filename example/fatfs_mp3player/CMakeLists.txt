@@ -13,49 +13,49 @@ include_directories(${LIB_COMPONENTS_DIR}/include)
 
 # source files
 set (LIB_SRC
-      "${LIB_CORE_DIR}/audio_element.c"
-      "${LIB_CORE_DIR}/audio_event_iface.c"
-      "${LIB_CORE_DIR}/audio_pipeline.c"
-      "${LIB_COMPONENTS_DIR}/audio_decoder/libmad/bit.c"
-      "${LIB_COMPONENTS_DIR}/audio_decoder/libmad/decoder.c"
-      "${LIB_COMPONENTS_DIR}/audio_decoder/libmad/fixed.c"
-      "${LIB_COMPONENTS_DIR}/audio_decoder/libmad/frame.c"
-      "${LIB_COMPONENTS_DIR}/audio_decoder/libmad/huffman.c"
-      "${LIB_COMPONENTS_DIR}/audio_decoder/libmad/layer12.c"
-      "${LIB_COMPONENTS_DIR}/audio_decoder/libmad/layer3.c"
-      "${LIB_COMPONENTS_DIR}/audio_decoder/libmad/stream.c"
-      "${LIB_COMPONENTS_DIR}/audio_decoder/libmad/synth.c"
-      "${LIB_COMPONENTS_DIR}/audio_decoder/libmad/timer.c"
-      "${LIB_COMPONENTS_DIR}/audio_decoder/libmad/version.c"
-      "${LIB_COMPONENTS_DIR}/audio_decoder/mp3_mad_wrapper.c"
-      "${LIB_COMPONENTS_DIR}/audio_decoder/mp3_decoder.c"
-      "${LIB_COMPONENTS_DIR}/audio_decoder/wav_decoder.c"
-      "${LIB_COMPONENTS_DIR}/audio_extractor/mp3_extractor.c"
-      "${LIB_COMPONENTS_DIR}/audio_extractor/wav_extractor.c"
-      "${LIB_COMPONENTS_DIR}/audio_resampler/libspeexdsp/resample.c"
-      "${LIB_COMPONENTS_DIR}/audio_resampler/audio_resampler.c"
-      "${LIB_COMPONENTS_DIR}/audio_stream/fatfs_stream.c"
+    "${LIB_CORE_DIR}/audio_element.c"
+    "${LIB_CORE_DIR}/audio_event_iface.c"
+    "${LIB_CORE_DIR}/audio_pipeline.c"
+    "${LIB_COMPONENTS_DIR}/audio_decoder/libmad/bit.c"
+    "${LIB_COMPONENTS_DIR}/audio_decoder/libmad/decoder.c"
+    "${LIB_COMPONENTS_DIR}/audio_decoder/libmad/fixed.c"
+    "${LIB_COMPONENTS_DIR}/audio_decoder/libmad/frame.c"
+    "${LIB_COMPONENTS_DIR}/audio_decoder/libmad/huffman.c"
+    "${LIB_COMPONENTS_DIR}/audio_decoder/libmad/layer12.c"
+    "${LIB_COMPONENTS_DIR}/audio_decoder/libmad/layer3.c"
+    "${LIB_COMPONENTS_DIR}/audio_decoder/libmad/stream.c"
+    "${LIB_COMPONENTS_DIR}/audio_decoder/libmad/synth.c"
+    "${LIB_COMPONENTS_DIR}/audio_decoder/libmad/timer.c"
+    "${LIB_COMPONENTS_DIR}/audio_decoder/libmad/version.c"
+    "${LIB_COMPONENTS_DIR}/audio_decoder/mp3_mad_wrapper.c"
+    "${LIB_COMPONENTS_DIR}/audio_decoder/mp3_decoder.c"
+    "${LIB_COMPONENTS_DIR}/audio_decoder/wav_decoder.c"
+    "${LIB_COMPONENTS_DIR}/audio_extractor/mp3_extractor.c"
+    "${LIB_COMPONENTS_DIR}/audio_extractor/wav_extractor.c"
+    "${LIB_COMPONENTS_DIR}/audio_resampler/libspeexdsp/resample.c"
+    "${LIB_COMPONENTS_DIR}/audio_resampler/audio_resampler.c"
+    "${LIB_COMPONENTS_DIR}/audio_stream/fatfs_stream.c"
 )
 
 # source files
 set (MSGUTILS_SRC
-      ${MSGUTILS_DIR}/source/memory_detect.c
-      ${MSGUTILS_DIR}/source/msglooper.c
-      ${MSGUTILS_DIR}/source/msgqueue.c
-      ${MSGUTILS_DIR}/source/ringbuf.c
-      ${MSGUTILS_DIR}/source/smartptr.c
-      ${MSGUTILS_DIR}/source/stllist.c
-      ${MSGUTILS_DIR}/source/sw_timer.c
-      ${MSGUTILS_DIR}/source/sw_watchdog.c
-      ${MSGUTILS_DIR}/source/portable/os_logger.c
-      ${MSGUTILS_DIR}/source/portable/os_thread.c
-      ${MSGUTILS_DIR}/source/portable/os_time.c
-      ${MSGUTILS_DIR}/source/portable/os_timer.c
+    ${MSGUTILS_DIR}/source/memory_detect.c
+    ${MSGUTILS_DIR}/source/msglooper.c
+    ${MSGUTILS_DIR}/source/msgqueue.c
+    ${MSGUTILS_DIR}/source/ringbuf.c
+    ${MSGUTILS_DIR}/source/smartptr.c
+    ${MSGUTILS_DIR}/source/stllist.c
+    ${MSGUTILS_DIR}/source/sw_timer.c
+    ${MSGUTILS_DIR}/source/sw_watchdog.c
+    ${MSGUTILS_DIR}/source/portable/os_logger.c
+    ${MSGUTILS_DIR}/source/portable/os_thread.c
+    ${MSGUTILS_DIR}/source/portable/os_time.c
+    ${MSGUTILS_DIR}/source/portable/os_timer.c
 )
 
 # source files
 set (MAIN_SRC
-      ${CMAKE_SOURCE_DIR}/fatfs_mp3player.c
+    ${CMAKE_SOURCE_DIR}/fatfs_mp3player.c
 )
 
 # cflags: OS_LINUX, OS_ANDROID, OS_MACOSX, OS_IOS, OS_FREERTOS
