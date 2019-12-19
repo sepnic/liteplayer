@@ -19,17 +19,14 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "msgutils/os_thread.h"
-#include "msgutils/os_memory.h"
 #include "esp_adf/esp_log.h"
 #include "esp_adf/audio_common.h"
-
 #include "liteplayer_main.h"
 #include "fatfs_wrapper.h"
 #include "httpstub_wrapper.h"
 #include "alsastub_wrapper.h"
 
-#define TAG "liteplayer_test"
+#define TAG "liteplayerdemo"
 
 #define LITEPLYAER_TEST_TASK_PRIO  (OS_THREAD_PRIO_NORMAL)
 #define LITEPLYAER_TEST_TASK_STACK (8192)
@@ -41,53 +38,42 @@ static int liteplayer_test_state_listener(liteplayer_state_t state, int errcode,
     switch (state) {
     case LITEPLAYER_IDLE:
         ESP_LOGD(TAG, "-->LITEPLAYER_IDLE");
-        g_state = state;
         break;
     case LITEPLAYER_PREPARED:
         ESP_LOGD(TAG, "-->LITEPLAYER_PREPARED");
-        g_state = state;
         break;
     case LITEPLAYER_STARTED:
         ESP_LOGD(TAG, "-->LITEPLAYER_STARTED");
-        g_state = state;
         break;
     case LITEPLAYER_PAUSED:
         ESP_LOGD(TAG, "-->LITEPLAYER_PAUSED");
-        g_state = state;
         break;
     case LITEPLAYER_NEARLYCOMPLETED:
         ESP_LOGD(TAG, "-->LITEPLAYER_NEARLYCOMPLETED");
         break;
     case LITEPLAYER_COMPLETED:
         ESP_LOGD(TAG, "-->LITEPLAYER_COMPLETED");
-        g_state = state;
         break;
     case LITEPLAYER_STOPPED:
         ESP_LOGD(TAG, "-->LITEPLAYER_STOPPED");
-        g_state = state;
         break;
     case LITEPLAYER_ERROR:
         ESP_LOGD(TAG, "-->LITEPLAYER_ERROR: %d", errcode);
-        g_state = state;
         break;
     default:
         break;
     }
 
+    g_state = state;
     return 0;
 }
 
-static void *liteplayer_test_thread(void *arg)
+static int liteplayer_test(const char *url)
 {
-    const char *url = (const char *)arg;
+    int ret = -1;
     liteplayer_handle_t player = liteplayer_create();
-    long long positon = 0, duration = 0;
-
     if (player == NULL)
-        return NULL;
-
-    ESP_LOGW(TAG, "Memory dump after liteplayer_create");
-    OS_MEMORY_DUMP();
+        return ret;
 
     liteplayer_register_state_listener(player, liteplayer_test_state_listener, (void *)player);
 
@@ -124,29 +110,20 @@ static void *liteplayer_test_thread(void *arg)
         ESP_LOGE(TAG, "Failed to set data source");
         goto test_done;
     }
-    ESP_LOGW(TAG, "Memory dump after liteplayer_set_data_source");
-    OS_MEMORY_DUMP();
 
     if (liteplayer_prepare_async(player) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to prepare player");
         goto test_done;
     }
-    ESP_LOGW(TAG, "Memory dump after liteplayer_prepare");
-    OS_MEMORY_DUMP();
 
     while (g_state != LITEPLAYER_PREPARED) {
         OS_THREAD_SLEEP_MSEC(100);
     }
 
-    liteplayer_get_duration(player, &duration);
-    ESP_LOGI(TAG, "Media duration: %d(ms)", (int)duration);
-
     if (liteplayer_start(player) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to start player");
         goto test_done;
     }
-    ESP_LOGW(TAG, "Memory dump after liteplayer_start");
-    OS_MEMORY_DUMP();
 
     while (g_state != LITEPLAYER_COMPLETED && g_state != LITEPLAYER_ERROR) {
         OS_THREAD_SLEEP_MSEC(100);
@@ -156,22 +133,17 @@ static void *liteplayer_test_thread(void *arg)
         ESP_LOGE(TAG, "Failed to stop player");
         goto test_done;
     }
-    ESP_LOGW(TAG, "Memory dump after liteplayer_stop");
-    OS_MEMORY_DUMP();
 
     while (g_state != LITEPLAYER_STOPPED) {
         OS_THREAD_SLEEP_MSEC(50);
     }
 
-    liteplayer_get_position(player, &positon);
-    ESP_LOGI(TAG, "Media playdone postion: %d(ms)", (int)positon);
+    ret = 0;
 
 test_done:
     liteplayer_reset(player);
     liteplayer_destroy(player);
-    ESP_LOGW(TAG, "Memory dump after liteplayer_destroy");
-    OS_MEMORY_DUMP();
-    return NULL;
+    return ret;
 }
 
 int main(int argc, char *argv[])
@@ -181,15 +153,6 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    const char *url = argv[1];
-    struct os_threadattr attr = {
-        .name = "liteplayer_test",
-        .priority = LITEPLYAER_TEST_TASK_PRIO,
-        .stacksize = LITEPLYAER_TEST_TASK_STACK,
-        .joinable = true,
-    };
-    os_thread_t id = OS_THREAD_CREATE(&attr, liteplayer_test_thread, (void *)url);
-    if (id != NULL)
-        OS_THREAD_JOIN(id, NULL);
+    liteplayer_test(argv[1]);
     return 0;
 }

@@ -308,7 +308,7 @@ static esp_err_t audio_element_on_cmd(audio_event_iface_msg_t *msg, void *contex
 static esp_err_t audio_element_process_running(audio_element_handle_t el)
 {
     int process_len = -1;
-    if (el->state < AEL_STATE_RUNNING || !el->is_open) {
+    if (el->state < AEL_STATE_RUNNING || !el->is_running) {
         return ESP_ERR_INVALID_STATE;
     }
     process_len = el->process(el, el->buf, el->buf_size);
@@ -1068,6 +1068,7 @@ esp_err_t audio_element_pause(audio_element_handle_t el)
         return ESP_OK;
     }
     if ((el->state >= AEL_STATE_PAUSED)) {
+        audio_element_force_set_state(el, AEL_STATE_PAUSED);
         ESP_LOGV(TAG, "[%s] Element already paused, state:%d", el->tag, el->state);
         return ESP_OK;
     }
@@ -1158,6 +1159,7 @@ esp_err_t audio_element_stop(audio_element_handle_t el)
     }
     if (el->is_running == false) {
         audio_element_set_state_event(el, STOPPED_BIT);
+        audio_element_report_status(el, AEL_STATUS_STATE_STOPPED);
         ESP_LOGV(TAG, "[%s] Element already stopped", el->tag);
         return ESP_OK;
     }

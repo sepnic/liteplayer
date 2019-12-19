@@ -24,7 +24,7 @@
 extern "C" {
 #endif
 
-alsa_handle_t alsastub_wrapper_open(int samplerate, int channels, void *priv);
+alsa_handle_t alsastub_wrapper_open(int samplerate, int channels, void *alsa_priv);
 
 int alsastub_wrapper_write(alsa_handle_t handle, char *buffer, int size);
 

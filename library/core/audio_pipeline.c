@@ -401,6 +401,17 @@ esp_err_t audio_pipeline_stop(audio_pipeline_handle_t pipeline)
             break;
         }
     }
+    // Fix the in stream has been finished while calling PAUSE function, then call audio_pipeline_stop.
+    // There are AEL_STATUS_STATE_FINISHED and AEL_STATUS_STATE_PAUSED status in linked elements,
+    // use audio_element_set_ringbuf_done easy to cause block.
+    STAILQ_FOREACH(el_item, &pipeline->el_list, next) {
+        if (el_item->linked
+            && el_item->el_state == AEL_STATUS_STATE_PAUSED) {
+            type = false;
+            ESP_LOGV(TAG, "audio_element_stop has paused element");
+            break;
+        }
+    }
     STAILQ_FOREACH(el_item, &pipeline->el_list, next) {
         if (el_item->linked) {
             if (type) {
@@ -410,7 +421,6 @@ esp_err_t audio_pipeline_stop(audio_pipeline_handle_t pipeline)
             }
         }
     }
-    audio_pipeline_change_state(pipeline, AEL_STATE_INIT);
     ESP_LOGD(TAG, "Pipeline stopped");
     return ESP_OK;
 }
@@ -635,7 +645,7 @@ esp_err_t audio_pipeline_check_items_state(audio_pipeline_handle_t pipeline, aud
     int el_cnt = 0;
     int el_sta_cnt = 0;
     audio_element_item_t *it = audio_pipeline_get_el_item_by_handle(pipeline, el);
-    it->el_state =  status;
+    it->el_state = status;
     STAILQ_FOREACH(item, &pipeline->el_list, next) {
         if (false == item->linked) {
             continue;
@@ -643,8 +653,40 @@ esp_err_t audio_pipeline_check_items_state(audio_pipeline_handle_t pipeline, aud
         el_cnt ++;
         ESP_LOGV(TAG, "pipeline state check, pl:%p, el:%p, tag:%8s, state:%d, status:%d", pipeline, item->el,
                  audio_element_get_tag(item->el), item->el_state, status);
-        if ((AEL_STATUS_NONE != item->el_state) && (status == item->el_state)) {
+        if (item->el_state == AEL_STATUS_NONE) {
+            continue;
+        }
+        if (status == item->el_state) {
             el_sta_cnt++;
+        } else if (status == AEL_STATUS_STATE_RUNNING) {
+            if ((item->el_state > AEL_STATUS_NONE) && (item->el_state < AEL_STATUS_INPUT_DONE)) {
+                el_sta_cnt++;
+                ESP_LOGV(TAG, "Check AEL RUNNING, pl:%p, el:%p, tag:%16s, state:%d, wanted:%d", pipeline, item->el,
+                         audio_element_get_tag(item->el), item->el_state, status);
+            }
+        } else if (status == AEL_STATUS_STATE_PAUSED) {
+            if ((item->el_state == AEL_STATUS_STATE_FINISHED)
+                || ((item->el_state > AEL_STATUS_NONE) && (item->el_state < AEL_STATUS_INPUT_DONE))) {
+                el_sta_cnt++;
+                ESP_LOGV(TAG, "Check AEL PAUSED, pl:%p, el:%p, tag:%16s, state:%d, wanted:%d", pipeline, item->el,
+                         audio_element_get_tag(item->el), item->el_state, status);
+            }
+        } else if (status == AEL_STATUS_STATE_STOPPED) {
+            if ((item->el_state == AEL_STATUS_STATE_FINISHED)
+                || ((item->el_state > AEL_STATUS_NONE) && (item->el_state < AEL_STATUS_INPUT_DONE))) {
+                el_sta_cnt++;
+                ESP_LOGV(TAG, "Check AEL STOPPED, pl:%p, el:%p, tag:%16s, state:%d, wanted:%d", pipeline, item->el,
+                         audio_element_get_tag(item->el), item->el_state, status);
+            }
+        } else if (status == AEL_STATUS_STATE_FINISHED) {
+            if ((item->el_state == AEL_STATUS_STATE_FINISHED)
+                || ((item->el_state > AEL_STATUS_NONE) && (item->el_state < AEL_STATUS_INPUT_DONE))) {
+                el_sta_cnt++;
+                ESP_LOGV(TAG, "Check AEL FINISHED, pl:%p, el:%p, tag:%16s, state:%d, wanted:%d", pipeline, item->el,
+                         audio_element_get_tag(item->el), item->el_state, status);
+            }
+        } else {
+            // TODO nothing
         }
     }
     if (el_cnt && (el_sta_cnt == el_cnt)) {
