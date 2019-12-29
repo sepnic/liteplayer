@@ -122,7 +122,7 @@ void faad_flushbits_ex(bitfile *ld, uint32_t bits)
     ld->bufb = tmp;
     ld->tail++;
     ld->bits_left += (32 - bits);
-    //ld->bytes_left -= 4;
+//    ld->bytes_left -= 4;
 //    if (ld->bytes_left == 0)
 //        ld->no_more_reading = 1;
 //    if (ld->bytes_left < 0)

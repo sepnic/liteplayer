@@ -77,105 +77,105 @@
  *              gains 0 int bits
  **************************************************************************************/
 static void StereoProcessGroup(int *coefL, int *coefR, const /*short*/ int *sfbTab, 
-							  int msMaskPres, unsigned char *msMaskPtr, int msMaskOffset, int maxSFB, 
-							  unsigned char *cbRight, short *sfRight, int *gbCurrent)
+                              int msMaskPres, unsigned char *msMaskPtr, int msMaskOffset, int maxSFB, 
+                              unsigned char *cbRight, short *sfRight, int *gbCurrent)
 {
 //fb
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wnarrowing"
 static const int pow14[2][4] PROGMEM = {
-	{ 0xc0000000, 0xb3e407d7, 0xa57d8666, 0x945d819b }, 
-	{ 0x40000000, 0x4c1bf829, 0x5a82799a, 0x6ba27e65 }
+    { 0xc0000000, 0xb3e407d7, 0xa57d8666, 0x945d819b }, 
+    { 0x40000000, 0x4c1bf829, 0x5a82799a, 0x6ba27e65 }
 };
 #pragma GCC diagnostic pop
 
-	int sfb, width, cbIdx, sf, cl, cr, scalef, scalei;
-	int gbMaskL, gbMaskR;
-	unsigned char msMask;
+    int sfb, width, cbIdx, sf, cl, cr, scalef, scalei;
+    int gbMaskL, gbMaskR;
+    unsigned char msMask;
 
-	msMask = (*msMaskPtr++) >> msMaskOffset;
-	gbMaskL = 0;
-	gbMaskR = 0;
+    msMask = (*msMaskPtr++) >> msMaskOffset;
+    gbMaskL = 0;
+    gbMaskR = 0;
 
-	for (sfb = 0; sfb < maxSFB; sfb++) {
-		width = sfbTab[sfb+1] - sfbTab[sfb];	/* assume >= 0 (see sfBandTabLong/sfBandTabShort) */
-		cbIdx = cbRight[sfb];
+    for (sfb = 0; sfb < maxSFB; sfb++) {
+        width = sfbTab[sfb+1] - sfbTab[sfb];    /* assume >= 0 (see sfBandTabLong/sfBandTabShort) */
+        cbIdx = cbRight[sfb];
 
-		if (cbIdx == 14 || cbIdx == 15) {
-			/* intensity stereo */
-			if (msMaskPres == 1 && (msMask & 0x01))
-				cbIdx ^= 0x01;				/* invert_intensity(): 14 becomes 15, or 15 becomes 14 */
-			sf = -sfRight[sfb];				/* negative since we use identity 0.5^(x) = 2^(-x) (see spec) */
-			cbIdx &= 0x01;					/* choose - or + scale factor */
-			scalef = pow14[cbIdx][sf & 0x03];
-			scalei = (sf >> 2) + 2;			/* +2 to compensate for scalef = Q30 */
-			
-			if (scalei > 0) {
-				if (scalei > 30)
-					scalei = 30;
-				do {
-					cr = MULSHIFT32(*coefL++, scalef);
-					CLIP_2N(cr, 31-scalei);
-					cr <<= scalei;
-					gbMaskR |= FASTABS(cr);
-					*coefR++ = cr;
-				} while (--width);
-			} else {
-				scalei = -scalei;
-				if (scalei > 31)
-					scalei = 31;
-				do {
-					cr = MULSHIFT32(*coefL++, scalef) >> scalei;
-					gbMaskR |= FASTABS(cr);
-					*coefR++ = cr;
-				} while (--width);
-			}
-		} else if ( cbIdx != 13 && ((msMaskPres == 1 && (msMask & 0x01)) || msMaskPres == 2) ) {
-			/* mid-side stereo (assumes no GB in inputs) */
-			do {
-				cl = *coefL;	
-				cr = *coefR;
+        if (cbIdx == 14 || cbIdx == 15) {
+            /* intensity stereo */
+            if (msMaskPres == 1 && (msMask & 0x01))
+                cbIdx ^= 0x01;              /* invert_intensity(): 14 becomes 15, or 15 becomes 14 */
+            sf = -sfRight[sfb];             /* negative since we use identity 0.5^(x) = 2^(-x) (see spec) */
+            cbIdx &= 0x01;                  /* choose - or + scale factor */
+            scalef = pow14[cbIdx][sf & 0x03];
+            scalei = (sf >> 2) + 2;         /* +2 to compensate for scalef = Q30 */
+            
+            if (scalei > 0) {
+                if (scalei > 30)
+                    scalei = 30;
+                do {
+                    cr = MULSHIFT32(*coefL++, scalef);
+                    CLIP_2N(cr, 31-scalei);
+                    cr <<= scalei;
+                    gbMaskR |= FASTABS(cr);
+                    *coefR++ = cr;
+                } while (--width);
+            } else {
+                scalei = -scalei;
+                if (scalei > 31)
+                    scalei = 31;
+                do {
+                    cr = MULSHIFT32(*coefL++, scalef) >> scalei;
+                    gbMaskR |= FASTABS(cr);
+                    *coefR++ = cr;
+                } while (--width);
+            }
+        } else if ( cbIdx != 13 && ((msMaskPres == 1 && (msMask & 0x01)) || msMaskPres == 2) ) {
+            /* mid-side stereo (assumes no GB in inputs) */
+            do {
+                cl = *coefL;    
+                cr = *coefR;
 
-				if ( (FASTABS(cl) | FASTABS(cr)) >> 30 ) {
-					/* avoid overflow (rare) */
-					cl >>= 1;
-					sf = cl + (cr >> 1);	CLIP_2N(sf, 30); 	sf <<= 1;
-					cl = cl - (cr >> 1);	CLIP_2N(cl, 30); 	cl <<= 1;
-				} else {
-					/* usual case */
-					sf = cl + cr;
-					cl -= cr;
-				}
+                if ( (FASTABS(cl) | FASTABS(cr)) >> 30 ) {
+                    /* avoid overflow (rare) */
+                    cl >>= 1;
+                    sf = cl + (cr >> 1);    CLIP_2N(sf, 30);    sf <<= 1;
+                    cl = cl - (cr >> 1);    CLIP_2N(cl, 30);    cl <<= 1;
+                } else {
+                    /* usual case */
+                    sf = cl + cr;
+                    cl -= cr;
+                }
 
-				*coefL++ = sf;
-				gbMaskL |= FASTABS(sf);
-				*coefR++ = cl;
-				gbMaskR |= FASTABS(cl);
-			} while (--width);
+                *coefL++ = sf;
+                gbMaskL |= FASTABS(sf);
+                *coefR++ = cl;
+                gbMaskR |= FASTABS(cl);
+            } while (--width);
 
-		} else {
-			/* nothing to do */
-			coefL += width;
-			coefR += width;
-		}
+        } else {
+            /* nothing to do */
+            coefL += width;
+            coefR += width;
+        }
 
-		/* get next mask bit (should be branchless on ARM) */
-		msMask >>= 1;
-		if (++msMaskOffset == 8) {
-			msMask = *msMaskPtr++;
-			msMaskOffset = 0;
-		}
-	}
+        /* get next mask bit (should be branchless on ARM) */
+        msMask >>= 1;
+        if (++msMaskOffset == 8) {
+            msMask = *msMaskPtr++;
+            msMaskOffset = 0;
+        }
+    }
 
-	cl = CLZ(gbMaskL) - 1;
-	if (gbCurrent[0] > cl)
-		gbCurrent[0] = cl;
+    cl = CLZ(gbMaskL) - 1;
+    if (gbCurrent[0] > cl)
+        gbCurrent[0] = cl;
 
-	cr = CLZ(gbMaskR) - 1;
-	if (gbCurrent[1] > cr)
-		gbCurrent[1] = cr;
+    cr = CLZ(gbMaskR) - 1;
+    if (gbCurrent[1] > cr)
+        gbCurrent[1] = cr;
 
-	return;
+    return;
 }
 
 /**************************************************************************************

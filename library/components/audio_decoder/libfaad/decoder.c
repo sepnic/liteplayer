@@ -75,8 +75,8 @@ int NeAACDecGetVersion(char **faad_id_string,
     static char *libfaadName = PACKAGE_VERSION;
     static char *libCopyright =
         " Copyright 2002-2004: Ahead Software AG\n"
-	" http://www.audiocoding.com\n"
-	" bug tracking: https://sourceforge.net/p/faac/bugs/\n";
+        " http://www.audiocoding.com\n"
+        " bug tracking: https://sourceforge.net/p/faac/bugs/\n";
 
     if (faad_id_string)
         *faad_id_string = libfaadName;
@@ -1004,7 +1004,7 @@ static void* aac_frame_decode(NeAACDecStruct *hDecoder,
         hInfo->header_type = ADIF;
     if (hDecoder->adts_header_present)
         hInfo->header_type = ADTS;
-	
+
 #if (defined(PS_DEC) || defined(DRM_PS))
     hInfo->ps = hDecoder->ps_used_global;
 #endif

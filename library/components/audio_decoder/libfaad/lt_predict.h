@@ -61,6 +61,7 @@ void lt_update_state(int16_t *lt_pred_stat,
 #ifdef __cplusplus
 }
 #endif
+
 #endif
 
 #endif

@@ -96,5 +96,6 @@ uint8_t drm_ps_decode(drm_ps_info *ps, uint8_t guess, qmf_t X_left[38][64], qmf_
 #ifdef __cplusplus
 }
 #endif
+
 #endif
 

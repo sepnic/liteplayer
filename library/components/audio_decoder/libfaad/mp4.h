@@ -50,4 +50,5 @@ int8_t AudioSpecificConfigFromBitfile(bitfile *ld,
 #ifdef __cplusplus
 }
 #endif
+
 #endif

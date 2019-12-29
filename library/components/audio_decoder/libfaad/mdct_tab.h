@@ -3652,4 +3652,5 @@ ALIGN static const complex_t mdct_tab_64[] =
 #ifdef __cplusplus
 }
 #endif
+
 #endif

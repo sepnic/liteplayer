@@ -141,8 +141,8 @@ int8_t AudioSpecificConfigFromBitfile(bitfile *ld,
 
     mp4ASC->samplingFrequencyIndex = (uint8_t)faad_getbits(ld, 4
         DEBUGVAR(1,2,"parse_audio_decoder_specific_info(): SamplingFrequencyIndex"));
-	if(mp4ASC->samplingFrequencyIndex==0x0f)
-		faad_getbits(ld, 24);
+    if(mp4ASC->samplingFrequencyIndex==0x0f)
+        faad_getbits(ld, 24);
 
     mp4ASC->channelsConfiguration = (uint8_t)faad_getbits(ld, 4
         DEBUGVAR(1,3,"parse_audio_decoder_specific_info(): ChannelsConfiguration"));
@@ -230,7 +230,7 @@ int8_t AudioSpecificConfigFromBitfile(bitfile *ld,
     if(short_form)
         bits_to_decode = 0;
     else
-		bits_to_decode = (int8_t)(buffer_size*8 - (startpos-faad_get_processed_bits(ld)));
+        bits_to_decode = (int8_t)(buffer_size*8 - (startpos-faad_get_processed_bits(ld)));
 
     if ((mp4ASC->objectTypeIndex != 5) && (bits_to_decode >= 16))
     {
@@ -251,8 +251,8 @@ int8_t AudioSpecificConfigFromBitfile(bitfile *ld,
                 {
                     uint8_t tmp;
 
-					/* Don't set OT to SBR until checked that it is actually there */
-					mp4ASC->objectTypeIndex = tmp_OTi;
+                    /* Don't set OT to SBR until checked that it is actually there */
+                    mp4ASC->objectTypeIndex = tmp_OTi;
 
                     tmp = (uint8_t)faad_getbits(ld, 4
                         DEBUGVAR(1,12,"parse_audio_decoder_specific_info(): extensionSamplingFrequencyIndex"));

@@ -247,6 +247,7 @@ ALIGN static const real_t exp_table[128] = {
 #ifdef __cplusplus
 }
 #endif
+
 #endif
 
 #endif

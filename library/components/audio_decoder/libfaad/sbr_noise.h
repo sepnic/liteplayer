@@ -558,7 +558,8 @@ ALIGN static const complex_t V[] = {
 };
 
 #ifdef __cplusplus
-
+}
 #endif
+
 #endif
 

@@ -88,8 +88,8 @@ extern "C" {
  *   12288 bits = 1536 bytes per CPE
  *       0 bits =    0 bytes per CCE-D (uses bits from the SCE/CPE/CCE-I it is coupled to)
  */
-#ifndef AAC_MAX_NCHANS              /* if max channels isn't set in makefile, */
-#define AAC_MAX_NCHANS    2         /* set to default max number of channels  */
+#ifndef AAC_MAX_NCHANS                /* if max channels isn't set in makefile, */
+#define AAC_MAX_NCHANS      2         /* set to default max number of channels  */
 #endif
 #define AAC_MAX_NSAMPS      1024
 #define AAC_MAINBUF_SIZE    (768 * AAC_MAX_NCHANS)
@@ -171,4 +171,4 @@ void AACFreeTrigtabsFloat(void);
 }
 #endif
 
-#endif	/* _AACDEC_H */
+#endif  /* _AACDEC_H */

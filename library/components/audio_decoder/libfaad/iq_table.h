@@ -16455,4 +16455,5 @@ ALIGN static const real_t iq_table[IQ_TABLE_SIZE] =
 #ifdef __cplusplus
 }
 #endif
+
 #endif

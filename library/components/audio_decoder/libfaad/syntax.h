@@ -126,4 +126,5 @@ uint32_t faad_latm_frame(latm_header *latm, bitfile *ld);
 #ifdef __cplusplus
 }
 #endif
+
 #endif

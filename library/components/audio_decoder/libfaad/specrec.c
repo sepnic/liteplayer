@@ -957,8 +957,8 @@ uint8_t reconstruct_single_channel(NeAACDecStruct *hDecoder, ic_stream *ics,
     /* MAIN object type prediction */
     if (hDecoder->object_type == MAIN)
     {
-		if (!hDecoder->pred_stat[sce->channel])
-			return 33;
+        if (!hDecoder->pred_stat[sce->channel])
+            return 33;
 
         /* intra channel prediction */
         ic_prediction(ics, spec_coef, hDecoder->pred_stat[sce->channel], hDecoder->frameLength,
@@ -1112,10 +1112,10 @@ uint8_t reconstruct_channel_pair(NeAACDecStruct *hDecoder, ic_stream *ics1, ic_s
     {
         retval = allocate_channel_pair(hDecoder, cpe->channel, (uint8_t)cpe->paired_channel);
         if (retval > 0) {
-		    faad_free(spec_coef1);
-	        faad_free(spec_coef2);
+            faad_free(spec_coef1);
+            faad_free(spec_coef2);
             return retval;
-    	}
+        }
 
         hDecoder->element_alloced[hDecoder->fr_ch_ele] = 1;
     }
@@ -1123,14 +1123,14 @@ uint8_t reconstruct_channel_pair(NeAACDecStruct *hDecoder, ic_stream *ics1, ic_s
     /* dequantisation and scaling */
     retval = quant_to_spec(hDecoder, ics1, spec_data1, spec_coef1, hDecoder->frameLength);
     if (retval > 0){
-		faad_free(spec_coef1);
-	    faad_free(spec_coef2);
+        faad_free(spec_coef1);
+        faad_free(spec_coef2);
         return retval;
     }
     retval = quant_to_spec(hDecoder, ics2, spec_data2, spec_coef2, hDecoder->frameLength);
     if (retval > 0){
-		faad_free(spec_coef1);
-	    faad_free(spec_coef2);
+        faad_free(spec_coef1);
+        faad_free(spec_coef2);
         return retval;
     }
 
@@ -1292,21 +1292,21 @@ uint8_t reconstruct_channel_pair(NeAACDecStruct *hDecoder, ic_stream *ics1, ic_s
             hDecoder->time_out[ch0], hDecoder->time_out[ch1],
             hDecoder->postSeekResetFlag, hDecoder->downSampledSBR);
         if (retval > 0){
-			faad_free(spec_coef1);
-			faad_free(spec_coef2);
+            faad_free(spec_coef1);
+            faad_free(spec_coef2);
             return retval;
         }
     } else if (((hDecoder->sbr_present_flag == 1) || (hDecoder->forceUpSampling == 1))
         && !hDecoder->sbr_alloced[hDecoder->fr_ch_ele])
     {
-    	faad_free(spec_coef1);
-		faad_free(spec_coef2);
+        faad_free(spec_coef1);
+        faad_free(spec_coef2);
         return 23;
     }
 #endif
 
-	faad_free(spec_coef1);
-	faad_free(spec_coef2);
+    faad_free(spec_coef1);
+    faad_free(spec_coef2);
 
     return 0;
 }

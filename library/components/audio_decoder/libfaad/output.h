@@ -45,4 +45,5 @@ void* output_to_PCM(NeAACDecStruct *hDecoder,
 #ifdef __cplusplus
 }
 #endif
+
 #endif

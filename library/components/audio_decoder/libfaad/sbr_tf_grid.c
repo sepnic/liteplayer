@@ -257,5 +257,4 @@ static uint8_t middleBorder(sbr_info *sbr, uint8_t ch)
     return (retval > 0) ? retval : 0;
 }
 
-
 #endif

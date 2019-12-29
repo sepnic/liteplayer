@@ -60,11 +60,11 @@
  **************************************************************************************/
 void SetBitstreamPointer(BitStreamInfo *bsi, int nBytes, unsigned char *buf)
 {
-	/* init bitstream */
-	bsi->bytePtr = buf;
-	bsi->iCache = 0;		/* 4-byte unsigned int */
-	bsi->cachedBits = 0;	/* i.e. zero bits in cache */
-	bsi->nBytes = nBytes;
+    /* init bitstream */
+    bsi->bytePtr = buf;
+    bsi->iCache = 0;        /* 4-byte unsigned int */
+    bsi->cachedBits = 0;    /* i.e. zero bits in cache */
+    bsi->nBytes = nBytes;
 }
 
 /**************************************************************************************
@@ -85,26 +85,26 @@ void SetBitstreamPointer(BitStreamInfo *bsi, int nBytes, unsigned char *buf)
 //Optimized for REV16, REV32 (FB)
 static __inline void RefillBitstreamCache(BitStreamInfo *bsi)
 {
-	int nBytes = bsi->nBytes;	
-	if (nBytes >= 4) {
-		/* optimize for common case, independent of machine endian-ness */
-		bsi->iCache  = (*bsi->bytePtr++) << 24;
-		bsi->iCache |= (*bsi->bytePtr++) << 16;
-		bsi->iCache |= (*bsi->bytePtr++) <<  8;
-		bsi->iCache |= (*bsi->bytePtr++);
-	
-		bsi->cachedBits = 32;
-		bsi->nBytes -= 4;
-	} else {
-		bsi->iCache = 0;
-		while (nBytes--) {
-			bsi->iCache |= (*bsi->bytePtr++);
-			bsi->iCache <<= 8;
-		}
-		bsi->iCache <<= ((3 - bsi->nBytes)*8);
-		bsi->cachedBits = 8*bsi->nBytes;
-		bsi->nBytes = 0;
-	}
+    int nBytes = bsi->nBytes;   
+    if (nBytes >= 4) {
+        /* optimize for common case, independent of machine endian-ness */
+        bsi->iCache  = (*bsi->bytePtr++) << 24;
+        bsi->iCache |= (*bsi->bytePtr++) << 16;
+        bsi->iCache |= (*bsi->bytePtr++) <<  8;
+        bsi->iCache |= (*bsi->bytePtr++);
+    
+        bsi->cachedBits = 32;
+        bsi->nBytes -= 4;
+    } else {
+        bsi->iCache = 0;
+        while (nBytes--) {
+            bsi->iCache |= (*bsi->bytePtr++);
+            bsi->iCache <<= 8;
+        }
+        bsi->iCache <<= ((3 - bsi->nBytes)*8);
+        bsi->cachedBits = 8*bsi->nBytes;
+        bsi->nBytes = 0;
+    }
 }
 
 /**************************************************************************************
@@ -125,25 +125,25 @@ static __inline void RefillBitstreamCache(BitStreamInfo *bsi)
  **************************************************************************************/
 unsigned int GetBits(BitStreamInfo *bsi, int nBits)
 {
-	unsigned int data, lowBits;
+    unsigned int data, lowBits;
 
-	nBits &= 0x1f;							/* nBits mod 32 to avoid unpredictable results like >> by negative amount */
-	data = bsi->iCache >> (31 - nBits);		/* unsigned >> so zero-extend */
-	data >>= 1;								/* do as >> 31, >> 1 so that nBits = 0 works okay (returns 0) */
-	bsi->iCache <<= nBits;					/* left-justify cache */
-	bsi->cachedBits -= nBits;				/* how many bits have we drawn from the cache so far */
+    nBits &= 0x1f;                          /* nBits mod 32 to avoid unpredictable results like >> by negative amount */
+    data = bsi->iCache >> (31 - nBits);     /* unsigned >> so zero-extend */
+    data >>= 1;                             /* do as >> 31, >> 1 so that nBits = 0 works okay (returns 0) */
+    bsi->iCache <<= nBits;                  /* left-justify cache */
+    bsi->cachedBits -= nBits;               /* how many bits have we drawn from the cache so far */
 
-	/* if we cross an int boundary, refill the cache */
-	if (bsi->cachedBits < 0) {
-		lowBits = -bsi->cachedBits;
-		RefillBitstreamCache(bsi);
-		data |= bsi->iCache >> (32 - lowBits);		/* get the low-order bits */
-	
-		bsi->cachedBits -= lowBits;			/* how many bits have we drawn from the cache so far */
-		bsi->iCache <<= lowBits;			/* left-justify cache */
-	}
+    /* if we cross an int boundary, refill the cache */
+    if (bsi->cachedBits < 0) {
+        lowBits = -bsi->cachedBits;
+        RefillBitstreamCache(bsi);
+        data |= bsi->iCache >> (32 - lowBits);      /* get the low-order bits */
+    
+        bsi->cachedBits -= lowBits;         /* how many bits have we drawn from the cache so far */
+        bsi->iCache <<= lowBits;            /* left-justify cache */
+    }
 
-	return data;
+    return data;
 }
 
 /**************************************************************************************
@@ -164,30 +164,30 @@ unsigned int GetBits(BitStreamInfo *bsi, int nBits)
  **************************************************************************************/
 unsigned int GetBitsNoAdvance(BitStreamInfo *bsi, int nBits)
 {
-	unsigned char *buf;
-	unsigned int data, iCache;
-	signed int lowBits;
+    unsigned char *buf;
+    unsigned int data, iCache;
+    signed int lowBits;
 
-	nBits &= 0x1f;							/* nBits mod 32 to avoid unpredictable results like >> by negative amount */
-	data = bsi->iCache >> (31 - nBits);		/* unsigned >> so zero-extend */
-	data >>= 1;								/* do as >> 31, >> 1 so that nBits = 0 works okay (returns 0) */
-	lowBits = nBits - bsi->cachedBits;		/* how many bits do we have left to read */
+    nBits &= 0x1f;                          /* nBits mod 32 to avoid unpredictable results like >> by negative amount */
+    data = bsi->iCache >> (31 - nBits);     /* unsigned >> so zero-extend */
+    data >>= 1;                             /* do as >> 31, >> 1 so that nBits = 0 works okay (returns 0) */
+    lowBits = nBits - bsi->cachedBits;      /* how many bits do we have left to read */
 
-	/* if we cross an int boundary, read next bytes in buffer */
-	if (lowBits > 0) {
-		iCache = 0;
-		buf = bsi->bytePtr;
-		while (lowBits > 0) {
-			iCache <<= 8;
-			if (buf < bsi->bytePtr + bsi->nBytes)
-				iCache |= (unsigned int)*buf++;
-			lowBits -= 8;
-		}
-		lowBits = -lowBits;
-		data |= iCache >> lowBits;
-	}
+    /* if we cross an int boundary, read next bytes in buffer */
+    if (lowBits > 0) {
+        iCache = 0;
+        buf = bsi->bytePtr;
+        while (lowBits > 0) {
+            iCache <<= 8;
+            if (buf < bsi->bytePtr + bsi->nBytes)
+                iCache |= (unsigned int)*buf++;
+            lowBits -= 8;
+        }
+        lowBits = -lowBits;
+        data |= iCache >> lowBits;
+    }
 
-	return data;
+    return data;
 }
 
 /**************************************************************************************
@@ -206,13 +206,13 @@ unsigned int GetBitsNoAdvance(BitStreamInfo *bsi, int nBits)
  **************************************************************************************/
 void AdvanceBitstream(BitStreamInfo *bsi, int nBits)
 {
-	nBits &= 0x1f;
-	if (nBits > bsi->cachedBits) {
-		nBits -= bsi->cachedBits;
-		RefillBitstreamCache(bsi);
-	}
-	bsi->iCache <<= nBits;
-	bsi->cachedBits -= nBits;
+    nBits &= 0x1f;
+    if (nBits > bsi->cachedBits) {
+        nBits -= bsi->cachedBits;
+        RefillBitstreamCache(bsi);
+    }
+    bsi->iCache <<= nBits;
+    bsi->cachedBits -= nBits;
 }
 
 /**************************************************************************************
@@ -230,13 +230,13 @@ void AdvanceBitstream(BitStreamInfo *bsi, int nBits)
  **************************************************************************************/
 int CalcBitsUsed(BitStreamInfo *bsi, unsigned char *startBuf, int startOffset)
 {
-	int bitsUsed;
+    int bitsUsed;
 
-	bitsUsed  = (bsi->bytePtr - startBuf) * 8;
-	bitsUsed -= bsi->cachedBits;
-	bitsUsed -= startOffset;
+    bitsUsed  = (bsi->bytePtr - startBuf) * 8;
+    bitsUsed -= bsi->cachedBits;
+    bitsUsed -= startOffset;
 
-	return bitsUsed;
+    return bitsUsed;
 }
 
 /**************************************************************************************
@@ -254,8 +254,8 @@ int CalcBitsUsed(BitStreamInfo *bsi, unsigned char *startBuf, int startOffset)
  **************************************************************************************/
 void ByteAlignBitstream(BitStreamInfo *bsi)
 {
-	int offset;
+    int offset;
 
-	offset = bsi->cachedBits & 0x07;
-	AdvanceBitstream(bsi, offset);
+    offset = bsi->cachedBits & 0x07;
+    AdvanceBitstream(bsi, offset);
 }

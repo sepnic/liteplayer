@@ -74,15 +74,13 @@ static uint32_t const bitmask[] = {
 
 void faad_initbits(bitfile *ld, const void *buffer, const uint32_t buffer_size);
 void faad_endbits(bitfile *ld);
-void faad_initbits_rev(bitfile *ld, void *buffer,
-                       uint32_t bits_in_buffer);
+void faad_initbits_rev(bitfile *ld, void *buffer, uint32_t bits_in_buffer);
 uint8_t faad_byte_align(bitfile *ld);
 uint32_t faad_get_processed_bits(bitfile *ld);
 void faad_flushbits_ex(bitfile *ld, uint32_t bits);
 void faad_rewindbits(bitfile *ld);
 void faad_resetbits(bitfile *ld, int bits);
-uint8_t *faad_getbitbuffer(bitfile *ld, uint32_t bits
-                       DEBUGDEC);
+uint8_t *faad_getbitbuffer(bitfile *ld, uint32_t bits DEBUGDEC);
 #ifdef DRM
 void *faad_origbitbuffer(bitfile *ld);
 uint32_t faad_origbitbuffer_size(bitfile *ld);
@@ -449,4 +447,5 @@ static INLINE int8_t get1bit_hcr(bits_t *ld, uint8_t *result)
 #ifdef __cplusplus
 }
 #endif
+
 #endif

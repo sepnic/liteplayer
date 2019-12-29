@@ -60,14 +60,14 @@
  **************************************************************************************/
 static int DecodeSingleChannelElement(AACDecInfo *aacDecInfo, BitStreamInfo *bsi)
 {
-	/* validate pointers */
-	if (!aacDecInfo || !aacDecInfo->psInfoBase)
-		return -1;
+    /* validate pointers */
+    if (!aacDecInfo || !aacDecInfo->psInfoBase)
+        return -1;
 
-	/* read instance tag */
-	aacDecInfo->currInstTag = GetBits(bsi, NUM_INST_TAG_BITS);
+    /* read instance tag */
+    aacDecInfo->currInstTag = GetBits(bsi, NUM_INST_TAG_BITS);
 
-	return 0;
+    return 0;
 }
 
 /**************************************************************************************
@@ -88,51 +88,51 @@ static int DecodeSingleChannelElement(AACDecInfo *aacDecInfo, BitStreamInfo *bsi
  **************************************************************************************/
 static int DecodeChannelPairElement(AACDecInfo *aacDecInfo, BitStreamInfo *bsi)
 {
-	int sfb, gp, maskOffset;
-	unsigned char currBit, *maskPtr;
-	PSInfoBase *psi;
-	ICSInfo *icsInfo;
+    int sfb, gp, maskOffset;
+    unsigned char currBit, *maskPtr;
+    PSInfoBase *psi;
+    ICSInfo *icsInfo;
 
-	/* validate pointers */
-	if (!aacDecInfo || !aacDecInfo->psInfoBase)
-		return -1;
-	psi = (PSInfoBase *)(aacDecInfo->psInfoBase);
-	icsInfo = psi->icsInfo;
+    /* validate pointers */
+    if (!aacDecInfo || !aacDecInfo->psInfoBase)
+        return -1;
+    psi = (PSInfoBase *)(aacDecInfo->psInfoBase);
+    icsInfo = psi->icsInfo;
 
-	/* read instance tag */
-	aacDecInfo->currInstTag = GetBits(bsi, NUM_INST_TAG_BITS);
+    /* read instance tag */
+    aacDecInfo->currInstTag = GetBits(bsi, NUM_INST_TAG_BITS);
 
-	/* read common window flag and mid-side info (if present) 
-	 * store msMask bits in psi->msMaskBits[] as follows:
-	 *  long blocks -  pack bits for each SFB in range [0, maxSFB) starting with lsb of msMaskBits[0]
-	 *  short blocks - pack bits for each SFB in range [0, maxSFB), for each group [0, 7]
-	 * msMaskPresent = 0 means no M/S coding
-	 *               = 1 means psi->msMaskBits contains 1 bit per SFB to toggle M/S coding
-	 *               = 2 means all SFB's are M/S coded (so psi->msMaskBits is not needed)
-	 */
-	psi->commonWin = GetBits(bsi, 1);
-	if (psi->commonWin) {
-		DecodeICSInfo(bsi, icsInfo, psi->sampRateIdx);
-		psi->msMaskPresent = GetBits(bsi, 2);
-		if (psi->msMaskPresent == 1) {
-			maskPtr = psi->msMaskBits;
-			*maskPtr = 0;
-			maskOffset = 0;
-			for (gp = 0; gp < icsInfo->numWinGroup; gp++) {
-				for (sfb = 0; sfb < icsInfo->maxSFB; sfb++) {
-					currBit = (unsigned char)GetBits(bsi, 1);
-					*maskPtr |= currBit << maskOffset;
-					if (++maskOffset == 8) {
-						maskPtr++;
-						*maskPtr = 0;
-						maskOffset = 0;
-					}
-				}		
-			}
-		}
-	}
+    /* read common window flag and mid-side info (if present) 
+     * store msMask bits in psi->msMaskBits[] as follows:
+     *  long blocks -  pack bits for each SFB in range [0, maxSFB) starting with lsb of msMaskBits[0]
+     *  short blocks - pack bits for each SFB in range [0, maxSFB), for each group [0, 7]
+     * msMaskPresent = 0 means no M/S coding
+     *               = 1 means psi->msMaskBits contains 1 bit per SFB to toggle M/S coding
+     *               = 2 means all SFB's are M/S coded (so psi->msMaskBits is not needed)
+     */
+    psi->commonWin = GetBits(bsi, 1);
+    if (psi->commonWin) {
+        DecodeICSInfo(bsi, icsInfo, psi->sampRateIdx);
+        psi->msMaskPresent = GetBits(bsi, 2);
+        if (psi->msMaskPresent == 1) {
+            maskPtr = psi->msMaskBits;
+            *maskPtr = 0;
+            maskOffset = 0;
+            for (gp = 0; gp < icsInfo->numWinGroup; gp++) {
+                for (sfb = 0; sfb < icsInfo->maxSFB; sfb++) {
+                    currBit = (unsigned char)GetBits(bsi, 1);
+                    *maskPtr |= currBit << maskOffset;
+                    if (++maskOffset == 8) {
+                        maskPtr++;
+                        *maskPtr = 0;
+                        maskOffset = 0;
+                    }
+                }       
+            }
+        }
+    }
 
-	return 0;
+    return 0;
 }
 
 /**************************************************************************************
@@ -150,14 +150,14 @@ static int DecodeChannelPairElement(AACDecInfo *aacDecInfo, BitStreamInfo *bsi)
  **************************************************************************************/
 static int DecodeLFEChannelElement(AACDecInfo *aacDecInfo, BitStreamInfo *bsi)
 {
-	/* validate pointers */
-	if (!aacDecInfo || !aacDecInfo->psInfoBase)
-		return -1;
+    /* validate pointers */
+    if (!aacDecInfo || !aacDecInfo->psInfoBase)
+        return -1;
 
-	/* read instance tag */
-	aacDecInfo->currInstTag = GetBits(bsi, NUM_INST_TAG_BITS);
+    /* read instance tag */
+    aacDecInfo->currInstTag = GetBits(bsi, NUM_INST_TAG_BITS);
 
-	return 0;
+    return 0;
 }
 
 /**************************************************************************************
@@ -174,30 +174,30 @@ static int DecodeLFEChannelElement(AACDecInfo *aacDecInfo, BitStreamInfo *bsi)
  **************************************************************************************/
 static int DecodeDataStreamElement(AACDecInfo *aacDecInfo, BitStreamInfo *bsi)
 {
-	unsigned int byteAlign, dataCount;
-	unsigned char *dataBuf;
-	PSInfoBase *psi;
+    unsigned int byteAlign, dataCount;
+    unsigned char *dataBuf;
+    PSInfoBase *psi;
 
-	/* validate pointers */
-	if (!aacDecInfo || !aacDecInfo->psInfoBase)
-		return -1;
-	psi = (PSInfoBase *)(aacDecInfo->psInfoBase);
+    /* validate pointers */
+    if (!aacDecInfo || !aacDecInfo->psInfoBase)
+        return -1;
+    psi = (PSInfoBase *)(aacDecInfo->psInfoBase);
 
-	aacDecInfo->currInstTag = GetBits(bsi, NUM_INST_TAG_BITS);
-	byteAlign = GetBits(bsi, 1);
-	dataCount = GetBits(bsi, 8);
-	if (dataCount == 255)
-		dataCount += GetBits(bsi, 8);
+    aacDecInfo->currInstTag = GetBits(bsi, NUM_INST_TAG_BITS);
+    byteAlign = GetBits(bsi, 1);
+    dataCount = GetBits(bsi, 8);
+    if (dataCount == 255)
+        dataCount += GetBits(bsi, 8);
 
-	if (byteAlign)
-		ByteAlignBitstream(bsi);
+    if (byteAlign)
+        ByteAlignBitstream(bsi);
 
-	psi->dataCount = dataCount;
-	dataBuf = psi->dataBuf;
-	while (dataCount--)
-		*dataBuf++ = GetBits(bsi, 8);
+    psi->dataCount = dataCount;
+    dataBuf = psi->dataBuf;
+    while (dataCount--)
+        *dataBuf++ = GetBits(bsi, 8);
 
-	return 0;
+    return 0;
 }
 
 /**************************************************************************************
@@ -217,73 +217,72 @@ static int DecodeDataStreamElement(AACDecInfo *aacDecInfo, BitStreamInfo *bsi)
  **************************************************************************************/
 int DecodeProgramConfigElement(ProgConfigElement *pce, BitStreamInfo *bsi)
 {
-	int i;
+    int i;
 
-	pce->elemInstTag =   GetBits(bsi, 4);
-	pce->profile =       GetBits(bsi, 2);
-	pce->sampRateIdx =   GetBits(bsi, 4);
-	pce->numFCE =        GetBits(bsi, 4);
-	pce->numSCE =        GetBits(bsi, 4);
-	pce->numBCE =        GetBits(bsi, 4);
-	pce->numLCE =        GetBits(bsi, 2);
-	pce->numADE =        GetBits(bsi, 3);
-	pce->numCCE =        GetBits(bsi, 4);
+    pce->elemInstTag =   GetBits(bsi, 4);
+    pce->profile =       GetBits(bsi, 2);
+    pce->sampRateIdx =   GetBits(bsi, 4);
+    pce->numFCE =        GetBits(bsi, 4);
+    pce->numSCE =        GetBits(bsi, 4);
+    pce->numBCE =        GetBits(bsi, 4);
+    pce->numLCE =        GetBits(bsi, 2);
+    pce->numADE =        GetBits(bsi, 3);
+    pce->numCCE =        GetBits(bsi, 4);
 
-	pce->monoMixdown = GetBits(bsi, 1) << 4;	/* present flag */
-	if (pce->monoMixdown)
-		pce->monoMixdown |= GetBits(bsi, 4);	/* element number */
+    pce->monoMixdown = GetBits(bsi, 1) << 4;    /* present flag */
+    if (pce->monoMixdown)
+        pce->monoMixdown |= GetBits(bsi, 4);    /* element number */
 
-	pce->stereoMixdown = GetBits(bsi, 1) << 4;	/* present flag */
-	if (pce->stereoMixdown)
-		pce->stereoMixdown  |= GetBits(bsi, 4);	/* element number */
+    pce->stereoMixdown = GetBits(bsi, 1) << 4;  /* present flag */
+    if (pce->stereoMixdown)
+        pce->stereoMixdown  |= GetBits(bsi, 4); /* element number */
 
-	pce->matrixMixdown = GetBits(bsi, 1) << 4;	/* present flag */
-	if (pce->matrixMixdown) {
-		pce->matrixMixdown  |= GetBits(bsi, 2) << 1;	/* index */
-		pce->matrixMixdown  |= GetBits(bsi, 1);			/* pseudo-surround enable */
-	}
+    pce->matrixMixdown = GetBits(bsi, 1) << 4;  /* present flag */
+    if (pce->matrixMixdown) {
+        pce->matrixMixdown  |= GetBits(bsi, 2) << 1;    /* index */
+        pce->matrixMixdown  |= GetBits(bsi, 1);         /* pseudo-surround enable */
+    }
 
-	for (i = 0; i < pce->numFCE; i++) {
-		pce->fce[i]  = GetBits(bsi, 1) << 4;	/* is_cpe flag */
-		pce->fce[i] |= GetBits(bsi, 4);			/* tag select */
-	}
+    for (i = 0; i < pce->numFCE; i++) {
+        pce->fce[i]  = GetBits(bsi, 1) << 4;    /* is_cpe flag */
+        pce->fce[i] |= GetBits(bsi, 4);         /* tag select */
+    }
 
-	for (i = 0; i < pce->numSCE; i++) {
-		pce->sce[i]  = GetBits(bsi, 1) << 4;	/* is_cpe flag */
-		pce->sce[i] |= GetBits(bsi, 4);			/* tag select */
-	}
+    for (i = 0; i < pce->numSCE; i++) {
+        pce->sce[i]  = GetBits(bsi, 1) << 4;    /* is_cpe flag */
+        pce->sce[i] |= GetBits(bsi, 4);         /* tag select */
+    }
 
-	for (i = 0; i < pce->numBCE; i++) {
-		pce->bce[i]  = GetBits(bsi, 1) << 4;	/* is_cpe flag */
-		pce->bce[i] |= GetBits(bsi, 4);			/* tag select */
-	}
+    for (i = 0; i < pce->numBCE; i++) {
+        pce->bce[i]  = GetBits(bsi, 1) << 4;    /* is_cpe flag */
+        pce->bce[i] |= GetBits(bsi, 4);         /* tag select */
+    }
 
-	for (i = 0; i < pce->numLCE; i++)
-		pce->lce[i] = GetBits(bsi, 4);			/* tag select */
+    for (i = 0; i < pce->numLCE; i++)
+        pce->lce[i] = GetBits(bsi, 4);          /* tag select */
 
-	for (i = 0; i < pce->numADE; i++)
-		pce->ade[i] = GetBits(bsi, 4);			/* tag select */
+    for (i = 0; i < pce->numADE; i++)
+        pce->ade[i] = GetBits(bsi, 4);          /* tag select */
 
-	for (i = 0; i < pce->numCCE; i++) {
-		pce->cce[i]  = GetBits(bsi, 1) << 4;	/* independent/dependent flag */
-		pce->cce[i] |= GetBits(bsi, 4);			/* tag select */
-	}
+    for (i = 0; i < pce->numCCE; i++) {
+        pce->cce[i]  = GetBits(bsi, 1) << 4;    /* independent/dependent flag */
+        pce->cce[i] |= GetBits(bsi, 4);         /* tag select */
+    }
 
-
-	ByteAlignBitstream(bsi);
+    ByteAlignBitstream(bsi);
 
 #ifdef KEEP_PCE_COMMENTS
-	pce->commentBytes = GetBits(bsi, 8);
-	for (i = 0; i < pce->commentBytes; i++)
-		pce->commentField[i] = GetBits(bsi, 8);
+    pce->commentBytes = GetBits(bsi, 8);
+    for (i = 0; i < pce->commentBytes; i++)
+        pce->commentField[i] = GetBits(bsi, 8);
 #else
-	/* eat comment bytes and throw away */
-	i = GetBits(bsi, 8);
-	while (i--)
-		GetBits(bsi, 8);
+    /* eat comment bytes and throw away */
+    i = GetBits(bsi, 8);
+    while (i--)
+        GetBits(bsi, 8);
 #endif
 
-	return 0;
+    return 0;
 }
 
 /**************************************************************************************
@@ -301,44 +300,44 @@ int DecodeProgramConfigElement(ProgConfigElement *pce, BitStreamInfo *bsi)
  **************************************************************************************/
 static int DecodeFillElement(AACDecInfo *aacDecInfo, BitStreamInfo *bsi)
 {
-	unsigned int fillCount;
-	unsigned char *fillBuf;
-	PSInfoBase *psi;
+    unsigned int fillCount;
+    unsigned char *fillBuf;
+    PSInfoBase *psi;
 
-	/* validate pointers */
-	if (!aacDecInfo || !aacDecInfo->psInfoBase)
-		return -1;
-	psi = (PSInfoBase *)(aacDecInfo->psInfoBase);
+    /* validate pointers */
+    if (!aacDecInfo || !aacDecInfo->psInfoBase)
+        return -1;
+    psi = (PSInfoBase *)(aacDecInfo->psInfoBase);
 
-	fillCount = GetBits(bsi, 4);
-	if (fillCount == 15)
-		fillCount += (GetBits(bsi, 8) - 1);
+    fillCount = GetBits(bsi, 4);
+    if (fillCount == 15)
+        fillCount += (GetBits(bsi, 8) - 1);
 
-	psi->fillCount = fillCount;
-	fillBuf = psi->fillBuf;
-	while (fillCount--)
-		*fillBuf++ = GetBits(bsi, 8);
+    psi->fillCount = fillCount;
+    fillBuf = psi->fillBuf;
+    while (fillCount--)
+        *fillBuf++ = GetBits(bsi, 8);
 
-	aacDecInfo->currInstTag = -1;	/* fill elements don't have instance tag */
-	aacDecInfo->fillExtType = 0;
+    aacDecInfo->currInstTag = -1;   /* fill elements don't have instance tag */
+    aacDecInfo->fillExtType = 0;
 
 #ifdef AAC_ENABLE_SBR
-	/* check for SBR 
-	 * aacDecInfo->sbrEnabled is sticky (reset each raw_data_block), so for multichannel 
-	 *    need to verify that all SCE/CPE/ICCE have valid SBR fill element following, and 
-	 *    must upsample by 2 for LFE
-	 */
-	if (psi->fillCount > 0) {
-		aacDecInfo->fillExtType = (int)((psi->fillBuf[0] >> 4) & 0x0f);
-		if (aacDecInfo->fillExtType == EXT_SBR_DATA || aacDecInfo->fillExtType == EXT_SBR_DATA_CRC)
-			aacDecInfo->sbrEnabled = 1;
-	}
+    /* check for SBR 
+     * aacDecInfo->sbrEnabled is sticky (reset each raw_data_block), so for multichannel 
+     *    need to verify that all SCE/CPE/ICCE have valid SBR fill element following, and 
+     *    must upsample by 2 for LFE
+     */
+    if (psi->fillCount > 0) {
+        aacDecInfo->fillExtType = (int)((psi->fillBuf[0] >> 4) & 0x0f);
+        if (aacDecInfo->fillExtType == EXT_SBR_DATA || aacDecInfo->fillExtType == EXT_SBR_DATA_CRC)
+            aacDecInfo->sbrEnabled = 1;
+    }
 #endif
 
-	aacDecInfo->fillBuf = psi->fillBuf;
-	aacDecInfo->fillCount = psi->fillCount;
+    aacDecInfo->fillBuf = psi->fillBuf;
+    aacDecInfo->fillCount = psi->fillCount;
 
-	return 0;
+    return 0;
 }
 
 /**************************************************************************************
@@ -362,64 +361,63 @@ static int DecodeFillElement(AACDecInfo *aacDecInfo, BitStreamInfo *bsi)
  **************************************************************************************/
 int DecodeNextElement(AACDecInfo *aacDecInfo, unsigned char **buf, int *bitOffset, int *bitsAvail)
 {
-	int err, bitsUsed;
-	PSInfoBase *psi;
-	BitStreamInfo bsi;
+    int err, bitsUsed;
+    PSInfoBase *psi;
+    BitStreamInfo bsi;
 
-	/* validate pointers */
-	if (!aacDecInfo || !aacDecInfo->psInfoBase)
-		return ERR_AAC_NULL_POINTER;
-	psi = (PSInfoBase *)(aacDecInfo->psInfoBase);
+    /* validate pointers */
+    if (!aacDecInfo || !aacDecInfo->psInfoBase)
+        return ERR_AAC_NULL_POINTER;
+    psi = (PSInfoBase *)(aacDecInfo->psInfoBase);
 
-	/* init bitstream reader */
-	SetBitstreamPointer(&bsi, (*bitsAvail + 7) >> 3, *buf);
-	GetBits(&bsi, *bitOffset);
+    /* init bitstream reader */
+    SetBitstreamPointer(&bsi, (*bitsAvail + 7) >> 3, *buf);
+    GetBits(&bsi, *bitOffset);
 
-	/* read element ID (save last ID for SBR purposes) */
-	aacDecInfo->prevBlockID = aacDecInfo->currBlockID;
-	aacDecInfo->currBlockID = GetBits(&bsi, NUM_SYN_ID_BITS);
+    /* read element ID (save last ID for SBR purposes) */
+    aacDecInfo->prevBlockID = aacDecInfo->currBlockID;
+    aacDecInfo->currBlockID = GetBits(&bsi, NUM_SYN_ID_BITS);
 
-	/* set defaults (could be overwritten by DecodeXXXElement(), depending on currBlockID) */
-	psi->commonWin = 0;
+    /* set defaults (could be overwritten by DecodeXXXElement(), depending on currBlockID) */
+    psi->commonWin = 0;
  
-	err = 0;
-	switch (aacDecInfo->currBlockID) {
-	case AAC_ID_SCE:
-		err = DecodeSingleChannelElement(aacDecInfo, &bsi);
-		break;
-	case AAC_ID_CPE:
-		err = DecodeChannelPairElement(aacDecInfo, &bsi);
-		break;
-	case AAC_ID_CCE:
-		/* TODO - implement CCE decoding */
-		break;
-	case AAC_ID_LFE:
-		err = DecodeLFEChannelElement(aacDecInfo, &bsi);
-		break;
-	case AAC_ID_DSE:
-		err = DecodeDataStreamElement(aacDecInfo, &bsi);
-		break;
-	case AAC_ID_PCE:
-		err = DecodeProgramConfigElement(psi->pce + 0, &bsi);
-		break;
-	case AAC_ID_FIL:
-		err = DecodeFillElement(aacDecInfo, &bsi);
-		break;
-	case AAC_ID_END:
-		break;
-	}
-	if (err)
-		return ERR_AAC_SYNTAX_ELEMENT;
+    err = 0;
+    switch (aacDecInfo->currBlockID) {
+    case AAC_ID_SCE:
+        err = DecodeSingleChannelElement(aacDecInfo, &bsi);
+        break;
+    case AAC_ID_CPE:
+        err = DecodeChannelPairElement(aacDecInfo, &bsi);
+        break;
+    case AAC_ID_CCE:
+        /* TODO - implement CCE decoding */
+        break;
+    case AAC_ID_LFE:
+        err = DecodeLFEChannelElement(aacDecInfo, &bsi);
+        break;
+    case AAC_ID_DSE:
+        err = DecodeDataStreamElement(aacDecInfo, &bsi);
+        break;
+    case AAC_ID_PCE:
+        err = DecodeProgramConfigElement(psi->pce + 0, &bsi);
+        break;
+    case AAC_ID_FIL:
+        err = DecodeFillElement(aacDecInfo, &bsi);
+        break;
+    case AAC_ID_END:
+        break;
+    }
+    if (err)
+        return ERR_AAC_SYNTAX_ELEMENT;
 
-	/* update bitstream reader */
-	bitsUsed = CalcBitsUsed(&bsi, *buf, *bitOffset);
-	*buf += (bitsUsed + *bitOffset) >> 3;
-	*bitOffset = (bitsUsed + *bitOffset) & 0x07;
-	*bitsAvail -= bitsUsed;
+    /* update bitstream reader */
+    bitsUsed = CalcBitsUsed(&bsi, *buf, *bitOffset);
+    *buf += (bitsUsed + *bitOffset) >> 3;
+    *bitOffset = (bitsUsed + *bitOffset) & 0x07;
+    *bitsAvail -= bitsUsed;
 
-	if (*bitsAvail < 0)
-		return ERR_AAC_INDATA_UNDERFLOW;
+    if (*bitsAvail < 0)
+        return ERR_AAC_INDATA_UNDERFLOW;
 
-	return ERR_AAC_NONE;
+    return ERR_AAC_NONE;
 }
-

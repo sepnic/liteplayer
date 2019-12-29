@@ -175,11 +175,10 @@ void ssr_ifilter_bank(fb_info *fb, uint8_t window_sequence, uint8_t window_shape
             time_out[nflat_ls+nshort+i] = transf_buf[nflat_ls+nshort+i];
         for (i = 0; i < nlong; i++)
             time_out[nlong+i] = MUL_R_C(transf_buf[nlong+i],window_long[nlong-1-i]);
-		break;
+        break;
     }
 
     faad_free(transf_buf);
 }
-
 
 #endif

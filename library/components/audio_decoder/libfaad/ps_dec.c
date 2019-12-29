@@ -233,7 +233,7 @@ static void hybrid_free(hyb_info *hyb)
 {
     uint8_t i;
 
-	if (!hyb) return;
+    if (!hyb) return;
 
     if (hyb->work)
         faad_free(hyb->work);
@@ -254,7 +254,7 @@ static void hybrid_free(hyb_info *hyb)
     if (hyb->temp)
         faad_free(hyb->temp);
 
-	faad_free(hyb);
+    faad_free(hyb);
 }
 
 /* real filter, size 2 */

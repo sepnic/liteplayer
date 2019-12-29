@@ -45,6 +45,7 @@
 
 #if defined(USE_DEFAULT_STDLIB) || defined(ARDUINO)
 #include <stdlib.h>
+#include <string.h>
 #else
 #include "hlxclib/stdlib.h"
 #endif
@@ -66,8 +67,7 @@
  *
  * Notes:       slow, platform-independent equivalent to memset(buf, 0, nBytes)
  **************************************************************************************/
-#include <string.h>
- void ClearBuffer(void *buf, int nBytes)
+void ClearBuffer(void *buf, int nBytes)
 {
     /*int i;
     unsigned char *cbuf = (unsigned char *)buf;

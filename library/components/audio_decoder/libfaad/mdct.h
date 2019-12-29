@@ -45,4 +45,5 @@ void faad_mdct(mdct_info *mdct, real_t *X_in, real_t *X_out);
 #ifdef __cplusplus
 }
 #endif
+
 #endif

@@ -46,4 +46,5 @@ void drc_decode(drc_info *drc, real_t *spec);
 #ifdef __cplusplus
 }
 #endif
+
 #endif

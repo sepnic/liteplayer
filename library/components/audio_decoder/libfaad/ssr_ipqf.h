@@ -43,4 +43,5 @@ void ssr_ipqf(ssr_info *ssr, real_t *in_data, real_t *out_data,
 #ifdef __cplusplus
 }
 #endif
+
 #endif

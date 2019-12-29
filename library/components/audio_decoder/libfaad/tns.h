@@ -48,4 +48,5 @@ void tns_encode_frame(ic_stream *ics, tns_info *tns, uint8_t sr_index,
 #ifdef __cplusplus
 }
 #endif
+
 #endif

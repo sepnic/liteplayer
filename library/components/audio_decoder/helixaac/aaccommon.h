@@ -47,16 +47,12 @@
 #define _AACCOMMON_H
 
 #include "Arduino.h"
-//#include <pgmspace.h>
-
-//#pragma GCC optimize ("O3")
-
 #include "aacdec.h"
 #include "statname.h"
 
 /* 12-bit syncword */
-#define SYNCWORDH       0xff
-#define SYNCWORDL       0xf0
+#define SYNCWORDH           0xff
+#define SYNCWORDL           0xf0
 
 #define MAX_NCHANS_ELEM     2   /* max number of channels in any single bitstream element (SCE,CPE,CCE,LFE) */
 
@@ -97,7 +93,7 @@ enum {
 
     AAC_FF_ADTS = 1,
     AAC_FF_ADIF = 2,
-    AAC_FF_RAW =  3
+    AAC_FF_RAW  = 3
 
 };
 

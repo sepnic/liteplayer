@@ -1,9 +1,5 @@
-#ifdef ARDUINO
-#error This file is only used for host builds
-#endif
-
-#ifndef MINIARD
-#define MINIARD
+#ifndef _ARDUINO_H_
+#define _ARDUINO_H_
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,17 +16,6 @@
 #define strcpy_P strcpy
 #define snprintf_P snprintf
 #define strncpy_P strncpy
-
-#ifdef __cplusplus
-class SerialEmulator {
-  public:
-    SerialEmulator() {};
-    ~SerialEmulator() {};
-    int printf_P(const char *fmt, ...) { va_list ap; va_start(ap, fmt); int r = vprintf(fmt, ap); va_end(ap); return r; };
-    void flush() {};
-};
-extern SerialEmulator Serial;
-#endif
 
 #ifndef ICACHE_RODATA_ATTR
 #define ICACHE_RODATA_ATTR
@@ -66,16 +51,15 @@ extern SerialEmulator Serial;
     #define pgm_read_ptr(addr)              (*(const void const *)(addr))
 #endif
 
-#define pgm_read_byte_near(addr)        pgm_read_byte(addr)
-#define pgm_read_word_near(addr)        pgm_read_word(addr)
-#define pgm_read_dword_near(addr)       pgm_read_dword(addr)
-#define pgm_read_float_near(addr)       pgm_read_float(addr)
-#define pgm_read_ptr_near(addr)         pgm_read_ptr(addr)
-#define pgm_read_byte_far(addr)         pgm_read_byte(addr)
-#define pgm_read_word_far(addr)         pgm_read_word(addr)
-#define pgm_read_dword_far(addr)        pgm_read_dword(addr)
-#define pgm_read_float_far(addr)        pgm_read_float(addr)
-#define pgm_read_ptr_far(addr)          pgm_read_ptr(addr)
-
+#define pgm_read_byte_near(addr)            pgm_read_byte(addr)
+#define pgm_read_word_near(addr)            pgm_read_word(addr)
+#define pgm_read_dword_near(addr)           pgm_read_dword(addr)
+#define pgm_read_float_near(addr)           pgm_read_float(addr)
+#define pgm_read_ptr_near(addr)             pgm_read_ptr(addr)
+#define pgm_read_byte_far(addr)             pgm_read_byte(addr)
+#define pgm_read_word_far(addr)             pgm_read_word(addr)
+#define pgm_read_dword_far(addr)            pgm_read_dword(addr)
+#define pgm_read_float_far(addr)            pgm_read_float(addr)
+#define pgm_read_ptr_far(addr)              pgm_read_ptr(addr)
 
 #endif

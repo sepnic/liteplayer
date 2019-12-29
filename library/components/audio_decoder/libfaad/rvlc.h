@@ -53,4 +53,5 @@ uint8_t rvlc_decode_scale_factors(ic_stream *ics, bitfile *ld);
 #ifdef __cplusplus
 }
 #endif
+
 #endif

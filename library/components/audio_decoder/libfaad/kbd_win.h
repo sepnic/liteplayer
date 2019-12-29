@@ -2294,4 +2294,5 @@ ALIGN static const real_t kbd_short_120[] =
 #ifdef __cplusplus
 }
 #endif
+
 #endif

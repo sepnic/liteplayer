@@ -114,7 +114,7 @@ static enum mad_flow mad_wrapper_input(void *data, struct mad_stream *stream)
 }
 
 /* 
-* NAME:	decode->input_read()
+* NAME: decode->input_read()
 * This is the output callback function. It is called after each frame of
 * MPEG audio data has been completely decoded.
 */

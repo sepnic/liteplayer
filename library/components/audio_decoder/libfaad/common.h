@@ -330,8 +330,8 @@ char *strchr(), *strrchr();
         return i;
     }
     #endif /* HAVE_LRINTF */
-  #elif (defined(__i386__) && defined(__GNUC__) && \
-	!defined(__CYGWIN__) && !defined(__MINGW32__))
+  #elif ((defined(__i386__) || defined(__amd64__)) && defined(__GNUC__) && \
+         !defined(__CYGWIN__) && !defined(__MINGW32__))
     #ifndef HAVE_LRINTF
     #define HAS_LRINTF
     // from http://www.stereopsis.com/FPU.html
@@ -453,4 +453,5 @@ static int64_t faad_get_ts()
 #ifdef __cplusplus
 }
 #endif
+
 #endif

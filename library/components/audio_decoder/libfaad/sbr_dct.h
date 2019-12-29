@@ -48,5 +48,6 @@ void DCT2_16_unscaled(real_t *y, real_t *x);
 #ifdef __cplusplus
 }
 #endif
+
 #endif
 

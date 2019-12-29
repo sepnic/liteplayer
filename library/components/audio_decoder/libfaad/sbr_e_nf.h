@@ -46,5 +46,6 @@ void unmap_envelope_noise(sbr_info *sbr);
 #ifdef __cplusplus
 }
 #endif
+
 #endif
 

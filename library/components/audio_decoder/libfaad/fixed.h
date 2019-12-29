@@ -169,7 +169,7 @@ static INLINE void ComplexMult(real_t *y1, real_t *y2,
         : "%r" (x), "r" (y), \
         "M" (SCALEBITS), "M" (32 - (SCALEBITS)) \
         : "cc"); \
-        __result; \
+    __result; \
 })
 
 static INLINE real_t MUL_R(real_t A, real_t B)
@@ -280,8 +280,8 @@ static INLINE void ComplexMult(real_t *y1, real_t *y2,
 #endif
 
 
-
 #ifdef __cplusplus
 }
 #endif
+
 #endif

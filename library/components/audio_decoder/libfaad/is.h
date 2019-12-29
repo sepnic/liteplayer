@@ -64,4 +64,5 @@ static INLINE int8_t invert_intensity(ic_stream *ics, uint8_t group, uint8_t sfb
 #ifdef __cplusplus
 }
 #endif
+
 #endif

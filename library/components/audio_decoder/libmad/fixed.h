@@ -30,22 +30,22 @@
 # ifndef LIBMAD_VERSION_H
 # define LIBMAD_VERSION_H
 
-# define MAD_VERSION_MAJOR	0
-# define MAD_VERSION_MINOR	15
-# define MAD_VERSION_PATCH	1
-# define MAD_VERSION_EXTRA	" (beta)"
+# define MAD_VERSION_MAJOR  0
+# define MAD_VERSION_MINOR  15
+# define MAD_VERSION_PATCH  1
+# define MAD_VERSION_EXTRA  " (beta)"
 
-# define MAD_VERSION_STRINGIZE(str)	#str
-# define MAD_VERSION_STRING(num)	MAD_VERSION_STRINGIZE(num)
+# define MAD_VERSION_STRINGIZE(str) #str
+# define MAD_VERSION_STRING(num)    MAD_VERSION_STRINGIZE(num)
 
-# define MAD_VERSION		MAD_VERSION_STRING(MAD_VERSION_MAJOR) "."  \
-				MAD_VERSION_STRING(MAD_VERSION_MINOR) "."  \
-				MAD_VERSION_STRING(MAD_VERSION_PATCH)  \
-				MAD_VERSION_EXTRA
+# define MAD_VERSION    MAD_VERSION_STRING(MAD_VERSION_MAJOR) "."  \
+                        MAD_VERSION_STRING(MAD_VERSION_MINOR) "."  \
+                        MAD_VERSION_STRING(MAD_VERSION_PATCH)  \
+                        MAD_VERSION_EXTRA
 
-# define MAD_PUBLISHYEAR	"2000-2004"
-# define MAD_AUTHOR		"Underbit Technologies, Inc."
-# define MAD_EMAIL		"info@underbit.com"
+# define MAD_PUBLISHYEAR    "2000-2004"
+# define MAD_AUTHOR         "Underbit Technologies, Inc."
+# define MAD_EMAIL          "info@underbit.com"
 
 extern char const mad_version[];
 extern char const mad_copyright[];
@@ -106,50 +106,50 @@ typedef mad_fixed_t mad_sample_t;
  * supported, and must be done with care.
  */
 
-# define MAD_F_FRACBITS		28
+# define MAD_F_FRACBITS     28
 
 # if MAD_F_FRACBITS == 28
-#  define MAD_F(x)		((mad_fixed_t) (x##L))
+#  define MAD_F(x)      ((mad_fixed_t) (x##L))
 # else
 #  if MAD_F_FRACBITS < 28
 #   warning "MAD_F_FRACBITS < 28"
-#   define MAD_F(x)		((mad_fixed_t)  \
-				 (((x##L) +  \
-				   (1L << (28 - MAD_F_FRACBITS - 1))) >>  \
-				  (28 - MAD_F_FRACBITS)))
+#   define MAD_F(x)     ((mad_fixed_t)  \
+                        (((x##L) +  \
+                        (1L << (28 - MAD_F_FRACBITS - 1))) >>  \
+                        (28 - MAD_F_FRACBITS)))
 #  elif MAD_F_FRACBITS > 28
 #   error "MAD_F_FRACBITS > 28 not currently supported"
-#   define MAD_F(x)		((mad_fixed_t)  \
-				 ((x##L) << (MAD_F_FRACBITS - 28)))
+#   define MAD_F(x)     ((mad_fixed_t)  \
+                        ((x##L) << (MAD_F_FRACBITS - 28)))
 #  endif
 # endif
 
-# define MAD_F_MIN		((mad_fixed_t) -0x80000000L)
-# define MAD_F_MAX		((mad_fixed_t) +0x7fffffffL)
+# define MAD_F_MIN      ((mad_fixed_t) -0x80000000L)
+# define MAD_F_MAX      ((mad_fixed_t) +0x7fffffffL)
 
-# define MAD_F_ONE		MAD_F(0x10000000)
+# define MAD_F_ONE      MAD_F(0x10000000)
 
-# define mad_f_tofixed(x)	((mad_fixed_t)  \
-				 ((x) * (double) (1L << MAD_F_FRACBITS) + 0.5))
-# define mad_f_todouble(x)	((double)  \
-				 ((x) / (double) (1L << MAD_F_FRACBITS)))
+# define mad_f_tofixed(x)   ((mad_fixed_t)  \
+                            ((x) * (double) (1L << MAD_F_FRACBITS) + 0.5))
+# define mad_f_todouble(x)  ((double)  \
+                            ((x) / (double) (1L << MAD_F_FRACBITS)))
 
-# define mad_f_intpart(x)	((x) >> MAD_F_FRACBITS)
-# define mad_f_fracpart(x)	((x) & ((1L << MAD_F_FRACBITS) - 1))
-				/* (x should be positive) */
+# define mad_f_intpart(x)   ((x) >> MAD_F_FRACBITS)
+# define mad_f_fracpart(x)  ((x) & ((1L << MAD_F_FRACBITS) - 1))
+                            /* (x should be positive) */
 
-# define mad_f_fromint(x)	((x) << MAD_F_FRACBITS)
+# define mad_f_fromint(x)   ((x) << MAD_F_FRACBITS)
 
-# define mad_f_add(x, y)	((x) + (y))
-# define mad_f_sub(x, y)	((x) - (y))
+# define mad_f_add(x, y)    ((x) + (y))
+# define mad_f_sub(x, y)    ((x) - (y))
 
 # if defined(FPM_FLOAT)
 #  error "FPM_FLOAT not yet supported"
 
 #  undef MAD_F
-#  define MAD_F(x)		mad_f_todouble(x)
+#  define MAD_F(x)          mad_f_todouble(x)
 
-#  define mad_f_mul(x, y)	((x) * (y))
+#  define mad_f_mul(x, y)   ((x) * (y))
 #  define mad_f_scale64
 
 #  undef ASO_ZEROCHECK
@@ -162,15 +162,15 @@ typedef mad_fixed_t mad_sample_t;
  */
 #  if defined(OPT_ACCURACY)
 #   define mad_f_mul(x, y)  \
-    ((mad_fixed_t)  \
-     ((((mad_fixed64_t) (x) * (y)) +  \
-       (1L << (MAD_F_SCALEBITS - 1))) >> MAD_F_SCALEBITS))
+                            ((mad_fixed_t)  \
+                            ((((mad_fixed64_t) (x) * (y)) +  \
+                            (1L << (MAD_F_SCALEBITS - 1))) >> MAD_F_SCALEBITS))
 #  else
 #   define mad_f_mul(x, y)  \
-    ((mad_fixed_t) (((mad_fixed64_t) (x) * (y)) >> MAD_F_SCALEBITS))
+                            ((mad_fixed_t) (((mad_fixed64_t) (x) * (y)) >> MAD_F_SCALEBITS))
 #  endif
 
-#  define MAD_F_SCALEBITS  MAD_F_FRACBITS
+#  define MAD_F_SCALEBITS   MAD_F_FRACBITS
 
 /* --- Intel --------------------------------------------------------------- */
 
@@ -182,21 +182,21 @@ typedef mad_fixed_t mad_sample_t;
 static __forceinline
 mad_fixed_t mad_f_mul_inline(mad_fixed_t x, mad_fixed_t y)
 {
-  enum {
-    fracbits = MAD_F_FRACBITS
-  };
+    enum {
+        fracbits = MAD_F_FRACBITS
+    };
 
-  __asm {
-    mov eax, x
-    imul y
-    shrd eax, edx, fracbits
-  }
+    __asm {
+        mov eax, x
+        imul y
+        shrd eax, edx, fracbits
+    }
 
-  /* implicit return of eax */
+    /* implicit return of eax */
 }
 #   pragma warning(pop)
 
-#   define mad_f_mul		mad_f_mul_inline
+#   define mad_f_mul        mad_f_mul_inline
 #   define mad_f_scale64
 #  else
 /*
@@ -204,25 +204,25 @@ mad_fixed_t mad_f_mul_inline(mad_fixed_t x, mad_fixed_t y)
  * significant bit depends on OPT_ACCURACY via mad_f_scale64().
  */
 #   define MAD_F_MLX(hi, lo, x, y)  \
-    asm ("imull %3"  \
-	 : "=a" (lo), "=d" (hi)  \
-	 : "%a" (x), "rm" (y)  \
-	 : "cc")
+        asm ("imull %3"  \
+            : "=a" (lo), "=d" (hi)  \
+            : "%a" (x), "rm" (y)  \
+            : "cc")
 
 #   if defined(OPT_ACCURACY)
 /*
  * This gives best accuracy but is not very fast.
  */
 #    define MAD_F_MLA(hi, lo, x, y)  \
-    ({ mad_fixed64hi_t __hi;  \
-       mad_fixed64lo_t __lo;  \
-       MAD_F_MLX(__hi, __lo, (x), (y));  \
-       asm ("addl %2,%0\n\t"  \
-	    "adcl %3,%1"  \
-	    : "=rm" (lo), "=rm" (hi)  \
-	    : "r" (__lo), "r" (__hi), "0" (lo), "1" (hi)  \
-	    : "cc");  \
-    })
+            ({ mad_fixed64hi_t __hi;  \
+            mad_fixed64lo_t __lo;  \
+            MAD_F_MLX(__hi, __lo, (x), (y));  \
+            asm ("addl %2,%0\n\t"  \
+                "adcl %3,%1"  \
+                : "=rm" (lo), "=rm" (hi)  \
+                : "r" (__lo), "r" (__hi), "0" (lo), "1" (hi)  \
+                : "cc");  \
+            })
 #   endif  /* OPT_ACCURACY */
 
 #   if defined(OPT_ACCURACY)
@@ -230,44 +230,44 @@ mad_fixed_t mad_f_mul_inline(mad_fixed_t x, mad_fixed_t y)
  * Surprisingly, this is faster than SHRD followed by ADC.
  */
 #    define mad_f_scale64(hi, lo)  \
-    ({ mad_fixed64hi_t __hi_;  \
-       mad_fixed64lo_t __lo_;  \
-       mad_fixed_t __result;  \
-       asm ("addl %4,%2\n\t"  \
-	    "adcl %5,%3"  \
-	    : "=rm" (__lo_), "=rm" (__hi_)  \
-	    : "0" (lo), "1" (hi),  \
-	      "ir" (1L << (MAD_F_SCALEBITS - 1)), "ir" (0)  \
-	    : "cc");  \
-       asm ("shrdl %3,%2,%1"  \
-	    : "=rm" (__result)  \
-	    : "0" (__lo_), "r" (__hi_), "I" (MAD_F_SCALEBITS)  \
-	    : "cc");  \
-       __result;  \
-    })
+            ({ mad_fixed64hi_t __hi_;  \
+            mad_fixed64lo_t __lo_;  \
+            mad_fixed_t __result;  \
+            asm ("addl %4,%2\n\t"  \
+                "adcl %5,%3"  \
+                : "=rm" (__lo_), "=rm" (__hi_)  \
+                : "0" (lo), "1" (hi),  \
+                "ir" (1L << (MAD_F_SCALEBITS - 1)), "ir" (0)  \
+                : "cc");  \
+            asm ("shrdl %3,%2,%1"  \
+                : "=rm" (__result)  \
+                : "0" (__lo_), "r" (__hi_), "I" (MAD_F_SCALEBITS)  \
+                : "cc");  \
+            __result;  \
+            })
 #   elif defined(OPT_INTEL)
 /*
  * Alternate Intel scaling that may or may not perform better.
  */
 #    define mad_f_scale64(hi, lo)  \
-    ({ mad_fixed_t __result;  \
-       asm ("shrl %3,%1\n\t"  \
-	    "shll %4,%2\n\t"  \
-	    "orl %2,%1"  \
-	    : "=rm" (__result)  \
-	    : "0" (lo), "r" (hi),  \
-	      "I" (MAD_F_SCALEBITS), "I" (32 - MAD_F_SCALEBITS)  \
-	    : "cc");  \
-       __result;  \
+            ({ mad_fixed_t __result;  \
+            asm ("shrl %3,%1\n\t"  \
+                "shll %4,%2\n\t"  \
+                "orl %2,%1"  \
+                : "=rm" (__result)  \
+                : "0" (lo), "r" (hi),  \
+                "I" (MAD_F_SCALEBITS), "I" (32 - MAD_F_SCALEBITS)  \
+                : "cc");  \
+            __result;  \
     })
 #   else
 #    define mad_f_scale64(hi, lo)  \
-    ({ mad_fixed_t __result;  \
-       asm ("shrdl %3,%2,%1"  \
-	    : "=rm" (__result)  \
-	    : "0" (lo), "r" (hi), "I" (MAD_F_SCALEBITS)  \
-	    : "cc");  \
-       __result;  \
+            ({ mad_fixed_t __result;  \
+            asm ("shrdl %3,%2,%1"  \
+                : "=rm" (__result)  \
+                : "0" (lo), "r" (hi), "I" (MAD_F_SCALEBITS)  \
+                : "cc");  \
+            __result;  \
     })
 #   endif  /* OPT_ACCURACY */
 
@@ -291,42 +291,42 @@ mad_fixed_t mad_f_mul_inline(mad_fixed_t x, mad_fixed_t y)
     ({ mad_fixed64hi_t __hi;  \
        mad_fixed64lo_t __lo;  \
        mad_fixed_t __result;  \
-       __asm__ ("smull	%0, %1, %3, %4\n\t"  \
-	    "movs	%0, %0, lsr %5\n\t"  \
-	    "adc	%2, %0, %1, lsl %6"  \
-	    : "=&r" (__lo), "=&r" (__hi), "=r" (__result)  \
-	    : "%r" (x), "r" (y),  \
-	      "M" (MAD_F_SCALEBITS), "M" (32 - MAD_F_SCALEBITS)  \
-	    : "cc");  \
+       __asm__ ("smull  %0, %1, %3, %4\n\t"  \
+                "movs   %0, %0, lsr %5\n\t"  \
+                "adc    %2, %0, %1, lsl %6"  \
+                : "=&r" (__lo), "=&r" (__hi), "=r" (__result)  \
+                : "%r" (x), "r" (y),  \
+                  "M" (MAD_F_SCALEBITS), "M" (32 - MAD_F_SCALEBITS)  \
+                : "cc");  \
        __result;  \
     })
 # endif
 
 #  define MAD_F_MLX(hi, lo, x, y)  \
-    __asm__ ("smull	%0, %1, %2, %3"  \
-	 : "=&r" (lo), "=&r" (hi)  \
-	 : "%r" (x), "r" (y))
+    __asm__ ("smull %0, %1, %2, %3"  \
+             : "=&r" (lo), "=&r" (hi)  \
+             : "%r" (x), "r" (y))
 
 #  define MAD_F_MLA(hi, lo, x, y)  \
-    __asm__ ("smlal	%0, %1, %2, %3"  \
-	 : "+r" (lo), "+r" (hi)  \
-	 : "%r" (x), "r" (y))
+    __asm__ ("smlal %0, %1, %2, %3"  \
+             : "+r" (lo), "+r" (hi)  \
+             : "%r" (x), "r" (y))
 
 #  define MAD_F_MLN(hi, lo)  \
-    __asm__ ("rsbs	%0, %2, #0\n\t"  \
-	 "rsc	%1, %3, #0"  \
-	 : "=r" (lo), "=r" (hi)  \
-	 : "0" (lo), "1" (hi)  \
-	 : "cc")
+    __asm__ ("rsbs  %0, %2, #0\n\t"  \
+             "rsc   %1, %3, #0"  \
+             : "=r" (lo), "=r" (hi)  \
+             : "0" (lo), "1" (hi)  \
+             : "cc")
 
 #  define mad_f_scale64(hi, lo)  \
     ({ mad_fixed_t __result;  \
-       __asm__ ("movs	%0, %1, lsr %3\n\t"  \
-	    "adc	%0, %0, %2, lsl %4"  \
-	    : "=&r" (__result)  \
-	    : "r" (lo), "r" (hi),  \
-	      "M" (MAD_F_SCALEBITS), "M" (32 - MAD_F_SCALEBITS)  \
-	    : "cc");  \
+       __asm__ ("movs   %0, %1, lsr %3\n\t"  \
+                "adc    %0, %0, %2, lsl %4"  \
+                : "=&r" (__result)  \
+                : "r" (lo), "r" (hi),  \
+                  "M" (MAD_F_SCALEBITS), "M" (32 - MAD_F_SCALEBITS)  \
+                : "cc");  \
        __result;  \
     })
 
@@ -341,28 +341,28 @@ mad_fixed_t mad_f_mul_inline(mad_fixed_t x, mad_fixed_t y)
  * significant bit depends on OPT_ACCURACY via mad_f_scale64().
  */
 #  define MAD_F_MLX(hi, lo, x, y)  \
-    asm ("mult	%2,%3"  \
-	 : "=l" (lo), "=h" (hi)  \
-	 : "%r" (x), "r" (y))
+    asm ("mult  %2,%3"  \
+         : "=l" (lo), "=h" (hi)  \
+         : "%r" (x), "r" (y))
 
 # if defined(HAVE_MADD_ASM)
 #  define MAD_F_MLA(hi, lo, x, y)  \
-    asm ("madd	%2,%3"  \
-	 : "+l" (lo), "+h" (hi)  \
-	 : "%r" (x), "r" (y))
+    asm ("madd  %2,%3"  \
+         : "+l" (lo), "+h" (hi)  \
+         : "%r" (x), "r" (y))
 # elif defined(HAVE_MADD16_ASM)
 /*
  * This loses significant accuracy due to the 16-bit integer limit in the
  * multiply/accumulate instruction.
  */
 #  define MAD_F_ML0(hi, lo, x, y)  \
-    asm ("mult	%2,%3"  \
-	 : "=l" (lo), "=h" (hi)  \
-	 : "%r" ((x) >> 12), "r" ((y) >> 16))
+    asm ("mult  %2,%3"  \
+         : "=l" (lo), "=h" (hi)  \
+         : "%r" ((x) >> 12), "r" ((y) >> 16))
 #  define MAD_F_MLA(hi, lo, x, y)  \
-    asm ("madd16	%2,%3"  \
-	 : "+l" (lo), "+h" (hi)  \
-	 : "%r" ((x) >> 12), "r" ((y) >> 16))
+    asm ("madd16    %2,%3"  \
+         : "+l" (lo), "+h" (hi)  \
+         : "%r" ((x) >> 12), "r" ((y) >> 16))
 #  define MAD_F_MLZ(hi, lo)  ((mad_fixed_t) (lo))
 # endif
 
@@ -382,9 +382,9 @@ mad_fixed_t mad_f_mul_inline(mad_fixed_t x, mad_fixed_t y)
  */
 #  define MAD_F_MLX(hi, lo, x, y)  \
     asm ("smul %2, %3, %0\n\t"  \
-	 "rd %%y, %1"  \
-	 : "=r" (lo), "=r" (hi)  \
-	 : "%r" (x), "rI" (y))
+         "rd %%y, %1"  \
+         : "=r" (lo), "=r" (hi)  \
+         : "%r" (x), "rI" (y))
 
 /* --- PowerPC ------------------------------------------------------------- */
 
@@ -397,11 +397,11 @@ mad_fixed_t mad_f_mul_inline(mad_fixed_t x, mad_fixed_t y)
 #  define MAD_F_MLX(hi, lo, x, y)  \
     do {  \
       asm ("mullw %0,%1,%2"  \
-	   : "=r" (lo)  \
-	   : "%r" (x), "r" (y));  \
+           : "=r" (lo)  \
+           : "%r" (x), "r" (y));  \
       asm ("mulhw %0,%1,%2"  \
-	   : "=r" (hi)  \
-	   : "%r" (x), "r" (y));  \
+           : "=r" (hi)  \
+           : "%r" (x), "r" (y));  \
     }  \
     while (0)
 
@@ -414,11 +414,11 @@ mad_fixed_t mad_f_mul_inline(mad_fixed_t x, mad_fixed_t y)
        mad_fixed64lo_t __lo;  \
        MAD_F_MLX(__hi, __lo, (x), (y));  \
        asm ("addc %0,%2,%3\n\t"  \
-	    "adde %1,%4,%5"  \
-	    : "=r" (lo), "=r" (hi)  \
-	    : "%r" (lo), "r" (__lo),  \
-	      "%r" (hi), "r" (__hi)  \
-	    : "xer");  \
+            "adde %1,%4,%5"  \
+            : "=r" (lo), "=r" (hi)  \
+            : "%r" (lo), "r" (__lo),  \
+              "%r" (hi), "r" (__hi)  \
+            : "xer");  \
     })
 #  endif
 
@@ -429,28 +429,28 @@ mad_fixed_t mad_f_mul_inline(mad_fixed_t x, mad_fixed_t y)
 #   define mad_f_scale64(hi, lo)  \
     ({ mad_fixed_t __result, __round;  \
        asm ("rotrwi %0,%1,%2"  \
-	    : "=r" (__result)  \
-	    : "r" (lo), "i" (MAD_F_SCALEBITS));  \
+            : "=r" (__result)  \
+            : "r" (lo), "i" (MAD_F_SCALEBITS));  \
        asm ("extrwi %0,%1,1,0"  \
-	    : "=r" (__round)  \
-	    : "r" (__result));  \
+            : "=r" (__round)  \
+            : "r" (__result));  \
        asm ("insrwi %0,%1,%2,0"  \
-	    : "+r" (__result)  \
-	    : "r" (hi), "i" (MAD_F_SCALEBITS));  \
+            : "+r" (__result)  \
+            : "r" (hi), "i" (MAD_F_SCALEBITS));  \
        asm ("add %0,%1,%2"  \
-	    : "=r" (__result)  \
-	    : "%r" (__result), "r" (__round));  \
+            : "=r" (__result)  \
+            : "%r" (__result), "r" (__round));  \
        __result;  \
     })
 #  else
 #   define mad_f_scale64(hi, lo)  \
     ({ mad_fixed_t __result;  \
        asm ("rotrwi %0,%1,%2"  \
-	    : "=r" (__result)  \
-	    : "r" (lo), "i" (MAD_F_SCALEBITS));  \
+            : "=r" (__result)  \
+            : "r" (lo), "i" (MAD_F_SCALEBITS));  \
        asm ("insrwi %0,%1,%2,0"  \
-	    : "+r" (__result)  \
-	    : "r" (hi), "i" (MAD_F_SCALEBITS));  \
+            : "+r" (__result)  \
+            : "r" (hi), "i" (MAD_F_SCALEBITS));  \
        __result;  \
     })
 #  endif
@@ -471,10 +471,10 @@ mad_fixed_t mad_f_mul_inline(mad_fixed_t x, mad_fixed_t y)
  * Pre-rounding is required to stay within the limits of compliance.
  */
 #  if defined(OPT_SPEED)
-#   define mad_f_mul(x, y)	(((x) >> 12) * ((y) >> 16))
+#   define mad_f_mul(x, y)  (((x) >> 12) * ((y) >> 16))
 #  else
-#   define mad_f_mul(x, y)	((((x) + (1L << 11)) >> 12) *  \
-				 (((y) + (1L << 15)) >> 16))
+#   define mad_f_mul(x, y)  ((((x) + (1L << 11)) >> 12) *  \
+                            (((y) + (1L << 15)) >> 16))
 #  endif
 
 /* ------------------------------------------------------------------------- */
@@ -495,22 +495,22 @@ mad_fixed_t mad_f_mul_inline(mad_fixed_t x, mad_fixed_t y)
 # endif
 
 # if !defined(MAD_F_MLA)
-#  define MAD_F_ML0(hi, lo, x, y)	((lo)  = mad_f_mul((x), (y)))
-#  define MAD_F_MLA(hi, lo, x, y)	((lo) += mad_f_mul((x), (y)))
-#  define MAD_F_MLN(hi, lo)		((lo)  = -(lo))
-#  define MAD_F_MLZ(hi, lo)		((void) (hi), (mad_fixed_t) (lo))
+#  define MAD_F_ML0(hi, lo, x, y)   ((lo)  = mad_f_mul((x), (y)))
+#  define MAD_F_MLA(hi, lo, x, y)   ((lo) += mad_f_mul((x), (y)))
+#  define MAD_F_MLN(hi, lo)         ((lo)  = -(lo))
+#  define MAD_F_MLZ(hi, lo)         ((void) (hi), (mad_fixed_t) (lo))
 # endif
 
 # if !defined(MAD_F_ML0)
-#  define MAD_F_ML0(hi, lo, x, y)	MAD_F_MLX((hi), (lo), (x), (y))
+#  define MAD_F_ML0(hi, lo, x, y)   MAD_F_MLX((hi), (lo), (x), (y))
 # endif
 
 # if !defined(MAD_F_MLN)
-#  define MAD_F_MLN(hi, lo)		((hi) = ((lo) = -(lo)) ? ~(hi) : -(hi))
+#  define MAD_F_MLN(hi, lo)         ((hi) = ((lo) = -(lo)) ? ~(hi) : -(hi))
 # endif
 
 # if !defined(MAD_F_MLZ)
-#  define MAD_F_MLZ(hi, lo)		mad_f_scale64((hi), (lo))
+#  define MAD_F_MLZ(hi, lo)         mad_f_scale64((hi), (lo))
 # endif
 
 # if !defined(mad_f_scale64)
@@ -518,7 +518,7 @@ mad_fixed_t mad_f_mul_inline(mad_fixed_t x, mad_fixed_t y)
 #   define mad_f_scale64(hi, lo)  \
     ((((mad_fixed_t)  \
        (((hi) << (32 - (MAD_F_SCALEBITS - 1))) |  \
-	((lo) >> (MAD_F_SCALEBITS - 1)))) + 1) >> 1)
+       ((lo) >> (MAD_F_SCALEBITS - 1)))) + 1) >> 1)
 #  else
 #   define mad_f_scale64(hi, lo)  \
     ((mad_fixed_t)  \

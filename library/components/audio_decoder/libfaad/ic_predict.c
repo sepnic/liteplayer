@@ -85,7 +85,7 @@ static void ic_predict(pred_state *state, real_t input, real_t *output, uint8_t 
     uint16_t tmp;
     int16_t i, j;
     real_t dr1;
-	float32_t predictedvalue;
+    float32_t predictedvalue;
     real_t e0, e1;
     real_t k1, k2;
 

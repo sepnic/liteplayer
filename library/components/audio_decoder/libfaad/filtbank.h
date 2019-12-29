@@ -58,4 +58,5 @@ void ifilter_bank(fb_info *fb, uint8_t window_sequence, uint8_t window_shape,
 #ifdef __cplusplus
 }
 #endif
+
 #endif

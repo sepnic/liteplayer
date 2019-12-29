@@ -51,5 +51,6 @@ void sbr_qmf_synthesis_64(sbr_info *sbr, qmfs_info *qmfs, qmf_t X[MAX_NTSRHFG][6
 #ifdef __cplusplus
 }
 #endif
+
 #endif
 

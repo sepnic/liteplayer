@@ -50,4 +50,5 @@ void ssr_ifilter_bank(fb_info *fb,
 #ifdef __cplusplus
 }
 #endif
+
 #endif

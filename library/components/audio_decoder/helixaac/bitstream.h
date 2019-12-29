@@ -49,18 +49,18 @@
 #include "aaccommon.h"
 
 /* additional external symbols to name-mangle for static linking */
-#define SetBitstreamPointer				STATNAME(SetBitstreamPointer)
-#define GetBits							STATNAME(GetBits)
-#define GetBitsNoAdvance				STATNAME(GetBitsNoAdvance)
-#define AdvanceBitstream				STATNAME(AdvanceBitstream)
-#define CalcBitsUsed					STATNAME(CalcBitsUsed)
-#define ByteAlignBitstream				STATNAME(ByteAlignBitstream)
+#define SetBitstreamPointer             STATNAME(SetBitstreamPointer)
+#define GetBits                         STATNAME(GetBits)
+#define GetBitsNoAdvance                STATNAME(GetBitsNoAdvance)
+#define AdvanceBitstream                STATNAME(AdvanceBitstream)
+#define CalcBitsUsed                    STATNAME(CalcBitsUsed)
+#define ByteAlignBitstream              STATNAME(ByteAlignBitstream)
 
 typedef struct _BitStreamInfo {
-	unsigned char *bytePtr;
-	unsigned int iCache;
-	int cachedBits;
-	int nBytes;
+    unsigned char *bytePtr;
+    unsigned int iCache;
+    int cachedBits;
+    int nBytes;
 } BitStreamInfo;
 
 /* bitstream.c */
@@ -71,4 +71,4 @@ void AdvanceBitstream(BitStreamInfo *bsi, int nBits);
 int CalcBitsUsed(BitStreamInfo *bsi, unsigned char *startBuf, int startOffset);
 void ByteAlignBitstream(BitStreamInfo *bsi);
 
-#endif	/* _BITSTREAM_H */
+#endif  /* _BITSTREAM_H */

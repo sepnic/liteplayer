@@ -81,7 +81,7 @@ typedef struct
 {
     uint8_t     cb;
     uint8_t     decoded;
-    uint16_t	sp_offset;
+    uint16_t    sp_offset;
     bits_t      bits;
 } codeword_t;
 
@@ -425,8 +425,6 @@ uint8_t reordered_spectral_data(NeAACDecStruct *hDecoder, ic_stream *ics,
     if (codewordsleft) return 10;
 #endif
 
-
     return 0;
-
 }
 #endif

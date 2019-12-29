@@ -364,5 +364,8 @@ ALIGN static const real_t qmf_c[640] = {
     FRAC_CONST(-0.00056176925738), FRAC_CONST(-0.00055252865047)
 };
 
+#ifdef __cplusplus
+}
 #endif
 
+#endif

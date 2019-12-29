@@ -56,4 +56,5 @@ static void ssr_gc_function(ssr_info *ssr, real_t *prev_fmd,
 #ifdef __cplusplus
 }
 #endif
+
 #endif

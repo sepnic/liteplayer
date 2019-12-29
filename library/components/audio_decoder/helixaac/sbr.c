@@ -65,22 +65,22 @@
  **************************************************************************************/
 static void InitSBRState(PSInfoSBR *psi)
 {
-	int i, ch;
-	unsigned char *c;
+    int i, ch;
+    unsigned char *c;
 
-	if (!psi)
-		return;
+    if (!psi)
+        return;
 
-	/* clear SBR state structure */
-	c = (unsigned char *)psi;
-	for (i = 0; i < (int)sizeof(PSInfoSBR); i++)
-		*c++ = 0;
+    /* clear SBR state structure */
+    c = (unsigned char *)psi;
+    for (i = 0; i < (int)sizeof(PSInfoSBR); i++)
+        *c++ = 0;
 
-	/* initialize non-zero state variables */
-	for (ch = 0; ch < AAC_MAX_NCHANS; ch++) {
-		psi->sbrChan[ch].reset = 1;
-		psi->sbrChan[ch].laPrev = -1;
-	}
+    /* initialize non-zero state variables */
+    for (ch = 0; ch < AAC_MAX_NCHANS; ch++) {
+        psi->sbrChan[ch].reset = 1;
+        psi->sbrChan[ch].laPrev = -1;
+    }
 }
  
 /**************************************************************************************
@@ -98,45 +98,43 @@ static void InitSBRState(PSInfoSBR *psi)
  **************************************************************************************/
 int InitSBR(AACDecInfo *aacDecInfo)
 {
-	PSInfoSBR *psi;
+    PSInfoSBR *psi;
 
-	if (!aacDecInfo)
-		return ERR_AAC_NULL_POINTER;
+    if (!aacDecInfo)
+        return ERR_AAC_NULL_POINTER;
 
-	/* allocate SBR state structure */
-	psi = (PSInfoSBR *)audio_malloc(sizeof(PSInfoSBR));
-	if (!psi) {
-		printf("OOM in SBR, can't allocate %lu bytes\n", sizeof(PSInfoSBR));
-		return ERR_AAC_SBR_INIT;
-	}
-	InitSBRState(psi);
+    /* allocate SBR state structure */
+    psi = (PSInfoSBR *)audio_malloc(sizeof(PSInfoSBR));
+    if (!psi) {
+        printf("OOM in SBR, can't allocate %lu bytes\n", sizeof(PSInfoSBR));
+        return ERR_AAC_SBR_INIT;
+    }
+    InitSBRState(psi);
 
-	aacDecInfo->psInfoSBR = psi;
-	return ERR_AAC_NONE;
+    aacDecInfo->psInfoSBR = psi;
+    return ERR_AAC_NONE;
 }
 
 int InitSBRPre(AACDecInfo *aacDecInfo, void **ptr, int *sz)
 {
-        PSInfoSBR *psi;
+    PSInfoSBR *psi;
 
-        if (!aacDecInfo)
-                return ERR_AAC_NULL_POINTER;
+    if (!aacDecInfo)
+        return ERR_AAC_NULL_POINTER;
 
-        /* allocate SBR state structure */
-        psi = (PSInfoSBR *)*ptr;
-        *sz -= sizeof(PSInfoSBR);
-        if (*sz < 0) {
-                printf("OOM in SBR, can't allocate %lu bytes\n", sizeof(PSInfoSBR));
-                return ERR_AAC_SBR_INIT;
-        }
-        InitSBRState(psi);
+    /* allocate SBR state structure */
+    psi = (PSInfoSBR *)*ptr;
+    *sz -= sizeof(PSInfoSBR);
+    if (*sz < 0) {
+        printf("OOM in SBR, can't allocate %lu bytes\n", sizeof(PSInfoSBR));
+        return ERR_AAC_SBR_INIT;
+    }
+    InitSBRState(psi);
 
-	*ptr = (void*)((char*)(*ptr) + sizeof(PSInfoSBR));
-        aacDecInfo->psInfoSBR = psi;
-        return ERR_AAC_NONE;
+    *ptr = (void*)((char*)(*ptr) + sizeof(PSInfoSBR));
+    aacDecInfo->psInfoSBR = psi;
+    return ERR_AAC_NONE;
 }
-
-
 
 /**************************************************************************************
  * Function:    FreeSBR
@@ -153,10 +151,10 @@ int InitSBRPre(AACDecInfo *aacDecInfo, void **ptr, int *sz)
  **************************************************************************************/
 void FreeSBR(AACDecInfo *aacDecInfo)
 {
-	if (aacDecInfo && aacDecInfo->psInfoSBR)
-		audio_free(aacDecInfo->psInfoSBR);
+    if (aacDecInfo && aacDecInfo->psInfoSBR)
+        audio_free(aacDecInfo->psInfoSBR);
 
-	return;
+    return;
 }
 
 /**************************************************************************************
@@ -179,63 +177,63 @@ void FreeSBR(AACDecInfo *aacDecInfo)
  **************************************************************************************/
 int DecodeSBRBitstream(AACDecInfo *aacDecInfo, int chBase)
 {
-	int headerFlag;
-	BitStreamInfo bsi;
-	PSInfoSBR *psi;
+    int headerFlag;
+    BitStreamInfo bsi;
+    PSInfoSBR *psi;
 
-	/* validate pointers */
-	if (!aacDecInfo || !aacDecInfo->psInfoSBR)
-		return ERR_AAC_NULL_POINTER;
-	psi = (PSInfoSBR *)(aacDecInfo->psInfoSBR);
+    /* validate pointers */
+    if (!aacDecInfo || !aacDecInfo->psInfoSBR)
+        return ERR_AAC_NULL_POINTER;
+    psi = (PSInfoSBR *)(aacDecInfo->psInfoSBR);
 
-	if (aacDecInfo->currBlockID != AAC_ID_FIL || (aacDecInfo->fillExtType != EXT_SBR_DATA && aacDecInfo->fillExtType != EXT_SBR_DATA_CRC))
-		return ERR_AAC_NONE;
+    if (aacDecInfo->currBlockID != AAC_ID_FIL || (aacDecInfo->fillExtType != EXT_SBR_DATA && aacDecInfo->fillExtType != EXT_SBR_DATA_CRC))
+        return ERR_AAC_NONE;
 
-	SetBitstreamPointer(&bsi, aacDecInfo->fillCount, aacDecInfo->fillBuf);
-	if (GetBits(&bsi, 4) != (unsigned int)aacDecInfo->fillExtType)
-		return ERR_AAC_SBR_BITSTREAM;
-	
-	if (aacDecInfo->fillExtType == EXT_SBR_DATA_CRC)
-		psi->crcCheckWord = GetBits(&bsi, 10);
+    SetBitstreamPointer(&bsi, aacDecInfo->fillCount, aacDecInfo->fillBuf);
+    if (GetBits(&bsi, 4) != (unsigned int)aacDecInfo->fillExtType)
+        return ERR_AAC_SBR_BITSTREAM;
+    
+    if (aacDecInfo->fillExtType == EXT_SBR_DATA_CRC)
+        psi->crcCheckWord = GetBits(&bsi, 10);
 
-	headerFlag = GetBits(&bsi, 1);
-	if (headerFlag) {
-		/* get sample rate index for output sample rate (2x base rate) */
-		psi->sampRateIdx = GetSampRateIdx(2 * aacDecInfo->sampRate);
-		if (psi->sampRateIdx < 0 || psi->sampRateIdx >= NUM_SAMPLE_RATES)
-			return ERR_AAC_SBR_BITSTREAM;
-		else if (psi->sampRateIdx >= NUM_SAMPLE_RATES_SBR)
-			return ERR_AAC_SBR_SINGLERATE_UNSUPPORTED;
+    headerFlag = GetBits(&bsi, 1);
+    if (headerFlag) {
+        /* get sample rate index for output sample rate (2x base rate) */
+        psi->sampRateIdx = GetSampRateIdx(2 * aacDecInfo->sampRate);
+        if (psi->sampRateIdx < 0 || psi->sampRateIdx >= NUM_SAMPLE_RATES)
+            return ERR_AAC_SBR_BITSTREAM;
+        else if (psi->sampRateIdx >= NUM_SAMPLE_RATES_SBR)
+            return ERR_AAC_SBR_SINGLERATE_UNSUPPORTED;
 
-		/* reset flag = 1 if header values changed */
-		if (UnpackSBRHeader(&bsi, &(psi->sbrHdr[chBase])))
-			psi->sbrChan[chBase].reset = 1;
-	
-		/* first valid SBR header should always trigger CalcFreqTables(), since psi->reset was set in InitSBR() */
-		if (psi->sbrChan[chBase].reset)
-			CalcFreqTables(&(psi->sbrHdr[chBase+0]), &(psi->sbrFreq[chBase]), psi->sampRateIdx);
+        /* reset flag = 1 if header values changed */
+        if (UnpackSBRHeader(&bsi, &(psi->sbrHdr[chBase])))
+            psi->sbrChan[chBase].reset = 1;
+    
+        /* first valid SBR header should always trigger CalcFreqTables(), since psi->reset was set in InitSBR() */
+        if (psi->sbrChan[chBase].reset)
+            CalcFreqTables(&(psi->sbrHdr[chBase+0]), &(psi->sbrFreq[chBase]), psi->sampRateIdx);
 
-		/* copy and reset state to right channel for CPE */
-		if (aacDecInfo->prevBlockID == AAC_ID_CPE)
-			psi->sbrChan[chBase+1].reset = psi->sbrChan[chBase+0].reset;
-	}
-	
+        /* copy and reset state to right channel for CPE */
+        if (aacDecInfo->prevBlockID == AAC_ID_CPE)
+            psi->sbrChan[chBase+1].reset = psi->sbrChan[chBase+0].reset;
+    }
+    
 
-	/* if no header has been received, upsample only */
-	if (psi->sbrHdr[chBase].count == 0)
-		return ERR_AAC_NONE;
+    /* if no header has been received, upsample only */
+    if (psi->sbrHdr[chBase].count == 0)
+        return ERR_AAC_NONE;
 
-	if (aacDecInfo->prevBlockID == AAC_ID_SCE) {
-		UnpackSBRSingleChannel(&bsi, psi, chBase);
-	} else if (aacDecInfo->prevBlockID == AAC_ID_CPE) {
-		UnpackSBRChannelPair(&bsi, psi, chBase);
-	} else {
-		return ERR_AAC_SBR_BITSTREAM;
-	}
+    if (aacDecInfo->prevBlockID == AAC_ID_SCE) {
+        UnpackSBRSingleChannel(&bsi, psi, chBase);
+    } else if (aacDecInfo->prevBlockID == AAC_ID_CPE) {
+        UnpackSBRChannelPair(&bsi, psi, chBase);
+    } else {
+        return ERR_AAC_SBR_BITSTREAM;
+    }
 
-	ByteAlignBitstream(&bsi);
+    ByteAlignBitstream(&bsi);
 
-	return ERR_AAC_NONE;
+    return ERR_AAC_NONE;
 }
 
 /**************************************************************************************
@@ -255,148 +253,148 @@ int DecodeSBRBitstream(AACDecInfo *aacDecInfo, int chBase)
  **************************************************************************************/
 int DecodeSBRData(AACDecInfo *aacDecInfo, int chBase, short *outbuf)
 {
-	int k, l, ch, chBlock, qmfaBands, qmfsBands;
-	int upsampleOnly, gbIdx, gbMask;
-	int *inbuf;
-	short *outptr;
-	PSInfoSBR *psi;
-	SBRHeader *sbrHdr;
-	SBRGrid *sbrGrid;
-	SBRFreq *sbrFreq;
-	SBRChan *sbrChan;
+    int k, l, ch, chBlock, qmfaBands, qmfsBands;
+    int upsampleOnly, gbIdx, gbMask;
+    int *inbuf;
+    short *outptr;
+    PSInfoSBR *psi;
+    SBRHeader *sbrHdr;
+    SBRGrid *sbrGrid;
+    SBRFreq *sbrFreq;
+    SBRChan *sbrChan;
 
-	/* validate pointers */
-	if (!aacDecInfo || !aacDecInfo->psInfoSBR)
-		return ERR_AAC_NULL_POINTER;
-	psi = (PSInfoSBR *)(aacDecInfo->psInfoSBR);
-	
-	/* same header and freq tables for both channels in CPE */
-	sbrHdr =  &(psi->sbrHdr[chBase]);
-	sbrFreq = &(psi->sbrFreq[chBase]);
+    /* validate pointers */
+    if (!aacDecInfo || !aacDecInfo->psInfoSBR)
+        return ERR_AAC_NULL_POINTER;
+    psi = (PSInfoSBR *)(aacDecInfo->psInfoSBR);
+    
+    /* same header and freq tables for both channels in CPE */
+    sbrHdr =  &(psi->sbrHdr[chBase]);
+    sbrFreq = &(psi->sbrFreq[chBase]);
 
-	/* upsample only if we haven't received an SBR header yet or if we have an LFE block */
-	if (aacDecInfo->currBlockID == AAC_ID_LFE) {
-		chBlock = 1;
-		upsampleOnly = 1;
-	} else if (aacDecInfo->currBlockID == AAC_ID_FIL) {
-		if (aacDecInfo->prevBlockID == AAC_ID_SCE) 
-			chBlock = 1;
-		else if (aacDecInfo->prevBlockID == AAC_ID_CPE)
-			chBlock = 2;
-		else
-			return ERR_AAC_NONE;
-		
-		upsampleOnly = (sbrHdr->count == 0 ? 1 : 0);
-		if (aacDecInfo->fillExtType != EXT_SBR_DATA && aacDecInfo->fillExtType != EXT_SBR_DATA_CRC)
-			return ERR_AAC_NONE;
-	} else {
-		/* ignore non-SBR blocks */
-		return ERR_AAC_NONE;
-	}
+    /* upsample only if we haven't received an SBR header yet or if we have an LFE block */
+    if (aacDecInfo->currBlockID == AAC_ID_LFE) {
+        chBlock = 1;
+        upsampleOnly = 1;
+    } else if (aacDecInfo->currBlockID == AAC_ID_FIL) {
+        if (aacDecInfo->prevBlockID == AAC_ID_SCE) 
+            chBlock = 1;
+        else if (aacDecInfo->prevBlockID == AAC_ID_CPE)
+            chBlock = 2;
+        else
+            return ERR_AAC_NONE;
+        
+        upsampleOnly = (sbrHdr->count == 0 ? 1 : 0);
+        if (aacDecInfo->fillExtType != EXT_SBR_DATA && aacDecInfo->fillExtType != EXT_SBR_DATA_CRC)
+            return ERR_AAC_NONE;
+    } else {
+        /* ignore non-SBR blocks */
+        return ERR_AAC_NONE;
+    }
 
-	if (upsampleOnly) {
-		sbrFreq->kStart = 32;
-		sbrFreq->numQMFBands = 0;
-	}
+    if (upsampleOnly) {
+        sbrFreq->kStart = 32;
+        sbrFreq->numQMFBands = 0;
+    }
 
-	for (ch = 0; ch < chBlock; ch++) {
-		sbrGrid = &(psi->sbrGrid[chBase + ch]);	
-		sbrChan = &(psi->sbrChan[chBase + ch]);
+    for (ch = 0; ch < chBlock; ch++) {
+        sbrGrid = &(psi->sbrGrid[chBase + ch]); 
+        sbrChan = &(psi->sbrChan[chBase + ch]);
 
-		if (aacDecInfo->rawSampleBuf[ch] == 0 || aacDecInfo->rawSampleBytes != 4)
-			return ERR_AAC_SBR_PCM_FORMAT;
-		inbuf = (int *)aacDecInfo->rawSampleBuf[ch];
-		outptr = outbuf + chBase + ch;
+        if (aacDecInfo->rawSampleBuf[ch] == 0 || aacDecInfo->rawSampleBytes != 4)
+            return ERR_AAC_SBR_PCM_FORMAT;
+        inbuf = (int *)aacDecInfo->rawSampleBuf[ch];
+        outptr = outbuf + chBase + ch;
 
-		/* restore delay buffers (could use ring buffer or keep in temp buffer for nChans == 1) */
-		for (l = 0; l < HF_GEN; l++) {
-			for (k = 0; k < 64; k++) {
-				psi->XBuf[l][k][0] = psi->XBufDelay[chBase + ch][l][k][0];
-				psi->XBuf[l][k][1] = psi->XBufDelay[chBase + ch][l][k][1];
-			}
-		}
+        /* restore delay buffers (could use ring buffer or keep in temp buffer for nChans == 1) */
+        for (l = 0; l < HF_GEN; l++) {
+            for (k = 0; k < 64; k++) {
+                psi->XBuf[l][k][0] = psi->XBufDelay[chBase + ch][l][k][0];
+                psi->XBuf[l][k][1] = psi->XBufDelay[chBase + ch][l][k][1];
+            }
+        }
 
-		/* step 1 - analysis QMF */
-		qmfaBands = sbrFreq->kStart;
-		for (l = 0; l < 32; l++) {
-			gbMask = QMFAnalysis(inbuf + l*32, psi->delayQMFA[chBase + ch], psi->XBuf[l + HF_GEN][0], 
-				aacDecInfo->rawSampleFBits, &(psi->delayIdxQMFA[chBase + ch]), qmfaBands);
+        /* step 1 - analysis QMF */
+        qmfaBands = sbrFreq->kStart;
+        for (l = 0; l < 32; l++) {
+            gbMask = QMFAnalysis(inbuf + l*32, psi->delayQMFA[chBase + ch], psi->XBuf[l + HF_GEN][0], 
+                aacDecInfo->rawSampleFBits, &(psi->delayIdxQMFA[chBase + ch]), qmfaBands);
 
-			gbIdx = ((l + HF_GEN) >> 5) & 0x01;	
-			sbrChan->gbMask[gbIdx] |= gbMask;	/* gbIdx = (0 if i < 32), (1 if i >= 32) */
-		}
+            gbIdx = ((l + HF_GEN) >> 5) & 0x01; 
+            sbrChan->gbMask[gbIdx] |= gbMask;   /* gbIdx = (0 if i < 32), (1 if i >= 32) */
+        }
 
-		if (upsampleOnly) {
-			/* no SBR - just run synthesis QMF to upsample by 2x */
-			qmfsBands = 32;
-			for (l = 0; l < 32; l++) {
-				/* step 4 - synthesis QMF */
-				QMFSynthesis(psi->XBuf[l + HF_ADJ][0], psi->delayQMFS[chBase + ch], &(psi->delayIdxQMFS[chBase + ch]), qmfsBands, outptr, aacDecInfo->nChans);
-				outptr += 64*aacDecInfo->nChans;
-			}
-		} else {
-			/* if previous frame had lower SBR starting freq than current, zero out the synthesized QMF
-			 *   bands so they aren't used as sources for patching
-			 * after patch generation, restore from delay buffer
-			 * can only happen after header reset
-			 */
-			for (k = sbrFreq->kStartPrev; k < sbrFreq->kStart; k++) {
-				for (l = 0; l < sbrGrid->envTimeBorder[0] + HF_ADJ; l++) {
-					psi->XBuf[l][k][0] = 0;
-					psi->XBuf[l][k][1] = 0;
-				}
-			}
+        if (upsampleOnly) {
+            /* no SBR - just run synthesis QMF to upsample by 2x */
+            qmfsBands = 32;
+            for (l = 0; l < 32; l++) {
+                /* step 4 - synthesis QMF */
+                QMFSynthesis(psi->XBuf[l + HF_ADJ][0], psi->delayQMFS[chBase + ch], &(psi->delayIdxQMFS[chBase + ch]), qmfsBands, outptr, aacDecInfo->nChans);
+                outptr += 64*aacDecInfo->nChans;
+            }
+        } else {
+            /* if previous frame had lower SBR starting freq than current, zero out the synthesized QMF
+             *   bands so they aren't used as sources for patching
+             * after patch generation, restore from delay buffer
+             * can only happen after header reset
+             */
+            for (k = sbrFreq->kStartPrev; k < sbrFreq->kStart; k++) {
+                for (l = 0; l < sbrGrid->envTimeBorder[0] + HF_ADJ; l++) {
+                    psi->XBuf[l][k][0] = 0;
+                    psi->XBuf[l][k][1] = 0;
+                }
+            }
 
-			/* step 2 - HF generation */
-			GenerateHighFreq(psi, sbrGrid, sbrFreq, sbrChan, ch);
+            /* step 2 - HF generation */
+            GenerateHighFreq(psi, sbrGrid, sbrFreq, sbrChan, ch);
 
-			/* restore SBR bands that were cleared before patch generation (time slots 0, 1 no longer needed) */
-			for (k = sbrFreq->kStartPrev; k < sbrFreq->kStart; k++) {
-				for (l = HF_ADJ; l < sbrGrid->envTimeBorder[0] + HF_ADJ; l++) {
-					psi->XBuf[l][k][0] = psi->XBufDelay[chBase + ch][l][k][0];
-					psi->XBuf[l][k][1] = psi->XBufDelay[chBase + ch][l][k][1];
-				}
-			}
+            /* restore SBR bands that were cleared before patch generation (time slots 0, 1 no longer needed) */
+            for (k = sbrFreq->kStartPrev; k < sbrFreq->kStart; k++) {
+                for (l = HF_ADJ; l < sbrGrid->envTimeBorder[0] + HF_ADJ; l++) {
+                    psi->XBuf[l][k][0] = psi->XBufDelay[chBase + ch][l][k][0];
+                    psi->XBuf[l][k][1] = psi->XBufDelay[chBase + ch][l][k][1];
+                }
+            }
 
-			/* step 3 - HF adjustment */
-			AdjustHighFreq(psi, sbrHdr, sbrGrid, sbrFreq, sbrChan, ch);
+            /* step 3 - HF adjustment */
+            AdjustHighFreq(psi, sbrHdr, sbrGrid, sbrFreq, sbrChan, ch);
 
-			/* step 4 - synthesis QMF */
-			qmfsBands = sbrFreq->kStartPrev + sbrFreq->numQMFBandsPrev;
-			for (l = 0; l < sbrGrid->envTimeBorder[0]; l++) {
-				/* if new envelope starts mid-frame, use old settings until start of first envelope in this frame */
-				QMFSynthesis(psi->XBuf[l + HF_ADJ][0], psi->delayQMFS[chBase + ch], &(psi->delayIdxQMFS[chBase + ch]), qmfsBands, outptr, aacDecInfo->nChans);
-				outptr += 64*aacDecInfo->nChans;
-			}
+            /* step 4 - synthesis QMF */
+            qmfsBands = sbrFreq->kStartPrev + sbrFreq->numQMFBandsPrev;
+            for (l = 0; l < sbrGrid->envTimeBorder[0]; l++) {
+                /* if new envelope starts mid-frame, use old settings until start of first envelope in this frame */
+                QMFSynthesis(psi->XBuf[l + HF_ADJ][0], psi->delayQMFS[chBase + ch], &(psi->delayIdxQMFS[chBase + ch]), qmfsBands, outptr, aacDecInfo->nChans);
+                outptr += 64*aacDecInfo->nChans;
+            }
 
-			qmfsBands = sbrFreq->kStart + sbrFreq->numQMFBands;
-			for (     ; l < 32; l++) {
-				/* use new settings for rest of frame (usually the entire frame, unless the first envelope starts mid-frame) */
-				QMFSynthesis(psi->XBuf[l + HF_ADJ][0], psi->delayQMFS[chBase + ch], &(psi->delayIdxQMFS[chBase + ch]), qmfsBands, outptr, aacDecInfo->nChans);
-				outptr += 64*aacDecInfo->nChans;
-			}
-		}
+            qmfsBands = sbrFreq->kStart + sbrFreq->numQMFBands;
+            for (     ; l < 32; l++) {
+                /* use new settings for rest of frame (usually the entire frame, unless the first envelope starts mid-frame) */
+                QMFSynthesis(psi->XBuf[l + HF_ADJ][0], psi->delayQMFS[chBase + ch], &(psi->delayIdxQMFS[chBase + ch]), qmfsBands, outptr, aacDecInfo->nChans);
+                outptr += 64*aacDecInfo->nChans;
+            }
+        }
 
-		/* save delay */
-		for (l = 0; l < HF_GEN; l++) {
-			for (k = 0; k < 64; k++) {
-				psi->XBufDelay[chBase + ch][l][k][0] = psi->XBuf[l+32][k][0];
-				psi->XBufDelay[chBase + ch][l][k][1] = psi->XBuf[l+32][k][1];
-			}
-		}
-		sbrChan->gbMask[0] = sbrChan->gbMask[1];
-		sbrChan->gbMask[1] = 0;
+        /* save delay */
+        for (l = 0; l < HF_GEN; l++) {
+            for (k = 0; k < 64; k++) {
+                psi->XBufDelay[chBase + ch][l][k][0] = psi->XBuf[l+32][k][0];
+                psi->XBufDelay[chBase + ch][l][k][1] = psi->XBuf[l+32][k][1];
+            }
+        }
+        sbrChan->gbMask[0] = sbrChan->gbMask[1];
+        sbrChan->gbMask[1] = 0;
 
-		if (sbrHdr->count > 0)
+        if (sbrHdr->count > 0)
             sbrChan->reset = 0;
-	}
-	sbrFreq->kStartPrev = sbrFreq->kStart;
-	sbrFreq->numQMFBandsPrev = sbrFreq->numQMFBands;
+    }
+    sbrFreq->kStartPrev = sbrFreq->kStart;
+    sbrFreq->numQMFBandsPrev = sbrFreq->numQMFBands;
 
-	if (aacDecInfo->nChans > 0 && (chBase + ch) == aacDecInfo->nChans)
-		psi->frameCount++;
+    if (aacDecInfo->nChans > 0 && (chBase + ch) == aacDecInfo->nChans)
+        psi->frameCount++;
 
-	return ERR_AAC_NONE;
+    return ERR_AAC_NONE;
 }
 
 /**************************************************************************************
@@ -418,14 +416,14 @@ int DecodeSBRData(AACDecInfo *aacDecInfo, int chBase, short *outbuf)
  **************************************************************************************/
 int FlushCodecSBR(AACDecInfo *aacDecInfo)
 {
-	PSInfoSBR *psi;
+    PSInfoSBR *psi;
 
-	/* validate pointers */
-	if (!aacDecInfo || !aacDecInfo->psInfoSBR)
-		return ERR_AAC_NULL_POINTER;
-	psi = (PSInfoSBR *)(aacDecInfo->psInfoSBR);
+    /* validate pointers */
+    if (!aacDecInfo || !aacDecInfo->psInfoSBR)
+        return ERR_AAC_NULL_POINTER;
+    psi = (PSInfoSBR *)(aacDecInfo->psInfoSBR);
 
-	InitSBRState(psi);
+    InitSBRState(psi);
 
-	return 0;
+    return 0;
 }

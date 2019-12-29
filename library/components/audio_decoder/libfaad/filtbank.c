@@ -313,7 +313,7 @@ void ifilter_bank(fb_info *fb, uint8_t window_sequence, uint8_t window_shape,
         /* window the second half and save as overlap for next frame */
         for (i = 0; i < nlong; i++)
             overlap[i] = MUL_F(transf_buf[nlong+i],window_long[nlong-1-i]);
-		break;
+        break;
     }
 
 #if 0

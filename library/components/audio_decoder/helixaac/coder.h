@@ -73,21 +73,21 @@
 #define ADIF_COPYID_SIZE        9
 #define MAX_COMMENT_BYTES       255
 
-#define MAX_NUM_FCE                     15
-#define MAX_NUM_SCE                     15
-#define MAX_NUM_BCE                     15
-#define MAX_NUM_LCE                      3
-#define MAX_NUM_ADE                      7
-#define MAX_NUM_CCE                     15
+#define MAX_NUM_FCE             15
+#define MAX_NUM_SCE             15
+#define MAX_NUM_BCE             15
+#define MAX_NUM_LCE             3
+#define MAX_NUM_ADE             7
+#define MAX_NUM_CCE             15
 
-#define CHAN_ELEM_IS_CPE(x)             (((x) & 0x10) >> 4)  /* bit 4 = SCE/CPE flag */
+#define CHAN_ELEM_IS_CPE(x)     (((x) & 0x10) >> 4)  /* bit 4 = SCE/CPE flag */
 #define CHAN_ELEM_GET_TAG(x)    (((x) & 0x0f) >> 0)  /* bits 3-0 = instance tag */
 
 #define CHAN_ELEM_SET_CPE(x)    (((x) & 0x01) << 4)  /* bit 4 = SCE/CPE flag */
 #define CHAN_ELEM_SET_TAG(x)    (((x) & 0x0f) << 0)  /* bits 3-0 = instance tag */
 
-#define MAX_HUFF_BITS                   20
-#define HUFFTAB_SPEC_OFFSET             1
+#define MAX_HUFF_BITS           20
+#define HUFFTAB_SPEC_OFFSET     1
 
 /* do y <<= n, clipping to range [-2^30, 2^30 - 1] (i.e. output has one guard bit) */
 /*
@@ -107,14 +107,13 @@
             (val) = ((val) >> 31) ^ ((1 << (n)) - 1);   \
     }
 */
-	
 
 #define SF_DQ_OFFSET            15
 #define FBITS_OUT_DQ            20
 #define FBITS_OUT_DQ_OFF        (FBITS_OUT_DQ - SF_DQ_OFFSET)   /* number of fraction bits out of dequant, including 2^15 bias */
 
-#define FBITS_IN_IMDCT          FBITS_OUT_DQ_OFF        /* number of fraction bits into IMDCT */
-#define GBITS_IN_DCT4           4                                       /* min guard bits in for DCT4 */
+#define FBITS_IN_IMDCT          FBITS_OUT_DQ_OFF/* number of fraction bits into IMDCT */
+#define GBITS_IN_DCT4           4               /* min guard bits in for DCT4 */
 
 #define FBITS_LOST_DCT4         1               /* number of fraction bits lost (>> out) in DCT-IV */
 #define FBITS_LOST_WND          1               /* number of fraction bits lost (>> out) in synthesis window (neg = gain frac bits) */
@@ -125,39 +124,39 @@
 
 /* additional external symbols to name-mangle for static linking */
 #define DecodeProgramConfigElement              STATNAME(DecodeProgramConfigElement)
-#define DecodeHuffmanScalar                             STATNAME(DecodeHuffmanScalar)
-#define DecodeSpectrumLong                              STATNAME(DecodeSpectrumLong)
-#define DecodeSpectrumShort                             STATNAME(DecodeSpectrumShort)
-#define DecodeICSInfo                                   STATNAME(DecodeICSInfo)
-#define DCT4                                                    STATNAME(DCT4)
-#define R4FFT                                                   STATNAME(R4FFT)
+#define DecodeHuffmanScalar                     STATNAME(DecodeHuffmanScalar)
+#define DecodeSpectrumLong                      STATNAME(DecodeSpectrumLong)
+#define DecodeSpectrumShort                     STATNAME(DecodeSpectrumShort)
+#define DecodeICSInfo                           STATNAME(DecodeICSInfo)
+#define DCT4                                    STATNAME(DCT4)
+#define R4FFT                                   STATNAME(R4FFT)
 
 #define DecWindowOverlapNoClip                  STATNAME(DecWindowOverlapNoClip)
-#define DecWindowOverlapLongStartNoClip STATNAME(DecWindowOverlapLongStartNoClip)
-#define DecWindowOverlapLongStopNoClip  STATNAME(DecWindowOverlapLongStopNoClip)
+#define DecWindowOverlapLongStartNoClip         STATNAME(DecWindowOverlapLongStartNoClip)
+#define DecWindowOverlapLongStopNoClip          STATNAME(DecWindowOverlapLongStopNoClip)
 #define DecWindowOverlapShortNoClip             STATNAME(DecWindowOverlapShortNoClip)
 
 #define huffTabSpecInfo                         STATNAME(huffTabSpecInfo)
-#define huffTabSpec                                     STATNAME(huffTabSpec)
-#define huffTabScaleFactInfo            STATNAME(huffTabScaleFactInfo)
+#define huffTabSpec                             STATNAME(huffTabSpec)
+#define huffTabScaleFactInfo                    STATNAME(huffTabScaleFactInfo)
 #define huffTabScaleFact                        STATNAME(huffTabScaleFact)
-#define cos4sin4tab                                     STATNAME(cos4sin4tab)
+#define cos4sin4tab                             STATNAME(cos4sin4tab)
 #define cos4sin4tabOffset                       STATNAME(cos4sin4tabOffset)
-#define cos1sin1tab                                     STATNAME(cos1sin1tab)
-#define sinWindow                                       STATNAME(sinWindow)
+#define cos1sin1tab                             STATNAME(cos1sin1tab)
+#define sinWindow                               STATNAME(sinWindow)
 #define sinWindowOffset                         STATNAME(sinWindowOffset)
-#define kbdWindow                                       STATNAME(kbdWindow)
+#define kbdWindow                               STATNAME(kbdWindow)
 #define kbdWindowOffset                         STATNAME(kbdWindowOffset)
-#define bitrevtab                                       STATNAME(bitrevtab)
+#define bitrevtab                               STATNAME(bitrevtab)
 #define bitrevtabOffset                         STATNAME(bitrevtabOffset)
-#define uniqueIDTab                                     STATNAME(uniqueIDTab)
-#define twidTabEven                                     STATNAME(twidTabEven)
-#define twidTabOdd                                      STATNAME(twidTabOdd)
+#define uniqueIDTab                             STATNAME(uniqueIDTab)
+#define twidTabEven                             STATNAME(twidTabEven)
+#define twidTabOdd                              STATNAME(twidTabOdd)
 
 typedef struct _HuffInfo {
-    int maxBits;                                                    /* number of bits in longest codeword */
+    int maxBits;                                        /* number of bits in longest codeword */
     unsigned /*char*/ int count[MAX_HUFF_BITS];         /* count[i] = number of codes with length i+1 bits */
-    int offset;                                                             /* offset into symbol table */
+    int offset;                                         /* offset into symbol table */
 } HuffInfo;
 
 typedef struct _PulseInfo {
@@ -175,7 +174,7 @@ typedef struct _TNSInfo {
     unsigned char length[MAX_TNS_FILTERS];
     unsigned char order[MAX_TNS_FILTERS];
     unsigned char dir[MAX_TNS_FILTERS];
-    signed char   coef[MAX_TNS_COEFS];              /* max 3 filters * 20 coefs for 1 long window, or 1 filter * 7 coefs for each of 8 short windows */
+    signed char   coef[MAX_TNS_COEFS];          /* max 3 filters * 20 coefs for 1 long window, or 1 filter * 7 coefs for each of 8 short windows */
 } TNSInfo;
 
 typedef struct _GainControlInfo {
@@ -370,4 +369,3 @@ extern const int twidTabOdd[8*6 + 32*6 + 128*6];
 #endif
 
 #endif  /* _CODER_H */
-

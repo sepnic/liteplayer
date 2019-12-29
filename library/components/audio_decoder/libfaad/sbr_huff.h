@@ -42,5 +42,6 @@ void sbr_noise(bitfile *ld, sbr_info *sbr, uint8_t ch);
 #ifdef __cplusplus
 }
 #endif
+
 #endif
 

@@ -46,10 +46,10 @@
 #include "sbr.h"
 #include "assembly.h"
 
-#define Q28_2	0x20000000	/* Q28: 2.0 */
-#define Q28_15	0x30000000	/* Q28: 1.5 */
+#define Q28_2   0x20000000  /* Q28: 2.0 */
+#define Q28_15  0x30000000  /* Q28: 1.5 */
 
-#define NUM_ITER_IRN		5
+#define NUM_ITER_IRN        5
 
 /**************************************************************************************
  * Function:    InvRNormalized
@@ -79,26 +79,26 @@
  **************************************************************************************/
 int InvRNormalized(int r)
 {
-	int i, xn, t;
+    int i, xn, t;
 
-	/* r =   [0.5, 1.0) 
-	 * 1/r = (1.0, 2.0] 
-	 *   so use 1.5 as initial guess 
-	 */
-	xn = Q28_15;
+    /* r =   [0.5, 1.0) 
+     * 1/r = (1.0, 2.0] 
+     *   so use 1.5 as initial guess 
+     */
+    xn = Q28_15;
 
-	/* xn = xn*(2.0 - r*xn) */
-	for (i = NUM_ITER_IRN; i != 0; i--) {
-		t = MULSHIFT32(r, xn);			/* Q31*Q29 = Q28 */
-		t = Q28_2 - t;					/* Q28 */
-		xn = MULSHIFT32(xn, t) << 4;	/* Q29*Q28 << 4 = Q29 */
-	}
+    /* xn = xn*(2.0 - r*xn) */
+    for (i = NUM_ITER_IRN; i != 0; i--) {
+        t = MULSHIFT32(r, xn);          /* Q31*Q29 = Q28 */
+        t = Q28_2 - t;                  /* Q28 */
+        xn = MULSHIFT32(xn, t) << 4;    /* Q29*Q28 << 4 = Q29 */
+    }
 
-	return xn;
+    return xn;
 }
 
-#define NUM_TERMS_RPI	5
-#define LOG2_EXP_INV	0x58b90bfc	/* 1/log2(e), Q31 */
+#define NUM_TERMS_RPI   5
+#define LOG2_EXP_INV    0x58b90bfc  /* 1/log2(e), Q31 */
 
 /* invTab[x] = 1/(x+1), format = Q30 */
 static const int invTab[NUM_TERMS_RPI] PROGMEM = {0x40000000, 0x20000000, 0x15555555, 0x10000000, 0x0ccccccd};
@@ -116,27 +116,27 @@ static const int invTab[NUM_TERMS_RPI] PROGMEM = {0x40000000, 0x20000000, 0x1555
  **************************************************************************************/
 int RatioPowInv(int a, int b, int c)
 {
-	int lna, lnb, i, p, t, y;
+    int lna, lnb, i, p, t, y;
 
-	if (a < 1 || b < 1 || c < 1 || a > 64 || b > 64 || c > 64 || a < b)
-		return 0;
+    if (a < 1 || b < 1 || c < 1 || a > 64 || b > 64 || c > 64 || a < b)
+        return 0;
 
-	lna = MULSHIFT32(log2Tab[a], LOG2_EXP_INV) << 1;	/* ln(a), Q28 */
-	lnb = MULSHIFT32(log2Tab[b], LOG2_EXP_INV) << 1;	/* ln(b), Q28 */
-	p = (lna - lnb) / c;	/* Q28 */
+    lna = MULSHIFT32(log2Tab[a], LOG2_EXP_INV) << 1;    /* ln(a), Q28 */
+    lnb = MULSHIFT32(log2Tab[b], LOG2_EXP_INV) << 1;    /* ln(b), Q28 */
+    p = (lna - lnb) / c;    /* Q28 */
 
-	/* sum in Q24 */
-	y = (1 << 24);
-	t = p >> 4;		/* t = p^1 * 1/1! (Q24)*/
-	y += t;
+    /* sum in Q24 */
+    y = (1 << 24);
+    t = p >> 4;     /* t = p^1 * 1/1! (Q24)*/
+    y += t;
 
-	for (i = 2; i <= NUM_TERMS_RPI; i++) {
-		t = MULSHIFT32(invTab[i-1], t) << 2;
-		t = MULSHIFT32(p, t) << 4;	/* t = p^i * 1/i! (Q24) */
-		y += t;
-	}
+    for (i = 2; i <= NUM_TERMS_RPI; i++) {
+        t = MULSHIFT32(invTab[i-1], t) << 2;
+        t = MULSHIFT32(p, t) << 4;  /* t = p^i * 1/i! (Q24) */
+        y += t;
+    }
 
-	return y;
+    return y;
 }
 
 /**************************************************************************************
@@ -157,39 +157,39 @@ int RatioPowInv(int a, int b, int c)
  **************************************************************************************/
 int SqrtFix(int q, int fBitsIn, int *fBitsOut)
 {
-	int z, lo, hi, mid;
+    int z, lo, hi, mid;
 
-	if (q <= 0) {
-		*fBitsOut = fBitsIn;
-		return 0;
-	}
+    if (q <= 0) {
+        *fBitsOut = fBitsIn;
+        return 0;
+    }
 
-	/* force even fBitsIn */
-	z = fBitsIn & 0x01;
-	q >>= z;
-	fBitsIn -= z;
+    /* force even fBitsIn */
+    z = fBitsIn & 0x01;
+    q >>= z;
+    fBitsIn -= z;
 
-	/* for max precision, normalize to [0x20000000, 0x7fffffff] */
-	z = (CLZ(q) - 1);
-	z >>= 1;
-	q <<= (2*z);
+    /* for max precision, normalize to [0x20000000, 0x7fffffff] */
+    z = (CLZ(q) - 1);
+    z >>= 1;
+    q <<= (2*z);
 
-	/* choose initial bounds */
-	lo = 1;
-	if (q >= 0x10000000)
-		lo = 16384;	/* (int)sqrt(0x10000000) */
-	hi = 46340;		/* (int)sqrt(0x7fffffff) */
+    /* choose initial bounds */
+    lo = 1;
+    if (q >= 0x10000000)
+        lo = 16384; /* (int)sqrt(0x10000000) */
+    hi = 46340;     /* (int)sqrt(0x7fffffff) */
 
-	/* do binary search with 32x32->32 multiply test */
-	do {
-		mid = (lo + hi) >> 1;
-		if (mid*mid > q)
-			hi = mid - 1;
-		else
-			lo = mid + 1;
-	} while (hi >= lo);
-	lo--;
+    /* do binary search with 32x32->32 multiply test */
+    do {
+        mid = (lo + hi) >> 1;
+        if (mid*mid > q)
+            hi = mid - 1;
+        else
+            lo = mid + 1;
+    } while (hi >= lo);
+    lo--;
 
-	*fBitsOut = ((fBitsIn + 2*z) >> 1);
-	return lo;
+    *fBitsOut = ((fBitsIn + 2*z) >> 1);
+    return lo;
 }

@@ -250,5 +250,6 @@ uint8_t sbrDecodeSingleFramePS(sbr_info *sbr, real_t *left_channel, real_t *righ
 #ifdef __cplusplus
 }
 #endif
+
 #endif
 

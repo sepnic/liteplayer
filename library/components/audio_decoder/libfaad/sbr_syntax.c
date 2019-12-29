@@ -360,16 +360,16 @@ static uint8_t sbr_data(bitfile *ld, sbr_info *sbr)
     switch (sbr->id_aac)
     {
     case ID_SCE:
-		if ((result = sbr_single_channel_element(ld, sbr)) > 0)
-			return result;
+        if ((result = sbr_single_channel_element(ld, sbr)) > 0)
+            return result;
         break;
     case ID_CPE:
-		if ((result = sbr_channel_pair_element(ld, sbr)) > 0)
-			return result;
+        if ((result = sbr_channel_pair_element(ld, sbr)) > 0)
+            return result;
         break;
     }
 
-	return 0;
+    return 0;
 }
 
 /* table 5 */
@@ -905,6 +905,5 @@ static void sinusoidal_coding(bitfile *ld, sbr_info *sbr, uint8_t ch)
             DEBUGVAR(1,278,"sinusoidal_coding(): bs_add_harmonic"));
     }
 }
-
 
 #endif /* SBR_DEC */

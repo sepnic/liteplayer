@@ -158,7 +158,7 @@ int8_t GASpecificConfig(bitfile *ld, mp4AudioSpecificConfig *mp4ASC,
         }
         /* 1 bit: extensionFlag3 */
         faad_getbits(ld, 1);
-	}
+    }
 #endif
 
     return 0;
@@ -595,15 +595,15 @@ static uint8_t single_lfe_channel_element(NeAACDecStruct *hDecoder, bitfile *ld,
 
     retval = individual_channel_stream(hDecoder, &sce, ld, ics, 0, spec_data);
     if (retval > 0) {
-		faad_free(spec_data);
-		return retval;
-	} 
+        faad_free(spec_data);
+        return retval;
+    } 
 
     /* IS not allowed in single channel */
     if (ics->is_used) {
-		faad_free(spec_data);
-		return 32;
-	}
+        faad_free(spec_data);
+        return 32;
+    }
 
 #ifdef SBR_DEC
     /* check if next bitstream element is a fill element */
@@ -615,7 +615,7 @@ static uint8_t single_lfe_channel_element(NeAACDecStruct *hDecoder, bitfile *ld,
         /* one sbr_info describes a channel_element not a channel! */
         if ((retval = fill_element(hDecoder, ld, hDecoder->drc, hDecoder->fr_ch_ele)) > 0)
         {
-        	faad_free(spec_data);
+            faad_free(spec_data);
             return retval;
         }
     }
@@ -624,12 +624,12 @@ static uint8_t single_lfe_channel_element(NeAACDecStruct *hDecoder, bitfile *ld,
     /* noiseless coding is done, spectral reconstruction is done now */
     retval = reconstruct_single_channel(hDecoder, ics, &sce, spec_data);
     if (retval > 0){
-		faad_free(spec_data);
-		return retval;
-	}
+        faad_free(spec_data);
+        return retval;
+    }
         
-	faad_free(spec_data);
-	return 0;
+    faad_free(spec_data);
+    return 0;
 }
 
 /* Table 4.4.5 */
@@ -655,17 +655,17 @@ static uint8_t channel_pair_element(NeAACDecStruct *hDecoder, bitfile *ld,
     {
         /* both channels have common ics information */
         if ((result = ics_info(hDecoder, ics1, ld, cpe.common_window)) > 0) {
-			faad_free(spec_data1);
-			faad_free(spec_data2);
-			return result;
-		}
+            faad_free(spec_data1);
+            faad_free(spec_data2);
+            return result;
+        }
 
         ics1->ms_mask_present = (uint8_t)faad_getbits(ld, 2
             DEBUGVAR(1,41,"channel_pair_element(): ms_mask_present"));
         if (ics1->ms_mask_present == 3)
         {
-        	faad_free(spec_data1);
-			faad_free(spec_data2);
+            faad_free(spec_data1);
+            faad_free(spec_data2);
             /* bitstream error */
             return 32;
         }
@@ -694,13 +694,13 @@ static uint8_t channel_pair_element(NeAACDecStruct *hDecoder, bitfile *ld,
 #ifdef LTP_DEC
                 if ((result = ltp_data(hDecoder, ics1, &(ics1->ltp), ld)) > 0)
                 {
-                	faad_free(spec_data1);
-					faad_free(spec_data2);
+                    faad_free(spec_data1);
+                    faad_free(spec_data2);
                     return result;
                 }
 #else
-				faad_free(spec_data1);
-				faad_free(spec_data2);
+                faad_free(spec_data1);
+                faad_free(spec_data2);
                 return 26;
 #endif
             }
@@ -716,7 +716,7 @@ static uint8_t channel_pair_element(NeAACDecStruct *hDecoder, bitfile *ld,
         0, spec_data1)) > 0)
     {
         faad_free(spec_data1);
-		faad_free(spec_data2);
+        faad_free(spec_data2);
         return result;
     }
 
@@ -733,13 +733,13 @@ static uint8_t channel_pair_element(NeAACDecStruct *hDecoder, bitfile *ld,
 #ifdef LTP_DEC
             if ((result = ltp_data(hDecoder, ics1, &(ics1->ltp2), ld)) > 0)
             {
-            	faad_free(spec_data1);
-				faad_free(spec_data2);
+                faad_free(spec_data1);
+                faad_free(spec_data2);
                 return result;
             }
 #else
-			faad_free(spec_data1);
-			faad_free(spec_data2);
+            faad_free(spec_data1);
+            faad_free(spec_data2);
             return 26;
 #endif
         }
@@ -749,8 +749,8 @@ static uint8_t channel_pair_element(NeAACDecStruct *hDecoder, bitfile *ld,
     if ((result = individual_channel_stream(hDecoder, &cpe, ld, ics2,
         0, spec_data2)) > 0)
     {
-    	faad_free(spec_data1);
-		faad_free(spec_data2);
+        faad_free(spec_data1);
+        faad_free(spec_data2);
         return result;
     }
 
@@ -765,7 +765,7 @@ static uint8_t channel_pair_element(NeAACDecStruct *hDecoder, bitfile *ld,
         if ((result = fill_element(hDecoder, ld, hDecoder->drc, hDecoder->fr_ch_ele)) > 0)
         {
             faad_free(spec_data1);
-			faad_free(spec_data2);
+            faad_free(spec_data2);
             return result;
         }
     }
@@ -775,13 +775,13 @@ static uint8_t channel_pair_element(NeAACDecStruct *hDecoder, bitfile *ld,
     if ((result = reconstruct_channel_pair(hDecoder, ics1, ics2, &cpe,
         spec_data1, spec_data2)) > 0)
     {
-    	faad_free(spec_data1);
-		faad_free(spec_data2);
+        faad_free(spec_data1);
+        faad_free(spec_data2);
         return result;
     }
 
-	faad_free(spec_data1);
-	faad_free(spec_data2);
+    faad_free(spec_data1);
+    faad_free(spec_data2);
 
     return 0;
 }
@@ -848,8 +848,8 @@ static uint8_t ics_info(NeAACDecStruct *hDecoder, ic_stream *ics, bitfile *ld,
                     ics->pred.predictor_reset =
 #endif
                     faad_get1bit(ld DEBUGVAR(1,53,"ics_info(): pred.predictor_reset"))) & 1)
-                {	
-				    uint8_t getbits=0;
+                {   
+                    uint8_t getbits=0;
                     getbits = (uint8_t)faad_getbits(ld, 5 DEBUGVAR(1,54,"ics_info(): pred.predictor_reset_group_number"));
 #ifdef MAIN_DEC
                     ics->pred.predictor_reset_group_number = getbits;

@@ -433,8 +433,8 @@ typedef struct
     int64_t scalefac_cycles;
     int64_t requant_cycles;
 #endif
-	latm_header latm_config;
-	const unsigned char *cmes;
+    latm_header latm_config;
+    const unsigned char *cmes;
 } NeAACDecStruct;
 
 
@@ -442,4 +442,5 @@ typedef struct
 #ifdef __cplusplus
 }
 #endif
+
 #endif

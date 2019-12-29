@@ -51,5 +51,6 @@ void limiter_frequency_table(sbr_info *sbr);
 #ifdef __cplusplus
 }
 #endif
+
 #endif
 
