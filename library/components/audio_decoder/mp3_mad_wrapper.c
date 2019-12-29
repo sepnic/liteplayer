@@ -26,7 +26,7 @@
 #include "esp_adf/audio_element.h"
 #include "audio_decoder/mp3_decoder.h"
 
-#define TAG "MAD_WRAPPER"
+#define TAG "MP3_WRAPPER"
 
 static inline short scale(mad_fixed_t sample)
 {

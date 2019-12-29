@@ -19,6 +19,7 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include "msgutils/os_memory.h"
 #include "esp_adf/esp_log.h"
 #include "esp_adf/audio_common.h"
 #include "liteplayer_main.h"
@@ -125,6 +126,8 @@ static int liteplayer_test(const char *url)
         goto test_done;
     }
 
+    OS_MEMORY_DUMP();
+
     while (g_state != LITEPLAYER_COMPLETED && g_state != LITEPLAYER_ERROR) {
         OS_THREAD_SLEEP_MSEC(100);
     }
@@ -143,6 +146,9 @@ static int liteplayer_test(const char *url)
 test_done:
     liteplayer_reset(player);
     liteplayer_destroy(player);
+
+    OS_THREAD_SLEEP_MSEC(100);
+    OS_MEMORY_DUMP();
     return ret;
 }
 

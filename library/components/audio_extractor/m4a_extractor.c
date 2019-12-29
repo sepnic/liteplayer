@@ -751,7 +751,7 @@ int m4a_extractor(m4a_fetch_cb fetch_cb, void *fetch_priv, m4a_info_t *info)
     };
 
     struct os_threadattr tattr = {
-        .name = "m4a_parser",
+        .name = "ael_m4aparser",
         .priority = M4A_PARSER_TASK_PRIO,
         .stacksize = M4A_PARSER_TASK_STACK,
         .joinable = true,

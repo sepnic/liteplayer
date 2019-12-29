@@ -110,8 +110,8 @@ static int mp3_decoder_process(audio_element_handle_t self, char *in_buffer, int
     if(decoder->buf_out.length > 0) {
         /* Output buffer have remain data */
         byte_write = audio_element_output(self,
-                decoder->buf_out.data+decoder->buf_out.offset,
-                decoder->buf_out.length);
+                                          decoder->buf_out.data+decoder->buf_out.offset,
+                                          decoder->buf_out.length);
     }
     else {
         /* More data need to be wrote */

@@ -1013,7 +1013,7 @@ esp_err_t audio_element_run(audio_element_handle_t el)
         return ESP_OK;
     }
     ESP_LOGV(TAG, "[%s] Element starting...", el->tag);
-    snprintf(task_name, 32, "el-%s", el->tag);
+    snprintf(task_name, 32, "ael-%s", el->tag);
     threadattr.name = task_name;
     threadattr.priority = el->task_prio;
     threadattr.stacksize = el->task_stack > 0 ? el->task_stack : DEFAULT_ELEMENT_STACK_SIZE;

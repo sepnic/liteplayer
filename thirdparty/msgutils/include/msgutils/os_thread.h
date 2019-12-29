@@ -40,6 +40,7 @@ typedef void *os_cond_t;
 // If PTHREAD_MUTEX_INITIALIZER not supported on some platforms,
 // just declare mutex null, ofcurse it's unsafe.
 #define OS_MUTEX_DECLARE(name) static os_mutex_t name = NULL;
+
 #else
 #include <pthread.h>
 #define OS_MUTEX_DECLARE(name) \
@@ -47,7 +48,7 @@ typedef void *os_cond_t;
     static os_mutex_t name = (os_mutex_t)(&temp##name);
 #endif
 
-// FIXME: Config task priority on your platform, current config for MT7686
+// FIXME: Config task priority on your platform
 #if defined(OS_FREERTOS)
 enum os_threadprio {
     OS_THREAD_PRIO_INVALID = -1,

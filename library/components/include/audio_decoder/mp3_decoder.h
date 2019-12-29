@@ -54,6 +54,7 @@ typedef struct {
 typedef struct mp3_buf_in {
     char *data;
     int length;
+    int offset;
     bool eof;
 } mp3_buf_in_t;
 

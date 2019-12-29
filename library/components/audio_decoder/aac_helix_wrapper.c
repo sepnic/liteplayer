@@ -84,11 +84,12 @@ fill_data:
 
     ret = AACDecode(decoder->handle, &in, &size, out);
     if (ret == ERR_AAC_INDATA_UNDERFLOW) {
-        if (decoder->buf_in.eof == true)
+        if (decoder->buf_in.eof)
             return AEL_IO_DONE;
         else
             goto fill_data;
-    } else if (ret < ERR_AAC_NONE) {
+    }
+    else if (ret < ERR_AAC_NONE) {
         ESP_LOGE(TAG, "AACDecode error[%d]", ret);
         if(decode_fail_cnt++ >= 4)
             return AEL_PROCESS_FAIL;

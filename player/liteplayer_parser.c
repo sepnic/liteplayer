@@ -431,7 +431,7 @@ media_parser_handle_t media_parser_start_async(media_source_info_t *source_info,
         goto start_failed;
 
     struct os_threadattr attr = {
-        .name = "el_parser",
+        .name = "ael_parser",
         .priority = DEFAULT_MEDIA_PARSER_TASK_PRIO,
         .stacksize = DEFAULT_MEDIA_PARSER_TASK_STACKSIZE,
         .joinable = false,

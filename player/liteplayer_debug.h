@@ -18,6 +18,9 @@
 #ifndef _LITEPLAYER_DEBUG_H_
 #define _LITEPLAYER_DEBUG_H_
 
+#include <stdio.h>
+#include <stdbool.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

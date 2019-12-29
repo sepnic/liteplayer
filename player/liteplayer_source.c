@@ -177,7 +177,7 @@ media_source_handle_t media_source_start(media_source_info_t *info,
         goto start_failed;
 
     struct os_threadattr attr = {
-        .name = "el_source",
+        .name = "ael_source",
         .priority = DEFAULT_MEDIA_SOURCE_TASK_PRIO,
         .stacksize = DEFAULT_MEDIA_SOURCE_TASK_STACKSIZE,
         .joinable = false,

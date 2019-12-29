@@ -192,7 +192,7 @@ socket_upload_handle_t socket_upload_start()
         goto start_failed;
 
     struct os_threadattr attr = {
-        .name = "el_debug",
+        .name = "ael_debug",
         .priority = DEFAULT_SOCKET_UPLOAD_TASK_PRIO,
         .stacksize = DEFAULT_SOCKET_UPLOAD_TASK_STACK,
         .joinable = true,
