@@ -40,12 +40,10 @@
 
 #define TAG "liteplayerdebug"
 
-static bool g_upload_enable   = false;
-static char g_server_addr[32] = "127.0.0.1";
-static int  g_server_port     = 22808;
-
 typedef struct socket_upload_priv {
     int fd;
+    const char *addr;
+    int port;
     ringbuf_handle_t rb;
     os_thread_t tid;
     char buffer[2048];
@@ -95,10 +93,10 @@ static void socket_disconnet(int fd)
 
 static void socket_upload_cleanup(socket_upload_priv_t *priv)
 {
-    if (priv->rb != NULL) {
+    if (priv->rb != NULL)
         rb_destroy(priv->rb);
-        priv->rb = NULL;
-    }
+    if (priv->addr != NULL)
+        OS_FREE(priv->addr);
     OS_FREE(priv);
 }
 
@@ -107,9 +105,9 @@ static void *socket_upload_thread(void *arg)
     socket_upload_priv_t *priv = (socket_upload_priv_t *)arg;
     int ret = 0, bytes_read = 0;
 
-    priv->fd = socket_connect(g_server_addr, g_server_port);
+    priv->fd = socket_connect(priv->addr, priv->port);
     if (priv->fd < 0) {
-        ESP_LOGE(TAG, "Failed to connect server:[%s:%d]", g_server_addr, g_server_port);
+        ESP_LOGE(TAG, "Failed to connect server:[%s:%d]", priv->addr, priv->port);
         goto thread_exit;
     }
 
@@ -119,7 +117,7 @@ static void *socket_upload_thread(void *arg)
         goto thread_exit;
     }
 
-    while (g_upload_enable && (!priv->stop || rb_bytes_filled(priv->rb) > 0)) {
+    while (!priv->stop || rb_bytes_filled(priv->rb) > 0) {
         bytes_read = rb_read(priv->rb, priv->buffer, sizeof(priv->buffer), AUDIO_MAX_DELAY);
         if (bytes_read > 0) {
             ret = socket_send(priv->fd, priv->buffer, bytes_read);
@@ -157,35 +155,16 @@ thread_exit:
     return NULL;
 }
 
-int socket_upload_config_server(const char *addr, int port)
+socket_upload_handle_t socket_upload_start(const char *server_addr, int server_port)
 {
-    if (addr == NULL || port < 0)
-        return -1;
-
-    memset(g_server_addr, 0x0, sizeof(g_server_addr));
-    strncpy(g_server_addr, addr, sizeof(g_server_addr));
-    g_server_addr[31] = '\0';
-    g_server_port = port;
-
-    ESP_LOGD(TAG, "Config socket upload server: [%s:%d]", g_server_addr, g_server_port);
-    return 0;
-}
-
-int socket_upload_config_enable(bool enable)
-{
-    ESP_LOGD(TAG, "Socket upload %s", enable ? "Enabled" : "Disabled");
-    g_upload_enable = enable;
-    return 0;
-}
-
-socket_upload_handle_t socket_upload_start()
-{
-    if (!g_upload_enable)
-        return NULL;
-
     socket_upload_priv_t *priv = OS_CALLOC(1, sizeof(socket_upload_priv_t));
     if (priv == NULL)
         return NULL;
+
+    priv->port = server_port;
+    priv->addr = OS_STRDUP(server_addr);
+    if (priv->addr == NULL)
+        goto start_failed;
 
     priv->rb = rb_create(DEFAULT_SOCKET_UPLOAD_RINGBUF_SIZE);
     if (priv->rb == NULL)

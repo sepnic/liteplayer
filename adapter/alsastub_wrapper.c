@@ -18,14 +18,13 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "msgutils/os_time.h"
 #include "esp_adf/esp_log.h"
 #include "esp_adf/audio_common.h"
 #include "audio_extractor/wav_extractor.h"
 #include "alsastub_wrapper.h"
 
 #define TAG "alsawrapper"
-
-#define ALSA_OUT_FILE "alsa_out.wav"
 
 struct alsastub_priv {
     FILE *file;
@@ -40,7 +39,16 @@ alsa_handle_t alsastub_wrapper_open(int samplerate, int channels, void *alsa_pri
     if (priv == NULL)
         return NULL;
 
-    priv->file = fopen(ALSA_OUT_FILE, "wb+");
+    char filename[64];
+    struct os_realtime ts;
+    OS_TIMESTAMP_TO_LOCAL(&ts);
+    memset(filename, 0x0, sizeof(filename));
+    snprintf(filename, sizeof(filename),
+             "pcm_out-%04d%02d%02d-%02d%02d%02d.wav",
+             ts.year, ts.mon, ts.day, ts.hour, ts.min, ts.sec
+    );
+
+    priv->file = fopen(filename, "wb+");
     if (priv->file == NULL) {
         audio_free(priv);
         return NULL;

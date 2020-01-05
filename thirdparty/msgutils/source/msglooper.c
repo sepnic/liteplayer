@@ -73,9 +73,6 @@ static void mlooper_free_msgnode(mlooper_t looper, struct message_node *node)
         msg->free_cb(msg);
     else if (looper->msg_free != NULL)
         looper->msg_free(msg);
-    else if (msg->data != NULL)
-        OS_LOGW(LOG_TAG, "[%s]: Forget to free message data: what=[%d], memory leak?",
-                looper->thread_name, msg->what);
 
     if (msg->notify_cb != NULL)
         msg->notify_cb(msg, MESSAGE_DESTROY);

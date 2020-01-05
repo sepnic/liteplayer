@@ -9,15 +9,11 @@
 
 #### 2.1. 设备端接口说明
 
-1. socket_upload_config_enable(enable)：是否使能 socket upload 功能
+1. socket_upload_start(addr, port)：创建 socket upload 线程和资源
 
-2. socket_upload_config_server(addr, port)：配置 socket server 网络地址和端口号，socket server 和设备端必须在同一个局域网内
+2. socket_upload_fill_data(handle, data, size)：填充数据到 socket upload 缓冲区
 
-3. socket_upload_start()：创建 socket upload 线程和资源
-
-4. socket_upload_fill_data(handle, data, size)：填充数据到 socket upload 缓冲区
-
-5. socket_upload_stop(handle)：停止 socket upload，阻塞等待 socket upload 线程退出
+3. socket_upload_stop(handle)：停止 socket upload，阻塞等待 socket upload 线程退出
 
 #### 2.2. socket server 启动说明
 

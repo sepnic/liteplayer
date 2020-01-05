@@ -291,7 +291,7 @@ static int liteplayer_pipeline_init(liteplayer_handle_t handle)
         alsa_cfg.type                     = AUDIO_STREAM_WRITER;
         alsa_cfg.task_prio                = DEFAULT_SINK_TASK_PRIO;
         alsa_cfg.task_stack               = DEFAULT_SINK_TASK_STACKSIZE;
-        alsa_cfg.out_rb_size              = DEFAULT_SINK_RINGBUFFER_SIZE;
+        alsa_cfg.out_rb_size              = DEFAULT_SINK_RINGBUF_SIZE;
         alsa_cfg.buf_sz                   = DEFAULT_SINK_BUFFER_SIZE;
         alsa_cfg.out_samplerate           = DEFAULT_SINK_OUT_RATE;
         alsa_cfg.out_channels             = DEFAULT_SINK_OUT_CHANNELS;
@@ -316,21 +316,21 @@ static int liteplayer_pipeline_init(liteplayer_handle_t handle)
             mp3_decoder_cfg_t mp3_cfg = DEFAULT_MP3_DECODER_CONFIG();
             mp3_cfg.task_prio            = DEFAULT_DECODER_TASK_PRIO;
             mp3_cfg.task_stack           = DEFAULT_DECODER_TASK_STACKSIZE;
-            mp3_cfg.out_rb_size          = DEFAULT_DECODER_RINGBUFFER_SIZE;
+            mp3_cfg.out_rb_size          = DEFAULT_DECODER_RINGBUF_SIZE;
             handle->el_decoder = mp3_decoder_init(&mp3_cfg);
         }
         else if (handle->media_info.codec_type == AUDIO_CODEC_AAC) {
             aac_decoder_cfg_t aac_cfg = DEFAULT_AAC_DECODER_CONFIG();
             aac_cfg.task_prio            = DEFAULT_DECODER_TASK_PRIO;
             aac_cfg.task_stack           = DEFAULT_DECODER_TASK_STACKSIZE;
-            aac_cfg.out_rb_size          = DEFAULT_DECODER_RINGBUFFER_SIZE;
+            aac_cfg.out_rb_size          = DEFAULT_DECODER_RINGBUF_SIZE;
             handle->el_decoder = aac_decoder_init(&aac_cfg);
         }
         else if (handle->media_info.codec_type == AUDIO_CODEC_M4A) {
             m4a_decoder_cfg_t m4a_cfg = DEFAULT_M4A_DECODER_CONFIG();
             m4a_cfg.task_prio            = DEFAULT_DECODER_TASK_PRIO;
             m4a_cfg.task_stack           = DEFAULT_DECODER_TASK_STACKSIZE;
-            m4a_cfg.out_rb_size          = DEFAULT_DECODER_RINGBUFFER_SIZE;
+            m4a_cfg.out_rb_size          = DEFAULT_DECODER_RINGBUF_SIZE;
             m4a_cfg.m4a_info = &handle->media_info.m4a_info;
             handle->el_decoder = m4a_decoder_init(&m4a_cfg);
         }
@@ -338,7 +338,7 @@ static int liteplayer_pipeline_init(liteplayer_handle_t handle)
             wav_decoder_cfg_t wav_cfg = DEFAULT_WAV_DECODER_CONFIG();
             wav_cfg.task_prio            = DEFAULT_DECODER_TASK_PRIO;
             wav_cfg.task_stack           = DEFAULT_DECODER_TASK_STACKSIZE;
-            wav_cfg.out_rb_size          = DEFAULT_DECODER_RINGBUFFER_SIZE;
+            wav_cfg.out_rb_size          = DEFAULT_DECODER_RINGBUF_SIZE;
             handle->el_decoder = wav_decoder_init(&wav_cfg);
         }
         AUDIO_MEM_CHECK(TAG, handle->el_decoder, goto init_failed);
@@ -347,11 +347,11 @@ static int liteplayer_pipeline_init(liteplayer_handle_t handle)
     {
         ESP_LOGI(TAG, "[2.2] Create source element");
         if (handle->source_type == MEDIA_SOURCE_STREAM)
-            handle->source_rb = rb_create(DEFAULT_SOURCE_STREAM_RINGBUFFER_SIZE);
+            handle->source_rb = rb_create(DEFAULT_SOURCE_STREAM_RINGBUF_SIZE);
         else if (handle->source_type == MEDIA_SOURCE_HTTP)
-            handle->source_rb = rb_create(DEFAULT_SOURCE_HTTP_RINGBUFFER_SIZE);
+            handle->source_rb = rb_create(DEFAULT_SOURCE_HTTP_RINGBUF_SIZE);
         else if (handle->source_type == MEDIA_SOURCE_FILE)
-            handle->source_rb = rb_create(DEFAULT_SOURCE_FILE_RINGBUFFER_SIZE);
+            handle->source_rb = rb_create(DEFAULT_SOURCE_FILE_RINGBUF_SIZE);
         AUDIO_MEM_CHECK(TAG, handle->source_rb, goto init_failed);
 
         audio_element_set_input_ringbuf(handle->el_decoder, handle->source_rb);

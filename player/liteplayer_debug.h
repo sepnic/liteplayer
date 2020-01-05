@@ -27,11 +27,7 @@ extern "C" {
 
 typedef void *socket_upload_handle_t;
 
-int socket_upload_config_enable(bool enable);
-
-int socket_upload_config_server(const char *addr, int port);
-
-socket_upload_handle_t socket_upload_start();
+socket_upload_handle_t socket_upload_start(const char *server_addr, int server_port);
 
 int socket_upload_fill_data(socket_upload_handle_t handle, char *data, int size);
 
