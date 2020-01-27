@@ -2,12 +2,14 @@ cmake_minimum_required(VERSION 2.8)
 
 set(TOP_DIR "${CMAKE_SOURCE_DIR}/../..")
 set(MSGUTILS_DIR "${TOP_DIR}/thirdparty/msgutils")
+set(MBEDTLS_DIR "${TOP_DIR}/thirdparty/mbedtls")
 set(LITECORE_DIR "${TOP_DIR}/library")
 set(LITEPLAYER_DIR "${TOP_DIR}/player")
 set(LITEPLAYER_ADAPTER_DIR "${TOP_DIR}/adapter")
 
 # include files
 include_directories(${MSGUTILS_DIR}/include)
+include_directories(${MBEDTLS_DIR}/include)
 include_directories(${LITECORE_DIR}/core/include)
 include_directories(${LITECORE_DIR}/components/include)
 include_directories(${LITEPLAYER_DIR})
@@ -27,6 +29,82 @@ set (MSGUTILS_SRC
     ${MSGUTILS_DIR}/source/portable/os_thread.c
     ${MSGUTILS_DIR}/source/portable/os_time.c
     ${MSGUTILS_DIR}/source/portable/os_timer.c
+)
+
+# source files
+set (MBEDTLS_SRC
+    ${MBEDTLS_DIR}/library/aes.c
+    ${MBEDTLS_DIR}/library/aesni.c
+    ${MBEDTLS_DIR}/library/arc4.c
+    ${MBEDTLS_DIR}/library/asn1parse.c
+    ${MBEDTLS_DIR}/library/asn1write.c
+    ${MBEDTLS_DIR}/library/base64.c
+    ${MBEDTLS_DIR}/library/bignum.c
+    ${MBEDTLS_DIR}/library/blowfish.c
+    ${MBEDTLS_DIR}/library/camellia.c
+    ${MBEDTLS_DIR}/library/ccm.c
+    ${MBEDTLS_DIR}/library/cipher.c
+    ${MBEDTLS_DIR}/library/cipher_wrap.c
+    ${MBEDTLS_DIR}/library/cmac.c
+    ${MBEDTLS_DIR}/library/ctr_drbg.c
+    ${MBEDTLS_DIR}/library/des.c
+    ${MBEDTLS_DIR}/library/dhm.c
+    ${MBEDTLS_DIR}/library/ecdh.c
+    ${MBEDTLS_DIR}/library/ecdsa.c
+    ${MBEDTLS_DIR}/library/ecjpake.c
+    ${MBEDTLS_DIR}/library/ecp.c
+    ${MBEDTLS_DIR}/library/ecp_curves.c
+    ${MBEDTLS_DIR}/library/entropy.c
+    ${MBEDTLS_DIR}/library/entropy_poll.c
+    ${MBEDTLS_DIR}/library/error.c
+    ${MBEDTLS_DIR}/library/gcm.c
+    ${MBEDTLS_DIR}/library/havege.c
+    ${MBEDTLS_DIR}/library/hmac_drbg.c
+    ${MBEDTLS_DIR}/library/md.c
+    ${MBEDTLS_DIR}/library/md2.c
+    ${MBEDTLS_DIR}/library/md4.c
+    ${MBEDTLS_DIR}/library/md5.c
+    ${MBEDTLS_DIR}/library/md_wrap.c
+    ${MBEDTLS_DIR}/library/memory_buffer_alloc.c
+    ${MBEDTLS_DIR}/library/oid.c
+    ${MBEDTLS_DIR}/library/padlock.c
+    ${MBEDTLS_DIR}/library/pem.c
+    ${MBEDTLS_DIR}/library/pk.c
+    ${MBEDTLS_DIR}/library/pk_wrap.c
+    ${MBEDTLS_DIR}/library/pkcs12.c
+    ${MBEDTLS_DIR}/library/pkcs5.c
+    ${MBEDTLS_DIR}/library/pkparse.c
+    ${MBEDTLS_DIR}/library/pkwrite.c
+    ${MBEDTLS_DIR}/library/platform.c
+    ${MBEDTLS_DIR}/library/ripemd160.c
+    ${MBEDTLS_DIR}/library/rsa.c
+    ${MBEDTLS_DIR}/library/rsa_internal.c
+    ${MBEDTLS_DIR}/library/sha1.c
+    ${MBEDTLS_DIR}/library/sha256.c
+    ${MBEDTLS_DIR}/library/sha512.c
+    ${MBEDTLS_DIR}/library/threading.c
+    ${MBEDTLS_DIR}/library/timing.c
+    ${MBEDTLS_DIR}/library/version.c
+    ${MBEDTLS_DIR}/library/version_features.c
+    ${MBEDTLS_DIR}/library/xtea.c
+    ${MBEDTLS_DIR}/library/certs.c
+    ${MBEDTLS_DIR}/library/pkcs11.c
+    ${MBEDTLS_DIR}/library/x509.c
+    ${MBEDTLS_DIR}/library/x509_create.c
+    ${MBEDTLS_DIR}/library/x509_crl.c
+    ${MBEDTLS_DIR}/library/x509_crt.c
+    ${MBEDTLS_DIR}/library/x509_csr.c
+    ${MBEDTLS_DIR}/library/x509write_crt.c
+    ${MBEDTLS_DIR}/library/x509write_csr.c
+    ${MBEDTLS_DIR}/library/debug.c
+    ${MBEDTLS_DIR}/library/net_sockets.c
+    ${MBEDTLS_DIR}/library/ssl_cache.c
+    ${MBEDTLS_DIR}/library/ssl_ciphersuites.c
+    ${MBEDTLS_DIR}/library/ssl_cli.c
+    ${MBEDTLS_DIR}/library/ssl_cookie.c
+    ${MBEDTLS_DIR}/library/ssl_srv.c
+    ${MBEDTLS_DIR}/library/ssl_ticket.c
+    ${MBEDTLS_DIR}/library/ssl_tls.c
 )
 
 # source files
@@ -152,5 +230,5 @@ set(CMAKE_LDFLAGS "${CMAKE_LDFLAGS} -Wl,-O1 -Wl,--hash-style=gnu -Wl,--as-needed
 #message("CMAKE_C_FLAGS: ${CMAKE_C_FLAGS}")
 
 # liteplayer_demo
-add_executable(liteplayer_demo ${MAIN_SRC}  ${MSGUTILS_SRC} ${LITECORE_SRC} ${LITEPLAYER_SRC})
+add_executable(liteplayer_demo ${MAIN_SRC}  ${MSGUTILS_SRC} ${MBEDTLS_SRC} ${LITECORE_SRC} ${LITEPLAYER_SRC})
 target_link_libraries(liteplayer_demo pthread m)
