@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.8)
 
 set(TOP_DIR "${CMAKE_SOURCE_DIR}/../..")
 set(MSGUTILS_DIR "${TOP_DIR}/thirdparty/msgutils")
+set(HTTPCLIENT_DIR "${TOP_DIR}/thirdparty/httpclient")
 set(MBEDTLS_DIR "${TOP_DIR}/thirdparty/mbedtls")
 set(LITECORE_DIR "${TOP_DIR}/library")
 set(LITEPLAYER_DIR "${TOP_DIR}/player")
@@ -9,6 +10,7 @@ set(LITEPLAYER_ADAPTER_DIR "${TOP_DIR}/adapter")
 
 # include files
 include_directories(${MSGUTILS_DIR}/include)
+include_directories(${HTTPCLIENT_DIR})
 include_directories(${MBEDTLS_DIR}/include)
 include_directories(${LITECORE_DIR}/core/include)
 include_directories(${LITECORE_DIR}/components/include)
@@ -29,6 +31,11 @@ set (MSGUTILS_SRC
     ${MSGUTILS_DIR}/source/portable/os_thread.c
     ${MSGUTILS_DIR}/source/portable/os_time.c
     ${MSGUTILS_DIR}/source/portable/os_timer.c
+)
+
+# source files
+set (HTTPCLIENT_SRC
+    ${HTTPCLIENT_DIR}/httpclient.c
 )
 
 # source files
@@ -194,9 +201,9 @@ set (LITEPLAYER_SRC
 
 # source files
 set (MAIN_SRC
-    ${LITEPLAYER_ADAPTER_DIR}/alsastub_wrapper.c
-    ${LITEPLAYER_ADAPTER_DIR}/httpstub_wrapper.c
+    ${LITEPLAYER_ADAPTER_DIR}/httpclient_wrapper.c
     ${LITEPLAYER_ADAPTER_DIR}/fatfs_wrapper.c
+    ${LITEPLAYER_ADAPTER_DIR}/pcmout_wrapper.c
     ${CMAKE_SOURCE_DIR}/liteplayer_demo.c
 )
 
@@ -230,5 +237,5 @@ set(CMAKE_LDFLAGS "${CMAKE_LDFLAGS} -Wl,-O1 -Wl,--hash-style=gnu -Wl,--as-needed
 #message("CMAKE_C_FLAGS: ${CMAKE_C_FLAGS}")
 
 # liteplayer_demo
-add_executable(liteplayer_demo ${MAIN_SRC}  ${MSGUTILS_SRC} ${MBEDTLS_SRC} ${LITECORE_SRC} ${LITEPLAYER_SRC})
+add_executable(liteplayer_demo ${MAIN_SRC} ${MSGUTILS_SRC} ${HTTPCLIENT_SRC} ${MBEDTLS_SRC} ${LITECORE_SRC} ${LITEPLAYER_SRC})
 target_link_libraries(liteplayer_demo pthread m)

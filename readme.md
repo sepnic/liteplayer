@@ -1,4 +1,4 @@
-## Architecture Diagram
+## 1. Architecture Diagram
 
 ```
 +-----------------------------------------------------------------------------------+
@@ -67,17 +67,17 @@
 +-----------------------------------------------------------------------------------+
 ```
 
-## File Structure
+## 2. File Structure
 
 ```
 .
 ├── adapter                      [适配层目录]
-│   ├── alsa_wrapper.cpp            1. sink适配接口实现[默认适配tinyalsa接口]
-│   ├── alsa_wrapper.h
+│   ├── pcmout_wrapper.cpp          1. sink适配接口实现[默认适配tinyalsa接口]
+│   ├── pcmout_wrapper.h
 │   ├── fatfs_wrapper.c             2. file适配接口实现[默认适配标准文件系统接口]
 │   ├── fatfs_wrapper.h
-│   ├── http_wrapper.c              3. http适配接口实现[默认适配httpclient]
-│   └── http_wrapper.h
+│   ├── httpclient_wrapper.c        3. http适配接口实现[默认适配httpclient]
+│   └── httpclient_wrapper.h
 │
 ├── player                       [播放器目录]
 │   ├── liteplayer_adapter.h        1. 播放器适配层(sink/file/http)接口定义
@@ -95,8 +95,7 @@
 │   └── build.sh                    1. MacosX/Ubuntu上编译脚本，编译library/example使用，本地调试使用
 │
 ├── example                      [例程目录]
-│   ├── fatfs_m4aplayer             1. 例程：从file读取m4a文件并解码，保存PCM数据到file中
-│   └── fatfs_mp3player             2. 例程：从file读取mp3文件并解码，保存PCM数据到file中
+│   └── liteplayer_demo             1. 例程：从http/file读取数据并解码，保存PCM数据到file中
 │
 ├── library                      [组件及音频框架目录]
 │   ├── CMakeLists.txt              1. 动态库编译脚本，与下面脚本的区别是使用helix-aac
@@ -175,3 +174,14 @@
         │       └── stllist.h          list container is similar to stl list
 
 ```
+
+## 3. Demo Usage
+
+### 3.1. Playing local media
+
+./liteplayer_demo ./test.mp3
+./liteplayer_demo ./test.m4a
+
+### 3.2. Playing network media
+
+./liteplayer_demo http://ailabsaicloudservice.alicdn.com/player/resources/23a2d715f019c0e345235f379fa26a30.mp3

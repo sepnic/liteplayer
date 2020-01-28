@@ -23,9 +23,9 @@
 #include "esp_adf/esp_log.h"
 #include "esp_adf/audio_common.h"
 #include "liteplayer_main.h"
+#include "httpclient_wrapper.h"
 #include "fatfs_wrapper.h"
-#include "httpstub_wrapper.h"
-#include "alsastub_wrapper.h"
+#include "pcmout_wrapper.h"
 
 #define TAG "liteplayerdemo"
 
@@ -80,9 +80,9 @@ static int liteplayer_test(const char *url)
 
     alsa_wrapper_t alsa_wrapper = {
         .alsa_priv = NULL,
-        .open = alsastub_wrapper_open,
-        .write = alsastub_wrapper_write,
-        .close = alsastub_wrapper_close,
+        .open = pcmout_wrapper_open,
+        .write = pcmout_wrapper_write,
+        .close = pcmout_wrapper_close,
     };
     liteplayer_register_alsa_wrapper(player, &alsa_wrapper);
 
@@ -99,11 +99,11 @@ static int liteplayer_test(const char *url)
 
     http_wrapper_t http_wrapper = {
         .http_priv = NULL,
-        .open = httpstub_wrapper_open,
-        .read = httpstub_wrapper_read,
-        .filesize = httpstub_wrapper_filesize,
-        .seek = httpstub_wrapper_seek,
-        .close = httpstub_wrapper_close,
+        .open = httpclient_wrapper_open,
+        .read = httpclient_wrapper_read,
+        .filesize = httpclient_wrapper_filesize,
+        .seek = httpclient_wrapper_seek,
+        .close = httpclient_wrapper_close,
     };
     liteplayer_register_http_wrapper(player, &http_wrapper);
 
@@ -117,8 +117,13 @@ static int liteplayer_test(const char *url)
         goto test_done;
     }
 
-    while (g_state != LITEPLAYER_PREPARED) {
+    while (g_state != LITEPLAYER_PREPARED && g_state != LITEPLAYER_ERROR) {
         OS_THREAD_SLEEP_MSEC(100);
+    }
+
+    if (g_state == LITEPLAYER_ERROR) {
+        ESP_LOGE(TAG, "Failed to prepare player");
+        goto test_done;
     }
 
     if (liteplayer_start(player) != ESP_OK) {

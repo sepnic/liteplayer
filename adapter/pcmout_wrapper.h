@@ -15,24 +15,20 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef _HTTPSTUB_WRAPPER_H_
-#define _HTTPSTUB_WRAPPER_H_
+#ifndef _ALSASTUB_WRAPPER_H_
+#define _ALSASTUB_WRAPPER_H_
 
-#include "audio_stream/http_stream.h"
+#include "audio_stream/alsa_stream.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-http_handle_t httpstub_wrapper_open(const char *url, long long content_pos, void *priv);
+alsa_handle_t pcmout_wrapper_open(int samplerate, int channels, void *alsa_priv);
 
-int httpstub_wrapper_read(http_handle_t handle, char *buffer, int size);
+int pcmout_wrapper_write(alsa_handle_t handle, char *buffer, int size);
 
-long long httpstub_wrapper_filesize(http_handle_t handle);
-
-int httpstub_wrapper_seek(http_handle_t handle, long offset);
-
-void httpstub_wrapper_close(http_handle_t handle);
+void pcmout_wrapper_close(alsa_handle_t handle);
 
 #ifdef __cplusplus
 }
