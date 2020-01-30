@@ -39,33 +39,42 @@ static int liteplayer_test_state_listener(liteplayer_state_t state, int errcode,
     switch (state) {
     case LITEPLAYER_IDLE:
         ESP_LOGD(TAG, "-->LITEPLAYER_IDLE");
+        g_state = state;
+        break;
+    case LITEPLAYER_INITED:
+        ESP_LOGD(TAG, "-->LITEPLAYER_INITED");
+        g_state = state;
         break;
     case LITEPLAYER_PREPARED:
         ESP_LOGD(TAG, "-->LITEPLAYER_PREPARED");
+        g_state = state;
         break;
     case LITEPLAYER_STARTED:
         ESP_LOGD(TAG, "-->LITEPLAYER_STARTED");
+        g_state = state;
         break;
     case LITEPLAYER_PAUSED:
         ESP_LOGD(TAG, "-->LITEPLAYER_PAUSED");
+        g_state = state;
         break;
     case LITEPLAYER_NEARLYCOMPLETED:
         ESP_LOGD(TAG, "-->LITEPLAYER_NEARLYCOMPLETED");
         break;
     case LITEPLAYER_COMPLETED:
         ESP_LOGD(TAG, "-->LITEPLAYER_COMPLETED");
+        g_state = state;
         break;
     case LITEPLAYER_STOPPED:
         ESP_LOGD(TAG, "-->LITEPLAYER_STOPPED");
+        g_state = state;
         break;
     case LITEPLAYER_ERROR:
         ESP_LOGD(TAG, "-->LITEPLAYER_ERROR: %d", errcode);
+        g_state = state;
         break;
     default:
         break;
     }
-
-    g_state = state;
     return 0;
 }
 

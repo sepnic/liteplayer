@@ -225,4 +225,5 @@ void httpclient_wrapper_close(http_handle_t handle)
     httpclient_close(&priv->client);
     audio_free(priv->url);
     audio_free(priv);
+    ESP_LOGV(TAG, "Closed http client");
 }

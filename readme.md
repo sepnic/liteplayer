@@ -179,9 +179,9 @@
 
 ### 3.1. Playing local media
 
-./liteplayer_demo ./test.mp3
-./liteplayer_demo ./test.m4a
+- ./liteplayer_demo ./test.mp3
+- ./liteplayer_demo ./test.m4a
 
 ### 3.2. Playing network media
 
-./liteplayer_demo http://ailabsaicloudservice.alicdn.com/player/resources/23a2d715f019c0e345235f379fa26a30.mp3
+- ./liteplayer_demo http://ailabsaicloudservice.alicdn.com/player/resources/23a2d715f019c0e345235f379fa26a30.mp3

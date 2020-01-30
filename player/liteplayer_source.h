@@ -62,6 +62,8 @@ long long media_source_bytes_written(media_source_handle_t handle);
 
 void media_source_stop(media_source_handle_t handle);
 
+int m3u_get_first_url(media_source_info_t *info, char *buf, int buf_size);
+
 #ifdef __cplusplus
 }
 #endif

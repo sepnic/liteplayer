@@ -367,6 +367,19 @@ int media_info_parse(media_source_info_t *source_info, media_codec_info_t *media
     if (source_info == NULL || source_info->url == NULL || media_info == NULL)
         return ESP_FAIL;
 
+    if (strstr(source_info->url, ".m3u") != NULL) {
+        char temp[256];
+        int ret = m3u_get_first_url(source_info, temp, sizeof(temp));
+        if (ret == 0) {
+            const char *media_url = audio_strdup(temp);
+            if (media_url != NULL) {
+                audio_free(source_info->url);
+                source_info->url = media_url;
+                ESP_LOGV(TAG, "M3U first url: %s", media_url);
+            }
+        }
+    }
+
     if (source_info->source_type == MEDIA_SOURCE_HTTP) {
         if (strstr(source_info->url, "m4a") != NULL) {
             media_info->codec_type = AUDIO_CODEC_M4A;
