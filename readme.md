@@ -72,11 +72,11 @@
 ```
 .
 ├── adapter                      [适配层目录]
-│   ├── pcmout_wrapper.cpp          1. sink适配接口实现[默认适配tinyalsa接口]
-│   ├── pcmout_wrapper.h
-│   ├── fatfs_wrapper.c             2. file适配接口实现[默认适配标准文件系统接口]
+│   ├── tinyalsa_wrapper.cpp        1. sink接口适配[适配tinyalsa]
+│   ├── tinyalsa_wrapper.h
+│   ├── fatfs_wrapper.c             2. file接口适配[适配标准文件系统接口]
 │   ├── fatfs_wrapper.h
-│   ├── httpclient_wrapper.c        3. http适配接口实现[默认适配httpclient]
+│   ├── httpclient_wrapper.c        3. http接口适配[适配httpclient]
 │   └── httpclient_wrapper.h
 │
 ├── player                       [播放器目录]

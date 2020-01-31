@@ -29,8 +29,8 @@
 
 //#define ENABLE_SRC
 
-#if !defined(DEFAULT_SRC_QUALITY)
-#define DEFAULT_SRC_QUALITY      8
+#if !defined(CONFIG_SRC_QUALITY)
+#define CONFIG_SRC_QUALITY      8
 #endif
 
 #define ALSA_INPUT_TIMEOUT_MAX  30
@@ -66,7 +66,7 @@ static esp_err_t alsa_stream_open(audio_element_handle_t self)
             cfg.out_channels = info.out_channels;
             cfg.out_rate = info.out_samplerate;
             cfg.bits = info.bits;
-            cfg.quality = DEFAULT_SRC_QUALITY;
+            cfg.quality = CONFIG_SRC_QUALITY;
             if (alsa->resampler && alsa->resampler->open(alsa->resampler, &cfg) == 0) {
                 alsa->resample_opened = true;
             }

@@ -487,7 +487,6 @@ int pcm_get_htimestamp(struct pcm *pcm, unsigned int *avail,
 
 int pcm_mmap_get_hw_ptr(struct pcm* pcm, unsigned int *hw_ptr, struct timespec *tstamp)
 {
-    int frames;
     int rc;
 
     if (pcm == NULL || hw_ptr == NULL || tstamp == NULL)

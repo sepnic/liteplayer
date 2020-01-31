@@ -15,8 +15,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef _ALSASTUB_WRAPPER_H_
-#define _ALSASTUB_WRAPPER_H_
+#ifndef _WAVE_WRAPPER_H_
+#define _WAVE_WRAPPER_H_
 
 #include "audio_stream/alsa_stream.h"
 
@@ -24,11 +24,11 @@
 extern "C" {
 #endif
 
-alsa_handle_t pcmout_wrapper_open(int samplerate, int channels, void *alsa_priv);
+alsa_handle_t wave_wrapper_open(int samplerate, int channels, void *alsa_priv);
 
-int pcmout_wrapper_write(alsa_handle_t handle, char *buffer, int size);
+int wave_wrapper_write(alsa_handle_t handle, char *buffer, int size);
 
-void pcmout_wrapper_close(alsa_handle_t handle);
+void wave_wrapper_close(alsa_handle_t handle);
 
 #ifdef __cplusplus
 }

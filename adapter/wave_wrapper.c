@@ -22,20 +22,20 @@
 #include "esp_adf/esp_log.h"
 #include "esp_adf/audio_common.h"
 #include "audio_extractor/wav_extractor.h"
-#include "pcmout_wrapper.h"
+#include "wave_wrapper.h"
 
 #define TAG "alsawrapper"
 
-struct pcmout_priv {
+struct wave_priv {
     FILE *file;
     int samplerate;
     int channels;
     long offset;
 };
 
-alsa_handle_t pcmout_wrapper_open(int samplerate, int channels, void *alsa_priv)
+alsa_handle_t wave_wrapper_open(int samplerate, int channels, void *alsa_priv)
 {
-    struct pcmout_priv *priv = audio_calloc(1, sizeof(struct pcmout_priv));
+    struct wave_priv *priv = audio_calloc(1, sizeof(struct wave_priv));
     if (priv == NULL)
         return NULL;
 
@@ -65,18 +65,18 @@ alsa_handle_t pcmout_wrapper_open(int samplerate, int channels, void *alsa_priv)
     return priv;
 }
 
-int pcmout_wrapper_write(alsa_handle_t handle, char *buffer, int size)
+int wave_wrapper_write(alsa_handle_t handle, char *buffer, int size)
 {
-    struct pcmout_priv *priv = (struct pcmout_priv *)handle;
+    struct wave_priv *priv = (struct wave_priv *)handle;
     size_t bytes_written = fwrite(buffer, 1, size, priv->file);
     if (bytes_written > 0)
         priv->offset += bytes_written;
     return bytes_written;
 }
 
-void pcmout_wrapper_close(alsa_handle_t handle)
+void wave_wrapper_close(alsa_handle_t handle)
 {
-    struct pcmout_priv *priv = (struct pcmout_priv *)handle;
+    struct wave_priv *priv = (struct wave_priv *)handle;
 
     wav_header_t header;
     memset(&header, 0x0, sizeof(wav_header_t));

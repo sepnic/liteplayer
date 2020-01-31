@@ -371,7 +371,7 @@ int media_info_parse(media_source_info_t *source_info, media_codec_info_t *media
         char temp[256];
         int ret = m3u_get_first_url(source_info, temp, sizeof(temp));
         if (ret == 0) {
-            const char *media_url = audio_strdup(temp);
+            const char *media_url = audio_strdup(&temp[0]);
             if (media_url != NULL) {
                 audio_free(source_info->url);
                 source_info->url = media_url;

@@ -108,8 +108,8 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D__amd64__ -DUSE_DEFAULT_STDLIB")
 # cflag: libspeexdsp: FIXED_POINT/FLOATING_POINT, USE_NEON/USE_SSE
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DFIXED_POINT")
 
-# cflag: resampler: ENABLE_SRC, DEFAULT_SRC_QUALITY
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_SRC -DDEFAULT_SRC_QUALITY=8")
+# cflag: resampler: ENABLE_SRC, CONFIG_SRC_QUALITY
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_SRC -DCONFIG_SRC_QUALITY=8")
 
 # cflags: compile paramters
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -g -Wall -Werror -Wno-error=pointer-to-int-cast -Wno-error=int-to-pointer-cast")

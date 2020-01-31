@@ -293,8 +293,16 @@ static int liteplayer_pipeline_init(liteplayer_handle_t handle)
         alsa_cfg.task_stack               = DEFAULT_SINK_TASK_STACKSIZE;
         alsa_cfg.out_rb_size              = DEFAULT_SINK_RINGBUF_SIZE;
         alsa_cfg.buf_sz                   = DEFAULT_SINK_BUFFER_SIZE;
+    #if defined(CONFIG_SRC_OUT_RATE)
+        alsa_cfg.out_samplerate           = CONFIG_SRC_OUT_RATE;
+    #else
         alsa_cfg.out_samplerate           = DEFAULT_SINK_OUT_RATE;
+    #endif
+    #if defined(CONFIG_SRC_OUT_CHANNELS)
+        alsa_cfg.out_channels             = CONFIG_SRC_OUT_CHANNELS;
+    #else
         alsa_cfg.out_channels             = DEFAULT_SINK_OUT_CHANNELS;
+    #endif
         alsa_cfg.alsa_priv                = handle->alsa_wrapper.alsa_priv;
         alsa_cfg.alsa_open                = handle->alsa_wrapper.open;
         alsa_cfg.alsa_write               = handle->alsa_wrapper.write;

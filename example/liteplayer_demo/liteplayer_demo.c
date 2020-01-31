@@ -25,7 +25,11 @@
 #include "liteplayer_main.h"
 #include "httpclient_wrapper.h"
 #include "fatfs_wrapper.h"
-#include "pcmout_wrapper.h"
+#if defined(ENABLE_TINYALSA)
+#include "tinyalsa_wrapper.h"
+#else
+#include "wave_wrapper.h"
+#endif
 
 #define TAG "liteplayerdemo"
 
@@ -87,12 +91,21 @@ static int liteplayer_test(const char *url)
 
     liteplayer_register_state_listener(player, liteplayer_test_state_listener, (void *)player);
 
+#if defined(ENABLE_TINYALSA)
     alsa_wrapper_t alsa_wrapper = {
         .alsa_priv = NULL,
-        .open = pcmout_wrapper_open,
-        .write = pcmout_wrapper_write,
-        .close = pcmout_wrapper_close,
+        .open = tinyalsa_wrapper_open,
+        .write = tinyalsa_wrapper_write,
+        .close = tinyalsa_wrapper_close,
     };
+#else
+    alsa_wrapper_t alsa_wrapper = {
+        .alsa_priv = NULL,
+        .open = wave_wrapper_open,
+        .write = wave_wrapper_write,
+        .close = wave_wrapper_close,
+    };
+#endif
     liteplayer_register_alsa_wrapper(player, &alsa_wrapper);
 
     fatfs_wrapper_t fatfs_wrapper = {

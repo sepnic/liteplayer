@@ -1,9 +1,13 @@
 cmake_minimum_required(VERSION 2.8)
 
+# Support tinalsa?
+set (ENABLE_TINYALSA "YES")
+
 set(TOP_DIR "${CMAKE_SOURCE_DIR}/../..")
 set(MSGUTILS_DIR "${TOP_DIR}/thirdparty/msgutils")
 set(HTTPCLIENT_DIR "${TOP_DIR}/thirdparty/httpclient")
 set(MBEDTLS_DIR "${TOP_DIR}/thirdparty/mbedtls")
+set(TINYALSA_DIR "${TOP_DIR}/thirdparty/tinyalsa")
 set(LITECORE_DIR "${TOP_DIR}/library")
 set(LITEPLAYER_DIR "${TOP_DIR}/player")
 set(LITEPLAYER_ADAPTER_DIR "${TOP_DIR}/adapter")
@@ -12,6 +16,7 @@ set(LITEPLAYER_ADAPTER_DIR "${TOP_DIR}/adapter")
 include_directories(${MSGUTILS_DIR}/include)
 include_directories(${HTTPCLIENT_DIR})
 include_directories(${MBEDTLS_DIR}/include)
+include_directories(${TINYALSA_DIR}/include)
 include_directories(${LITECORE_DIR}/core/include)
 include_directories(${LITECORE_DIR}/components/include)
 include_directories(${LITEPLAYER_DIR})
@@ -31,11 +36,6 @@ set (MSGUTILS_SRC
     ${MSGUTILS_DIR}/source/portable/os_thread.c
     ${MSGUTILS_DIR}/source/portable/os_time.c
     ${MSGUTILS_DIR}/source/portable/os_timer.c
-)
-
-# source files
-set (HTTPCLIENT_SRC
-    ${HTTPCLIENT_DIR}/httpclient.c
 )
 
 # source files
@@ -113,6 +113,19 @@ set (MBEDTLS_SRC
     ${MBEDTLS_DIR}/library/ssl_ticket.c
     ${MBEDTLS_DIR}/library/ssl_tls.c
 )
+
+# source files
+set (HTTPCLIENT_SRC
+    ${HTTPCLIENT_DIR}/httpclient.c
+)
+
+# source files
+if (ENABLE_TINYALSA)
+set (TINYALSA_SRC
+    ${TINYALSA_DIR}/pcm.c
+    ${TINYALSA_DIR}/mixer.c
+)
+endif()
 
 # source files
 set (LITECORE_SRC
@@ -200,15 +213,27 @@ set (LITEPLAYER_SRC
 )
 
 # source files
+if (ENABLE_TINYALSA)
 set (MAIN_SRC
     ${LITEPLAYER_ADAPTER_DIR}/httpclient_wrapper.c
     ${LITEPLAYER_ADAPTER_DIR}/fatfs_wrapper.c
-    ${LITEPLAYER_ADAPTER_DIR}/pcmout_wrapper.c
+    ${LITEPLAYER_ADAPTER_DIR}/tinyalsa_wrapper.c
     ${CMAKE_SOURCE_DIR}/liteplayer_demo.c
 )
+else()
+set (MAIN_SRC
+    ${LITEPLAYER_ADAPTER_DIR}/httpclient_wrapper.c
+    ${LITEPLAYER_ADAPTER_DIR}/fatfs_wrapper.c
+    ${LITEPLAYER_ADAPTER_DIR}/wave_wrapper.c
+    ${CMAKE_SOURCE_DIR}/liteplayer_demo.c
+)
+endif()
 
 # cflags: OS_LINUX, OS_ANDROID, OS_MACOSX, OS_IOS, OS_FREERTOS
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DOS_MACOSX")
+if (ENABLE_TINYALSA)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_TINYALSA")
+endif()
 
 # ENABLE_MEMORY_LEAK_DETECT
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_MEMORY_LEAK_DETECT")
@@ -225,8 +250,14 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D__amd64__ -DUSE_DEFAULT_STDLIB")
 # cflag: libspeexdsp: FIXED_POINT/FLOATING_POINT, USE_NEON/USE_SSE
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DFIXED_POINT")
 
-# cflag: resampler: ENABLE_SRC, DEFAULT_SRC_QUALITY
-#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_SRC -DDEFAULT_SRC_QUALITY=8")
+# cflag: resampler: ENABLE_SRC, CONFIG_SRC_QUALITY
+if (ENABLE_TINYALSA)
+    # Force SRC to 48KHz/Stereo for tinyalsa device
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_SRC")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCONFIG_SRC_QUALITY=8")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCONFIG_SRC_OUT_RATE=48000")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCONFIG_SRC_OUT_CHANNELS=2")
+endif()
 
 # cflags: compile paramters
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -g -Wall -Werror -Wno-error=pointer-to-int-cast -Wno-error=int-to-pointer-cast")
@@ -237,5 +268,5 @@ set(CMAKE_LDFLAGS "${CMAKE_LDFLAGS} -Wl,-O1 -Wl,--hash-style=gnu -Wl,--as-needed
 #message("CMAKE_C_FLAGS: ${CMAKE_C_FLAGS}")
 
 # liteplayer_demo
-add_executable(liteplayer_demo ${MAIN_SRC} ${MSGUTILS_SRC} ${HTTPCLIENT_SRC} ${MBEDTLS_SRC} ${LITECORE_SRC} ${LITEPLAYER_SRC})
+add_executable(liteplayer_demo ${MAIN_SRC} ${MSGUTILS_SRC} ${HTTPCLIENT_SRC} ${MBEDTLS_SRC} ${TINYALSA_SRC} ${LITECORE_SRC} ${LITEPLAYER_SRC})
 target_link_libraries(liteplayer_demo pthread m)

@@ -30,14 +30,14 @@
 //#define ENABLE_SRC
 
 #if defined(ENABLE_SRC)
-#if !defined(DEFAULT_SRC_OUT_CHANNELS)
-#define DEFAULT_SRC_OUT_CHANNELS 2
+#if !defined(CONFIG_SRC_OUT_CHANNELS)
+#define CONFIG_SRC_OUT_CHANNELS 2
 #endif
-#if !defined(DEFAULT_SRC_OUT_RATE)
-#define DEFAULT_SRC_OUT_RATE     44100
+#if !defined(CONFIG_SRC_OUT_RATE)
+#define CONFIG_SRC_OUT_RATE     44100
 #endif
-#if !defined(DEFAULT_SRC_QUALITY)
-#define DEFAULT_SRC_QUALITY      8
+#if !defined(CONFIG_SRC_QUALITY)
+#define CONFIG_SRC_QUALITY      8
 #endif
 #endif
 
@@ -232,14 +232,14 @@ static int fatfs_stream_write(audio_element_handle_t self, char *buffer, int len
 
 #if defined(ENABLE_SRC)
     if (!fatfs->resampler_inited) {
-        if (info.in_samplerate != DEFAULT_SRC_OUT_RATE || info.in_channels != DEFAULT_SRC_OUT_CHANNELS) {
+        if (info.in_samplerate != CONFIG_SRC_OUT_RATE || info.in_channels != CONFIG_SRC_OUT_CHANNELS) {
             resample_cfg_t cfg;
             cfg.in_channels = info.in_channels;
             cfg.in_rate = info.in_samplerate;
-            cfg.out_channels = DEFAULT_SRC_OUT_CHANNELS;
-            cfg.out_rate = DEFAULT_SRC_OUT_RATE;
+            cfg.out_channels = CONFIG_SRC_OUT_CHANNELS;
+            cfg.out_rate = CONFIG_SRC_OUT_RATE;
             cfg.bits = info.bits;
-            cfg.quality = DEFAULT_SRC_QUALITY;
+            cfg.quality = CONFIG_SRC_QUALITY;
             if (fatfs->resampler && fatfs->resampler->open(fatfs->resampler, &cfg) == 0)
                 fatfs->resample_opened = true;
         }
@@ -250,8 +250,8 @@ static int fatfs_stream_write(audio_element_handle_t self, char *buffer, int len
         if (ret == 0) {
             buffer = (char *)fatfs->resampler->out_buf;
             len = fatfs->resampler->out_bytes;
-            info.out_channels = DEFAULT_SRC_OUT_CHANNELS;
-            info.out_samplerate = DEFAULT_SRC_OUT_RATE;
+            info.out_channels = CONFIG_SRC_OUT_CHANNELS;
+            info.out_samplerate = CONFIG_SRC_OUT_RATE;
         }
     }
 #endif
@@ -409,8 +409,8 @@ audio_element_handle_t fatfs_stream_init(fatfs_stream_cfg_t *config)
 
         audio_element_info_t info = {0};
         audio_element_getinfo(el, &info);
-        info.out_samplerate = DEFAULT_SRC_OUT_RATE;
-        info.out_channels = DEFAULT_SRC_OUT_CHANNELS;
+        info.out_samplerate = CONFIG_SRC_OUT_RATE;
+        info.out_channels = CONFIG_SRC_OUT_CHANNELS;
         audio_element_setinfo(el, &info);
     }
 #endif
