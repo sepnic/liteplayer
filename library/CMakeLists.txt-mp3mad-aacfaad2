@@ -74,7 +74,7 @@ set (LITECORE_SRC
     "${CMAKE_SOURCE_DIR}/components/audio_resampler/libspeexdsp/resample.c"
     "${CMAKE_SOURCE_DIR}/components/audio_resampler/audio_resampler.c"
     "${CMAKE_SOURCE_DIR}/components/audio_stream/fatfs_stream.c"
-    "${CMAKE_SOURCE_DIR}/components/audio_stream/alsa_stream.c"
+    "${CMAKE_SOURCE_DIR}/components/audio_stream/sink_stream.c"
     "${CMAKE_SOURCE_DIR}/components/audio_stream/http_stream.c"
 )
 

@@ -24,7 +24,7 @@
 #include "tinyalsa/asoundlib.h"
 #include "tinyalsa_wrapper.h"
 
-#define TAG "alsawrapper"
+#define TAG "sinkwrapper"
 
 #define DEFAULT_SND_CARD   0
 #define DEFAULT_SND_DEVICE 0
@@ -76,7 +76,7 @@ static bool tinyalsa_can_play(unsigned int card, unsigned int device,
     return !!can_play;
 }
 
-alsa_handle_t tinyalsa_wrapper_open(int samplerate, int channels, void *alsa_priv)
+sink_handle_t tinyalsa_wrapper_open(int samplerate, int channels, void *sink_priv)
 {
     struct pcm *pcm = NULL;
     struct pcm_config config;
@@ -109,7 +109,7 @@ alsa_handle_t tinyalsa_wrapper_open(int samplerate, int channels, void *alsa_pri
     return pcm;
 }
 
-int tinyalsa_wrapper_write(alsa_handle_t handle, char *buffer, int size)
+int tinyalsa_wrapper_write(sink_handle_t handle, char *buffer, int size)
 {
     struct pcm *pcm = (struct pcm *)handle;
     if (pcm_write(pcm, buffer, size)) {
@@ -119,7 +119,7 @@ int tinyalsa_wrapper_write(alsa_handle_t handle, char *buffer, int size)
     return size;
 }
 
-void tinyalsa_wrapper_close(alsa_handle_t handle)
+void tinyalsa_wrapper_close(sink_handle_t handle)
 {
     struct pcm *pcm = (struct pcm *)handle;
     pcm_close(pcm);

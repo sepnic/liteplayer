@@ -15,8 +15,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef _ALSA_STREAM_WRITER_H_
-#define _ALSA_STREAM_WRITER_H_
+#ifndef _SINK_STREAM_H_
+#define _SINK_STREAM_H_
 
 #include "msgutils/os_thread.h"
 #include "esp_adf/audio_element.h"
@@ -26,10 +26,10 @@
 extern "C" {
 #endif
 
-typedef void *alsa_handle_t;
+typedef void *sink_handle_t;
 
 /**
- * @brief      ALSA Stream configurations
+ * @brief      Sink stream configurations
  *             Default value will be used if any entry is zero
  */
 typedef struct {
@@ -39,41 +39,41 @@ typedef struct {
     int                 out_rb_size;    /*!< Size of output ringbuffer */
     int                 buf_sz;         /*!< Audio Element Buffer size */
 
-    void           *alsa_priv;
+    void           *sink_priv;
     int             out_samplerate;
     int             out_channels;
-    alsa_handle_t (*alsa_open)(int samplerate, int channels, void *alsa_priv);
-    int           (*alsa_write)(alsa_handle_t handle, char *buffer, int size);
-    void          (*alsa_close)(alsa_handle_t handle);
-} alsa_stream_cfg_t;
+    sink_handle_t (*sink_open)(int samplerate, int channels, void *sink_priv);
+    int           (*sink_write)(sink_handle_t handle, char *buffer, int size);
+    void          (*sink_close)(sink_handle_t handle);
+} sink_stream_cfg_t;
 
-#define ALSA_STREAM_TASK_PRIO            (OS_THREAD_PRIO_HARD_REALTIME)
-#define ALSA_STREAM_TASK_STACK           (4 * 1024)
-#define ALSA_STREAM_RINGBUFFER_SIZE      (8 * 1024)
-#define ALSA_STREAM_BUF_SIZE             (4 * 1024)
-#define ALSA_STREAM_SAMPLE_RATE          (44100)
-#define ALSA_STREAM_CHANNELS             (2)
+#define SINK_STREAM_TASK_PRIO            (OS_THREAD_PRIO_HARD_REALTIME)
+#define SINK_STREAM_TASK_STACK           (4 * 1024)
+#define SINK_STREAM_RINGBUFFER_SIZE      (8 * 1024)
+#define SINK_STREAM_BUF_SIZE             (4 * 1024)
+#define SINK_STREAM_SAMPLE_RATE          (44100)
+#define SINK_STREAM_CHANNELS             (2)
 
-#define ALSA_STREAM_CFG_DEFAULT() {                 \
+#define SINK_STREAM_CFG_DEFAULT() {                 \
     .type           = AUDIO_STREAM_WRITER,          \
-    .task_prio      = ALSA_STREAM_TASK_PRIO,        \
-    .task_stack     = ALSA_STREAM_TASK_STACK,       \
-    .out_rb_size    = ALSA_STREAM_RINGBUFFER_SIZE,  \
-    .buf_sz         = ALSA_STREAM_BUF_SIZE,         \
-    .alsa_priv      = NULL,                         \
-    .out_samplerate = ALSA_STREAM_SAMPLE_RATE,      \
-    .out_channels   = ALSA_STREAM_CHANNELS,         \
+    .task_prio      = SINK_STREAM_TASK_PRIO,        \
+    .task_stack     = SINK_STREAM_TASK_STACK,       \
+    .out_rb_size    = SINK_STREAM_RINGBUFFER_SIZE,  \
+    .buf_sz         = SINK_STREAM_BUF_SIZE,         \
+    .sink_priv      = NULL,                         \
+    .out_samplerate = SINK_STREAM_SAMPLE_RATE,      \
+    .out_channels   = SINK_STREAM_CHANNELS,         \
 }
 
 /**
- * @brief      Create a handle to an Audio Element to stream data from ALSA to another Element
- *             or get data from other elements sent to ALSA, depending on the configuration of stream type
- *             is AUDIO_STREAM_READER or AUDIO_STREAM_WRITER.
+ * @brief      Create a handle to an Audio Element to stream data from sink to another Element
+ *             or get data from other elements sent to sink, depending on the configuration of stream type
+ *             is AUDIO_STREAM_WRITER.
  * @param      config  The configuration
  *
  * @return     The Audio Element handle
  */
-audio_element_handle_t alsa_stream_init(alsa_stream_cfg_t *config);
+audio_element_handle_t sink_stream_init(sink_stream_cfg_t *config);
 
 #ifdef __cplusplus
 }

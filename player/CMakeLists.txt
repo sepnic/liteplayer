@@ -84,7 +84,7 @@ set (LITECORE_SRC
     "${LITECORE_DIR}/components/audio_resampler/libspeexdsp/resample.c"
     "${LITECORE_DIR}/components/audio_resampler/audio_resampler.c"
     "${LITECORE_DIR}/components/audio_stream/fatfs_stream.c"
-    "${LITECORE_DIR}/components/audio_stream/alsa_stream.c"
+    "${LITECORE_DIR}/components/audio_stream/sink_stream.c"
     "${LITECORE_DIR}/components/audio_stream/http_stream.c"
 )
 

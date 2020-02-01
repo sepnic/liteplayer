@@ -22,7 +22,7 @@
 #include "esp_adf/audio_common.h"
 #include "audio_stream/http_stream.h"
 #include "audio_stream/fatfs_stream.h"
-#include "audio_stream/alsa_stream.h"
+#include "audio_stream/sink_stream.h"
 #include "audio_extractor/mp3_extractor.h"
 #include "audio_extractor/aac_extractor.h"
 #include "audio_extractor/m4a_extractor.h"

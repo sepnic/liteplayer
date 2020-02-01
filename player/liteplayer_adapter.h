@@ -20,7 +20,7 @@
 
 #include "audio_stream/http_stream.h"
 #include "audio_stream/fatfs_stream.h"
-#include "audio_stream/alsa_stream.h"
+#include "audio_stream/sink_stream.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,12 +45,12 @@ typedef struct http_wrapper {
     void           (*close)(http_handle_t handle);
 } http_wrapper_t;
 
-typedef struct alsa_wrapper {
-    void            *alsa_priv;
-    alsa_handle_t  (*open)(int samplerate, int channels, void *alsa_priv);
-    int            (*write)(alsa_handle_t handle, char *buffer, int size);
-    void           (*close)(alsa_handle_t handle);
-} alsa_wrapper_t;
+typedef struct sink_wrapper {
+    void            *sink_priv;
+    sink_handle_t  (*open)(int samplerate, int channels, void *sink_priv);
+    int            (*write)(sink_handle_t handle, char *buffer, int size);
+    void           (*close)(sink_handle_t handle);
+} sink_wrapper_t;
 
 #ifdef __cplusplus
 }

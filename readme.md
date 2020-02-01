@@ -121,7 +121,7 @@
 │   │   │   ├── audio_resampler.c
 │   │   │   └── libspeexdsp            speexdsp开源库，仅使用resample模块
 │   │   ├── audio_stream            [source/sink组件]
-│   │   │   ├── alsa_stream.c          1. sink输出组件，封装为一个audio element，里面可根据需要是否使用SRC
+│   │   │   ├── sink_stream.c          1. sink输出组件，封装为一个audio element，里面可根据需要是否使用SRC
 │   │   │   ├── fatfs_stream.c         2. file读写组件[播放器没有使用]
 │   │   │   └── http_stream.c          3. http读写组件[播放器没有使用]
 │   │   └── include
@@ -138,7 +138,7 @@
 │   │       ├── audio_resampler
 │   │       │   └── audio_resampler.h
 │   │       └── audio_stream
-│   │           ├── alsa_stream.h
+│   │           ├── sink_stream.h
 │   │           ├── fatfs_stream.h
 │   │           └── http_stream.h
 │   └── core                       [ESP开源音频框架]

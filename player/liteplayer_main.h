@@ -46,7 +46,7 @@ int liteplayer_register_fatfs_wrapper(liteplayer_handle_t handle, fatfs_wrapper_
 
 int liteplayer_register_http_wrapper(liteplayer_handle_t handle, http_wrapper_t *http_wrapper);
 
-int liteplayer_register_alsa_wrapper(liteplayer_handle_t handle, alsa_wrapper_t *alsa_wrapper);
+int liteplayer_register_sink_wrapper(liteplayer_handle_t handle, sink_wrapper_t *sink_wrapper);
 
 int liteplayer_register_state_listener(liteplayer_handle_t handle, liteplayer_state_cb listener, void *listener_priv);
 

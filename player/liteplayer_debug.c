@@ -173,7 +173,7 @@ socket_upload_handle_t socket_upload_start(const char *server_addr, int server_p
     struct os_threadattr attr = {
         .name = "ael_debug",
         .priority = DEFAULT_SOCKET_UPLOAD_TASK_PRIO,
-        .stacksize = DEFAULT_SOCKET_UPLOAD_TASK_STACK,
+        .stacksize = DEFAULT_SOCKET_UPLOAD_TASK_STACKSIZE,
         .joinable = true,
     };
     priv->tid = OS_THREAD_CREATE(&attr, socket_upload_thread, priv);

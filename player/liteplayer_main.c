@@ -32,7 +32,7 @@
 #include "audio_decoder/wav_decoder.h"
 #include "audio_stream/http_stream.h"
 #include "audio_stream/fatfs_stream.h"
-#include "audio_stream/alsa_stream.h"
+#include "audio_stream/sink_stream.h"
 
 #include "liteplayer_adapter.h"
 #include "liteplayer_config.h"
@@ -56,7 +56,7 @@ struct liteplayer {
 
     fatfs_wrapper_t         fatfs_wrapper;
     http_wrapper_t          http_wrapper;
-    alsa_wrapper_t          alsa_wrapper;
+    sink_wrapper_t          sink_wrapper;
 
     audio_pipeline_handle_t pipeline;
     audio_element_handle_t  el_source;
@@ -287,27 +287,27 @@ static int liteplayer_pipeline_init(liteplayer_handle_t handle)
 
     {
         ESP_LOGI(TAG, "[2.0] Create sink element");
-        alsa_stream_cfg_t alsa_cfg = ALSA_STREAM_CFG_DEFAULT();
-        alsa_cfg.type                     = AUDIO_STREAM_WRITER;
-        alsa_cfg.task_prio                = DEFAULT_SINK_TASK_PRIO;
-        alsa_cfg.task_stack               = DEFAULT_SINK_TASK_STACKSIZE;
-        alsa_cfg.out_rb_size              = DEFAULT_SINK_RINGBUF_SIZE;
-        alsa_cfg.buf_sz                   = DEFAULT_SINK_BUFFER_SIZE;
+        sink_stream_cfg_t sink_cfg = SINK_STREAM_CFG_DEFAULT();
+        sink_cfg.type                     = AUDIO_STREAM_WRITER;
+        sink_cfg.task_prio                = DEFAULT_SINK_TASK_PRIO;
+        sink_cfg.task_stack               = DEFAULT_SINK_TASK_STACKSIZE;
+        sink_cfg.out_rb_size              = DEFAULT_SINK_RINGBUF_SIZE;
+        sink_cfg.buf_sz                   = DEFAULT_SINK_BUFFER_SIZE;
     #if defined(CONFIG_SRC_OUT_RATE)
-        alsa_cfg.out_samplerate           = CONFIG_SRC_OUT_RATE;
+        sink_cfg.out_samplerate           = CONFIG_SRC_OUT_RATE;
     #else
-        alsa_cfg.out_samplerate           = DEFAULT_SINK_OUT_RATE;
+        sink_cfg.out_samplerate           = DEFAULT_SINK_OUT_RATE;
     #endif
     #if defined(CONFIG_SRC_OUT_CHANNELS)
-        alsa_cfg.out_channels             = CONFIG_SRC_OUT_CHANNELS;
+        sink_cfg.out_channels             = CONFIG_SRC_OUT_CHANNELS;
     #else
-        alsa_cfg.out_channels             = DEFAULT_SINK_OUT_CHANNELS;
+        sink_cfg.out_channels             = DEFAULT_SINK_OUT_CHANNELS;
     #endif
-        alsa_cfg.alsa_priv                = handle->alsa_wrapper.alsa_priv;
-        alsa_cfg.alsa_open                = handle->alsa_wrapper.open;
-        alsa_cfg.alsa_write               = handle->alsa_wrapper.write;
-        alsa_cfg.alsa_close               = handle->alsa_wrapper.close;
-        handle->el_sink = alsa_stream_init(&alsa_cfg);
+        sink_cfg.sink_priv                = handle->sink_wrapper.sink_priv;
+        sink_cfg.sink_open                = handle->sink_wrapper.open;
+        sink_cfg.sink_write               = handle->sink_wrapper.write;
+        sink_cfg.sink_close               = handle->sink_wrapper.close;
+        handle->el_sink = sink_stream_init(&sink_cfg);
         AUDIO_MEM_CHECK(TAG, handle->el_sink, goto init_failed);
 
         audio_element_info_t info;
@@ -449,11 +449,11 @@ int liteplayer_register_http_wrapper(liteplayer_handle_t handle, http_wrapper_t 
     return ESP_OK;
 }
 
-int liteplayer_register_alsa_wrapper(liteplayer_handle_t handle, alsa_wrapper_t *alsa_wrapper)
+int liteplayer_register_sink_wrapper(liteplayer_handle_t handle, sink_wrapper_t *sink_wrapper)
 {
-    if (handle == NULL || alsa_wrapper == NULL)
+    if (handle == NULL || sink_wrapper == NULL)
         return ESP_FAIL;
-    memcpy(&handle->alsa_wrapper, alsa_wrapper, sizeof(alsa_wrapper_t));
+    memcpy(&handle->sink_wrapper, sink_wrapper, sizeof(sink_wrapper_t));
     return ESP_OK;
 }
 

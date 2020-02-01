@@ -18,17 +18,17 @@
 #ifndef _WAVE_WRAPPER_H_
 #define _WAVE_WRAPPER_H_
 
-#include "audio_stream/alsa_stream.h"
+#include "audio_stream/sink_stream.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-alsa_handle_t wave_wrapper_open(int samplerate, int channels, void *alsa_priv);
+sink_handle_t wave_wrapper_open(int samplerate, int channels, void *sink_priv);
 
-int wave_wrapper_write(alsa_handle_t handle, char *buffer, int size);
+int wave_wrapper_write(sink_handle_t handle, char *buffer, int size);
 
-void wave_wrapper_close(alsa_handle_t handle);
+void wave_wrapper_close(sink_handle_t handle);
 
 #ifdef __cplusplus
 }

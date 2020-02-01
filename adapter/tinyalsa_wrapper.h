@@ -18,17 +18,17 @@
 #ifndef _TINYALSA_WRAPPER_H_
 #define _TINYALSA_WRAPPER_H_
 
-#include "audio_stream/alsa_stream.h"
+#include "audio_stream/sink_stream.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-alsa_handle_t tinyalsa_wrapper_open(int samplerate, int channels, void *alsa_priv);
+sink_handle_t tinyalsa_wrapper_open(int samplerate, int channels, void *sink_priv);
 
-int tinyalsa_wrapper_write(alsa_handle_t handle, char *buffer, int size);
+int tinyalsa_wrapper_write(sink_handle_t handle, char *buffer, int size);
 
-void tinyalsa_wrapper_close(alsa_handle_t handle);
+void tinyalsa_wrapper_close(sink_handle_t handle);
 
 #ifdef __cplusplus
 }

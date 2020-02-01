@@ -23,9 +23,9 @@
 #include "esp_adf/audio_common.h"
 #include "esp_adf/audio_element.h"
 #include "audio_resampler/audio_resampler.h"
-#include "audio_stream/alsa_stream.h"
+#include "audio_stream/sink_stream.h"
 
-#define TAG "ALSA_STREAM"
+#define TAG "SINK_STREAM"
 
 //#define ENABLE_SRC
 
@@ -33,27 +33,27 @@
 #define CONFIG_SRC_QUALITY      8
 #endif
 
-#define ALSA_INPUT_TIMEOUT_MAX  30
+#define SINK_INPUT_TIMEOUT_MAX  50
 
-typedef struct alsa_stream {
-    alsa_stream_cfg_t   config;
-    alsa_handle_t       out;
+typedef struct sink_stream {
+    sink_stream_cfg_t   config;
+    sink_handle_t       out;
 #if defined(ENABLE_SRC)
     resample_converter_handle_t resampler;
     bool resampler_inited;
     bool resample_opened;
 #endif
-} alsa_stream_t;
+} sink_stream_t;
 
-static esp_err_t alsa_stream_open(audio_element_handle_t self)
+static esp_err_t sink_stream_open(audio_element_handle_t self)
 {
-    alsa_stream_t *alsa = (alsa_stream_t *)audio_element_getdata(self);
-    alsa_stream_cfg_t *config = &alsa->config;
+    sink_stream_t *sink = (sink_stream_t *)audio_element_getdata(self);
+    sink_stream_cfg_t *config = &sink->config;
 
-    ESP_LOGV(TAG, "Open alsa stream %s", config->type == AUDIO_STREAM_WRITER ? "out" : "in");
+    ESP_LOGV(TAG, "Open sink stream");
 
 #if defined(ENABLE_SRC)
-    if (!alsa->resampler_inited) {
+    if (!sink->resampler_inited) {
         audio_element_info_t info = {0};
         audio_element_getinfo(self, &info);
         ESP_LOGI(TAG, "Input: channels=%d, rate=%d, output:channels=%d, rate=%d",
@@ -67,19 +67,19 @@ static esp_err_t alsa_stream_open(audio_element_handle_t self)
             cfg.out_rate = info.out_samplerate;
             cfg.bits = info.bits;
             cfg.quality = CONFIG_SRC_QUALITY;
-            if (alsa->resampler && alsa->resampler->open(alsa->resampler, &cfg) == 0) {
-                alsa->resample_opened = true;
+            if (sink->resampler && sink->resampler->open(sink->resampler, &cfg) == 0) {
+                sink->resample_opened = true;
             }
             else {
                 ESP_LOGE(TAG, "Failed to open resampler");
                 return AEL_IO_FAIL;
             }
         }
-        alsa->resampler_inited = true;
+        sink->resampler_inited = true;
     }
 #endif
 
-    if (config->type == AUDIO_STREAM_WRITER && alsa->out == NULL) {
+    if (sink->out == NULL) {
         audio_element_info_t info = {0};
         audio_element_getinfo(self, &info);
 #if defined(ENABLE_SRC)
@@ -92,11 +92,11 @@ static esp_err_t alsa_stream_open(audio_element_handle_t self)
         info.out_channels = info.in_channels;
         audio_element_setinfo(self, &info);
 #endif
-        ESP_LOGI(TAG, "Open alsa stream out: rate:%d, channels:%d", config->out_samplerate, config->out_channels);
-        if (config->alsa_open)
-            alsa->out = config->alsa_open(config->out_samplerate, config->out_channels, config->alsa_priv);
-        if (alsa->out == NULL) {
-            ESP_LOGE(TAG, "Failed to open alsa out");
+        ESP_LOGI(TAG, "Open sink stream out: rate:%d, channels:%d", config->out_samplerate, config->out_channels);
+        if (config->sink_open)
+            sink->out = config->sink_open(config->out_samplerate, config->out_channels, config->sink_priv);
+        if (sink->out == NULL) {
+            ESP_LOGE(TAG, "Failed to open sink out");
             return AEL_IO_FAIL;
         }
     }
@@ -104,22 +104,16 @@ static esp_err_t alsa_stream_open(audio_element_handle_t self)
     return ESP_OK;
 }
 
-static int alsa_stream_read(audio_element_handle_t self, char *buffer, int len, int timeout_ms, void *context)
+static int sink_stream_write(audio_element_handle_t self, char *buffer, int len, int timeout_ms, void *context)
 {
-    // TODO
-    return ESP_FAIL;
-}
-
-static int alsa_stream_write(audio_element_handle_t self, char *buffer, int len, int timeout_ms, void *context)
-{
-    alsa_stream_t *alsa = (alsa_stream_t *)audio_element_getdata(self);
-    alsa_stream_cfg_t *config = &alsa->config;
+    sink_stream_t *sink = (sink_stream_t *)audio_element_getdata(self);
+    sink_stream_cfg_t *config = &sink->config;
     int bytes_written = 0, bytes_wanted = 0, status = -1;
 
     do {
         bytes_wanted = len - bytes_written;
-        if (config->alsa_write && alsa->out != NULL)
-            status = config->alsa_write(alsa->out, buffer, bytes_wanted);
+        if (config->sink_write && sink->out != NULL)
+            status = config->sink_write(sink->out, buffer, bytes_wanted);
         if (status < 0) {
             ESP_LOGE(TAG, "Failed to write pcm, ret:%d", status);
             break;
@@ -140,18 +134,18 @@ static int alsa_stream_write(audio_element_handle_t self, char *buffer, int len,
     return bytes_written;
 }
 
-static int alsa_stream_process(audio_element_handle_t self, char *in_buffer, int in_len)
+static int sink_stream_process(audio_element_handle_t self, char *in_buffer, int in_len)
 {
     int r_size = audio_element_input(self, in_buffer, in_len);
     int w_size = 0;
     if (r_size > 0) {
 #if defined(ENABLE_SRC)
-        alsa_stream_t *alsa = (alsa_stream_t *)audio_element_getdata(self);
-        if (alsa->resample_opened && alsa->resampler) {
-            int ret = alsa->resampler->process(alsa->resampler, (const short *)in_buffer, r_size);
+        sink_stream_t *sink = (sink_stream_t *)audio_element_getdata(self);
+        if (sink->resample_opened && sink->resampler) {
+            int ret = sink->resampler->process(sink->resampler, (const short *)in_buffer, r_size);
             if (ret == 0) {
-                in_buffer = (char *)alsa->resampler->out_buf;
-                r_size = alsa->resampler->out_bytes;
+                in_buffer = (char *)sink->resampler->out_buf;
+                r_size = sink->resampler->out_bytes;
             }
             else {
                 ESP_LOGE(TAG, "Failed to process resampler");
@@ -166,26 +160,24 @@ static int alsa_stream_process(audio_element_handle_t self, char *in_buffer, int
     return w_size;
 }
 
-static esp_err_t alsa_stream_close(audio_element_handle_t self)
+static esp_err_t sink_stream_close(audio_element_handle_t self)
 {
-    alsa_stream_t *alsa = (alsa_stream_t *)audio_element_getdata(self);
-    alsa_stream_cfg_t *config = &alsa->config;
+    sink_stream_t *sink = (sink_stream_t *)audio_element_getdata(self);
+    sink_stream_cfg_t *config = &sink->config;
 
-    ESP_LOGV(TAG, "Close alsa stream %s", config->type == AUDIO_STREAM_WRITER ? "out" : "in");
+    ESP_LOGV(TAG, "Close sink stream");
 
 #if defined(ENABLE_SRC)
-    if (alsa->resample_opened && alsa->resampler) {
-        alsa->resampler->close(alsa->resampler);
-        alsa->resampler_inited = false;
-        alsa->resample_opened = false;
+    if (sink->resample_opened && sink->resampler) {
+        sink->resampler->close(sink->resampler);
+        sink->resampler_inited = false;
+        sink->resample_opened = false;
     }
 #endif
 
-    if (config->type == AUDIO_STREAM_WRITER) {
-        if (config->alsa_close && alsa->out != NULL) {
-            config->alsa_close(alsa->out);
-            alsa->out = NULL;
-        }
+    if (config->sink_close && sink->out != NULL) {
+        config->sink_close(sink->out);
+        sink->out = NULL;
     }
 
     if (audio_element_get_state(self) != AEL_STATE_PAUSED) {
@@ -197,70 +189,67 @@ static esp_err_t alsa_stream_close(audio_element_handle_t self)
     return ESP_OK;
 }
 
-static esp_err_t alsa_stream_destroy(audio_element_handle_t self)
+static esp_err_t sink_stream_destroy(audio_element_handle_t self)
 {
-    alsa_stream_t *alsa = (alsa_stream_t *)audio_element_getdata(self);
-    alsa_stream_cfg_t *config = &alsa->config;
+    sink_stream_t *sink = (sink_stream_t *)audio_element_getdata(self);
+    sink_stream_cfg_t *config = &sink->config;
 
-    ESP_LOGV(TAG, "Destroy alsa stream %s", config->type == AUDIO_STREAM_WRITER ? "out" : "in");
+    ESP_LOGV(TAG, "Destroy sink stream");
 
 #if defined(ENABLE_SRC)
-    if (alsa->resampler)
-        alsa->resampler->destroy(alsa->resampler);
+    if (sink->resampler)
+        sink->resampler->destroy(sink->resampler);
 #endif
 
-    if (config->type == AUDIO_STREAM_WRITER) {
-        if (config->alsa_close && alsa->out != NULL) {
-            config->alsa_close(alsa->out);
-            alsa->out = NULL;
-        }
+    if (config->sink_close && sink->out != NULL) {
+        config->sink_close(sink->out);
+        sink->out = NULL;
     }
 
-    audio_free(alsa);
+    audio_free(sink);
     return ESP_OK;
 }
 
-audio_element_handle_t alsa_stream_init(alsa_stream_cfg_t *config)
+audio_element_handle_t sink_stream_init(sink_stream_cfg_t *config)
 {
-    ESP_LOGV(TAG, "Init alsa stream %s", config->type == AUDIO_STREAM_WRITER ? "out" : "in");
+    ESP_LOGV(TAG, "Init sink stream");
 
     audio_element_handle_t el;
     audio_element_cfg_t cfg = DEFAULT_AUDIO_ELEMENT_CONFIG();
-    cfg.open = alsa_stream_open;
-    cfg.close = alsa_stream_close;
-    cfg.process = alsa_stream_process;
-    cfg.destroy = alsa_stream_destroy;
+    cfg.open = sink_stream_open;
+    cfg.close = sink_stream_close;
+    cfg.process = sink_stream_process;
+    cfg.destroy = sink_stream_destroy;
     cfg.task_stack = config->task_stack;
     cfg.task_prio = config->task_prio;
     cfg.out_rb_size = config->out_rb_size;
     cfg.buffer_len = config->buf_sz;
-    cfg.tag = "alsa";
+    cfg.tag = "sink";
 
     if (config->type == AUDIO_STREAM_WRITER) {
-        cfg.write = alsa_stream_write;
+        cfg.write = sink_stream_write;
     }
     else if (config->type == AUDIO_STREAM_READER) {
-        cfg.read = alsa_stream_read;
-        // TODO
+        ESP_LOGE(TAG, "Unvalid stream type (AUDIO_STREAM_READER) for sink");
         return NULL;
     }
 
-    alsa_stream_t *alsa = audio_calloc(1, sizeof(alsa_stream_t));
-    AUDIO_MEM_CHECK(TAG, alsa, return NULL);
-    memcpy(&alsa->config, config, sizeof(alsa_stream_cfg_t));
+    sink_stream_t *sink = audio_calloc(1, sizeof(sink_stream_t));
+    AUDIO_MEM_CHECK(TAG, sink, return NULL);
+    memcpy(&sink->config, config, sizeof(sink_stream_cfg_t));
 
     el = audio_element_init(&cfg);
     if (el == NULL) {
-        ESP_LOGE(TAG, "Failed to init alsa audio element");
-        audio_free(alsa);
+        ESP_LOGE(TAG, "Failed to init sink audio element");
+        audio_free(sink);
         return NULL;
     }
-    audio_element_setdata(el, alsa);
+    audio_element_setdata(el, sink);
 
 #if defined(ENABLE_SRC)
-    alsa->resampler = audio_resampler_init();
-    alsa->resampler_inited = false;
-    alsa->resample_opened = false;
+    sink->resampler = audio_resampler_init();
+    sink->resampler_inited = false;
+    sink->resample_opened = false;
 
     audio_element_info_t info = {0};
     audio_element_getinfo(el, &info);
@@ -269,6 +258,6 @@ audio_element_handle_t alsa_stream_init(alsa_stream_cfg_t *config)
     audio_element_setinfo(el, &info);
 #endif
 
-    audio_element_set_input_timeout(el, ALSA_INPUT_TIMEOUT_MAX);
+    audio_element_set_input_timeout(el, SINK_INPUT_TIMEOUT_MAX);
     return el;
 }

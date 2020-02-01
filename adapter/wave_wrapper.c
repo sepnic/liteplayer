@@ -24,7 +24,7 @@
 #include "audio_extractor/wav_extractor.h"
 #include "wave_wrapper.h"
 
-#define TAG "alsawrapper"
+#define TAG "sinkwrapper"
 
 struct wave_priv {
     FILE *file;
@@ -33,7 +33,7 @@ struct wave_priv {
     long offset;
 };
 
-alsa_handle_t wave_wrapper_open(int samplerate, int channels, void *alsa_priv)
+sink_handle_t wave_wrapper_open(int samplerate, int channels, void *sink_priv)
 {
     struct wave_priv *priv = audio_calloc(1, sizeof(struct wave_priv));
     if (priv == NULL)
@@ -65,7 +65,7 @@ alsa_handle_t wave_wrapper_open(int samplerate, int channels, void *alsa_priv)
     return priv;
 }
 
-int wave_wrapper_write(alsa_handle_t handle, char *buffer, int size)
+int wave_wrapper_write(sink_handle_t handle, char *buffer, int size)
 {
     struct wave_priv *priv = (struct wave_priv *)handle;
     size_t bytes_written = fwrite(buffer, 1, size, priv->file);
@@ -74,7 +74,7 @@ int wave_wrapper_write(alsa_handle_t handle, char *buffer, int size)
     return bytes_written;
 }
 
-void wave_wrapper_close(alsa_handle_t handle)
+void wave_wrapper_close(sink_handle_t handle)
 {
     struct wave_priv *priv = (struct wave_priv *)handle;
 
