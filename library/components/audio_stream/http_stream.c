@@ -92,12 +92,6 @@ static int http_stream_read(audio_element_handle_t self, char *buffer, int len, 
     return rlen;
 }
 
-static int http_stream_write(audio_element_handle_t self, char *buffer, int len, int timeout_ms, void *context)
-{
-    // todo
-    return 0;
-}
-
 static int http_stream_process(audio_element_handle_t self, char *in_buffer, int in_len)
 {
     int w_size = 0;
@@ -168,11 +162,7 @@ audio_element_handle_t http_stream_init(http_stream_cfg_t *config)
     cfg.out_rb_size = config->out_rb_size;
     cfg.buffer_len = config->buf_sz;
     cfg.tag = "http";
-
-    if (config->type == AUDIO_STREAM_WRITER)
-        cfg.write = http_stream_write;
-    else if (config->type == AUDIO_STREAM_READER)
-        cfg.read = http_stream_read;
+    cfg.read = http_stream_read;
 
     http_stream_t *http = audio_calloc(1, sizeof(http_stream_t));
     AUDIO_MEM_CHECK(TAG, http, return NULL);

@@ -225,14 +225,7 @@ audio_element_handle_t sink_stream_init(sink_stream_cfg_t *config)
     cfg.out_rb_size = config->out_rb_size;
     cfg.buffer_len = config->buf_sz;
     cfg.tag = "sink";
-
-    if (config->type == AUDIO_STREAM_WRITER) {
-        cfg.write = sink_stream_write;
-    }
-    else if (config->type == AUDIO_STREAM_READER) {
-        ESP_LOGE(TAG, "Unvalid stream type (AUDIO_STREAM_READER) for sink");
-        return NULL;
-    }
+    cfg.write = sink_stream_write;
 
     sink_stream_t *sink = audio_calloc(1, sizeof(sink_stream_t));
     AUDIO_MEM_CHECK(TAG, sink, return NULL);

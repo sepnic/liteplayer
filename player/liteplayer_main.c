@@ -288,7 +288,6 @@ static int liteplayer_pipeline_init(liteplayer_handle_t handle)
     {
         ESP_LOGI(TAG, "[2.0] Create sink element");
         sink_stream_cfg_t sink_cfg = SINK_STREAM_CFG_DEFAULT();
-        sink_cfg.type                     = AUDIO_STREAM_WRITER;
         sink_cfg.task_prio                = DEFAULT_SINK_TASK_PRIO;
         sink_cfg.task_stack               = DEFAULT_SINK_TASK_STACKSIZE;
         sink_cfg.out_rb_size              = DEFAULT_SINK_RINGBUF_SIZE;

@@ -33,7 +33,6 @@ typedef void *sink_handle_t;
  *             Default value will be used if any entry is zero
  */
 typedef struct {
-    audio_stream_type_t type;           /*!< Type of stream */
     int                 task_prio;      /*!< Task priority (based on freeRTOS priority) */
     int                 task_stack;     /*!< Task stack size */
     int                 out_rb_size;    /*!< Size of output ringbuffer */
@@ -55,7 +54,6 @@ typedef struct {
 #define SINK_STREAM_CHANNELS             (2)
 
 #define SINK_STREAM_CFG_DEFAULT() {                 \
-    .type           = AUDIO_STREAM_WRITER,          \
     .task_prio      = SINK_STREAM_TASK_PRIO,        \
     .task_stack     = SINK_STREAM_TASK_STACK,       \
     .out_rb_size    = SINK_STREAM_RINGBUFFER_SIZE,  \
@@ -67,8 +65,7 @@ typedef struct {
 
 /**
  * @brief      Create a handle to an Audio Element to stream data from sink to another Element
- *             or get data from other elements sent to sink, depending on the configuration of stream type
- *             is AUDIO_STREAM_WRITER.
+ *             or get data from other elements sent to sink
  * @param      config  The configuration
  *
  * @return     The Audio Element handle

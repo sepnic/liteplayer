@@ -34,7 +34,6 @@ typedef void *http_handle_t;
  *             Default value will be used if any entry is zero
  */
 typedef struct {
-    audio_stream_type_t     type;           /*!< Type of stream */
     int                     task_prio;      /*!< Task priority (based on freeRTOS priority) */
     int                     task_stack;     /*!< Task stack size */
     int                     out_rb_size;    /*!< Size of output ringbuffer */
@@ -55,7 +54,6 @@ typedef struct {
 #define HTTP_STREAM_BUFFER_SIZE         (1024)
 
 #define HTTP_STREAM_CFG_DEFAULT() {              \
-    .type = AUDIO_STREAM_READER,                 \
     .task_prio = HTTP_STREAM_TASK_PRIO,          \
     .task_stack = HTTP_STREAM_TASK_STACK,        \
     .out_rb_size = HTTP_STREAM_RINGBUFFER_SIZE,  \
@@ -69,8 +67,7 @@ typedef struct {
 
 /**
  * @brief      Create a handle to an Audio Element to stream data from HTTP to another Element
- *             or get data from other elements sent to HTTP, depending on the configuration of stream type
- *             is AUDIO_STREAM_READER or AUDIO_STREAM_WRITER.
+ *             or get data from other elements sent to HTTP
  * @param      config  The configuration
  *
  * @return     The Audio Element handle
