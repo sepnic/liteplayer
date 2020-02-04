@@ -35,7 +35,14 @@ extern "C" {
  */
 #define AAC_DECODER_INPUT_BUFFER_SIZE    (1536)
 #define AAC_MAX_NCHANS                   (2)
-#define AAC_DECODER_OUTPUT_BUFFER_SIZE   (1024 * AAC_MAX_NCHANS * sizeof(short))
+/* The frame size of the decoded PCM audio signal, Typically this is:
+ *   1024 or 960 for AAC-LC
+ *   2048 or 1920 for HE-AAC (v2)
+ *   512 or 480 for AAC-LD and AAC-ELD
+ *   768, 1024, 2048 or 4096 for USAC
+ * max size of input buffer = 4096 * AAC_MAX_NCHANS * sizeof(short))
+ */
+#define AAC_DECODER_OUTPUT_BUFFER_SIZE   (4096 * AAC_MAX_NCHANS * sizeof(short))
 
 /**
  * @brief      AAC Decoder configurations
