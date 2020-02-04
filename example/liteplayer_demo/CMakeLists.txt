@@ -10,7 +10,6 @@ set(FDK_DIR "${TOP_DIR}/library/components/audio_decoder/fdk-aac")
 include_directories(${TOP_DIR}/thirdparty/msgutils/include)
 include_directories(${TOP_DIR}/thirdparty/httpclient)
 include_directories(${TOP_DIR}/thirdparty/mbedtls/include)
-include_directories(${TOP_DIR}/thirdparty/tinyalsa/include)
 
 # include files
 include_directories(${TOP_DIR}/library/core/include)
@@ -30,21 +29,6 @@ include_directories(${FDK_DIR}/libDRCdec/include)
 include_directories(${FDK_DIR}/libSACdec/include)
 
 # source files
-if (ENABLE_TINYALSA)
-file(GLOB THIRDPARTY_SRC src
-    ${TOP_DIR}/thirdparty/msgutils/source/*.c
-    ${TOP_DIR}/thirdparty/msgutils/source/portable/*.c
-    ${TOP_DIR}/thirdparty/mbedtls/library/*.c
-    ${TOP_DIR}/thirdparty/httpclient/*.c
-    ${TOP_DIR}/thirdparty/tinyalsa/pcm.c
-    ${TOP_DIR}/thirdparty/tinyalsa/mixer.c
-)
-set (ADAPTER_SRC
-    ${TOP_DIR}/adapter/httpclient_wrapper.c
-    ${TOP_DIR}/adapter/fatfs_wrapper.c
-    ${TOP_DIR}/adapter/tinyalsa_wrapper.c
-)
-else()
 file(GLOB THIRDPARTY_SRC src
     ${TOP_DIR}/thirdparty/msgutils/source/*.c
     ${TOP_DIR}/thirdparty/msgutils/source/portable/*.c
@@ -56,6 +40,23 @@ set (ADAPTER_SRC
     ${TOP_DIR}/adapter/fatfs_wrapper.c
     ${TOP_DIR}/adapter/wave_wrapper.c
 )
+
+if (ENABLE_TINYALSA)
+    # Force SRC to 48KHz/Stereo for tinyalsa device
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_TINYALSA")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_SRC")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCONFIG_SRC_QUALITY=8")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCONFIG_SRC_OUT_RATE=48000")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCONFIG_SRC_OUT_CHANNELS=2")
+
+    include_directories(${TOP_DIR}/thirdparty/tinyalsa/include)
+    list(APPEND THIRDPARTY_SRC
+        ${TOP_DIR}/thirdparty/tinyalsa/pcm.c
+        ${TOP_DIR}/thirdparty/tinyalsa/mixer.c
+    )
+    list(APPEND ADAPTER_SRC
+        ${TOP_DIR}/adapter/tinyalsa_wrapper.c
+    )
 endif()
 
 # source files
@@ -71,24 +72,23 @@ file(GLOB LITEPLAYER_SRC src
     ${FDK_DIR}/libArithCoding/src/*.cpp
     ${FDK_DIR}/libDRCdec/src/*.cpp
     ${FDK_DIR}/libSACdec/src/*.cpp
+    ${TOP_DIR}/library/components/audio_extractor/*.c
+    ${TOP_DIR}/library/components/audio_stream/*.c
+    ${TOP_DIR}/player/*.c
+)
+list(APPEND LITEPLAYER_SRC
     ${TOP_DIR}/library/components/audio_decoder/mp3_mad_wrapper.c
     ${TOP_DIR}/library/components/audio_decoder/mp3_decoder.c
     ${TOP_DIR}/library/components/audio_decoder/aac_fdk_wrapper.c
     ${TOP_DIR}/library/components/audio_decoder/aac_decoder.c
     ${TOP_DIR}/library/components/audio_decoder/m4a_decoder.c
     ${TOP_DIR}/library/components/audio_decoder/wav_decoder.c
-    ${TOP_DIR}/library/components/audio_extractor/*.c
     ${TOP_DIR}/library/components/audio_resampler/libspeexdsp/resample.c
     ${TOP_DIR}/library/components/audio_resampler/audio_resampler.c
-    ${TOP_DIR}/library/components/audio_stream/*.c
-    ${TOP_DIR}/player/*.c
 )
 
 # cflags: OS_LINUX, OS_ANDROID, OS_MACOSX, OS_IOS, OS_FREERTOS
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DOS_MACOSX")
-if (ENABLE_TINYALSA)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_TINYALSA")
-endif()
 
 # ENABLE_MEMORY_LEAK_DETECT
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_MEMORY_LEAK_DETECT")
@@ -106,13 +106,6 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D__amd64__ -DUSE_DEFAULT_STDLIB")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DFLOATING_POINT -DUSE_SSE")
 
 # cflag: resampler: ENABLE_SRC, CONFIG_SRC_QUALITY
-if (ENABLE_TINYALSA)
-    # Force SRC to 48KHz/Stereo for tinyalsa device
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_SRC")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCONFIG_SRC_QUALITY=8")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCONFIG_SRC_OUT_RATE=48000")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCONFIG_SRC_OUT_CHANNELS=2")
-endif()
 
 # cflags: compile paramters
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -g -Wall -Werror -Wno-error=unused-function")

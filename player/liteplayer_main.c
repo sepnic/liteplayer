@@ -178,11 +178,23 @@ static int liteplayer_element_listener(audio_element_handle_t el, audio_event_if
         }
         else if (msg->cmd == AEL_MSG_CMD_REPORT_MUSIC_INFO) {
             if (msg->source == (void *) handle->el_decoder) {
-                audio_element_info_t info = {0};
-                audio_element_getinfo(handle->el_decoder, &info);
+                audio_element_info_t decoder_info = {0};
+                audio_element_getinfo(handle->el_decoder, &decoder_info);
                 ESP_LOGI(TAG, "[ %s-%s ] Receive codec info: samplerate=%d, ch=%d, bits=%d",
                          liteplayer_source_tag(handle->source_type), audio_element_get_tag(el),
-                         info.out_samplerate, info.out_channels, info.bits);
+                         decoder_info.out_samplerate, decoder_info.out_channels, decoder_info.bits);
+
+                audio_element_info_t sink_info = {0};
+                audio_element_getinfo(handle->el_sink, &sink_info);
+                if (sink_info.in_samplerate != decoder_info.out_samplerate ||
+                    sink_info.in_channels != decoder_info.out_channels) {
+                    ESP_LOGW(TAG, "Forcely update sink samplerate(%d>>%d), channels(%d>>%d)",
+                             sink_info.in_samplerate, decoder_info.out_samplerate,
+                             sink_info.in_channels, decoder_info.out_channels);
+                    sink_info.in_channels = decoder_info.out_channels;
+                    sink_info.in_samplerate = decoder_info.out_samplerate;
+                    audio_element_setinfo(handle->el_sink, &sink_info);
+                }
             }
         }
         else if (msg->cmd == AEL_MSG_CMD_REPORT_POSITION) {
@@ -292,6 +304,8 @@ static int liteplayer_pipeline_init(liteplayer_handle_t handle)
         sink_cfg.task_stack               = DEFAULT_SINK_TASK_STACKSIZE;
         sink_cfg.out_rb_size              = DEFAULT_SINK_RINGBUF_SIZE;
         sink_cfg.buf_sz                   = DEFAULT_SINK_BUFFER_SIZE;
+        sink_cfg.in_channels              = handle->media_info.codec_channels;
+        sink_cfg.in_samplerate            = handle->media_info.codec_samplerate;
     #if defined(CONFIG_SRC_OUT_RATE)
         sink_cfg.out_samplerate           = CONFIG_SRC_OUT_RATE;
     #else

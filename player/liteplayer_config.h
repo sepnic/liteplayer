@@ -41,13 +41,13 @@ extern "C" {
 
 // decoder element definations
 #define DEFAULT_DECODER_TASK_PRIO            ( OS_THREAD_PRIO_HIGH )
-#define DEFAULT_DECODER_TASK_STACKSIZE       ( 8192 )
+#define DEFAULT_DECODER_TASK_STACKSIZE       ( 16384 )
 #define DEFAULT_DECODER_RINGBUF_SIZE         ( 8*1024 )
 #define DEFAULT_DECODER_BUFFER_SIZE          ( 512 )
 
 // sink element definations
 #define DEFAULT_SINK_TASK_PRIO               ( OS_THREAD_PRIO_HARD_REALTIME )
-#define DEFAULT_SINK_TASK_STACKSIZE          ( 8192 )
+#define DEFAULT_SINK_TASK_STACKSIZE          ( 16384 )
 #define DEFAULT_SINK_RINGBUF_SIZE            ( 8*1024 )
 #define DEFAULT_SINK_BUFFER_SIZE             ( 4096 )
 #define DEFAULT_SINK_OUT_RATE                ( 48000 )

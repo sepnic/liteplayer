@@ -38,9 +38,11 @@ typedef struct {
     int                 out_rb_size;    /*!< Size of output ringbuffer */
     int                 buf_sz;         /*!< Audio Element Buffer size */
 
-    void           *sink_priv;
+    int             in_samplerate;
+    int             in_channels;
     int             out_samplerate;
     int             out_channels;
+    void           *sink_priv;
     sink_handle_t (*sink_open)(int samplerate, int channels, void *sink_priv);
     int           (*sink_write)(sink_handle_t handle, char *buffer, int size);
     void          (*sink_close)(sink_handle_t handle);

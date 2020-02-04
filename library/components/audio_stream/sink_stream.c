@@ -54,18 +54,15 @@ static esp_err_t sink_stream_open(audio_element_handle_t self)
 
 #if defined(ENABLE_SRC)
     if (!sink->resampler_inited) {
-        audio_element_info_t info = {0};
-        audio_element_getinfo(self, &info);
         ESP_LOGI(TAG, "Input: channels=%d, rate=%d, output:channels=%d, rate=%d",
-                 info.in_channels, info.in_samplerate, info.out_channels, info.out_samplerate);
-        if ((info.in_samplerate != 0 && info.in_samplerate != info.out_samplerate) ||
-            (info.in_channels != 0 && info.in_channels != info.out_channels)) {
+                 config->in_channels, config->in_samplerate, config->out_channels, config->out_samplerate);
+        if (config->in_samplerate != config->out_samplerate || config->in_channels != config->out_channels) {
             resample_cfg_t cfg;
-            cfg.in_channels = info.in_channels;
-            cfg.in_rate = info.in_samplerate;
-            cfg.out_channels = info.out_channels;
-            cfg.out_rate = info.out_samplerate;
-            cfg.bits = info.bits;
+            cfg.in_channels = config->in_channels;
+            cfg.in_rate = config->in_samplerate;
+            cfg.out_channels = config->out_channels;
+            cfg.out_rate = config->out_samplerate;
+            cfg.bits = 16;
             cfg.quality = CONFIG_SRC_QUALITY;
             if (sink->resampler && sink->resampler->open(sink->resampler, &cfg) == 0) {
                 sink->resample_opened = true;
@@ -80,17 +77,11 @@ static esp_err_t sink_stream_open(audio_element_handle_t self)
 #endif
 
     if (sink->out == NULL) {
-        audio_element_info_t info = {0};
-        audio_element_getinfo(self, &info);
 #if defined(ENABLE_SRC)
-        config->out_samplerate = info.out_samplerate;
-        config->out_channels = info.out_channels;
+        // nothing
 #else
-        config->out_samplerate = info.in_samplerate;
-        config->out_channels = info.in_channels;
-        info.out_samplerate = info.in_samplerate;
-        info.out_channels = info.in_channels;
-        audio_element_setinfo(self, &info);
+        config->out_samplerate = config->in_samplerate;
+        config->out_channels = config->in_channels;
 #endif
         ESP_LOGI(TAG, "Open sink stream out: rate:%d, channels:%d", config->out_samplerate, config->out_channels);
         if (config->sink_open)
@@ -104,11 +95,63 @@ static esp_err_t sink_stream_open(audio_element_handle_t self)
     return ESP_OK;
 }
 
+static esp_err_t sink_stream_close(audio_element_handle_t self)
+{
+    sink_stream_t *sink = (sink_stream_t *)audio_element_getdata(self);
+    sink_stream_cfg_t *config = &sink->config;
+
+    ESP_LOGV(TAG, "Close sink stream");
+
+#if defined(ENABLE_SRC)
+    if (sink->resample_opened && sink->resampler) {
+        sink->resampler->close(sink->resampler);
+        sink->resampler_inited = false;
+        sink->resample_opened = false;
+    }
+#endif
+
+    if (config->sink_close && sink->out != NULL) {
+        config->sink_close(sink->out);
+        sink->out = NULL;
+    }
+
+    if (audio_element_get_state(self) != AEL_STATE_PAUSED) {
+        audio_element_info_t info = {0};
+        audio_element_getinfo(self, &info);
+        info.byte_pos = 0;
+        audio_element_setinfo(self, &info);
+    }
+    return ESP_OK;
+}
+
 static int sink_stream_write(audio_element_handle_t self, char *buffer, int len, int timeout_ms, void *context)
 {
     sink_stream_t *sink = (sink_stream_t *)audio_element_getdata(self);
     sink_stream_cfg_t *config = &sink->config;
     int bytes_written = 0, bytes_wanted = 0, status = -1;
+    static bool info_checked = false;
+
+    if (!info_checked) {
+        audio_element_info_t info = {0};
+        audio_element_getinfo(self, &info);
+        // If samplerate not matched with decoder info, reopen sink
+        if ((info.in_samplerate != 0 && config->in_samplerate != info.in_samplerate) ||
+            (info.in_channels != 0 && config->in_channels != info.in_channels)) {
+            ESP_LOGW(TAG, "sink samplerate (%d) not match decoder samplerate (%d), reopen sink",
+                     config->in_samplerate, info.in_samplerate);
+            config->in_samplerate = info.in_samplerate;
+            config->in_channels = info.in_channels;
+            sink_stream_close(self);
+            sink_stream_open(self);
+        }
+        // Update element ifo once
+        info.in_samplerate = config->in_samplerate;
+        info.in_channels = config->in_channels;
+        info.out_samplerate = config->out_samplerate;
+        info.out_channels = config->out_channels;
+        audio_element_setinfo(self, &info);
+        info_checked = true;
+    }
 
     do {
         bytes_wanted = len - bytes_written;
@@ -158,35 +201,6 @@ static int sink_stream_process(audio_element_handle_t self, char *in_buffer, int
         w_size = r_size;
     }
     return w_size;
-}
-
-static esp_err_t sink_stream_close(audio_element_handle_t self)
-{
-    sink_stream_t *sink = (sink_stream_t *)audio_element_getdata(self);
-    sink_stream_cfg_t *config = &sink->config;
-
-    ESP_LOGV(TAG, "Close sink stream");
-
-#if defined(ENABLE_SRC)
-    if (sink->resample_opened && sink->resampler) {
-        sink->resampler->close(sink->resampler);
-        sink->resampler_inited = false;
-        sink->resample_opened = false;
-    }
-#endif
-
-    if (config->sink_close && sink->out != NULL) {
-        config->sink_close(sink->out);
-        sink->out = NULL;
-    }
-
-    if (audio_element_get_state(self) != AEL_STATE_PAUSED) {
-        audio_element_info_t info = {0};
-        audio_element_getinfo(self, &info);
-        info.byte_pos = 0;
-        audio_element_setinfo(self, &info);
-    }
-    return ESP_OK;
 }
 
 static esp_err_t sink_stream_destroy(audio_element_handle_t self)
@@ -243,12 +257,6 @@ audio_element_handle_t sink_stream_init(sink_stream_cfg_t *config)
     sink->resampler = audio_resampler_init();
     sink->resampler_inited = false;
     sink->resample_opened = false;
-
-    audio_element_info_t info = {0};
-    audio_element_getinfo(el, &info);
-    info.out_samplerate = config->out_samplerate;
-    info.out_channels   = config->out_channels;
-    audio_element_setinfo(el, &info);
 #endif
 
     audio_element_set_input_timeout(el, SINK_INPUT_TIMEOUT_MAX);
