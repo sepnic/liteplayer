@@ -70,14 +70,13 @@ static enum mad_flow mad_wrapper_input(void *data, struct mad_stream *stream)
     mp3_decoder_handle_t decoder = (mp3_decoder_handle_t)data;
     mp3_buf_in_t *input = &decoder->buf_in;
     int size_read = 0;
-    int remain;
+    int remain = stream->bufend - stream->next_frame;
 
-    remain = stream->bufend - stream->next_frame;
     if (stream->next_frame && remain > 0)
         memmove(input->data, stream->next_frame, remain);
 
     if (input->eof) {
-        ESP_LOGV(TAG, "length=%d, frmae_size=%d, error=0x%X",
+        ESP_LOGV(TAG, "length=%d, frame_size=%d, error=0x%X",
                  input->length, decoder->frame_size, stream->error);
 
         if (stream->error == MAD_ERROR_BUFLEN)
@@ -99,13 +98,18 @@ static enum mad_flow mad_wrapper_input(void *data, struct mad_stream *stream)
        while (size_read < MAD_BUFFER_GUARD)
             input->data[remain + size_read++] = 0;
     }
-    else if (size_read == AEL_IO_OK || size_read == AEL_IO_DONE) {
+    else if (size_read == AEL_IO_OK || size_read == AEL_IO_DONE || size_read == AEL_IO_ABORT) {
         input->eof = true;
         size_read = 0;
         while (size_read < MAD_BUFFER_GUARD)
             input->data[remain + size_read++] = 0;
     }
+    else if (size_read == AEL_IO_TIMEOUT) {
+        ESP_LOGV(TAG, "Timeout to fetch data");
+        return MAD_FLOW_TIMEOUT;
+    }
     else if (size_read < 0) {
+        ESP_LOGE(TAG, "Unexpected bytes read: %d", size_read);
         return MAD_FLOW_BREAK;
     }
 
@@ -123,30 +127,25 @@ static enum mad_flow mad_wrapper_output(void *data,
                                         struct mad_pcm *pcm)
 {
     mp3_decoder_handle_t decoder = (mp3_decoder_handle_t)data;
-    int nchannels, nsamples;
-    mad_fixed_t const *left_ch, *right_ch;
+    int nchannels = pcm->channels;
+    int nsamples  = pcm->length;
+    mad_fixed_t const * left  = pcm->samples[0];
+    mad_fixed_t const * right = pcm->samples[1];
     int k;
-
-    /* pcm->samplerate contains the sampling frequency */
-    nchannels = pcm->channels;
-    nsamples  = pcm->length;
-    left_ch   = pcm->samples[0];
-    right_ch  = pcm->samples[1];
 
     decoder->buf_out.length = nsamples * nchannels * sizeof(short);
 
-    short *buf_out = (short *)(decoder->buf_out.data);
-
     /* output sample(s) in 16-bit signed little-endian PCM */
+    short *out = (short *)(decoder->buf_out.data);
     if (nchannels == 2) {
         for (k = 0; k < nsamples; k++) {
-            buf_out[k*2+0] = scale(*left_ch++);
-            buf_out[k*2+1] = scale(*right_ch++);
+            out[k*2+0] = scale(*left++);
+            out[k*2+1] = scale(*right++);
         }
     }
     else if (nchannels == 1) {
         for (k = 0; k < nsamples; k++)
-            buf_out[k] = scale(*left_ch++);
+            out[k] = scale(*left++);
     }
 
     return MAD_FLOW_CONTINUE;
@@ -204,6 +203,9 @@ int mp3_wrapper_run(mp3_decoder_handle_t decoder)
         case MAD_FLOW_STOP:
             goto done;
         case MAD_FLOW_BREAK:
+            result = AEL_IO_FAIL;
+            goto done;
+        case MAD_FLOW_TIMEOUT:
             result = AEL_IO_TIMEOUT;
             goto done;
         case MAD_FLOW_IGNORE:
@@ -214,7 +216,7 @@ int mp3_wrapper_run(mp3_decoder_handle_t decoder)
 
         while (1) {
             if (mad->header_func) {
-                if (mad_header_decode(&frame->header, stream) == -1) {
+                if (mad_header_decode(&frame->header, stream) != 0) {
                     if (!MAD_RECOVERABLE(stream->error))
                         break;
 
@@ -223,7 +225,8 @@ int mp3_wrapper_run(mp3_decoder_handle_t decoder)
                         case MAD_FLOW_STOP:
                             goto done;
                         case MAD_FLOW_BREAK:
-                            result = -1;
+                        case MAD_FLOW_TIMEOUT:
+                            result = AEL_IO_FAIL;
                             goto done;
                         case MAD_FLOW_IGNORE:
                         case MAD_FLOW_CONTINUE:
@@ -236,7 +239,8 @@ int mp3_wrapper_run(mp3_decoder_handle_t decoder)
                 case MAD_FLOW_STOP:
                     goto done;
                 case MAD_FLOW_BREAK:
-                    result = -1;
+                case MAD_FLOW_TIMEOUT:
+                    result = AEL_IO_FAIL;
                     goto done;
                 case MAD_FLOW_IGNORE:
                     continue;
@@ -245,7 +249,7 @@ int mp3_wrapper_run(mp3_decoder_handle_t decoder)
                 }
             }
 
-            if (mad_frame_decode(frame, stream) == -1) {
+            if (mad_frame_decode(frame, stream) != 0) {
                 if (!MAD_RECOVERABLE(stream->error))
                     break;
 
@@ -254,7 +258,8 @@ int mp3_wrapper_run(mp3_decoder_handle_t decoder)
                     case MAD_FLOW_STOP:
                         goto done;
                     case MAD_FLOW_BREAK:
-                        result = -1;
+                    case MAD_FLOW_TIMEOUT:
+                        result = AEL_IO_FAIL;
                         goto done;
                     case MAD_FLOW_IGNORE:
                         break;
@@ -264,33 +269,11 @@ int mp3_wrapper_run(mp3_decoder_handle_t decoder)
                 }
             }
 
-            if (mad->filter_func) {
-                switch (mad->filter_func(mad->cb_data, stream, frame)) {
-                case MAD_FLOW_STOP:
-                    goto done;
-                case MAD_FLOW_BREAK:
-                    result = -1;
-                    goto done;
-                case MAD_FLOW_IGNORE:
-                    continue;
-                case MAD_FLOW_CONTINUE:
-                    break;
-                }
-            }
-
             mad_synth_frame(synth, frame);
 
             if (mad->output_func) {
-                switch (mad->output_func(mad->cb_data, &frame->header, &synth->pcm)) {
-                case MAD_FLOW_STOP:
-                    goto done;
-                case MAD_FLOW_BREAK:
-                    result = -1;
-                    goto done;
-                case MAD_FLOW_IGNORE:
-                case MAD_FLOW_CONTINUE:
-                    goto decode_complete;
-                }
+                mad->output_func(mad->cb_data, &frame->header, &synth->pcm);
+                return 0;
             }
         }
     } while (stream->error == MAD_ERROR_BUFLEN);
@@ -299,8 +282,6 @@ done:
     mad_synth_finish(synth);
     mad_frame_finish(frame);
     mad_stream_finish(stream);
-
-decode_complete:
     return result;
 }
 

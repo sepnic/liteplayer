@@ -40,7 +40,7 @@ extern "C" {
  *   2048 or 1920 for HE-AAC (v2)
  *   512 or 480 for AAC-LD and AAC-ELD
  *   768, 1024, 2048 or 4096 for USAC
- * max size of input buffer = 4096 * AAC_MAX_NCHANS * sizeof(short))
+ * max size of output buffer = 4096 * AAC_MAX_NCHANS * sizeof(short))
  */
 #define AAC_DECODER_OUTPUT_BUFFER_SIZE   (4096 * AAC_MAX_NCHANS * sizeof(short))
 

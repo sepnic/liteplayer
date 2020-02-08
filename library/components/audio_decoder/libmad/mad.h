@@ -905,7 +905,8 @@ enum mad_flow {
   MAD_FLOW_CONTINUE = 0x0000, /* continue normally */
   MAD_FLOW_STOP     = 0x0010, /* stop decoding normally */
   MAD_FLOW_BREAK    = 0x0011, /* stop decoding and signal an error */
-  MAD_FLOW_IGNORE   = 0x0020  /* ignore the current frame */
+  MAD_FLOW_IGNORE   = 0x0020, /* ignore the current frame */
+  MAD_FLOW_TIMEOUT  = 0x0030  /* timeout to fill data */
 };
 
 struct mad_decoder {

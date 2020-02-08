@@ -38,6 +38,7 @@
 typedef struct sink_stream {
     sink_stream_cfg_t   config;
     sink_handle_t       out;
+    bool                samplerate_checked;
 #if defined(ENABLE_SRC)
     resample_converter_handle_t resampler;
     bool resampler_inited;
@@ -129,9 +130,8 @@ static int sink_stream_write(audio_element_handle_t self, char *buffer, int len,
     sink_stream_t *sink = (sink_stream_t *)audio_element_getdata(self);
     sink_stream_cfg_t *config = &sink->config;
     int bytes_written = 0, bytes_wanted = 0, status = -1;
-    static bool info_checked = false;
 
-    if (!info_checked) {
+    if (!sink->samplerate_checked) {
         audio_element_info_t info = {0};
         audio_element_getinfo(self, &info);
         // If samplerate not matched with decoder info, reopen sink
@@ -150,7 +150,7 @@ static int sink_stream_write(audio_element_handle_t self, char *buffer, int len,
         info.out_samplerate = config->out_samplerate;
         info.out_channels = config->out_channels;
         audio_element_setinfo(self, &info);
-        info_checked = true;
+        sink->samplerate_checked = true;
     }
 
     do {
