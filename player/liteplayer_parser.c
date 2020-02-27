@@ -204,6 +204,10 @@ static int media_header_parse(media_source_info_t *source_info, media_codec_info
         else if (media_info->codec_type == AUDIO_CODEC_AAC) {
             ESP_LOGV(TAG, "Found AAC media with ID3 tag");
         }
+        else {
+            ESP_LOGV(TAG, "Unknown type with ID3, assume codec is MP3");
+            media_info->codec_type = AUDIO_CODEC_MP3;
+        }
     }
     else if ((buf[0] & 0xFF) == 0xFF && (buf[1] & 0xE0) == 0xE0) {
         if (media_info->codec_type == AUDIO_CODEC_AAC &&
@@ -307,6 +311,7 @@ static int media_header_parse(media_source_info_t *source_info, media_codec_info
         duration_ms = (long long)info.dataSize*1000/info.blockAlign/info.sampleRate;
     }
     else {
+        ESP_LOGE(TAG, "Unknown codec type");
         goto parse_done;
     }
 
