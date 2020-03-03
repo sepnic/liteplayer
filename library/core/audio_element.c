@@ -1127,7 +1127,7 @@ esp_err_t audio_element_resume(audio_element_handle_t el, float wait_for_rb_thre
         if (OS_THREAD_COND_TIMEDWAIT(el->state_cond, el->state_lock, DEFAULT_WAIT_TIMEOUT_MS*1000) != 0)
             break;
     }
-    if ((el->state_event & RESUMED_BIT) != 0 && el->is_running) {
+    if ((el->state_event & RESUMED_BIT) != 0 && (el->is_running || el->state == AEL_STATE_FINISHED)) {
         ESP_LOGD(TAG, "[%s] Element resumed", el->tag);
         ret = ESP_OK;
     }
@@ -1136,7 +1136,7 @@ esp_err_t audio_element_resume(audio_element_handle_t el, float wait_for_rb_thre
     }
     OS_THREAD_MUTEX_UNLOCK(el->state_lock);
 
-    if (ret == ESP_OK && el->out.output_rb) {
+    if (ret == ESP_OK && el->out.output_rb && el->is_running) {
         int size_threshold = rb_get_size(el->out.output_rb) * wait_for_rb_threshold;
         if (size_threshold != 0 && rb_bytes_filled(el->out.output_rb) < size_threshold)
             audio_element_wait_for_buffer(el, size_threshold, timeout_ms);
