@@ -42,7 +42,7 @@ typedef struct liteplayer *liteplayer_handle_t;
 
 liteplayer_handle_t liteplayer_create();
 
-int liteplayer_register_fatfs_wrapper(liteplayer_handle_t handle, fatfs_wrapper_t *fatfs_wrapper);
+int liteplayer_register_file_wrapper(liteplayer_handle_t handle, file_wrapper_t *file_wrapper);
 
 int liteplayer_register_http_wrapper(liteplayer_handle_t handle, http_wrapper_t *http_wrapper);
 

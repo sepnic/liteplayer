@@ -31,7 +31,7 @@
 #include "audio_decoder/m4a_decoder.h"
 #include "audio_decoder/wav_decoder.h"
 #include "audio_stream/http_stream.h"
-#include "audio_stream/fatfs_stream.h"
+#include "audio_stream/file_stream.h"
 #include "audio_stream/sink_stream.h"
 
 #include "liteplayer_adapter.h"
@@ -54,7 +54,7 @@ struct liteplayer {
 
     os_mutex_t              io_lock;
 
-    fatfs_wrapper_t         fatfs_wrapper;
+    file_wrapper_t          file_wrapper;
     http_wrapper_t          http_wrapper;
     sink_wrapper_t          sink_wrapper;
 
@@ -397,12 +397,12 @@ static int liteplayer_pipeline_init(liteplayer_handle_t handle)
             media_source_info_t info = {
                 .url = handle->url,
                 .source_type = MEDIA_SOURCE_FILE,
-                .fatfs_wrapper = {
-                    .fatfs_priv = handle->fatfs_wrapper.fatfs_priv,
-                    .open = handle->fatfs_wrapper.open,
-                    .read = handle->fatfs_wrapper.read,
-                    .seek = handle->fatfs_wrapper.seek,
-                    .close = handle->fatfs_wrapper.close,
+                .file_wrapper = {
+                    .file_priv = handle->file_wrapper.file_priv,
+                    .open = handle->file_wrapper.open,
+                    .read = handle->file_wrapper.read,
+                    .seek = handle->file_wrapper.seek,
+                    .close = handle->file_wrapper.close,
                 },
                 .content_pos = handle->media_info.content_pos,
             };
@@ -446,11 +446,11 @@ liteplayer_handle_t liteplayer_create()
     return handle;
 }
 
-int liteplayer_register_fatfs_wrapper(liteplayer_handle_t handle, fatfs_wrapper_t *fatfs_wrapper)
+int liteplayer_register_file_wrapper(liteplayer_handle_t handle, file_wrapper_t *file_wrapper)
 {
-    if (handle == NULL || fatfs_wrapper == NULL)
+    if (handle == NULL || file_wrapper == NULL)
         return ESP_FAIL;
-    memcpy(&handle->fatfs_wrapper, fatfs_wrapper, sizeof(fatfs_wrapper_t));
+    memcpy(&handle->file_wrapper, file_wrapper, sizeof(file_wrapper_t));
     return ESP_OK;
 }
 
@@ -549,7 +549,7 @@ int liteplayer_prepare(liteplayer_handle_t handle)
         media_source_info_t source_info = {0};
         source_info.url = handle->url;
         source_info.source_type = MEDIA_SOURCE_FILE;
-        memcpy(&source_info.fatfs_wrapper, &handle->fatfs_wrapper, sizeof(fatfs_wrapper_t));
+        memcpy(&source_info.file_wrapper, &handle->file_wrapper, sizeof(file_wrapper_t));
         ret = media_info_parse(&source_info, &handle->media_info);
     }
 
@@ -608,7 +608,7 @@ int liteplayer_prepare_async(liteplayer_handle_t handle)
         media_source_info_t source_info = {0};
         source_info.url = handle->url;
         source_info.source_type = MEDIA_SOURCE_FILE;
-        memcpy(&source_info.fatfs_wrapper, &handle->fatfs_wrapper, sizeof(fatfs_wrapper_t));
+        memcpy(&source_info.file_wrapper, &handle->file_wrapper, sizeof(file_wrapper_t));
         ret = media_info_parse(&source_info, &handle->media_info);
     }
 

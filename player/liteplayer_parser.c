@@ -21,7 +21,7 @@
 #include "esp_adf/esp_log.h"
 #include "esp_adf/audio_common.h"
 #include "audio_stream/http_stream.h"
-#include "audio_stream/fatfs_stream.h"
+#include "audio_stream/file_stream.h"
 #include "audio_stream/sink_stream.h"
 #include "audio_extractor/mp3_extractor.h"
 #include "audio_extractor/aac_extractor.h"
@@ -38,7 +38,7 @@ typedef struct media_parser_priv {
     media_codec_info_t media_info;
 
     http_handle_t http_handle;
-    fatfs_handle_t fatfs_handle;
+    file_handle_t file_handle;
     long offset;
 
     media_parser_state_cb listener;
@@ -56,12 +56,12 @@ static int media_parser_fetch(char *buf, int wanted_size, long offset, void *pri
 
     if (parser->source_info.source_type == MEDIA_SOURCE_FILE) {
         if (parser->offset != offset) {
-            ESP_LOGD(TAG, "fatfs seek position: %ld>>%ld", parser->offset, offset);
-            if (parser->source_info.fatfs_wrapper.seek(parser->fatfs_handle, offset) != 0)
+            ESP_LOGD(TAG, "file seek position: %ld>>%ld", parser->offset, offset);
+            if (parser->source_info.file_wrapper.seek(parser->file_handle, offset) != 0)
                 return ESP_FAIL;
             parser->offset = offset;
         }
-        bytes_read = parser->source_info.fatfs_wrapper.read(parser->fatfs_handle, buf, wanted_size);
+        bytes_read = parser->source_info.file_wrapper.read(parser->file_handle, buf, wanted_size);
     }
     else if (parser->source_info.source_type == MEDIA_SOURCE_HTTP) {
         if (parser->offset != offset) {
@@ -86,18 +86,18 @@ static int m4a_header_parse(media_source_info_t *source_info, media_codec_info_t
 
     media_parser_priv_t m4a_priv = {
         .offset = 0,
-        .fatfs_handle = NULL,
+        .file_handle = NULL,
         .http_handle = NULL,
     };
     memcpy(&m4a_priv.source_info, source_info, sizeof(media_source_info_t));
     int ret = ESP_FAIL;
 
     if (source_info->source_type == MEDIA_SOURCE_FILE) {
-        m4a_priv.fatfs_handle = source_info->fatfs_wrapper.open(source_info->url,
-                                                                FATFS_READ,
+        m4a_priv.file_handle = source_info->file_wrapper.open(source_info->url,
+                                                                FILE_READ,
                                                                 0,
-                                                                source_info->fatfs_wrapper.fatfs_priv);
-        if (m4a_priv.fatfs_handle == NULL)
+                                                                source_info->file_wrapper.file_priv);
+        if (m4a_priv.file_handle == NULL)
             return ESP_FAIL;
     }
     else if (source_info->source_type == MEDIA_SOURCE_HTTP) {
@@ -117,7 +117,7 @@ static int m4a_header_parse(media_source_info_t *source_info, media_codec_info_t
     }
 
     if (source_info->source_type == MEDIA_SOURCE_FILE)
-        source_info->fatfs_wrapper.close(m4a_priv.fatfs_handle);
+        source_info->file_wrapper.close(m4a_priv.file_handle);
     else if (source_info->source_type == MEDIA_SOURCE_HTTP)
         source_info->http_wrapper.close(m4a_priv.http_handle);
 
@@ -147,7 +147,7 @@ static int media_header_parse(media_source_info_t *source_info, media_codec_info
         return ESP_FAIL;
 
     http_handle_t client = NULL;
-    fatfs_handle_t file = NULL;
+    file_handle_t file = NULL;
     long long filesize = 0;
     int bytes_read = 0;
     char *buf = audio_calloc(1, DEFAULT_MEDIA_PARSER_BUFFER_SIZE);
@@ -172,20 +172,20 @@ static int media_header_parse(media_source_info_t *source_info, media_codec_info
         filesize = source_info->http_wrapper.filesize(client);
     }
     else if (source_info->source_type == MEDIA_SOURCE_FILE) {
-        file = source_info->fatfs_wrapper.open(source_info->url,
-                                               FATFS_READ,
+        file = source_info->file_wrapper.open(source_info->url,
+                                               FILE_READ,
                                                0,
-                                               source_info->fatfs_wrapper.fatfs_priv);
+                                               source_info->file_wrapper.file_priv);
         if (file == NULL) {
             ESP_LOGE(TAG, "Failed to open file, url=%s", source_info->url);
             goto parse_done;
         }
-        bytes_read = source_info->fatfs_wrapper.read(file, buf, DEFAULT_MEDIA_PARSER_BUFFER_SIZE);
+        bytes_read = source_info->file_wrapper.read(file, buf, DEFAULT_MEDIA_PARSER_BUFFER_SIZE);
         if (bytes_read <= 0) {
             ESP_LOGE(TAG, "Failed to read file");
             goto parse_done;
         }
-        filesize = source_info->fatfs_wrapper.filesize(file);
+        filesize = source_info->file_wrapper.filesize(file);
     }
 
     if (bytes_read < 64) {
@@ -248,9 +248,9 @@ static int media_header_parse(media_source_info_t *source_info, media_codec_info
                                                             DEFAULT_MEDIA_PARSER_BUFFER_SIZE);
             }
             else if (source_info->source_type == MEDIA_SOURCE_FILE) {
-                if (source_info->fatfs_wrapper.seek(file, frame_start_offset) != 0)
+                if (source_info->file_wrapper.seek(file, frame_start_offset) != 0)
                     goto parse_done;
-                bytes_read = source_info->fatfs_wrapper.read(file,
+                bytes_read = source_info->file_wrapper.read(file,
                                                              buf,
                                                              DEFAULT_MEDIA_PARSER_BUFFER_SIZE);
             }
@@ -284,9 +284,9 @@ static int media_header_parse(media_source_info_t *source_info, media_codec_info
                                                             DEFAULT_MEDIA_PARSER_BUFFER_SIZE);
             }
             else if (source_info->source_type == MEDIA_SOURCE_FILE) {
-                if (source_info->fatfs_wrapper.seek(file, frame_start_offset) != 0)
+                if (source_info->file_wrapper.seek(file, frame_start_offset) != 0)
                     goto parse_done;
-                bytes_read = source_info->fatfs_wrapper.read(file,
+                bytes_read = source_info->file_wrapper.read(file,
                                                              buf,
                                                              DEFAULT_MEDIA_PARSER_BUFFER_SIZE);
             }
@@ -328,7 +328,7 @@ parse_done:
     if (source_info->source_type == MEDIA_SOURCE_HTTP && client != NULL)
         source_info->http_wrapper.close(client);
     if (source_info->source_type == MEDIA_SOURCE_FILE && file != NULL)
-        source_info->fatfs_wrapper.close(file);
+        source_info->file_wrapper.close(file);
     if (buf != NULL)
         audio_free(buf);
     return ret;

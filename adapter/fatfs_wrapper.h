@@ -18,23 +18,23 @@
 #ifndef _FATFS_WRAPPER_H_
 #define _FATFS_WRAPPER_H_
 
-#include "audio_stream/fatfs_stream.h"
+#include "audio_stream/file_stream.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-fatfs_handle_t fatfs_wrapper_open(const char *url, fatfs_mode_t mode, long long content_pos, void *priv);
+file_handle_t fatfs_wrapper_open(const char *url, file_mode_t mode, long long content_pos, void *priv);
 
-int fatfs_wrapper_read(fatfs_handle_t handle, char *buffer, int size);
+int fatfs_wrapper_read(file_handle_t handle, char *buffer, int size);
 
-int fatfs_wrapper_write(fatfs_handle_t handle, char *buffer, int size);
+int fatfs_wrapper_write(file_handle_t handle, char *buffer, int size);
 
-long long fatfs_wrapper_filesize(fatfs_handle_t handle);
+long long fatfs_wrapper_filesize(file_handle_t handle);
 
-int fatfs_wrapper_seek(fatfs_handle_t handle, long offset);
+int fatfs_wrapper_seek(file_handle_t handle, long offset);
 
-void fatfs_wrapper_close(fatfs_handle_t handle);
+void fatfs_wrapper_close(file_handle_t handle);
 
 #ifdef __cplusplus
 }

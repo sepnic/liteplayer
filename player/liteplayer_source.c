@@ -490,7 +490,7 @@ static void *media_source_thread(void *arg)
     media_source_priv_t *priv = (media_source_priv_t *)arg;
     media_source_state_t state = MEDIA_SOURCE_READ_FAILED;
     http_handle_t client = NULL;
-    fatfs_handle_t file = NULL;
+    file_handle_t file = NULL;
 
     if (priv->info.source_type == MEDIA_SOURCE_HTTP) {
         client = priv->info.http_wrapper.open(priv->info.url,
@@ -502,10 +502,10 @@ static void *media_source_thread(void *arg)
         }
     }
     else if (priv->info.source_type == MEDIA_SOURCE_FILE) {
-        file = priv->info.fatfs_wrapper.open(priv->info.url,
-                                             FATFS_READ,
+        file = priv->info.file_wrapper.open(priv->info.url,
+                                             FILE_READ,
                                              priv->info.content_pos,
-                                             priv->info.fatfs_wrapper.fatfs_priv);
+                                             priv->info.file_wrapper.file_priv);
         if (file == NULL) {
             state = MEDIA_SOURCE_READ_FAILED;
             goto thread_exit;
@@ -523,7 +523,7 @@ static void *media_source_thread(void *arg)
         if (client != NULL)
             bytes_read = priv->info.http_wrapper.read(client, buffer, sizeof(buffer));
         else if (file != NULL)
-            bytes_read = priv->info.fatfs_wrapper.read(file, buffer, sizeof(buffer));
+            bytes_read = priv->info.file_wrapper.read(file, buffer, sizeof(buffer));
 
         if (bytes_read < 0) {
             ESP_LOGE(TAG, "Media source read failed");
@@ -577,7 +577,7 @@ thread_exit:
     if (client != NULL)
         priv->info.http_wrapper.close(client);
     else if (file != NULL)
-        priv->info.fatfs_wrapper.close(file);
+        priv->info.file_wrapper.close(file);
 
     ESP_LOGV(TAG, "Waiting stop command");
     while (!priv->stop)

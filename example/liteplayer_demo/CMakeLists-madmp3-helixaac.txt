@@ -189,7 +189,7 @@ set (LITEPLAYER_SRC
     ${TOP_DIR}/library/components/audio_extractor/wav_extractor.c
     ${TOP_DIR}/library/components/audio_resampler/libspeexdsp/resample.c
     ${TOP_DIR}/library/components/audio_resampler/audio_resampler.c
-    ${TOP_DIR}/library/components/audio_stream/fatfs_stream.c
+    ${TOP_DIR}/library/components/audio_stream/file_stream.c
     ${TOP_DIR}/library/components/audio_stream/sink_stream.c
     ${TOP_DIR}/library/components/audio_stream/http_stream.c
     ${TOP_DIR}/player/liteplayer_source.c

@@ -47,7 +47,7 @@ typedef struct media_source_info {
     const char *url;
     media_source_type_t source_type;
     http_wrapper_t http_wrapper;
-    fatfs_wrapper_t fatfs_wrapper;
+    file_wrapper_t file_wrapper;
     long long content_pos;
 } media_source_info_t;
 

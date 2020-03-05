@@ -108,8 +108,8 @@ static int liteplayer_test(const char *url)
 #endif
     liteplayer_register_sink_wrapper(player, &sink_wrapper);
 
-    fatfs_wrapper_t fatfs_wrapper = {
-        .fatfs_priv = NULL,
+    file_wrapper_t file_wrapper = {
+        .file_priv = NULL,
         .open = fatfs_wrapper_open,
         .read = fatfs_wrapper_read,
         .write = fatfs_wrapper_write,
@@ -117,7 +117,7 @@ static int liteplayer_test(const char *url)
         .seek = fatfs_wrapper_seek,
         .close = fatfs_wrapper_close,
     };
-    liteplayer_register_fatfs_wrapper(player, &fatfs_wrapper);
+    liteplayer_register_file_wrapper(player, &file_wrapper);
 
     http_wrapper_t http_wrapper = {
         .http_priv = NULL,

@@ -20,20 +20,20 @@
 
 #include "esp_adf/esp_log.h"
 #include "esp_adf/audio_common.h"
-#include "audio_stream/fatfs_stream.h"
+#include "audio_stream/file_stream.h"
 #include "fatfs_wrapper.h"
 
 #define TAG "fatfswrapper"
 
 typedef struct fatfs_wrapper_priv {
     const char *url;
-    fatfs_mode_t mode;
+    file_mode_t mode;
     FILE *file;
     long content_pos;
     long content_len;
 } fatfs_wrapper_priv_t;
 
-fatfs_handle_t fatfs_wrapper_open(const char *url, fatfs_mode_t mode, long long content_pos, void *priv)
+file_handle_t fatfs_wrapper_open(const char *url, file_mode_t mode, long long content_pos, void *priv)
 {
     fatfs_wrapper_priv_t *handle = audio_calloc(1, sizeof(fatfs_wrapper_priv_t));
     FILE *file = NULL;
@@ -41,7 +41,7 @@ fatfs_handle_t fatfs_wrapper_open(const char *url, fatfs_mode_t mode, long long 
     if (handle == NULL)
         return NULL;
 
-    if (mode == FATFS_READ)
+    if (mode == FILE_READ)
         file = fopen(url, "rb");
     else
         file = fopen(url, "wb+");
@@ -64,7 +64,7 @@ fatfs_handle_t fatfs_wrapper_open(const char *url, fatfs_mode_t mode, long long 
     return handle;
 }
 
-int fatfs_wrapper_read(fatfs_handle_t handle, char *buffer, int size)
+int fatfs_wrapper_read(file_handle_t handle, char *buffer, int size)
 {
     fatfs_wrapper_priv_t *priv = (fatfs_wrapper_priv_t *)handle;
     if (priv->file) {
@@ -80,7 +80,7 @@ int fatfs_wrapper_read(fatfs_handle_t handle, char *buffer, int size)
     return -1;
 }
 
-int fatfs_wrapper_write(fatfs_handle_t handle, char *buffer, int size)
+int fatfs_wrapper_write(file_handle_t handle, char *buffer, int size)
 {
     fatfs_wrapper_priv_t *priv = (fatfs_wrapper_priv_t *)handle;
     if (priv->file) {
@@ -92,7 +92,7 @@ int fatfs_wrapper_write(fatfs_handle_t handle, char *buffer, int size)
     return -1;
 }
 
-long long fatfs_wrapper_filesize(fatfs_handle_t handle)
+long long fatfs_wrapper_filesize(file_handle_t handle)
 {
     fatfs_wrapper_priv_t *priv = (fatfs_wrapper_priv_t *)handle;
     if (priv->file)
@@ -100,7 +100,7 @@ long long fatfs_wrapper_filesize(fatfs_handle_t handle)
     return 0;
 }
 
-int fatfs_wrapper_seek(fatfs_handle_t handle, long offset)
+int fatfs_wrapper_seek(file_handle_t handle, long offset)
 {
     fatfs_wrapper_priv_t *priv = (fatfs_wrapper_priv_t *)handle;
     if (priv->file) {
@@ -112,11 +112,11 @@ int fatfs_wrapper_seek(fatfs_handle_t handle, long offset)
     return -1;
 }
 
-void fatfs_wrapper_close(fatfs_handle_t handle)
+void fatfs_wrapper_close(file_handle_t handle)
 {
     fatfs_wrapper_priv_t *priv = (fatfs_wrapper_priv_t *)handle;
     if (priv->file) {
-        if (priv->mode == FATFS_WRITE)
+        if (priv->mode == FILE_WRITE)
             fflush(priv->file);
         fclose(priv->file);
         priv->file = NULL;
