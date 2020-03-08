@@ -9,6 +9,8 @@ set(TOP_DIR "${CMAKE_SOURCE_DIR}/../..")
 include_directories(${TOP_DIR}/thirdparty/msgutils/include)
 include_directories(${TOP_DIR}/thirdparty/httpclient)
 include_directories(${TOP_DIR}/thirdparty/mbedtls/include)
+include_directories(${TOP_DIR}/thirdparty/codec)
+include_directories(${TOP_DIR}/thirdparty/speexdsp)
 include_directories(${TOP_DIR}/library/core/include)
 include_directories(${TOP_DIR}/library/components/include)
 include_directories(${TOP_DIR}/player)
@@ -106,6 +108,48 @@ set (THIRDPARTY_SRC
     ${TOP_DIR}/thirdparty/mbedtls/library/ssl_srv.c
     ${TOP_DIR}/thirdparty/mbedtls/library/ssl_ticket.c
     ${TOP_DIR}/thirdparty/mbedtls/library/ssl_tls.c
+
+    # codec src
+    ${TOP_DIR}/thirdparty/codec/mp3-mad/bit.c
+    ${TOP_DIR}/thirdparty/codec/mp3-mad/decoder.c
+    ${TOP_DIR}/thirdparty/codec/mp3-mad/fixed.c
+    ${TOP_DIR}/thirdparty/codec/mp3-mad/frame.c
+    ${TOP_DIR}/thirdparty/codec/mp3-mad/huffman.c
+    ${TOP_DIR}/thirdparty/codec/mp3-mad/layer12.c
+    ${TOP_DIR}/thirdparty/codec/mp3-mad/layer3.c
+    ${TOP_DIR}/thirdparty/codec/mp3-mad/stream.c
+    ${TOP_DIR}/thirdparty/codec/mp3-mad/synth.c
+    ${TOP_DIR}/thirdparty/codec/mp3-mad/timer.c
+    ${TOP_DIR}/thirdparty/codec/mp3-mad/version.c
+    ${TOP_DIR}/thirdparty/codec/aac-helix/aacdec.c
+    ${TOP_DIR}/thirdparty/codec/aac-helix/aactabs.c
+    ${TOP_DIR}/thirdparty/codec/aac-helix/bitstream.c
+    ${TOP_DIR}/thirdparty/codec/aac-helix/buffers.c
+    ${TOP_DIR}/thirdparty/codec/aac-helix/dct4.c
+    ${TOP_DIR}/thirdparty/codec/aac-helix/decelmnt.c
+    ${TOP_DIR}/thirdparty/codec/aac-helix/dequant.c
+    ${TOP_DIR}/thirdparty/codec/aac-helix/fft.c
+    ${TOP_DIR}/thirdparty/codec/aac-helix/filefmt.c
+    ${TOP_DIR}/thirdparty/codec/aac-helix/huffman.c
+    ${TOP_DIR}/thirdparty/codec/aac-helix/hufftabs.c
+    ${TOP_DIR}/thirdparty/codec/aac-helix/imdct.c
+    ${TOP_DIR}/thirdparty/codec/aac-helix/noiseless.c
+    ${TOP_DIR}/thirdparty/codec/aac-helix/pns.c
+    ${TOP_DIR}/thirdparty/codec/aac-helix/sbr.c
+    ${TOP_DIR}/thirdparty/codec/aac-helix/sbrfft.c
+    ${TOP_DIR}/thirdparty/codec/aac-helix/sbrfreq.c
+    ${TOP_DIR}/thirdparty/codec/aac-helix/sbrhfadj.c
+    ${TOP_DIR}/thirdparty/codec/aac-helix/sbrhfgen.c
+    ${TOP_DIR}/thirdparty/codec/aac-helix/sbrhuff.c
+    ${TOP_DIR}/thirdparty/codec/aac-helix/sbrimdct.c
+    ${TOP_DIR}/thirdparty/codec/aac-helix/sbrmath.c
+    ${TOP_DIR}/thirdparty/codec/aac-helix/sbrqmf.c
+    ${TOP_DIR}/thirdparty/codec/aac-helix/sbrside.c
+    ${TOP_DIR}/thirdparty/codec/aac-helix/sbrtabs.c
+    ${TOP_DIR}/thirdparty/codec/aac-helix/stproc.c
+    ${TOP_DIR}/thirdparty/codec/aac-helix/tns.c
+    ${TOP_DIR}/thirdparty/codec/aac-helix/trigtabs.c
+    ${TOP_DIR}/thirdparty/speexdsp/resample.c
 )
 
 # source files
@@ -138,45 +182,6 @@ set (LITEPLAYER_SRC
     ${TOP_DIR}/library/core/audio_element.c
     ${TOP_DIR}/library/core/audio_event_iface.c
     ${TOP_DIR}/library/core/audio_pipeline.c
-    ${TOP_DIR}/library/components/audio_decoder/libmad/bit.c
-    ${TOP_DIR}/library/components/audio_decoder/libmad/decoder.c
-    ${TOP_DIR}/library/components/audio_decoder/libmad/fixed.c
-    ${TOP_DIR}/library/components/audio_decoder/libmad/frame.c
-    ${TOP_DIR}/library/components/audio_decoder/libmad/huffman.c
-    ${TOP_DIR}/library/components/audio_decoder/libmad/layer12.c
-    ${TOP_DIR}/library/components/audio_decoder/libmad/layer3.c
-    ${TOP_DIR}/library/components/audio_decoder/libmad/stream.c
-    ${TOP_DIR}/library/components/audio_decoder/libmad/synth.c
-    ${TOP_DIR}/library/components/audio_decoder/libmad/timer.c
-    ${TOP_DIR}/library/components/audio_decoder/libmad/version.c
-    ${TOP_DIR}/library/components/audio_decoder/helixaac/aacdec.c
-    ${TOP_DIR}/library/components/audio_decoder/helixaac/aactabs.c
-    ${TOP_DIR}/library/components/audio_decoder/helixaac/bitstream.c
-    ${TOP_DIR}/library/components/audio_decoder/helixaac/buffers.c
-    ${TOP_DIR}/library/components/audio_decoder/helixaac/dct4.c
-    ${TOP_DIR}/library/components/audio_decoder/helixaac/decelmnt.c
-    ${TOP_DIR}/library/components/audio_decoder/helixaac/dequant.c
-    ${TOP_DIR}/library/components/audio_decoder/helixaac/fft.c
-    ${TOP_DIR}/library/components/audio_decoder/helixaac/filefmt.c
-    ${TOP_DIR}/library/components/audio_decoder/helixaac/huffman.c
-    ${TOP_DIR}/library/components/audio_decoder/helixaac/hufftabs.c
-    ${TOP_DIR}/library/components/audio_decoder/helixaac/imdct.c
-    ${TOP_DIR}/library/components/audio_decoder/helixaac/noiseless.c
-    ${TOP_DIR}/library/components/audio_decoder/helixaac/pns.c
-    ${TOP_DIR}/library/components/audio_decoder/helixaac/sbr.c
-    ${TOP_DIR}/library/components/audio_decoder/helixaac/sbrfft.c
-    ${TOP_DIR}/library/components/audio_decoder/helixaac/sbrfreq.c
-    ${TOP_DIR}/library/components/audio_decoder/helixaac/sbrhfadj.c
-    ${TOP_DIR}/library/components/audio_decoder/helixaac/sbrhfgen.c
-    ${TOP_DIR}/library/components/audio_decoder/helixaac/sbrhuff.c
-    ${TOP_DIR}/library/components/audio_decoder/helixaac/sbrimdct.c
-    ${TOP_DIR}/library/components/audio_decoder/helixaac/sbrmath.c
-    ${TOP_DIR}/library/components/audio_decoder/helixaac/sbrqmf.c
-    ${TOP_DIR}/library/components/audio_decoder/helixaac/sbrside.c
-    ${TOP_DIR}/library/components/audio_decoder/helixaac/sbrtabs.c
-    ${TOP_DIR}/library/components/audio_decoder/helixaac/stproc.c
-    ${TOP_DIR}/library/components/audio_decoder/helixaac/tns.c
-    ${TOP_DIR}/library/components/audio_decoder/helixaac/trigtabs.c
     ${TOP_DIR}/library/components/audio_decoder/mp3_mad_wrapper.c
     ${TOP_DIR}/library/components/audio_decoder/mp3_decoder.c
     ${TOP_DIR}/library/components/audio_decoder/aac_helix_wrapper.c
@@ -187,7 +192,6 @@ set (LITEPLAYER_SRC
     ${TOP_DIR}/library/components/audio_extractor/aac_extractor.c
     ${TOP_DIR}/library/components/audio_extractor/m4a_extractor.c
     ${TOP_DIR}/library/components/audio_extractor/wav_extractor.c
-    ${TOP_DIR}/library/components/audio_resampler/libspeexdsp/resample.c
     ${TOP_DIR}/library/components/audio_resampler/audio_resampler.c
     ${TOP_DIR}/library/components/audio_stream/file_stream.c
     ${TOP_DIR}/library/components/audio_stream/sink_stream.c

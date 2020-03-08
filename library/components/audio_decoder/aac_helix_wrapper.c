@@ -24,7 +24,7 @@
 #include "esp_adf/audio_element.h"
 #include "audio_decoder/aac_decoder.h"
 #include "audio_decoder/m4a_decoder.h"
-#include "helixaac/aacdec.h"
+#include "aac-helix/aacdec.h"
 
 #define TAG "AAC_WRAPPER"
 

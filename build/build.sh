@@ -7,20 +7,6 @@ OUTPUT_DIR=${PWD}/out
 OUTPUT_LIB_DIR=${OUTPUT_DIR}/lib
 OUTPUT_BIN_DIR=${OUTPUT_DIR}/bin
 
-# build libmsgutils lib
-echo "Building libmsgutils"
-mkdir -p ${OUTPUT_LIB_DIR}/libmsgutils
-cd ${OUTPUT_LIB_DIR}/libmsgutils
-cmake ${TOP_DIR}/thirdparty/msgutils
-make
-
-# build liblitecore lib
-echo "Building liblitecore"
-mkdir -p ${OUTPUT_LIB_DIR}/liblitecore
-cd ${OUTPUT_LIB_DIR}/liblitecore
-cmake ${TOP_DIR}/library
-make
-
 # build libliteplayer lib
 echo "Building libliteplayer"
 mkdir -p ${OUTPUT_LIB_DIR}/libliteplayer

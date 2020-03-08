@@ -4,12 +4,13 @@ cmake_minimum_required(VERSION 2.8)
 #set (ENABLE_TINYALSA "YES")
 
 set(TOP_DIR "${CMAKE_SOURCE_DIR}/../..")
-set(FDK_DIR "${TOP_DIR}/library/components/audio_decoder/fdk-aac")
 
 # include files
 include_directories(${TOP_DIR}/thirdparty/msgutils/include)
 include_directories(${TOP_DIR}/thirdparty/httpclient)
 include_directories(${TOP_DIR}/thirdparty/mbedtls/include)
+include_directories(${TOP_DIR}/thirdparty/codec)
+include_directories(${TOP_DIR}/thirdparty/speexdsp)
 
 # include files
 include_directories(${TOP_DIR}/library/core/include)
@@ -18,15 +19,15 @@ include_directories(${TOP_DIR}/player)
 include_directories(${TOP_DIR}/adapter)
 
 # include files
-include_directories(${FDK_DIR}/libAACdec/include)
-include_directories(${FDK_DIR}/libPCMutils/include)
-include_directories(${FDK_DIR}/libFDK/include)
-include_directories(${FDK_DIR}/libSYS/include)
-include_directories(${FDK_DIR}/libMpegTPDec/include)
-include_directories(${FDK_DIR}/libSBRdec/include)
-include_directories(${FDK_DIR}/libArithCoding/include)
-include_directories(${FDK_DIR}/libDRCdec/include)
-include_directories(${FDK_DIR}/libSACdec/include)
+include_directories(${TOP_DIR}/thirdparty/codec/aac-fdk/libAACdec/include)
+include_directories(${TOP_DIR}/thirdparty/codec/aac-fdk/libPCMutils/include)
+include_directories(${TOP_DIR}/thirdparty/codec/aac-fdk/libFDK/include)
+include_directories(${TOP_DIR}/thirdparty/codec/aac-fdk/libSYS/include)
+include_directories(${TOP_DIR}/thirdparty/codec/aac-fdk/libMpegTPDec/include)
+include_directories(${TOP_DIR}/thirdparty/codec/aac-fdk/libSBRdec/include)
+include_directories(${TOP_DIR}/thirdparty/codec/aac-fdk/libArithCoding/include)
+include_directories(${TOP_DIR}/thirdparty/codec/aac-fdk/libDRCdec/include)
+include_directories(${TOP_DIR}/thirdparty/codec/aac-fdk/libSACdec/include)
 
 # source files
 file(GLOB THIRDPARTY_SRC src
@@ -34,6 +35,19 @@ file(GLOB THIRDPARTY_SRC src
     ${TOP_DIR}/thirdparty/msgutils/source/portable/*.c
     ${TOP_DIR}/thirdparty/mbedtls/library/*.c
     ${TOP_DIR}/thirdparty/httpclient/*.c
+    ${TOP_DIR}/thirdparty/codec/mp3-mad/*.c
+    ${TOP_DIR}/thirdparty/codec/aac-fdk/libAACdec/src/*.cpp
+    ${TOP_DIR}/thirdparty/codec/aac-fdk/libPCMutils/src/*.cpp
+    ${TOP_DIR}/thirdparty/codec/aac-fdk/libFDK/src/*.cpp
+    ${TOP_DIR}/thirdparty/codec/aac-fdk/libSYS/src/*.cpp
+    ${TOP_DIR}/thirdparty/codec/aac-fdk/libMpegTPDec/src/*.cpp
+    ${TOP_DIR}/thirdparty/codec/aac-fdk/libSBRdec/src/*.cpp
+    ${TOP_DIR}/thirdparty/codec/aac-fdk/libArithCoding/src/*.cpp
+    ${TOP_DIR}/thirdparty/codec/aac-fdk/libDRCdec/src/*.cpp
+    ${TOP_DIR}/thirdparty/codec/aac-fdk/libSACdec/src/*.cpp
+)
+list(APPEND THIRDPARTY_SRC
+    ${TOP_DIR}/thirdparty/speexdsp/resample.c
 )
 set (ADAPTER_SRC
     ${TOP_DIR}/adapter/httpclient_wrapper.c
@@ -62,16 +76,6 @@ endif()
 # source files
 file(GLOB LITEPLAYER_SRC src
     ${TOP_DIR}/library/core/*.c
-    ${TOP_DIR}/library/components/audio_decoder/libmad/*.c
-    ${FDK_DIR}/libAACdec/src/*.cpp
-    ${FDK_DIR}/libPCMutils/src/*.cpp
-    ${FDK_DIR}/libFDK/src/*.cpp
-    ${FDK_DIR}/libSYS/src/*.cpp
-    ${FDK_DIR}/libMpegTPDec/src/*.cpp
-    ${FDK_DIR}/libSBRdec/src/*.cpp
-    ${FDK_DIR}/libArithCoding/src/*.cpp
-    ${FDK_DIR}/libDRCdec/src/*.cpp
-    ${FDK_DIR}/libSACdec/src/*.cpp
     ${TOP_DIR}/library/components/audio_extractor/*.c
     ${TOP_DIR}/library/components/audio_stream/*.c
     ${TOP_DIR}/player/*.c
@@ -83,7 +87,6 @@ list(APPEND LITEPLAYER_SRC
     ${TOP_DIR}/library/components/audio_decoder/aac_decoder.c
     ${TOP_DIR}/library/components/audio_decoder/m4a_decoder.c
     ${TOP_DIR}/library/components/audio_decoder/wav_decoder.c
-    ${TOP_DIR}/library/components/audio_resampler/libspeexdsp/resample.c
     ${TOP_DIR}/library/components/audio_resampler/audio_resampler.c
 )
 

@@ -1,99 +1,95 @@
 cmake_minimum_required(VERSION 2.8)
 
 set(TOP_DIR "${CMAKE_SOURCE_DIR}/..")
-set(MSGUTILS_DIR "${TOP_DIR}/thirdparty/msgutils")
-set(LITECORE_DIR "${TOP_DIR}/library")
-set(LITEPLAYER_DIR "${TOP_DIR}/player")
+set(THIRDPARTY_DIR "${TOP_DIR}/thirdparty")
 
 # include files
-include_directories(${MSGUTILS_DIR}/include)
-include_directories(${LITECORE_DIR}/core/include)
-include_directories(${LITECORE_DIR}/components/include)
-include_directories(${LITEPLAYER_DIR})
+include_directories(${THIRDPARTY_DIR}/msgutils/include)
+include_directories(${THIRDPARTY_DIR}/codec)
+include_directories(${THIRDPARTY_DIR}/speexdsp)
+include_directories(${TOP_DIR}/library/core/include)
+include_directories(${TOP_DIR}/library/components/include)
+include_directories(${TOP_DIR}/player)
 
 # source files
-set (MSGUTILS_SRC
-    ${MSGUTILS_DIR}/source/memory_detect.c
-    ${MSGUTILS_DIR}/source/msglooper.c
-    ${MSGUTILS_DIR}/source/msgqueue.c
-    ${MSGUTILS_DIR}/source/ringbuf.c
-    ${MSGUTILS_DIR}/source/smartptr.c
-    ${MSGUTILS_DIR}/source/stllist.c
-    ${MSGUTILS_DIR}/source/sw_timer.c
-    ${MSGUTILS_DIR}/source/sw_watchdog.c
-    ${MSGUTILS_DIR}/source/portable/os_logger.c
-    ${MSGUTILS_DIR}/source/portable/os_thread.c
-    ${MSGUTILS_DIR}/source/portable/os_time.c
-    ${MSGUTILS_DIR}/source/portable/os_timer.c
-)
-
-# source files
-set (LITECORE_SRC
-    "${LITECORE_DIR}/core/audio_element.c"
-    "${LITECORE_DIR}/core/audio_event_iface.c"
-    "${LITECORE_DIR}/core/audio_pipeline.c"
-    "${LITECORE_DIR}/components/audio_decoder/libmad/bit.c"
-    "${LITECORE_DIR}/components/audio_decoder/libmad/decoder.c"
-    "${LITECORE_DIR}/components/audio_decoder/libmad/fixed.c"
-    "${LITECORE_DIR}/components/audio_decoder/libmad/frame.c"
-    "${LITECORE_DIR}/components/audio_decoder/libmad/huffman.c"
-    "${LITECORE_DIR}/components/audio_decoder/libmad/layer12.c"
-    "${LITECORE_DIR}/components/audio_decoder/libmad/layer3.c"
-    "${LITECORE_DIR}/components/audio_decoder/libmad/stream.c"
-    "${LITECORE_DIR}/components/audio_decoder/libmad/synth.c"
-    "${LITECORE_DIR}/components/audio_decoder/libmad/timer.c"
-    "${LITECORE_DIR}/components/audio_decoder/libmad/version.c"
-    "${LITECORE_DIR}/components/audio_decoder/helixaac/aacdec.c"
-    "${LITECORE_DIR}/components/audio_decoder/helixaac/aactabs.c"
-    "${LITECORE_DIR}/components/audio_decoder/helixaac/bitstream.c"
-    "${LITECORE_DIR}/components/audio_decoder/helixaac/buffers.c"
-    "${LITECORE_DIR}/components/audio_decoder/helixaac/dct4.c"
-    "${LITECORE_DIR}/components/audio_decoder/helixaac/decelmnt.c"
-    "${LITECORE_DIR}/components/audio_decoder/helixaac/dequant.c"
-    "${LITECORE_DIR}/components/audio_decoder/helixaac/fft.c"
-    "${LITECORE_DIR}/components/audio_decoder/helixaac/filefmt.c"
-    "${LITECORE_DIR}/components/audio_decoder/helixaac/huffman.c"
-    "${LITECORE_DIR}/components/audio_decoder/helixaac/hufftabs.c"
-    "${LITECORE_DIR}/components/audio_decoder/helixaac/imdct.c"
-    "${LITECORE_DIR}/components/audio_decoder/helixaac/noiseless.c"
-    "${LITECORE_DIR}/components/audio_decoder/helixaac/pns.c"
-    "${LITECORE_DIR}/components/audio_decoder/helixaac/sbr.c"
-    "${LITECORE_DIR}/components/audio_decoder/helixaac/sbrfft.c"
-    "${LITECORE_DIR}/components/audio_decoder/helixaac/sbrfreq.c"
-    "${LITECORE_DIR}/components/audio_decoder/helixaac/sbrhfadj.c"
-    "${LITECORE_DIR}/components/audio_decoder/helixaac/sbrhfgen.c"
-    "${LITECORE_DIR}/components/audio_decoder/helixaac/sbrhuff.c"
-    "${LITECORE_DIR}/components/audio_decoder/helixaac/sbrimdct.c"
-    "${LITECORE_DIR}/components/audio_decoder/helixaac/sbrmath.c"
-    "${LITECORE_DIR}/components/audio_decoder/helixaac/sbrqmf.c"
-    "${LITECORE_DIR}/components/audio_decoder/helixaac/sbrside.c"
-    "${LITECORE_DIR}/components/audio_decoder/helixaac/sbrtabs.c"
-    "${LITECORE_DIR}/components/audio_decoder/helixaac/stproc.c"
-    "${LITECORE_DIR}/components/audio_decoder/helixaac/tns.c"
-    "${LITECORE_DIR}/components/audio_decoder/helixaac/trigtabs.c"
-    "${LITECORE_DIR}/components/audio_decoder/mp3_mad_wrapper.c"
-    "${LITECORE_DIR}/components/audio_decoder/mp3_decoder.c"
-    "${LITECORE_DIR}/components/audio_decoder/aac_helix_wrapper.c"
-    "${LITECORE_DIR}/components/audio_decoder/aac_decoder.c"
-    "${LITECORE_DIR}/components/audio_decoder/m4a_decoder.c"
-    "${LITECORE_DIR}/components/audio_decoder/wav_decoder.c"
-    "${LITECORE_DIR}/components/audio_extractor/mp3_extractor.c"
-    "${LITECORE_DIR}/components/audio_extractor/aac_extractor.c"
-    "${LITECORE_DIR}/components/audio_extractor/m4a_extractor.c"
-    "${LITECORE_DIR}/components/audio_extractor/wav_extractor.c"
-    "${LITECORE_DIR}/components/audio_resampler/libspeexdsp/resample.c"
-    "${LITECORE_DIR}/components/audio_resampler/audio_resampler.c"
-    "${LITECORE_DIR}/components/audio_stream/file_stream.c"
-    "${LITECORE_DIR}/components/audio_stream/sink_stream.c"
-    "${LITECORE_DIR}/components/audio_stream/http_stream.c"
+set (THIRDPARTY_SRC
+    ${THIRDPARTY_DIR}/msgutils/source/memory_detect.c
+    ${THIRDPARTY_DIR}/msgutils/source/msglooper.c
+    ${THIRDPARTY_DIR}/msgutils/source/msgqueue.c
+    ${THIRDPARTY_DIR}/msgutils/source/ringbuf.c
+    ${THIRDPARTY_DIR}/msgutils/source/smartptr.c
+    ${THIRDPARTY_DIR}/msgutils/source/stllist.c
+    ${THIRDPARTY_DIR}/msgutils/source/sw_timer.c
+    ${THIRDPARTY_DIR}/msgutils/source/sw_watchdog.c
+    ${THIRDPARTY_DIR}/msgutils/source/portable/os_logger.c
+    ${THIRDPARTY_DIR}/msgutils/source/portable/os_thread.c
+    ${THIRDPARTY_DIR}/msgutils/source/portable/os_time.c
+    ${THIRDPARTY_DIR}/msgutils/source/portable/os_timer.c
+    ${THIRDPARTY_DIR}/codec/mp3-mad/bit.c
+    ${THIRDPARTY_DIR}/codec/mp3-mad/decoder.c
+    ${THIRDPARTY_DIR}/codec/mp3-mad/fixed.c
+    ${THIRDPARTY_DIR}/codec/mp3-mad/frame.c
+    ${THIRDPARTY_DIR}/codec/mp3-mad/huffman.c
+    ${THIRDPARTY_DIR}/codec/mp3-mad/layer12.c
+    ${THIRDPARTY_DIR}/codec/mp3-mad/layer3.c
+    ${THIRDPARTY_DIR}/codec/mp3-mad/stream.c
+    ${THIRDPARTY_DIR}/codec/mp3-mad/synth.c
+    ${THIRDPARTY_DIR}/codec/mp3-mad/timer.c
+    ${THIRDPARTY_DIR}/codec/mp3-mad/version.c
+    ${THIRDPARTY_DIR}/codec/aac-helix/aacdec.c
+    ${THIRDPARTY_DIR}/codec/aac-helix/aactabs.c
+    ${THIRDPARTY_DIR}/codec/aac-helix/bitstream.c
+    ${THIRDPARTY_DIR}/codec/aac-helix/buffers.c
+    ${THIRDPARTY_DIR}/codec/aac-helix/dct4.c
+    ${THIRDPARTY_DIR}/codec/aac-helix/decelmnt.c
+    ${THIRDPARTY_DIR}/codec/aac-helix/dequant.c
+    ${THIRDPARTY_DIR}/codec/aac-helix/fft.c
+    ${THIRDPARTY_DIR}/codec/aac-helix/filefmt.c
+    ${THIRDPARTY_DIR}/codec/aac-helix/huffman.c
+    ${THIRDPARTY_DIR}/codec/aac-helix/hufftabs.c
+    ${THIRDPARTY_DIR}/codec/aac-helix/imdct.c
+    ${THIRDPARTY_DIR}/codec/aac-helix/noiseless.c
+    ${THIRDPARTY_DIR}/codec/aac-helix/pns.c
+    ${THIRDPARTY_DIR}/codec/aac-helix/sbr.c
+    ${THIRDPARTY_DIR}/codec/aac-helix/sbrfft.c
+    ${THIRDPARTY_DIR}/codec/aac-helix/sbrfreq.c
+    ${THIRDPARTY_DIR}/codec/aac-helix/sbrhfadj.c
+    ${THIRDPARTY_DIR}/codec/aac-helix/sbrhfgen.c
+    ${THIRDPARTY_DIR}/codec/aac-helix/sbrhuff.c
+    ${THIRDPARTY_DIR}/codec/aac-helix/sbrimdct.c
+    ${THIRDPARTY_DIR}/codec/aac-helix/sbrmath.c
+    ${THIRDPARTY_DIR}/codec/aac-helix/sbrqmf.c
+    ${THIRDPARTY_DIR}/codec/aac-helix/sbrside.c
+    ${THIRDPARTY_DIR}/codec/aac-helix/sbrtabs.c
+    ${THIRDPARTY_DIR}/codec/aac-helix/stproc.c
+    ${THIRDPARTY_DIR}/codec/aac-helix/tns.c
+    ${THIRDPARTY_DIR}/codec/aac-helix/trigtabs.c
+    ${THIRDPARTY_DIR}/speexdsp/resample.c
 )
 
 # source files
 set (LITEPLAYER_SRC
-    ${LITEPLAYER_DIR}/liteplayer_source.c
-    ${LITEPLAYER_DIR}/liteplayer_parser.c
-    ${LITEPLAYER_DIR}/liteplayer_debug.c
-    ${LITEPLAYER_DIR}/liteplayer_main.c
+    ${TOP_DIR}/library/core/audio_element.c
+    ${TOP_DIR}/library/core/audio_event_iface.c
+    ${TOP_DIR}/library/core/audio_pipeline.c
+    ${TOP_DIR}/library/components/audio_decoder/mp3_mad_wrapper.c
+    ${TOP_DIR}/library/components/audio_decoder/mp3_decoder.c
+    ${TOP_DIR}/library/components/audio_decoder/aac_helix_wrapper.c
+    ${TOP_DIR}/library/components/audio_decoder/aac_decoder.c
+    ${TOP_DIR}/library/components/audio_decoder/m4a_decoder.c
+    ${TOP_DIR}/library/components/audio_decoder/wav_decoder.c
+    ${TOP_DIR}/library/components/audio_extractor/mp3_extractor.c
+    ${TOP_DIR}/library/components/audio_extractor/aac_extractor.c
+    ${TOP_DIR}/library/components/audio_extractor/m4a_extractor.c
+    ${TOP_DIR}/library/components/audio_extractor/wav_extractor.c
+    ${TOP_DIR}/library/components/audio_resampler/audio_resampler.c
+    ${TOP_DIR}/library/components/audio_stream/file_stream.c
+    ${TOP_DIR}/library/components/audio_stream/sink_stream.c
+    ${TOP_DIR}/library/components/audio_stream/http_stream.c
+    ${TOP_DIR}/player/liteplayer_source.c
+    ${TOP_DIR}/player/liteplayer_parser.c
+    ${TOP_DIR}/player/liteplayer_debug.c
+    ${TOP_DIR}/player/liteplayer_main.c
 )
 
 # cflags: OS_LINUX, OS_ANDROID, OS_MACOSX, OS_IOS, OS_FREERTOS
@@ -120,5 +116,5 @@ set(CMAKE_LDFLAGS "${CMAKE_LDFLAGS} -Wl,-O1 -Wl,--hash-style=gnu -Wl,--as-needed
 #message("CMAKE_C_FLAGS: ${CMAKE_C_FLAGS}")
 
 # liteplayer lib
-add_library(liteplayer   SHARED ${MSGUTILS_SRC} ${LITECORE_SRC} ${LITEPLAYER_SRC})
-add_library(liteplayer_s STATIC ${MSGUTILS_SRC} ${LITECORE_SRC} ${LITEPLAYER_SRC})
+add_library(liteplayer   SHARED ${THIRDPARTY_SRC} ${LITEPLAYER_SRC})
+add_library(liteplayer_s STATIC ${THIRDPARTY_SRC} ${LITEPLAYER_SRC})

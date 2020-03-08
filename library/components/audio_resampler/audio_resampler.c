@@ -22,7 +22,7 @@
 
 #include "esp_adf/esp_log.h"
 #include "esp_adf/audio_common.h"
-#include "libspeexdsp/speex/speex_resampler.h"
+#include "speex/speex_resampler.h"
 #include "audio_resampler/audio_resampler.h"
 
 #define TAG "AUDIO_RESAMPLER"

@@ -19,8 +19,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "libmad/mad.h"
-#include "libmad/global.h"
+#include "mp3-mad/mad.h"
+#include "mp3-mad/global.h"
 #include "esp_adf/esp_log.h"
 #include "esp_adf/audio_common.h"
 #include "esp_adf/audio_element.h"

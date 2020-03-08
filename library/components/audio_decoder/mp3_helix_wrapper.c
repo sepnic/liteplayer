@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "helixmp3/mp3common.h"
+#include "mp3-helix/mp3common.h"
 #include "esp_adf/esp_log.h"
 #include "esp_adf/audio_common.h"
 #include "esp_adf/audio_element.h"
