@@ -88,7 +88,7 @@ static int httpclient_wrapper_parse_content_length(char *header_buf, long long *
         memcpy(header_content, header_buf+val_pos, val_len);
         header_content[val_len] = '\0';
         *content_len = atoi(header_content);
-        ESP_LOGD(TAG, "Content-Length=%d", (int)(*content_len));
+        ESP_LOGV(TAG, "Content-Length=%d", (int)(*content_len));
     }
     return ret;
 }

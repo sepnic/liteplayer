@@ -380,7 +380,7 @@ int audio_element_input(audio_element_handle_t el, char *buffer, int wanted_size
                 break;
             case AEL_IO_DONE:
             case AEL_IO_OK:
-                ESP_LOGI(TAG, "IN-[%s] AEL_IO_DONE,%d", el->tag, in_len);
+                ESP_LOGD(TAG, "IN-[%s] AEL_IO_DONE,%d", el->tag, in_len);
                 break;
             case AEL_IO_FAIL:
                 ESP_LOGE(TAG, "IN-[%s] AEL_STATUS_ERROR_INPUT", el->tag);
@@ -427,7 +427,7 @@ int audio_element_output(audio_element_handle_t el, char *buffer, int write_size
                 break;
             case AEL_IO_DONE:
             case AEL_IO_OK:
-                ESP_LOGI(TAG, "OUT-[%s] AEL_IO_DONE,%d", el->tag, output_len);
+                ESP_LOGD(TAG, "OUT-[%s] AEL_IO_DONE,%d", el->tag, output_len);
                 break;
             case AEL_IO_FAIL:
                 ESP_LOGE(TAG, "OUT-[%s] AEL_STATUS_ERROR_OUTPUT", el->tag);
@@ -1189,11 +1189,17 @@ esp_err_t audio_element_wait_for_stop_ms(audio_element_handle_t el, int timeout_
     esp_err_t ret = ESP_FAIL;
     OS_THREAD_MUTEX_LOCK(el->state_lock);
     while ((el->state_event & STOPPED_BIT) == 0) {
-        if (OS_THREAD_COND_TIMEDWAIT(el->state_cond, el->state_lock, timeout_ms*1000) != 0)
+        if (timeout_ms > 0)
+            ret = OS_THREAD_COND_TIMEDWAIT(el->state_cond, el->state_lock, timeout_ms*1000);
+        else
+            ret = OS_THREAD_COND_WAIT(el->state_lock, el->state_lock);
+        if (ret != 0)
             break;
     }
     if ((el->state_event & STOPPED_BIT) != 0)
         ret = ESP_OK;
+    else
+        ret = ESP_FAIL;
     OS_THREAD_MUTEX_UNLOCK(el->state_lock);
     return ret;
 }

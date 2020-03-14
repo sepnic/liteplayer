@@ -269,7 +269,7 @@ int m4a_wrapper_init(m4a_decoder_handle_t decoder)
         return -1;
     }
 
-    UCHAR *asc_buf = (UCHAR *)(&decoder->m4a_info.asc);
+    UCHAR *asc_buf = (UCHAR *)(decoder->m4a_info.asc.buf);
     UINT asc_size = (UINT)(decoder->m4a_info.asc.size);
     AAC_DECODER_ERROR err = aacDecoder_ConfigRaw(hDecoder, &asc_buf, &asc_size);
     if (err != AAC_DEC_OK) {

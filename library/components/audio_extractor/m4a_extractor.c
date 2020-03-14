@@ -594,20 +594,21 @@ static int m4a_parse_asc(m4a_info_t *m4a_info)
 
 static void m4a_dump_info(m4a_info_t *m4a_info)
 {
-    ESP_LOGD(TAG, "Sampling rate:\t\t%u", m4a_info->samplerate);
-    ESP_LOGD(TAG, "Channels:\t\t%u", m4a_info->channels);
-    ESP_LOGD(TAG, "Bits per sample:\t\t%u", m4a_info->bits);
-    ESP_LOGD(TAG, "Buffer size:\t\t%u", m4a_info->buffersize);
-    ESP_LOGD(TAG, "Max bitrate:\t\t%u", m4a_info->bitratemax);
-    ESP_LOGD(TAG, "Average bitrate:\t%u", m4a_info->bitrateavg);
-    ESP_LOGD(TAG, "Frames:\t\t\t%u", m4a_info->stszsize);
-    ESP_LOGD(TAG, "ASC size:\t\t%u", m4a_info->asc.size);
-    ESP_LOGD(TAG, "ASC buf:%x:%x:%x:%x:%x:%x:%x",
+    ESP_LOGD(TAG, "M4A INFO:");
+    ESP_LOGD(TAG, "  >Channels          : %u", m4a_info->channels);
+    ESP_LOGD(TAG, "  >Sampling rate     : %u", m4a_info->samplerate);
+    ESP_LOGD(TAG, "  >Bits per sample   : %u", m4a_info->bits);
+    ESP_LOGD(TAG, "  >Buffer size       : %u", m4a_info->buffersize);
+    ESP_LOGD(TAG, "  >Max bitrate       : %u", m4a_info->bitratemax);
+    ESP_LOGD(TAG, "  >Average bitrate   : %u", m4a_info->bitrateavg);
+    ESP_LOGD(TAG, "  >Frames            : %u", m4a_info->stszsize);
+    ESP_LOGD(TAG, "  >ASC buff          : %x:%x:%x:%x:%x:%x:%x",
              m4a_info->asc.buf[0], m4a_info->asc.buf[1], m4a_info->asc.buf[2],
              m4a_info->asc.buf[3], m4a_info->asc.buf[4], m4a_info->asc.buf[5],
              m4a_info->asc.buf[6]);
-    ESP_LOGD(TAG, "Duration:\t\t%.1f sec", (float)m4a_info->duration/m4a_info->timescale);
-    ESP_LOGD(TAG, "Data offset/size:\t%u/%u", m4a_info->mdatofs, m4a_info->mdatsize);
+    ESP_LOGD(TAG, "  >ASC size          : %u", m4a_info->asc.size);
+    ESP_LOGD(TAG, "  >Duration          : %.1f sec", (float)m4a_info->duration/m4a_info->timescale);
+    ESP_LOGD(TAG, "  >Data offset/size  : %u/%u", m4a_info->mdatofs, m4a_info->mdatsize);
 }
 
 static AAC_ERR_T m4a_check_header(atom_parser_handle_t handle)

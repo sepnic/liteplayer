@@ -76,7 +76,7 @@ typedef struct {
     .queue_set_size = DEFAULT_AUDIO_EVENT_IFACE_SIZE,       \
     .on_cmd = NULL,                                         \
     .context = NULL,                                        \
-    .timeout_ms = AUDIO_MAX_DELAY,                                \
+    .timeout_ms = AUDIO_MAX_DELAY,                          \
     .type = 0,                                              \
 }
 

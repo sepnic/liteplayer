@@ -29,7 +29,7 @@ typedef struct {
     uint32_t ChunkID;           //chunk id;"RIFF",0X46464952
     uint32_t ChunkSize ;        //file length - 8
     uint32_t Format;            //WAVE,0X45564157
-} ChunkRIFF ;
+} __attribute__((packed)) ChunkRIFF;
 
 //fmt block
 typedef struct {

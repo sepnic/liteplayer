@@ -80,8 +80,7 @@ static int media_parser_fetch(char *buf, int wanted_size, long offset, void *pri
 
 static int m4a_header_parse(media_source_info_t *source_info, media_codec_info_t *media_info)
 {
-    if (source_info->source_type != MEDIA_SOURCE_FILE &&
-        source_info->source_type != MEDIA_SOURCE_HTTP)
+    if (source_info->source_type != MEDIA_SOURCE_FILE && source_info->source_type != MEDIA_SOURCE_HTTP)
         return ESP_FAIL;
 
     media_parser_priv_t m4a_priv = {
@@ -94,9 +93,9 @@ static int m4a_header_parse(media_source_info_t *source_info, media_codec_info_t
 
     if (source_info->source_type == MEDIA_SOURCE_FILE) {
         m4a_priv.file_handle = source_info->file_wrapper.open(source_info->url,
-                                                                FILE_READ,
-                                                                0,
-                                                                source_info->file_wrapper.file_priv);
+                                                              FILE_READ,
+                                                              0,
+                                                              source_info->file_wrapper.file_priv);
         if (m4a_priv.file_handle == NULL)
             return ESP_FAIL;
     }
@@ -173,9 +172,9 @@ static int media_header_parse(media_source_info_t *source_info, media_codec_info
     }
     else if (source_info->source_type == MEDIA_SOURCE_FILE) {
         file = source_info->file_wrapper.open(source_info->url,
-                                               FILE_READ,
-                                               0,
-                                               source_info->file_wrapper.file_priv);
+                                              FILE_READ,
+                                              0,
+                                              source_info->file_wrapper.file_priv);
         if (file == NULL) {
             ESP_LOGE(TAG, "Failed to open file, url=%s", source_info->url);
             goto parse_done;
@@ -251,8 +250,8 @@ static int media_header_parse(media_source_info_t *source_info, media_codec_info
                 if (source_info->file_wrapper.seek(file, frame_start_offset) != 0)
                     goto parse_done;
                 bytes_read = source_info->file_wrapper.read(file,
-                                                             buf,
-                                                             DEFAULT_MEDIA_PARSER_BUFFER_SIZE);
+                                                            buf,
+                                                            DEFAULT_MEDIA_PARSER_BUFFER_SIZE);
             }
             if (bytes_read < 4)
                 goto parse_done;
@@ -287,8 +286,8 @@ static int media_header_parse(media_source_info_t *source_info, media_codec_info
                 if (source_info->file_wrapper.seek(file, frame_start_offset) != 0)
                     goto parse_done;
                 bytes_read = source_info->file_wrapper.read(file,
-                                                             buf,
-                                                             DEFAULT_MEDIA_PARSER_BUFFER_SIZE);
+                                                            buf,
+                                                            DEFAULT_MEDIA_PARSER_BUFFER_SIZE);
             }
             if (bytes_read < 9)
                 goto parse_done;
@@ -350,19 +349,24 @@ static void *media_parser_thread(void *arg)
     media_parser_priv_t *priv = (media_parser_priv_t *)arg;
     int ret = media_info_parse(&priv->source_info, &priv->media_info);
 
-    OS_THREAD_MUTEX_LOCK(priv->lock);
-    if (!priv->stop && priv->listener) {
-        if (ret == ESP_OK)
-            priv->listener(MEDIA_PARSER_SUCCEED, &priv->media_info, priv->listener_priv);
-        else
-            priv->listener(MEDIA_PARSER_FAILED, &priv->media_info, priv->listener_priv);
+    {
+        OS_THREAD_MUTEX_LOCK(priv->lock);
+
+        if (!priv->stop && priv->listener) {
+            if (ret == ESP_OK)
+                priv->listener(MEDIA_PARSER_SUCCEED, &priv->media_info, priv->listener_priv);
+            else
+                priv->listener(MEDIA_PARSER_FAILED, &priv->media_info, priv->listener_priv);
+        }
+
+        ESP_LOGV(TAG, "Waiting stop command");
+        while (!priv->stop)
+            OS_THREAD_COND_WAIT(priv->cond, priv->lock);
+
+        OS_THREAD_MUTEX_UNLOCK(priv->lock);
     }
-    OS_THREAD_MUTEX_UNLOCK(priv->lock);
 
-    while (!priv->stop)
-        OS_THREAD_COND_WAIT(priv->cond, priv->lock);
     media_parser_cleanup(priv);
-
     ESP_LOGD(TAG, "Media parser task leave");
     return NULL;
 }
@@ -472,8 +476,12 @@ void media_parser_stop(media_parser_handle_t handle)
     if (priv == NULL)
         return;
 
-    OS_THREAD_MUTEX_LOCK(priv->lock);
-    priv->stop = true;
-    OS_THREAD_COND_SIGNAL(priv->cond);
-    OS_THREAD_MUTEX_UNLOCK(priv->lock);
+    {
+        OS_THREAD_MUTEX_LOCK(priv->lock);
+
+        priv->stop = true;
+        OS_THREAD_COND_SIGNAL(priv->cond);
+
+        OS_THREAD_MUTEX_UNLOCK(priv->lock);
+    }
 }

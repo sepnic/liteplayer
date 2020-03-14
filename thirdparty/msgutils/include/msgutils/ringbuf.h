@@ -99,12 +99,11 @@ int rb_get_size(ringbuf_handle_t rb);
 /**
  * @brief      Read from Ringbuffer to `buf` with len and wait `timeout_ms` milliseconds until enough bytes to read
  *             if the ringbuffer bytes available is less than `len`.
- *             If `buf` argument provided is `NULL`, then ringbuffer do pseudo reads by simply advancing pointers.
  *
  * @param[in]  rb             The Ringbuffer handle
  * @param      buf            The buffer pointer to read out data
  * @param[in]  len            The length request
- * @param[in]  timeout_ms     The time to wait
+ * @param[in]  timeout_ms     The time to wait, if zero, wait forever
  *
  * @return     Number of bytes read
  */
@@ -117,11 +116,33 @@ int rb_read(ringbuf_handle_t rb, char *buf, int len, unsigned int timeout_ms);
  * @param[in]  rb             The Ringbuffer handle
  * @param      buf            The buffer
  * @param[in]  len            The length
- * @param[in]  timeout_ms     The time to wait
+ * @param[in]  timeout_ms     The time to wait, if zero, wait forever
  *
  * @return     Number of bytes written
  */
 int rb_write(ringbuf_handle_t rb, char *buf, int len, unsigned int timeout_ms);
+
+/**
+ * @brief      Nonblock read from Ringbuffer to `buf` with len.
+ *
+ * @param[in]  rb             The Ringbuffer handle
+ * @param      buf            The buffer pointer to read out data
+ * @param[in]  len            The length request
+ *
+ * @return     Number of bytes read
+ */
+int rb_read_nonblock(ringbuf_handle_t rb, char *buf, int len);
+
+/**
+ * @brief      Nonblock write to Ringbuffer from `buf` with `len`
+ *
+ * @param[in]  rb             The Ringbuffer handle
+ * @param      buf            The buffer
+ * @param[in]  len            The length
+ *
+ * @return     Number of bytes written
+ */
+int rb_write_nonblock(ringbuf_handle_t rb, char *buf, int len);
 
 /**
  * @brief      Set status of writing to ringbuffer is done

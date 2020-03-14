@@ -268,8 +268,7 @@ request_next:
 
     struct listnode *front = list_head(&priv->m3u_list);
     struct m3u_node *node = node_to_item(front, struct m3u_node, listnode);
-    const char *url = node->url;
-    client = priv->info.http_wrapper.open(url, pos, priv->info.http_wrapper.http_priv);
+    client = priv->info.http_wrapper.open(node->url, pos, priv->info.http_wrapper.http_priv);
 
     list_remove(front);
     audio_free(node->url);
@@ -325,25 +324,29 @@ request_next:
     }
 
 thread_exit:
-    OS_THREAD_MUTEX_LOCK(priv->lock);
-    if (!priv->stop) {
-        if (state == MEDIA_SOURCE_READ_DONE || state == MEDIA_SOURCE_WRITE_DONE)
-            rb_done_write(priv->rb);
-        else
-            rb_abort(priv->rb);
-        if (priv->listener)
-            priv->listener(state, priv->listener_priv);
-    }
-    OS_THREAD_MUTEX_UNLOCK(priv->lock);
-
     if (client != NULL)
         priv->info.http_wrapper.close(client);
 
-    ESP_LOGV(TAG, "Waiting stop command");
-    while (!priv->stop)
-        OS_THREAD_COND_WAIT(priv->cond, priv->lock);
-    media_source_cleanup(priv);
+    {
+        OS_THREAD_MUTEX_LOCK(priv->lock);
 
+        if (!priv->stop) {
+            if (state == MEDIA_SOURCE_READ_DONE || state == MEDIA_SOURCE_WRITE_DONE)
+                rb_done_write(priv->rb);
+            else
+                rb_abort(priv->rb);
+            if (priv->listener)
+                priv->listener(state, priv->listener_priv);
+        }
+
+        ESP_LOGV(TAG, "Waiting stop command");
+        while (!priv->stop)
+            OS_THREAD_COND_WAIT(priv->cond, priv->lock);
+
+        OS_THREAD_MUTEX_UNLOCK(priv->lock);
+    }
+
+    media_source_cleanup(priv);
     ESP_LOGD(TAG, "Media source task leave");
     return NULL;
 }
@@ -503,9 +506,9 @@ static void *media_source_thread(void *arg)
     }
     else if (priv->info.source_type == MEDIA_SOURCE_FILE) {
         file = priv->info.file_wrapper.open(priv->info.url,
-                                             FILE_READ,
-                                             priv->info.content_pos,
-                                             priv->info.file_wrapper.file_priv);
+                                            FILE_READ,
+                                            priv->info.content_pos,
+                                            priv->info.file_wrapper.file_priv);
         if (file == NULL) {
             state = MEDIA_SOURCE_READ_FAILED;
             goto thread_exit;
@@ -563,27 +566,31 @@ static void *media_source_thread(void *arg)
     }
 
 thread_exit:
-    OS_THREAD_MUTEX_LOCK(priv->lock);
-    if (!priv->stop) {
-        if (state == MEDIA_SOURCE_READ_DONE || state == MEDIA_SOURCE_WRITE_DONE)
-            rb_done_write(priv->rb);
-        else
-            rb_abort(priv->rb);
-        if (priv->listener)
-            priv->listener(state, priv->listener_priv);
-    }
-    OS_THREAD_MUTEX_UNLOCK(priv->lock);
-
     if (client != NULL)
         priv->info.http_wrapper.close(client);
     else if (file != NULL)
         priv->info.file_wrapper.close(file);
 
-    ESP_LOGV(TAG, "Waiting stop command");
-    while (!priv->stop)
-        OS_THREAD_COND_WAIT(priv->cond, priv->lock);
-    media_source_cleanup(priv);
+    {
+        OS_THREAD_MUTEX_LOCK(priv->lock);
 
+        if (!priv->stop) {
+            if (state == MEDIA_SOURCE_READ_DONE || state == MEDIA_SOURCE_WRITE_DONE)
+                rb_done_write(priv->rb);
+            else
+                rb_abort(priv->rb);
+            if (priv->listener)
+                priv->listener(state, priv->listener_priv);
+        }
+
+        ESP_LOGV(TAG, "Waiting stop command");
+        while (!priv->stop)
+            OS_THREAD_COND_WAIT(priv->cond, priv->lock);
+
+        OS_THREAD_MUTEX_UNLOCK(priv->lock);
+    }
+
+    media_source_cleanup(priv);
     ESP_LOGD(TAG, "Media source task leave");
     return NULL;
 }
@@ -650,8 +657,12 @@ void media_source_stop(media_source_handle_t handle)
     rb_done_read(priv->rb);
     rb_done_write(priv->rb);
 
-    OS_THREAD_MUTEX_LOCK(priv->lock);
-    priv->stop = true;
-    OS_THREAD_COND_SIGNAL(priv->cond);
-    OS_THREAD_MUTEX_UNLOCK(priv->lock);
+    {
+        OS_THREAD_MUTEX_LOCK(priv->lock);
+
+        priv->stop = true;
+        OS_THREAD_COND_SIGNAL(priv->cond);
+
+        OS_THREAD_MUTEX_UNLOCK(priv->lock);
+    }
 }

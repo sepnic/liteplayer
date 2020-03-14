@@ -249,7 +249,7 @@ static void liteplayer_mediaparser_listener(media_parser_state_t state, media_co
         liteplayer_report_state(handle, LITEPLAYER_ERROR, MEDIA_PARSER_FAILED);
         break;
     case MEDIA_PARSER_SUCCEED:
-        ESP_LOGI(TAG, "[ %s-PARSER ] Receive succeed event", liteplayer_source_tag(handle->source_type));
+        ESP_LOGI(TAG, "[ %s-PARSER ] Receive prepared event", liteplayer_source_tag(handle->source_type));
         memcpy(&handle->media_info, media_info, sizeof(media_codec_info_t));
         handle->state = LITEPLAYER_PREPARED;
         liteplayer_report_state(handle, LITEPLAYER_PREPARED, 0);
@@ -264,7 +264,7 @@ static void liteplayer_mediaparser_listener(media_parser_state_t state, media_co
 static void liteplayer_pipeline_deinit(liteplayer_handle_t handle)
 {
     if (handle->pipeline != NULL) {
-        ESP_LOGI(TAG, "Destroy audio pipeline");
+        ESP_LOGD(TAG, "Destroy audio pipeline");
         audio_pipeline_deinit(handle->pipeline);
         handle->pipeline = NULL;
         handle->el_source = NULL;
@@ -291,14 +291,14 @@ static void liteplayer_pipeline_deinit(liteplayer_handle_t handle)
 static int liteplayer_pipeline_init(liteplayer_handle_t handle)
 {
     {
-        ESP_LOGI(TAG, "[1.0] Create audio pipeline");
+        ESP_LOGD(TAG, "[1.0] Create audio pipeline");
         audio_pipeline_cfg_t pipeline_cfg = DEFAULT_AUDIO_PIPELINE_CONFIG();
         handle->pipeline = audio_pipeline_init(&pipeline_cfg);
         AUDIO_MEM_CHECK(TAG, handle->pipeline, goto init_failed);
     }
 
     {
-        ESP_LOGI(TAG, "[2.0] Create sink element");
+        ESP_LOGD(TAG, "[2.0] Create sink element");
         sink_stream_cfg_t sink_cfg = SINK_STREAM_CFG_DEFAULT();
         sink_cfg.task_prio                = DEFAULT_SINK_TASK_PRIO;
         sink_cfg.task_stack               = DEFAULT_SINK_TASK_STACKSIZE;
@@ -332,7 +332,7 @@ static int liteplayer_pipeline_init(liteplayer_handle_t handle)
     }
 
     {
-        ESP_LOGI(TAG, "[2.1] Create decoder element");
+        ESP_LOGD(TAG, "[2.1] Create decoder element");
         if (handle->media_info.codec_type == AUDIO_CODEC_MP3) {
             mp3_decoder_cfg_t mp3_cfg = DEFAULT_MP3_DECODER_CONFIG();
             mp3_cfg.task_prio            = DEFAULT_DECODER_TASK_PRIO;
@@ -366,7 +366,7 @@ static int liteplayer_pipeline_init(liteplayer_handle_t handle)
     }
 
     {
-        ESP_LOGI(TAG, "[2.2] Create source element");
+        ESP_LOGD(TAG, "[2.2] Create source element");
         if (handle->source_type == MEDIA_SOURCE_STREAM)
             handle->source_rb = rb_create(DEFAULT_SOURCE_STREAM_RINGBUF_SIZE);
         else if (handle->source_type == MEDIA_SOURCE_HTTP)
@@ -412,14 +412,14 @@ static int liteplayer_pipeline_init(liteplayer_handle_t handle)
     }
 
     {
-        ESP_LOGI(TAG, "[3.0] Register all elements to audio pipeline");
+        ESP_LOGD(TAG, "[3.0] Register all elements to audio pipeline");
         audio_pipeline_register(handle->pipeline, handle->el_decoder, "decoder");
         audio_pipeline_register(handle->pipeline, handle->el_sink, "sink_w");
 
-        ESP_LOGI(TAG, "[3.1] Link elements together source_rb->decoder->sink_w");
+        ESP_LOGD(TAG, "[3.1] Link elements together source_rb->decoder->sink_w");
         audio_pipeline_link(handle->pipeline, (const char *[]){"decoder", "sink_w"}, 2);
 
-        ESP_LOGI(TAG, "[3.2] Register event callback of all elements");
+        ESP_LOGD(TAG, "[3.2] Register event callback of all elements");
         audio_element_set_event_callback(handle->el_decoder, liteplayer_element_listener, handle);
         audio_element_set_event_callback(handle->el_sink, liteplayer_element_listener, handle);
     }
