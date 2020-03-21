@@ -31,12 +31,9 @@
 #include "wave_wrapper.h"
 #endif
 
-#define TAG "liteplayerdemo"
+#define TAG "liteplayer_demo"
 
-#define LITEPLYAER_TEST_TASK_PRIO  (OS_THREAD_PRIO_NORMAL)
-#define LITEPLYAER_TEST_TASK_STACK (8192)
-
-static liteplayer_state_t g_state = LITEPLAYER_ERROR;
+static liteplayer_state_t g_state = LITEPLAYER_IDLE;
 
 static int liteplayer_test_state_listener(liteplayer_state_t state, int errcode, void *priv)
 {

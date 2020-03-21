@@ -801,7 +801,7 @@ int liteplayer_stop(liteplayer_handle_t handle)
 
     {
         OS_THREAD_MUTEX_LOCK(handle->state_lock);
-        handle->state = (ret == ESP_OK) ? LITEPLAYER_STOPPED : LITEPLAYER_ERROR;
+        handle->state = LITEPLAYER_STOPPED;
         liteplayer_report_state(handle, handle->state, ret);
         OS_THREAD_MUTEX_UNLOCK(handle->state_lock);
     }

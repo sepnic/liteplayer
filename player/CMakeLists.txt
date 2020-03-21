@@ -90,6 +90,7 @@ set (LITEPLAYER_SRC
     ${TOP_DIR}/player/liteplayer_parser.c
     ${TOP_DIR}/player/liteplayer_debug.c
     ${TOP_DIR}/player/liteplayer_main.c
+    ${TOP_DIR}/player/liteplayer_manager.c
 )
 
 # cflags: OS_LINUX, OS_ANDROID, OS_MACOSX, OS_IOS, OS_FREERTOS

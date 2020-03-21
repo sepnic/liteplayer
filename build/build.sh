@@ -20,3 +20,10 @@ mkdir -p ${OUTPUT_BIN_DIR}/liteplayer_demo
 cd ${OUTPUT_BIN_DIR}/liteplayer_demo
 cmake ${TOP_DIR}/example/liteplayer_demo
 make
+
+# build liteplayermngr_demo bin
+echo "Building liteplayermngr_demo"
+mkdir -p ${OUTPUT_BIN_DIR}/liteplayermngr_demo
+cd ${OUTPUT_BIN_DIR}/liteplayermngr_demo
+cmake ${TOP_DIR}/example/liteplayermngr_demo
+make

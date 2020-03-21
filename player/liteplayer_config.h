@@ -25,6 +25,13 @@
 extern "C" {
 #endif
 
+// player manager definations
+#define DEFAULT_MANAGER_TASK_PRIO            ( OS_THREAD_PRIO_HIGH )
+#define DEFAULT_MANAGER_TASK_STACKSIZE       ( 4096 )
+#define DEFAULT_PLAYLIST_FILE_SUFFIX         ".playlist"
+#define DEFAULT_PLAYLIST_URL_MAX             ( 200 )
+#define DEFAULT_PLAYLIST_BUFFER_SIZE         ( 32*1024 )
+
 // stream mode definations
 #define DEFAULT_STREAM_FIXED_URL             "/websocket/tts.mp3"
 #define DEFAULT_STREAM_FIXED_CODEC           ( AUDIO_CODEC_MP3 )
