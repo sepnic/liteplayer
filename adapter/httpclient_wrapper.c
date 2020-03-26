@@ -27,9 +27,7 @@
 #define TAG "httpwrapper"
 
 #define HTTPCLIENT_HEADER_BUFFER_SIZE 1024
-#define HTTPCLIENT_CONN_RETRY_COUNT   3
-#define HTTPCLIENT_SEND_RETRY_COUNT   3
-#define HTTPCLIENT_RECV_RETRY_COUNT   3
+#define HTTPCLIENT_RETRY_COUNT        3
 
 typedef struct httpclient_wrapper_priv {
     const char          *url;
@@ -41,13 +39,13 @@ typedef struct httpclient_wrapper_priv {
     int                  retrieve_len;
     bool                 first_request;
     bool                 first_response;
+    int                  retrycount;
 } httpclient_wrapper_priv_t;
 
 static int httpclient_wrapper_connect(http_handle_t handle)
 {
     httpclient_wrapper_priv_t *priv = (httpclient_wrapper_priv_t *)handle;
     HTTPCLIENT_RESULT ret = HTTPCLIENT_OK;
-    int retry = 0;
 
     memset(&priv->client, 0, sizeof(httpclient_t));
     memset(&priv->client_data, 0, sizeof(httpclient_data_t));
@@ -61,9 +59,9 @@ static int httpclient_wrapper_connect(http_handle_t handle)
 reconnect:
     ret = httpclient_connect(&priv->client, (char *)priv->url);
     if (ret != HTTPCLIENT_OK) {
-        ESP_LOGE(TAG, "Failed to connect, ret=%d, retry=%d", ret, retry);
-        if (retry++ < HTTPCLIENT_CONN_RETRY_COUNT) {
-            OS_THREAD_SLEEP_MSEC(100);
+        ESP_LOGE(TAG, "Failed to connect, ret=%d, retry=%d", ret, priv->retrycount);
+        if (priv->retrycount++ < HTTPCLIENT_RETRY_COUNT) {
+            OS_THREAD_SLEEP_MSEC(2000);
             goto reconnect;
         }
         httpclient_close(&priv->client);
@@ -117,7 +115,6 @@ int httpclient_wrapper_read(http_handle_t handle, char *buffer, int size)
     httpclient_data_t *client_data = &priv->client_data;
     char *url = (char *)priv->url;
     int resp_len = 0;
-    int send_retry = 0, recv_retry = 0;
     HTTPCLIENT_RESULT ret = HTTPCLIENT_ERROR;
 
 contiune_read:
@@ -136,12 +133,14 @@ contiune_read:
 
         ret = httpclient_send_request(client, url, HTTPCLIENT_GET, client_data);
         if (ret < 0) {
-            ESP_LOGE(TAG, "httpclient_send_request failed, ret=%d, retry=%d", ret, send_retry);
-            if (send_retry++ >= HTTPCLIENT_SEND_RETRY_COUNT)
+            ESP_LOGE(TAG, "httpclient_send_request failed, ret=%d, retry=%d", ret, priv->retrycount);
+            if (priv->retrycount++ >= HTTPCLIENT_RETRY_COUNT)
                 return -1;
+            OS_THREAD_SLEEP_MSEC(2000);
             goto reconnect;
         }
         priv->first_request = true;
+        priv->retrycount = 0;
     }
 
     //ESP_LOGD(TAG, "httpclient reading: %d/%d", (int)priv->content_pos, (int)priv->content_len);
@@ -152,9 +151,7 @@ contiune_read:
 
     ret = httpclient_recv_response(client, client_data);
     if (ret < 0) {
-        ESP_LOGE(TAG, "httpclient_recv_response failed, ret=%d, retry=%d", ret, recv_retry);
-        if (recv_retry++ >= HTTPCLIENT_RECV_RETRY_COUNT)
-            return -1;
+        ESP_LOGE(TAG, "httpclient_recv_response failed, ret=%d, reconnect", ret);
         goto reconnect;
     }
 
@@ -189,7 +186,6 @@ contiune_read:
 
 reconnect:
     httpclient_wrapper_disconnect(priv);
-    OS_THREAD_SLEEP_MSEC(50);
     ret = httpclient_wrapper_connect(priv);
     if (ret != HTTPCLIENT_OK) {
         ESP_LOGE(TAG, "httpclient reconnect failed, ret=%d", ret);

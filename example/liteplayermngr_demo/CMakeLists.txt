@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 # Support tinalsa?
-set (ENABLE_TINYALSA "YES")
+#set (ENABLE_TINYALSA "YES")
 
 set(TOP_DIR "${CMAKE_SOURCE_DIR}/../..")
 
