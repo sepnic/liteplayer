@@ -721,7 +721,7 @@ esp_err_t audio_element_set_ringbuf_done(audio_element_handle_t el)
     if (NULL == el) {
         return ESP_FAIL;
     }
-    if (el->out.output_rb && el->write_type == IO_TYPE_RB) {
+    if (el->write_type == IO_TYPE_RB && el->out.output_rb) {
         rb_done_write(el->out.output_rb);
         for (int i = 0; i < el->multi_out.max_rb_num; ++i) {
             if (el->multi_out.rb[i]) {
@@ -852,7 +852,7 @@ esp_err_t audio_element_wait_for_buffer(audio_element_handle_t el, int size_expe
 {
     esp_err_t ret = ESP_FAIL;
     el->out_buf_size_expect = size_expect;
-    if (el->out.output_rb) {
+    if (el->write_type == IO_TYPE_RB && el->out.output_rb) {
         audio_element_clear_state_event(el, BUFFER_REACH_LEVEL_BIT);
         OS_THREAD_MUTEX_LOCK(el->state_lock);
         while ((el->state_event & BUFFER_REACH_LEVEL_BIT) == 0) {
@@ -1136,7 +1136,7 @@ esp_err_t audio_element_resume(audio_element_handle_t el, float wait_for_rb_thre
     }
     OS_THREAD_MUTEX_UNLOCK(el->state_lock);
 
-    if (ret == ESP_OK && el->out.output_rb && el->is_running) {
+    if (ret == ESP_OK && el->write_type == IO_TYPE_RB && el->out.output_rb && el->is_running) {
         int size_threshold = rb_get_size(el->out.output_rb) * wait_for_rb_threshold;
         if (size_threshold != 0 && rb_bytes_filled(el->out.output_rb) < size_threshold)
             audio_element_wait_for_buffer(el, size_threshold, timeout_ms);

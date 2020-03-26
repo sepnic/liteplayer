@@ -247,18 +247,40 @@ static void *m3u_source_thread(void *arg)
     media_source_state_t state = MEDIA_SOURCE_READ_FAILED;
     http_handle_t client = NULL;
     long long pos = priv->info.content_pos;
+    int ret = 0;
 
-    int ret = m3u_parser_resolve(priv);
+resolve_m3u:
+    if (priv->stop)
+        goto thread_exit;
+    ret = m3u_parser_resolve(priv);
     if (ret != 0) {
         ESP_LOGE(TAG, "Failed to parse m3u url");
         goto thread_exit;
     }
 
-request_next:
+dequeue_url:
     if (list_empty(&priv->m3u_list)) {
-        ESP_LOGV(TAG, "No more m3u url, all read done");
-        //state = MEDIA_SOURCE_READ_DONE;
-        goto thread_exit;
+        int fill_size = 0, total_size = 0;
+        while (!priv->stop) {
+            OS_THREAD_MUTEX_LOCK(priv->lock);
+            if (!priv->stop) {
+                fill_size = rb_bytes_filled(priv->rb);
+                total_size = rb_get_size(priv->rb);
+            }
+            else {
+                fill_size = 0;
+                total_size = 0;
+            }
+            OS_THREAD_MUTEX_UNLOCK(priv->lock);
+
+            // waiting decoder to consume the old data in the ringbuf
+            if (fill_size > total_size/4)
+                OS_THREAD_SLEEP_MSEC(100);
+            else
+                break;
+        }
+        ESP_LOGV(TAG, "Current m3u list playdone, resolve more");
+        goto resolve_m3u;
     }
 
     if (client != NULL) {
@@ -277,7 +299,7 @@ request_next:
     if (client == NULL) {
         ESP_LOGE(TAG, "Connect failed, request next url");
         state = MEDIA_SOURCE_READ_FAILED;
-        goto request_next;
+        goto dequeue_url;
     }
 
     char buffer[DEFAULT_MEDIA_SOURCE_BUFFER_SIZE];
@@ -289,12 +311,12 @@ request_next:
         if (bytes_read < 0) {
             ESP_LOGE(TAG, "Read failed, request next url");
             state = MEDIA_SOURCE_READ_FAILED;
-            goto request_next;
+            goto dequeue_url;
         }
         else if (bytes_read == 0) {
             ESP_LOGD(TAG, "Read done, request next url");
             state = MEDIA_SOURCE_READ_DONE;
-            goto request_next;
+            goto dequeue_url;
         }
 
         bytes_written = 0;
@@ -347,7 +369,7 @@ thread_exit:
     }
 
     media_source_cleanup(priv);
-    ESP_LOGD(TAG, "Media source task leave");
+    ESP_LOGD(TAG, "M3U source task leave");
     return NULL;
 }
 
