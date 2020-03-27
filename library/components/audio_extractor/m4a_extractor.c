@@ -70,36 +70,22 @@ struct atom_parser {
 };
 typedef struct atom_parser *atom_parser_handle_t;
 
-/* Swap bytes in 16 bit value.  */
-static inline unsigned short bswap16(unsigned short __bsx){
-    return ((((__bsx) >> 8) & 0xff) | (((__bsx) & 0xff) << 8));
-}
-
-/* Swap bytes in 32 bit value.  */
-static inline unsigned int bswap32(unsigned int __bsx) {
-    return ((((__bsx) & 0xff000000) >> 24) | (((__bsx) & 0x00ff0000) >>  8) |
-            (((__bsx) & 0x0000ff00) <<  8) | (((__bsx) & 0x000000ff) << 24));
-}
-
-static inline uint32_t u32in(char *buf)
+static inline uint32_t u32in(uint8_t *buf)
 {
-    uint32_t u32 = *((uint32_t *)buf);
-    return bswap32(u32);
+    return ((buf[0] << 24) | (buf[1] << 16) | (buf[2] << 8) | (buf[3] << 0));
 }
 
-static inline uint16_t u16in(char *buf)
+static inline uint16_t u16in(uint8_t *buf)
 {
-    uint16_t u16 = *((uint16_t*)buf);
-    return bswap16(u16);
+    return ((buf[0] << 8) | (buf[1] << 0));
 }
 
-static inline uint8_t u8in(char *buf)
+static inline uint8_t u8in(uint8_t *buf)
 {
-    uint8_t u8 = *((uint8_t*)buf);
-    return (u8);
+    return buf[0];
 }
 
-static inline void datain(uint8_t *buf_out, char *buf_in, uint32_t size)
+static inline void datain(uint8_t *buf_out, uint8_t *buf_in, uint32_t size)
 {
     for (uint32_t i = 0; i < size; i++) {
         buf_out[i] = u8in(buf_in); buf_in += 1;
@@ -141,7 +127,7 @@ static AAC_ERR_T dummyin(atom_parser_handle_t handle, uint32_t atom_size)
 
 static AAC_ERR_T mdhdin(atom_parser_handle_t handle, uint32_t atom_size)
 {
-    char *buf = (char *)handle->data;
+    uint8_t *buf = handle->data;
     m4a_info_t *m4a_info = handle->m4a_info;
 
     uint16_t wanted_byte = 6*sizeof(uint32_t);
@@ -172,7 +158,7 @@ static AAC_ERR_T mdhdin(atom_parser_handle_t handle, uint32_t atom_size)
 
 static AAC_ERR_T hdlr1in(atom_parser_handle_t handle, uint32_t atom_size)
 {
-    char *buf = (char *)handle->data;
+    uint8_t *buf = handle->data;
     uint16_t wanted_byte = 6*sizeof(uint32_t);
 
     int32_t ret = atom_rb_read(handle, wanted_byte);
@@ -204,7 +190,7 @@ static AAC_ERR_T hdlr1in(atom_parser_handle_t handle, uint32_t atom_size)
 
 static AAC_ERR_T stsdin(atom_parser_handle_t handle, uint32_t atom_size)
 {
-    char *buf = (char *)handle->data;
+    uint8_t *buf = handle->data;
     uint16_t wanted_byte = 2*sizeof(uint32_t);
 
     int32_t ret = atom_rb_read(handle, wanted_byte);
@@ -223,7 +209,7 @@ static AAC_ERR_T stsdin(atom_parser_handle_t handle, uint32_t atom_size)
 
 static AAC_ERR_T mp4ain(atom_parser_handle_t handle, uint32_t atom_size)
 {
-    char *buf = (char *)handle->data;
+    uint8_t *buf = handle->data;
     m4a_info_t *m4a_info = handle->m4a_info;
 
     uint16_t wanted_byte = 7*sizeof(uint32_t);
@@ -259,7 +245,7 @@ static AAC_ERR_T mp4ain(atom_parser_handle_t handle, uint32_t atom_size)
     return AAC_ERR_NONE;
 }
 
-static uint32_t getsize(char *buf, uint8_t *read)
+static uint32_t getsize(uint8_t *buf, uint8_t *read)
 {
     uint8_t cnt = 0;
     uint32_t size = 0;
@@ -291,7 +277,7 @@ static AAC_ERR_T esdsin(atom_parser_handle_t handle, uint32_t atom_size)
     };
 
     uint8_t read = 0;
-    char *buf = (char *)handle->data;
+    uint8_t *buf = handle->data;
     m4a_info_t *m4a_info = handle->m4a_info;
 
     int32_t ret = atom_rb_read(handle, atom_size);
@@ -371,7 +357,7 @@ static AAC_ERR_T stszin(atom_parser_handle_t handle, uint32_t atom_size)
 {
     m4a_info_t *m4a_info = handle->m4a_info;
     uint16_t wanted_byte = 3*sizeof(uint32_t);
-    char *buf            = (char *)handle->data;
+    uint8_t *buf = handle->data;
     int32_t ret = atom_rb_read(handle, wanted_byte);
     AUDIO_ERR_CHECK(TAG, ret == 0, return ret);
 
@@ -399,8 +385,8 @@ static AAC_ERR_T stszin(atom_parser_handle_t handle, uint32_t atom_size)
         ret = atom_rb_read(handle, sizeof(uint32_t));
         AUDIO_ERR_CHECK(TAG, ret == 0, return ret);
 
-        uint32_t u32 = *(uint32_t*)(handle->data);
-        frame_size = bswap32(u32);
+        buf = handle->data;
+        frame_size = u32in(buf);
         if (m4a_info->stszmax < frame_size) {
             m4a_info->stszmax = frame_size;
         }
@@ -417,7 +403,7 @@ static AAC_ERR_T stszin(atom_parser_handle_t handle, uint32_t atom_size)
 
 static AAC_ERR_T stcoin(atom_parser_handle_t handle, uint32_t atom_size)
 {
-    char *buf = (char *)handle->data;
+    uint8_t *buf = handle->data;
     m4a_info_t *m4a_info = handle->m4a_info;
     uint16_t wanted_byte = 3*sizeof(uint32_t);
 
@@ -441,7 +427,7 @@ static AAC_ERR_T stcoin(atom_parser_handle_t handle, uint32_t atom_size)
 
 static AAC_ERR_T atom_parse(atom_parser_handle_t handle)
 {
-    char *buf = NULL;
+    uint8_t *buf = NULL;
     int32_t ret = AAC_ERR_NONE;
 
     if (handle->atom->opcode == ATOM_DESCENT) {
@@ -460,7 +446,7 @@ static AAC_ERR_T atom_parse(atom_parser_handle_t handle)
     }
 
 _next_atom:
-    buf = (char *)handle->data;
+    buf = handle->data;
     ret = atom_rb_read(handle, 8);
     AUDIO_ERR_CHECK(TAG, ret == 0, return ret);
 
@@ -613,7 +599,7 @@ static void m4a_dump_info(m4a_info_t *m4a_info)
 
 static AAC_ERR_T m4a_check_header(atom_parser_handle_t handle)
 {
-    char *buf = (char *)handle->data;
+    uint8_t *buf = handle->data;
     uint32_t pos = 0;
     uint32_t atom_size = 0;
     uint8_t atom_name[4] = {0};
@@ -644,7 +630,7 @@ next_atom:
         AUDIO_ERR_CHECK(TAG, ret == 0, return AAC_ERR_FAIL);
     }
 
-    buf = (char *)handle->data;
+    buf = handle->data;
     wanted_byte = 2*sizeof(uint32_t);
     ret = atom_rb_read(handle, wanted_byte);
     AUDIO_ERR_CHECK(TAG, ret == 0, return AAC_ERR_FAIL);
