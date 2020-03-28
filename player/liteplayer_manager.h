@@ -53,6 +53,8 @@ int liteplayer_mngr_next(liteplayer_mngr_handle_t mngr);
 
 int liteplayer_mngr_prev(liteplayer_mngr_handle_t mngr);
 
+int liteplayer_mngr_set_single_looping(liteplayer_mngr_handle_t mngr, bool enable);
+
 int liteplayer_mngr_stop(liteplayer_mngr_handle_t mngr);
 
 int liteplayer_mngr_reset(liteplayer_mngr_handle_t mngr);

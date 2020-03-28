@@ -270,34 +270,57 @@ int main(int argc, char *argv[])
 
     char input = 0;
     while (!g_exit) {
-        ESP_LOGI(TAG, "Waiting enter command: q=quit, p=pause, r=resume, N=next, P=prev");
+        if (input != '\n') {
+            ESP_LOGW(TAG, "Waiting enter command:");
+            ESP_LOGW(TAG, "  Q|q: quit");
+            ESP_LOGW(TAG, "  P|p: pause");
+            ESP_LOGW(TAG, "  R|r: resume");
+            ESP_LOGW(TAG, "  N|n: switch next");
+            ESP_LOGW(TAG, "  V|v: switch prev");
+            ESP_LOGW(TAG, "  O:   enable single looping");
+            ESP_LOGW(TAG, "  o:   disable single looping");
+        }
         input = getc(stdin);
 
-        if (input == 'q') {
+        if (input == 'Q' || input == 'q') {
            ESP_LOGI(TAG, "Quit");
             if (g_player)
                 liteplayer_mngr_reset(g_player);
             break;
         }
-        else if (input == 'p') {
+        else if (input == 'P' || input == 'p') {
            ESP_LOGI(TAG, "Pause");
             if (g_player)
                 liteplayer_mngr_pause(g_player);
         }
-        else if (input == 'r') {
+        else if (input == 'R' || input == 'r') {
            ESP_LOGI(TAG, "Resume");
             if (g_player)
                 liteplayer_mngr_resume(g_player);
         }
-        else if (input == 'N') {
+        else if (input == 'N' || input == 'n') {
            ESP_LOGI(TAG, "Next");
             if (g_player)
                 liteplayer_mngr_next(g_player);
         }
-        else if (input == 'P') {
+        else if (input == 'V' || input == 'v') {
            ESP_LOGI(TAG, "Prev");
             if (g_player)
                 liteplayer_mngr_prev(g_player);
+        }
+        else if (input == 'O') {
+           ESP_LOGI(TAG, "Enable looping");
+            if (g_player)
+                liteplayer_mngr_set_single_looping(g_player, true);
+        }
+        else if (input == 'o') {
+           ESP_LOGI(TAG, "Disable looping");
+            if (g_player)
+                liteplayer_mngr_set_single_looping(g_player, false);
+        }
+        else {
+            if (input != '\n')
+                ESP_LOGW(TAG, "Unknown command: %c", input);
         }
     }
 

@@ -34,6 +34,7 @@ struct liteplayer_mngr {
     liteplayer_handle_t  player;
     mlooper_t            looper;
     os_mutex_t           lock;
+    liteplayer_state_t   state;
     liteplayer_state_cb  listener;
     void                *listener_priv;
 
@@ -45,8 +46,10 @@ struct liteplayer_mngr {
     int                  url_index;
     int                  url_count;
 
-    bool                 is_completed;
+    bool                 is_list;
     bool                 is_paused;
+    bool                 is_completed;
+    bool                 is_looping;
 };
 
 enum {
@@ -70,6 +73,7 @@ static void playlist_clear(liteplayer_mngr_handle_t mngr)
     }
     mngr->url_index = 0;
     mngr->url_count = 0;
+    mngr->is_list = false;
 
     OS_THREAD_MUTEX_UNLOCK(mngr->lock);
 }
@@ -153,8 +157,10 @@ static int playlist_resolve(liteplayer_mngr_handle_t mngr, const char *filename)
     }
 
     OS_THREAD_MUTEX_LOCK(mngr->lock);
-    if (mngr->url_count > 0)
+    if (mngr->url_count > 0) {
+        mngr->is_list = true;
         ret = 0;
+    }
 #if 1
     for (int i = 0; i < mngr->url_count; i++) {
         ESP_LOGV(TAG, "-->url[%d]=[%s]", i, mngr->url_list[i]);
@@ -200,25 +206,25 @@ static int manager_state_callback(liteplayer_state_t state, int errcode, void *p
 
     case LITEPLAYER_STARTED:
         if (mngr->url_index > 1 || mngr->is_completed) {
-            state_sync = false;
+            state_sync = mngr->is_paused;
         }
         mngr->is_completed = false;
         mngr->is_paused = false;
         break;
 
     case LITEPLAYER_PAUSED:
-        mngr->is_paused = false;
+        mngr->is_paused = true;
         break;
 
     case LITEPLAYER_NEARLYCOMPLETED:
-        if (mngr->url_index < mngr->url_count) {
+        if (mngr->is_list || mngr->is_looping) {
             state_sync = false;
         }
         break;
 
     case LITEPLAYER_COMPLETED:
         mngr->is_completed = true;
-        if (mngr->url_index < mngr->url_count) {
+        if (mngr->is_list || mngr->is_looping) {
             struct message *msg = message_obtain(PLAYER_DO_STOP, 0, 0, mngr);
             if (msg != NULL) {
                 state_sync = false;
@@ -228,8 +234,8 @@ static int manager_state_callback(liteplayer_state_t state, int errcode, void *p
         break;
 
     case LITEPLAYER_ERROR:
-        mngr->is_completed = true; // fake completed
-        if (mngr->url_index < mngr->url_count) {
+        if (mngr->is_list && !mngr->is_looping && mngr->url_count > 1) {
+            mngr->is_completed = true; // fake completed, try to play next
             struct message *msg = message_obtain(PLAYER_DO_STOP, 0, 0, mngr);
             if (msg != NULL) {
                 state_sync = false;
@@ -239,7 +245,7 @@ static int manager_state_callback(liteplayer_state_t state, int errcode, void *p
         break;
 
     case LITEPLAYER_STOPPED:
-        if (mngr->url_index < mngr->url_count && mngr->is_completed) {
+        if ((mngr->is_list || mngr->is_looping) && mngr->is_completed) {
             struct message *msg = message_obtain(PLAYER_DO_RESET, 0, 0, mngr);
             if (msg != NULL) {
                 state_sync = false;
@@ -249,7 +255,7 @@ static int manager_state_callback(liteplayer_state_t state, int errcode, void *p
         break;
 
     case LITEPLAYER_IDLE:
-        if (mngr->url_index < mngr->url_count && mngr->is_completed) {
+        if ((mngr->is_list || mngr->is_looping) && mngr->is_completed) {
             struct message *msg = message_obtain(PLAYER_DO_SET_SOURCE, 0, 0, mngr);
             if (msg != NULL) {
                 state_sync = false;
@@ -262,6 +268,8 @@ static int manager_state_callback(liteplayer_state_t state, int errcode, void *p
         state_sync = false;
         break;
     }
+
+    mngr->state = state;
 
     OS_THREAD_MUTEX_UNLOCK(mngr->lock);
 
@@ -278,10 +286,15 @@ static void manager_looper_handle(struct message *msg)
     case PLAYER_DO_SET_SOURCE: {
         const char *url = NULL;
         OS_THREAD_MUTEX_LOCK(mngr->lock);
-        if (mngr->url_index < mngr->url_count) {
-            url = audio_strdup(mngr->url_list[mngr->url_index]);
-            mngr->url_index++;
+        if (mngr->is_looping) {
+            mngr->url_index--;
+            if (mngr->url_index < 0)
+                mngr->url_index = mngr->url_count - 1;
         }
+        url = audio_strdup(mngr->url_list[mngr->url_index]);
+        mngr->url_index++;
+        if (mngr->url_index >= mngr->url_count)
+            mngr->url_index = 0;
         OS_THREAD_MUTEX_UNLOCK(mngr->lock);
         if (url != NULL) {
             liteplayer_set_data_source(mngr->player, url);
@@ -307,28 +320,39 @@ static void manager_looper_handle(struct message *msg)
         break;
 
     case PLAYER_DO_NEXT: {
-        bool do_next = false;
         OS_THREAD_MUTEX_LOCK(mngr->lock);
-        if (mngr->url_index <= mngr->url_count - 1) {
+        if (mngr->is_list) {
+            if (mngr->is_looping) {
+                mngr->url_index++;
+                if (mngr->url_index >= mngr->url_count)
+                    mngr->url_index = 0;
+            }
             mngr->is_completed = true;
-            do_next = true;
         }
         OS_THREAD_MUTEX_UNLOCK(mngr->lock);
-        if (do_next)
+        if (mngr->is_list)
             liteplayer_stop(mngr->player);
         break;
     }
 
     case PLAYER_DO_PREV: {
-        bool do_prev = false;
         OS_THREAD_MUTEX_LOCK(mngr->lock);
-        if (mngr->url_index > 1) {
-            mngr->url_index -= 2;
+        if (mngr->is_list) {
+            mngr->url_index--;
+            if (mngr->url_index < 0)
+                mngr->url_index = mngr->url_count -1;
+            mngr->url_index--;
+            if (mngr->url_index < 0)
+                mngr->url_index = mngr->url_count -1;
+            if (mngr->is_looping) {
+                mngr->url_index++;
+                if (mngr->url_index >= mngr->url_count)
+                    mngr->url_index = 0;
+            }
             mngr->is_completed = true;
-            do_prev = true;
         }
         OS_THREAD_MUTEX_UNLOCK(mngr->lock);
-        if (do_prev)
+        if (mngr->is_list)
             liteplayer_stop(mngr->player);
         break;
     }
@@ -427,6 +451,7 @@ int liteplayer_mngr_set_data_source(liteplayer_mngr_handle_t mngr, const char *u
         OS_THREAD_MUTEX_UNLOCK(mngr->lock);
         return -1;
     }
+    mngr->is_list = false;
     mngr->is_completed = false;
     mngr->is_paused = false;
     OS_THREAD_MUTEX_UNLOCK(mngr->lock);
@@ -514,8 +539,8 @@ int liteplayer_mngr_next(liteplayer_mngr_handle_t mngr)
         return -1;
 
     OS_THREAD_MUTEX_LOCK(mngr->lock);
-    if (mngr->url_count == 0) {
-        ESP_LOGE(TAG, "Failed to switch next, playlist is empty");
+    if (!mngr->is_list) {
+        ESP_LOGE(TAG, "Failed to switch next without playlist");
         OS_THREAD_MUTEX_UNLOCK(mngr->lock);
         return -1;
     }
@@ -535,8 +560,8 @@ int liteplayer_mngr_prev(liteplayer_mngr_handle_t mngr)
         return -1;
 
     OS_THREAD_MUTEX_LOCK(mngr->lock);
-    if (mngr->url_count == 0) {
-        ESP_LOGE(TAG, "Failed to switch prev, playlist is empty");
+    if (!mngr->is_list) {
+        ESP_LOGE(TAG, "Failed to switch prev without playlist");
         OS_THREAD_MUTEX_UNLOCK(mngr->lock);
         return -1;
     }
@@ -548,6 +573,28 @@ int liteplayer_mngr_prev(liteplayer_mngr_handle_t mngr)
         return 0;
     }
     return -1;
+}
+
+int liteplayer_mngr_set_single_looping(liteplayer_mngr_handle_t mngr, bool enable)
+{
+    if (mngr == NULL)
+        return -1;
+
+    OS_THREAD_MUTEX_LOCK(mngr->lock);
+
+    if (mngr->is_looping != enable) {
+        if (mngr->state == LITEPLAYER_INITED || mngr->state == LITEPLAYER_PREPARED ||
+            mngr->state == LITEPLAYER_COMPLETED || mngr->state == LITEPLAYER_STOPPED ||
+            mngr->state == LITEPLAYER_ERROR) {
+            ESP_LOGE(TAG, "Failed to set looping in critical state");
+            OS_THREAD_MUTEX_UNLOCK(mngr->lock);
+            return -1;
+        }
+        mngr->is_looping = enable;
+    }
+
+    OS_THREAD_MUTEX_UNLOCK(mngr->lock);
+    return 0;
 }
 
 int liteplayer_mngr_stop(liteplayer_mngr_handle_t mngr)
