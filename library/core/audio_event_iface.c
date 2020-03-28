@@ -22,7 +22,7 @@
  *
  */
 
-#include "esp_adf/esp_log.h"
+#include "msgutils/os_logger.h"
 #include "esp_adf/audio_event_iface.h"
 #include "esp_adf/audio_common.h"
 
@@ -76,7 +76,7 @@ audio_event_iface_handle_t audio_event_iface_init(audio_event_iface_cfg_t *confi
         evt->external_queue = mqueue_create(sizeof(audio_event_iface_msg_t), evt->external_queue_size);
         AUDIO_MEM_CHECK(TAG, evt->external_queue, goto _event_iface_init_failed);
     } else {
-        ESP_LOGD(TAG, "This emiiter have no queue set,%p", evt);
+        OS_LOGD(TAG, "This emiiter have no queue set,%p", evt);
     }
 
     STAILQ_INIT(&evt->listening_queues);
@@ -97,7 +97,7 @@ static esp_err_t audio_event_iface_cleanup_listener(audio_event_iface_handle_t l
     audio_event_iface_discard(listen);
     STAILQ_FOREACH_SAFE(item, &listen->listening_queues, next, tmp) {
         if (listen->queue_set && mqueueset_remove_queue(listen->queue_set, item->queue) != 0) {
-            ESP_LOGE(TAG, "Error remove listener");
+            OS_LOGE(TAG, "Error remove listener");
             return ESP_FAIL;
         }
     }
@@ -124,7 +124,7 @@ static esp_err_t audio_event_iface_update_listener(audio_event_iface_handle_t li
             while (mqueue_receive(item->queue, (char *)&dummy, 0) == 0);
         }
         if (listen->queue_set && item->queue && mqueueset_add_queue(listen->queue_set, item->queue) != 0) {
-            ESP_LOGE(TAG, "Error add queue items to queue set");
+            OS_LOGE(TAG, "Error add queue items to queue set");
             return ESP_FAIL;
         }
     }
@@ -243,7 +243,7 @@ esp_err_t audio_event_iface_waiting_cmd_msg(audio_event_iface_handle_t evt)
 esp_err_t audio_event_iface_cmd(audio_event_iface_handle_t evt, audio_event_iface_msg_t *msg)
 {
     if (evt->internal_queue && (mqueue_send(evt->internal_queue, (char *)msg, 0) != 0)) {
-        ESP_LOGD(TAG, "There are no space to dispatch queue");
+        OS_LOGD(TAG, "There are no space to dispatch queue");
         return ESP_FAIL;
     }
     return ESP_OK;
@@ -253,7 +253,7 @@ esp_err_t audio_event_iface_sendout(audio_event_iface_handle_t evt, audio_event_
 {
     if (evt->external_queue) {
         if (mqueue_send(evt->external_queue, (char *)msg, 0) != 0) {
-            ESP_LOGD(TAG, "There is no space in external queue");
+            OS_LOGD(TAG, "There is no space in external queue");
             return ESP_FAIL;
         }
     }

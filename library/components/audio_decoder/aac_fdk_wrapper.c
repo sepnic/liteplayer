@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "esp_adf/esp_log.h"
+#include "msgutils/os_logger.h"
 #include "esp_adf/audio_common.h"
 #include "esp_adf/audio_element.h"
 #include "audio_decoder/aac_decoder.h"
@@ -72,7 +72,7 @@ fill_data:
     ret = aac_adts_read(decoder);
     if (ret != AAC_ERR_NONE) {
         if (ret == AAC_ERR_EOF) {
-            ESP_LOGV(TAG, "AAC frame end");
+            OS_LOGV(TAG, "AAC frame end");
             ret = AEL_IO_DONE;
         }
         return ret;
@@ -85,13 +85,13 @@ fill_data:
 
     AAC_DECODER_ERROR err = aacDecoder_Fill(decoder->handle, &in, &size, &left);
     if (err != AAC_DEC_OK) {
-        ESP_LOGE(TAG, "Failed to fill data:0x%x", err);
+        OS_LOGE(TAG, "Failed to fill data:0x%x", err);
         return AEL_PROCESS_FAIL;
     }
 
     err = aacDecoder_DecodeFrame(decoder->handle, out, AAC_DECODER_OUTPUT_BUFFER_SIZE / sizeof(INT_PCM), 0);
     if (err != AAC_DEC_OK) {
-        ESP_LOGE(TAG, "Failed to decode data:0x%x", err);
+        OS_LOGE(TAG, "Failed to decode data:0x%x", err);
         if (decode_fail_cnt++ >= 4)
             return AEL_PROCESS_FAIL;
         goto fill_data;
@@ -100,7 +100,7 @@ fill_data:
 
     CStreamInfo *frame_info = aacDecoder_GetStreamInfo(decoder->handle);
     if (frame_info == NULL || frame_info->sampleRate <= 0 || frame_info->numChannels <= 0) {
-        ESP_LOGE(TAG, "Failed to get stream info");
+        OS_LOGE(TAG, "Failed to get stream info");
         return AEL_PROCESS_FAIL;
     }
     decoder->buf_out.length = sizeof(INT_PCM)*frame_info->frameSize*frame_info->numChannels;
@@ -113,7 +113,7 @@ fill_data:
         audio_element_setinfo(decoder->el, &info);
         audio_element_report_info(decoder->el);
 
-        ESP_LOGV(TAG,"Found aac header: SR=%d, CH=%d", info.out_samplerate, info.out_channels);
+        OS_LOGV(TAG,"Found aac header: SR=%d, CH=%d", info.out_samplerate, info.out_channels);
         decoder->parsed_header = true;
     }
     return 0;
@@ -123,7 +123,7 @@ int aac_wrapper_init(aac_decoder_handle_t decoder)
 {
     HANDLE_AACDECODER hDecoder = aacDecoder_Open(TT_MP4_ADTS, 1);
     if (hDecoder == NULL) {
-        ESP_LOGE(TAG, "Failed to open aac decoder");
+        OS_LOGE(TAG, "Failed to open aac decoder");
         return -1;
     }
     decoder->handle = hDecoder;
@@ -154,19 +154,19 @@ static int m4a_mdat_read(m4a_decoder_handle_t handle)
         if (bytes_read >= 0) {
             handle->buf_in.size_read += bytes_read;
             if (bytes_read < size_want - size_read) {
-                ESP_LOGW(TAG, "Remain size_read timeout with less data");
+                OS_LOGW(TAG, "Remain size_read timeout with less data");
                 return AEL_IO_TIMEOUT;
             }
             else if (bytes_read == size_want - size_read) {
                 goto finish;
             }
             else {
-                ESP_LOGD(TAG, "Remain size_read error, stop decode");
+                OS_LOGD(TAG, "Remain size_read error, stop decode");
                 return AAC_ERR_EOF;
             }
         }
         else {
-            ESP_LOGE(TAG, "Remain size_read fail, ret=%d", bytes_read);
+            OS_LOGE(TAG, "Remain size_read fail, ret=%d", bytes_read);
             return bytes_read;
         }
     }
@@ -186,19 +186,19 @@ static int m4a_mdat_read(m4a_decoder_handle_t handle)
     if (bytes_read >= 0) {
         handle->buf_in.size_read += bytes_read;
         if (bytes_read < frame_size) {
-            ESP_LOGW(TAG, "Newly size_read timeout with less data[%d]", bytes_read);
+            OS_LOGW(TAG, "Newly size_read timeout with less data[%d]", bytes_read);
             return AEL_IO_TIMEOUT;
         }
         else if (bytes_read == frame_size) {
             goto finish;
         }
         else {
-            ESP_LOGD(TAG, "Newly size_read error, stop decode");
+            OS_LOGD(TAG, "Newly size_read error, stop decode");
             return AAC_ERR_EOF;
         }
     }
     else {
-        ESP_LOGE(TAG, "Newly size_read fail, ret=%d", bytes_read);
+        OS_LOGE(TAG, "Newly size_read fail, ret=%d", bytes_read);
         return bytes_read;
     }
 
@@ -213,7 +213,7 @@ int m4a_wrapper_run(m4a_decoder_handle_t decoder)
     int ret = m4a_mdat_read(decoder);
     if (ret != AAC_ERR_NONE) {
         if (ret == AAC_ERR_EOF) {
-            ESP_LOGV(TAG, "M4A frame end");
+            OS_LOGV(TAG, "M4A frame end");
             ret = AEL_IO_DONE;
         }
         return ret;
@@ -226,23 +226,23 @@ int m4a_wrapper_run(m4a_decoder_handle_t decoder)
 
     AAC_DECODER_ERROR err = aacDecoder_Fill(decoder->handle, &in, &size, &left);
     if (err != AAC_DEC_OK) {
-        ESP_LOGE(TAG, "Failed to fill data:0x%x", err);
+        OS_LOGE(TAG, "Failed to fill data:0x%x", err);
         return AEL_PROCESS_FAIL;
     }
 
     err = aacDecoder_DecodeFrame(decoder->handle, out, AAC_DECODER_OUTPUT_BUFFER_SIZE / sizeof(INT_PCM), 0);
     if (err != AAC_DEC_OK) {
-        ESP_LOGE(TAG, "Failed to decode data:0x%x", err);
+        OS_LOGE(TAG, "Failed to decode data:0x%x", err);
         return AEL_PROCESS_FAIL;
     }
 
     if (left != 0) {
-        ESP_LOGW(TAG, "Left %d bytes not decoded", left);
+        OS_LOGW(TAG, "Left %d bytes not decoded", left);
     }
 
     CStreamInfo *frame_info = aacDecoder_GetStreamInfo(decoder->handle);
     if (frame_info == NULL || frame_info->sampleRate <= 0 || frame_info->numChannels <= 0) {
-        ESP_LOGE(TAG, "Failed to get stream info");
+        OS_LOGE(TAG, "Failed to get stream info");
         return AEL_PROCESS_FAIL;
     }
     decoder->buf_out.length = sizeof(INT_PCM)*frame_info->frameSize*frame_info->numChannels;
@@ -255,7 +255,7 @@ int m4a_wrapper_run(m4a_decoder_handle_t decoder)
         audio_element_setinfo(decoder->el, &info);
         audio_element_report_info(decoder->el);
 
-        ESP_LOGV(TAG,"Found aac header: SR=%d, CH=%d", info.out_samplerate, info.out_channels);
+        OS_LOGV(TAG,"Found aac header: SR=%d, CH=%d", info.out_samplerate, info.out_channels);
         decoder->parsed_header = true;
     }
     return 0;
@@ -265,7 +265,7 @@ int m4a_wrapper_init(m4a_decoder_handle_t decoder)
 {
     HANDLE_AACDECODER hDecoder = aacDecoder_Open(TT_MP4_RAW, 1);
     if (hDecoder == NULL) {
-        ESP_LOGE(TAG, "Failed to open aac decoder");
+        OS_LOGE(TAG, "Failed to open aac decoder");
         return -1;
     }
 
@@ -273,7 +273,7 @@ int m4a_wrapper_init(m4a_decoder_handle_t decoder)
     UINT asc_size = (UINT)(decoder->m4a_info.asc.size);
     AAC_DECODER_ERROR err = aacDecoder_ConfigRaw(hDecoder, &asc_buf, &asc_size);
     if (err != AAC_DEC_OK) {
-        ESP_LOGE(TAG, "Failed to decode the ASC");
+        OS_LOGE(TAG, "Failed to decode the ASC");
         return -1;
     }
 

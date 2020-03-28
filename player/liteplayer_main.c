@@ -20,8 +20,7 @@
 #include <stdint.h>
 
 #include "msgutils/ringbuf.h"
-#include "esp_adf/esp_log.h"
-#include "esp_adf/esp_err.h"
+#include "msgutils/os_logger.h"
 #include "esp_adf/audio_element.h"
 #include "esp_adf/audio_pipeline.h"
 #include "esp_adf/audio_event_iface.h"
@@ -119,7 +118,7 @@ static int liteplayer_element_listener(audio_element_handle_t el, audio_event_if
             case AEL_STATUS_ERROR_CLOSE:
             case AEL_STATUS_ERROR_TIMEOUT:
             case AEL_STATUS_ERROR_UNKNOWN:
-                ESP_LOGE(TAG, "[ %s-%s ] Receive error[%d]",
+                OS_LOGE(TAG, "[ %s-%s ] Receive error[%d]",
                          liteplayer_source_tag(handle->source_type), audio_element_get_tag(el), el_status);
                 handle->state = LITEPLAYER_ERROR;
                 liteplayer_report_state(handle, LITEPLAYER_ERROR, el_status);
@@ -127,7 +126,7 @@ static int liteplayer_element_listener(audio_element_handle_t el, audio_event_if
 
             case AEL_STATUS_STATE_RUNNING:
                 if (msg->source == (void *)handle->el_sink) {
-                    ESP_LOGI(TAG, "[ %s-%s ] Receive started event",
+                    OS_LOGI(TAG, "[ %s-%s ] Receive started event",
                              liteplayer_source_tag(handle->source_type), audio_element_get_tag(el));
                     //handle->state = LITEPLAYER_STARTED;
                     //liteplayer_report_state(handle, LITEPLAYER_STARTED, 0);
@@ -136,7 +135,7 @@ static int liteplayer_element_listener(audio_element_handle_t el, audio_event_if
 
             case AEL_STATUS_STATE_PAUSED:
                 if (msg->source == (void *)handle->el_sink) {
-                    ESP_LOGI(TAG, "[ %s-%s ] Receive paused event",
+                    OS_LOGI(TAG, "[ %s-%s ] Receive paused event",
                              liteplayer_source_tag(handle->source_type), audio_element_get_tag(el));
                     //handle->state = LITEPLAYER_PAUSED;
                     //liteplayer_report_state(handle, LITEPLAYER_PAUSED, 0);
@@ -145,7 +144,7 @@ static int liteplayer_element_listener(audio_element_handle_t el, audio_event_if
 
             case AEL_STATUS_INPUT_DONE:
                 if (msg->source == (void *)handle->el_source) {
-                    ESP_LOGI(TAG, "[ %s-%s ] Receive inputdone event",
+                    OS_LOGI(TAG, "[ %s-%s ] Receive inputdone event",
                              liteplayer_source_tag(handle->source_type), audio_element_get_tag(el));
                     if (handle->source_type == MEDIA_SOURCE_HTTP)
                         liteplayer_report_state(handle, LITEPLAYER_NEARLYCOMPLETED, 0);
@@ -154,7 +153,7 @@ static int liteplayer_element_listener(audio_element_handle_t el, audio_event_if
 
             case AEL_STATUS_STATE_FINISHED:
                 if (msg->source == (void *)handle->el_sink) {
-                    ESP_LOGI(TAG, "[ %s-%s ] Receive finished event",
+                    OS_LOGI(TAG, "[ %s-%s ] Receive finished event",
                              liteplayer_source_tag(handle->source_type), audio_element_get_tag(el));
                     if (handle->state != LITEPLAYER_ERROR && handle->state != LITEPLAYER_STOPPED) {
                         handle->state = LITEPLAYER_COMPLETED;
@@ -165,7 +164,7 @@ static int liteplayer_element_listener(audio_element_handle_t el, audio_event_if
 
             case AEL_STATUS_STATE_STOPPED:
                 if (msg->source == (void *)handle->el_sink) {
-                    ESP_LOGI(TAG, "[ %s-%s ] Receive stopped event",
+                    OS_LOGI(TAG, "[ %s-%s ] Receive stopped event",
                              liteplayer_source_tag(handle->source_type), audio_element_get_tag(el));
                     //handle->state = LITEPLAYER_STOPPED;
                     //liteplayer_report_state(handle, LITEPLAYER_STOPPED, 0);
@@ -180,7 +179,7 @@ static int liteplayer_element_listener(audio_element_handle_t el, audio_event_if
             if (msg->source == (void *) handle->el_decoder) {
                 audio_element_info_t decoder_info = {0};
                 audio_element_getinfo(handle->el_decoder, &decoder_info);
-                ESP_LOGI(TAG, "[ %s-%s ] Receive codec info: samplerate=%d, ch=%d, bits=%d",
+                OS_LOGI(TAG, "[ %s-%s ] Receive codec info: samplerate=%d, ch=%d, bits=%d",
                          liteplayer_source_tag(handle->source_type), audio_element_get_tag(el),
                          decoder_info.out_samplerate, decoder_info.out_channels, decoder_info.bits);
 
@@ -188,7 +187,7 @@ static int liteplayer_element_listener(audio_element_handle_t el, audio_event_if
                 audio_element_getinfo(handle->el_sink, &sink_info);
                 if (sink_info.in_samplerate != decoder_info.out_samplerate ||
                     sink_info.in_channels != decoder_info.out_channels) {
-                    ESP_LOGW(TAG, "Forcely update sink samplerate(%d>>%d), channels(%d>>%d)",
+                    OS_LOGW(TAG, "Forcely update sink samplerate(%d>>%d), channels(%d>>%d)",
                              sink_info.in_samplerate, decoder_info.out_samplerate,
                              sink_info.in_channels, decoder_info.out_channels);
                     sink_info.in_channels = decoder_info.out_channels;
@@ -200,7 +199,7 @@ static int liteplayer_element_listener(audio_element_handle_t el, audio_event_if
         else if (msg->cmd == AEL_MSG_CMD_REPORT_POSITION) {
             if (msg->source == (void *) handle->el_sink) {
                 handle->sink_position = (long long)msg->data;
-                //ESP_LOGV(TAG, "[ %s-%s ] Receive postion info: pos=%ld",
+                //OS_LOGV(TAG, "[ %s-%s ] Receive postion info: pos=%ld",
                 //         liteplayer_source_tag(handle->source_type), audio_element_get_tag(el),
                 //         (long)handle->sink_position);
             }
@@ -220,12 +219,12 @@ static void liteplayer_mediasource_listener(media_source_state_t state, void *pr
     switch (state) {
     case MEDIA_SOURCE_READ_FAILED:
     case MEDIA_SOURCE_WRITE_FAILED:
-        ESP_LOGE(TAG, "[ %s-SOURCE ] Receive error[%d]", liteplayer_source_tag(handle->source_type), state);
+        OS_LOGE(TAG, "[ %s-SOURCE ] Receive error[%d]", liteplayer_source_tag(handle->source_type), state);
         handle->state = LITEPLAYER_ERROR;
         liteplayer_report_state(handle, LITEPLAYER_ERROR, state);
         break;
     case MEDIA_SOURCE_READ_DONE:
-        ESP_LOGI(TAG, "[ %s-SOURCE ] Receive inputdone event", liteplayer_source_tag(handle->source_type));
+        OS_LOGI(TAG, "[ %s-SOURCE ] Receive inputdone event", liteplayer_source_tag(handle->source_type));
         if (handle->source_type == MEDIA_SOURCE_HTTP)
             liteplayer_report_state(handle, LITEPLAYER_NEARLYCOMPLETED, 0);
         break;
@@ -244,12 +243,12 @@ static void liteplayer_mediaparser_listener(media_parser_state_t state, media_co
 
     switch (state) {
     case MEDIA_PARSER_FAILED:
-        ESP_LOGE(TAG, "[ %s-PARSER ] Receive error[%d]", liteplayer_source_tag(handle->source_type), state);
+        OS_LOGE(TAG, "[ %s-PARSER ] Receive error[%d]", liteplayer_source_tag(handle->source_type), state);
         handle->state = LITEPLAYER_ERROR;
         liteplayer_report_state(handle, LITEPLAYER_ERROR, MEDIA_PARSER_FAILED);
         break;
     case MEDIA_PARSER_SUCCEED:
-        ESP_LOGI(TAG, "[ %s-PARSER ] Receive prepared event", liteplayer_source_tag(handle->source_type));
+        OS_LOGI(TAG, "[ %s-PARSER ] Receive prepared event", liteplayer_source_tag(handle->source_type));
         memcpy(&handle->media_info, media_info, sizeof(media_codec_info_t));
         handle->state = LITEPLAYER_PREPARED;
         liteplayer_report_state(handle, LITEPLAYER_PREPARED, 0);
@@ -264,7 +263,7 @@ static void liteplayer_mediaparser_listener(media_parser_state_t state, media_co
 static void liteplayer_pipeline_deinit(liteplayer_handle_t handle)
 {
     if (handle->pipeline != NULL) {
-        ESP_LOGD(TAG, "Destroy audio pipeline");
+        OS_LOGD(TAG, "Destroy audio pipeline");
         audio_pipeline_deinit(handle->pipeline);
         handle->pipeline = NULL;
         handle->el_source = NULL;
@@ -291,14 +290,14 @@ static void liteplayer_pipeline_deinit(liteplayer_handle_t handle)
 static int liteplayer_pipeline_init(liteplayer_handle_t handle)
 {
     {
-        ESP_LOGD(TAG, "[1.0] Create audio pipeline");
+        OS_LOGD(TAG, "[1.0] Create audio pipeline");
         audio_pipeline_cfg_t pipeline_cfg = DEFAULT_AUDIO_PIPELINE_CONFIG();
         handle->pipeline = audio_pipeline_init(&pipeline_cfg);
         AUDIO_MEM_CHECK(TAG, handle->pipeline, goto init_failed);
     }
 
     {
-        ESP_LOGD(TAG, "[2.0] Create sink element");
+        OS_LOGD(TAG, "[2.0] Create sink element");
         sink_stream_cfg_t sink_cfg = SINK_STREAM_CFG_DEFAULT();
         sink_cfg.task_prio                = DEFAULT_SINK_TASK_PRIO;
         sink_cfg.task_stack               = DEFAULT_SINK_TASK_STACKSIZE;
@@ -332,7 +331,7 @@ static int liteplayer_pipeline_init(liteplayer_handle_t handle)
     }
 
     {
-        ESP_LOGD(TAG, "[2.1] Create decoder element");
+        OS_LOGD(TAG, "[2.1] Create decoder element");
         if (handle->media_info.codec_type == AUDIO_CODEC_MP3) {
             mp3_decoder_cfg_t mp3_cfg = DEFAULT_MP3_DECODER_CONFIG();
             mp3_cfg.task_prio            = DEFAULT_DECODER_TASK_PRIO;
@@ -366,7 +365,7 @@ static int liteplayer_pipeline_init(liteplayer_handle_t handle)
     }
 
     {
-        ESP_LOGD(TAG, "[2.2] Create source element");
+        OS_LOGD(TAG, "[2.2] Create source element");
         if (handle->source_type == MEDIA_SOURCE_STREAM)
             handle->source_rb = rb_create(DEFAULT_SOURCE_STREAM_RINGBUF_SIZE);
         else if (handle->source_type == MEDIA_SOURCE_HTTP)
@@ -412,14 +411,14 @@ static int liteplayer_pipeline_init(liteplayer_handle_t handle)
     }
 
     {
-        ESP_LOGD(TAG, "[3.0] Register all elements to audio pipeline");
+        OS_LOGD(TAG, "[3.0] Register all elements to audio pipeline");
         audio_pipeline_register(handle->pipeline, handle->el_decoder, "decoder");
         audio_pipeline_register(handle->pipeline, handle->el_sink, "sink_w");
 
-        ESP_LOGD(TAG, "[3.1] Link elements together source_rb->decoder->sink_w");
+        OS_LOGD(TAG, "[3.1] Link elements together source_rb->decoder->sink_w");
         audio_pipeline_link(handle->pipeline, (const char *[]){"decoder", "sink_w"}, 2);
 
-        ESP_LOGD(TAG, "[3.2] Register event callback of all elements");
+        OS_LOGD(TAG, "[3.2] Register event callback of all elements");
         audio_element_set_event_callback(handle->el_decoder, liteplayer_element_listener, handle);
         audio_element_set_event_callback(handle->el_sink, liteplayer_element_listener, handle);
     }
@@ -484,12 +483,12 @@ int liteplayer_set_data_source(liteplayer_handle_t handle, const char *url)
     if (handle == NULL || url == NULL)
         return ESP_FAIL;
 
-    ESP_LOGI(TAG, "Set player[%s] source:%s", liteplayer_source_tag(handle->source_type), url);
+    OS_LOGI(TAG, "Set player[%s] source:%s", liteplayer_source_tag(handle->source_type), url);
 
     OS_THREAD_MUTEX_LOCK(handle->io_lock);
 
     if (handle->state != LITEPLAYER_IDLE) {
-        ESP_LOGE(TAG, "Can't set source in state=[%d]", handle->state);
+        OS_LOGE(TAG, "Can't set source in state=[%d]", handle->state);
         OS_THREAD_MUTEX_UNLOCK(handle->io_lock);
         return ESP_FAIL;
     }
@@ -520,12 +519,12 @@ int liteplayer_prepare(liteplayer_handle_t handle)
     if (handle == NULL)
         return ESP_FAIL;
 
-    ESP_LOGI(TAG, "Preparing player[%s]", liteplayer_source_tag(handle->source_type));
+    OS_LOGI(TAG, "Preparing player[%s]", liteplayer_source_tag(handle->source_type));
 
     OS_THREAD_MUTEX_LOCK(handle->io_lock);
 
     if (handle->state != LITEPLAYER_INITED) {
-        ESP_LOGE(TAG, "Can't prepare in state=[%d]", handle->state);
+        OS_LOGE(TAG, "Can't prepare in state=[%d]", handle->state);
         OS_THREAD_MUTEX_UNLOCK(handle->io_lock);
         return ESP_FAIL;
     }
@@ -572,12 +571,12 @@ int liteplayer_prepare_async(liteplayer_handle_t handle)
     if (handle == NULL)
         return ESP_FAIL;
 
-    ESP_LOGI(TAG, "Async preparing player[%s]", liteplayer_source_tag(handle->source_type));
+    OS_LOGI(TAG, "Async preparing player[%s]", liteplayer_source_tag(handle->source_type));
 
     OS_THREAD_MUTEX_LOCK(handle->io_lock);
 
     if (handle->state != LITEPLAYER_INITED) {
-        ESP_LOGE(TAG, "Can't prepare in state=[%d]", handle->state);
+        OS_LOGE(TAG, "Can't prepare in state=[%d]", handle->state);
         OS_THREAD_MUTEX_UNLOCK(handle->io_lock);
         return ESP_FAIL;
     }
@@ -631,11 +630,11 @@ int liteplayer_write(liteplayer_handle_t handle, char *data, int size, bool fina
     if (handle == NULL)
         return ESP_FAIL;
 
-    ESP_LOGV(TAG, "Writing player[%s], size=%d, final=%d", liteplayer_source_tag(handle->source_type), size, final);
+    OS_LOGV(TAG, "Writing player[%s], size=%d, final=%d", liteplayer_source_tag(handle->source_type), size, final);
 
     ringbuf_handle_t source_rb = audio_element_get_input_ringbuf(handle->el_decoder);
     if (source_rb == NULL || handle->source_type != MEDIA_SOURCE_STREAM) {
-        ESP_LOGE(TAG, "Invalid source_rb or source_type");
+        OS_LOGE(TAG, "Invalid source_rb or source_type");
         return ESP_FAIL;
     }
 
@@ -645,7 +644,7 @@ int liteplayer_write(liteplayer_handle_t handle, char *data, int size, bool fina
         handle->state != LITEPLAYER_STARTED &&
         handle->state != LITEPLAYER_NEARLYCOMPLETED) {
         OS_THREAD_MUTEX_UNLOCK(handle->io_lock);
-        ESP_LOGE(TAG, "Can't write data in state=[%d]", handle->state);
+        OS_LOGE(TAG, "Can't write data in state=[%d]", handle->state);
         return ESP_FAIL;
     }
 
@@ -656,7 +655,7 @@ int liteplayer_write(liteplayer_handle_t handle, char *data, int size, bool fina
         if (byte_write < 0) {
             if (byte_write != RB_DONE) {
                 ret = ESP_FAIL;
-                ESP_LOGE(TAG, "Wrong write to RB with error[%d]", byte_write);
+                OS_LOGE(TAG, "Wrong write to RB with error[%d]", byte_write);
             }
             goto write_done;
         }
@@ -680,12 +679,12 @@ int liteplayer_start(liteplayer_handle_t handle)
     if (handle == NULL)
         return ESP_FAIL;
 
-    ESP_LOGI(TAG, "Starting player[%s]", liteplayer_source_tag(handle->source_type));
+    OS_LOGI(TAG, "Starting player[%s]", liteplayer_source_tag(handle->source_type));
 
     OS_THREAD_MUTEX_LOCK(handle->io_lock);
 
     if (handle->state != LITEPLAYER_PREPARED && handle->state != LITEPLAYER_PAUSED) {
-        ESP_LOGE(TAG, "Can't start in state=[%d]", handle->state);
+        OS_LOGE(TAG, "Can't start in state=[%d]", handle->state);
         OS_THREAD_MUTEX_UNLOCK(handle->io_lock);
         return ESP_FAIL;
     }
@@ -726,12 +725,12 @@ int liteplayer_pause(liteplayer_handle_t handle)
     if (handle == NULL)
         return ESP_FAIL;
 
-    ESP_LOGI(TAG, "Pausing player[%s]", liteplayer_source_tag(handle->source_type));
+    OS_LOGI(TAG, "Pausing player[%s]", liteplayer_source_tag(handle->source_type));
 
     OS_THREAD_MUTEX_LOCK(handle->io_lock);
 
     if (handle->state != LITEPLAYER_STARTED && handle->state != LITEPLAYER_NEARLYCOMPLETED) {
-        ESP_LOGE(TAG, "Can't pause in state=[%d]", handle->state);
+        OS_LOGE(TAG, "Can't pause in state=[%d]", handle->state);
         OS_THREAD_MUTEX_UNLOCK(handle->io_lock);
         return ESP_FAIL;
     }
@@ -754,12 +753,12 @@ int liteplayer_resume(liteplayer_handle_t handle)
     if (handle == NULL)
         return ESP_FAIL;
 
-    ESP_LOGI(TAG, "Resuming player[%s]", liteplayer_source_tag(handle->source_type));
+    OS_LOGI(TAG, "Resuming player[%s]", liteplayer_source_tag(handle->source_type));
 
     OS_THREAD_MUTEX_LOCK(handle->io_lock);
 
     if (handle->state != LITEPLAYER_PAUSED) {
-        ESP_LOGE(TAG, "Can't resume in state=[%d]", handle->state);
+        OS_LOGE(TAG, "Can't resume in state=[%d]", handle->state);
         OS_THREAD_MUTEX_UNLOCK(handle->io_lock);
         return ESP_FAIL;
     }
@@ -782,12 +781,12 @@ int liteplayer_stop(liteplayer_handle_t handle)
     if (handle == NULL)
         return ESP_FAIL;
 
-    ESP_LOGI(TAG, "Stopping player[%s]", liteplayer_source_tag(handle->source_type));
+    OS_LOGI(TAG, "Stopping player[%s]", liteplayer_source_tag(handle->source_type));
 
     OS_THREAD_MUTEX_LOCK(handle->io_lock);
 
     if (handle->state < LITEPLAYER_PREPARED || handle->state > LITEPLAYER_COMPLETED) {
-        ESP_LOGE(TAG, "Can't stop in state=[%d]", handle->state);
+        OS_LOGE(TAG, "Can't stop in state=[%d]", handle->state);
         OS_THREAD_MUTEX_UNLOCK(handle->io_lock);
         return ESP_FAIL;
     }
@@ -815,7 +814,7 @@ int liteplayer_reset(liteplayer_handle_t handle)
     if (handle == NULL)
         return ESP_FAIL;
 
-    ESP_LOGI(TAG, "Resetting player[%s]", liteplayer_source_tag(handle->source_type));
+    OS_LOGI(TAG, "Resetting player[%s]", liteplayer_source_tag(handle->source_type));
 
     OS_THREAD_MUTEX_LOCK(handle->io_lock);
 

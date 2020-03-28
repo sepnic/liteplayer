@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "esp_adf/esp_log.h"
+#include "msgutils/os_logger.h"
 #include "esp_adf/audio_common.h"
 #include "esp_adf/audio_element.h"
 #include "audio_resampler/audio_resampler.h"
@@ -51,11 +51,11 @@ static esp_err_t sink_stream_open(audio_element_handle_t self)
     sink_stream_t *sink = (sink_stream_t *)audio_element_getdata(self);
     sink_stream_cfg_t *config = &sink->config;
 
-    ESP_LOGV(TAG, "Open sink stream");
+    OS_LOGV(TAG, "Open sink stream");
 
 #if defined(ENABLE_SRC)
     if (!sink->resampler_inited) {
-        ESP_LOGI(TAG, "Input: channels=%d, rate=%d, output:channels=%d, rate=%d",
+        OS_LOGI(TAG, "Input: channels=%d, rate=%d, output:channels=%d, rate=%d",
                  config->in_channels, config->in_samplerate, config->out_channels, config->out_samplerate);
         if (config->in_samplerate != config->out_samplerate || config->in_channels != config->out_channels) {
             resample_cfg_t cfg;
@@ -69,7 +69,7 @@ static esp_err_t sink_stream_open(audio_element_handle_t self)
                 sink->resample_opened = true;
             }
             else {
-                ESP_LOGE(TAG, "Failed to open resampler");
+                OS_LOGE(TAG, "Failed to open resampler");
                 return AEL_IO_FAIL;
             }
         }
@@ -84,11 +84,11 @@ static esp_err_t sink_stream_open(audio_element_handle_t self)
         config->out_samplerate = config->in_samplerate;
         config->out_channels = config->in_channels;
 #endif
-        ESP_LOGI(TAG, "Open sink stream out: rate:%d, channels:%d", config->out_samplerate, config->out_channels);
+        OS_LOGI(TAG, "Open sink stream out: rate:%d, channels:%d", config->out_samplerate, config->out_channels);
         if (config->sink_open)
             sink->out = config->sink_open(config->out_samplerate, config->out_channels, config->sink_priv);
         if (sink->out == NULL) {
-            ESP_LOGE(TAG, "Failed to open sink out");
+            OS_LOGE(TAG, "Failed to open sink out");
             return AEL_IO_FAIL;
         }
     }
@@ -101,7 +101,7 @@ static esp_err_t sink_stream_close(audio_element_handle_t self)
     sink_stream_t *sink = (sink_stream_t *)audio_element_getdata(self);
     sink_stream_cfg_t *config = &sink->config;
 
-    ESP_LOGV(TAG, "Close sink stream");
+    OS_LOGV(TAG, "Close sink stream");
 
 #if defined(ENABLE_SRC)
     if (sink->resample_opened && sink->resampler) {
@@ -137,7 +137,7 @@ static int sink_stream_write(audio_element_handle_t self, char *buffer, int len,
         // If samplerate not matched with decoder info, reopen sink
         if ((info.in_samplerate != 0 && config->in_samplerate != info.in_samplerate) ||
             (info.in_channels != 0 && config->in_channels != info.in_channels)) {
-            ESP_LOGW(TAG, "sink samplerate (%d) not match decoder samplerate (%d), reopen sink",
+            OS_LOGW(TAG, "sink samplerate (%d) not match decoder samplerate (%d), reopen sink",
                      config->in_samplerate, info.in_samplerate);
             config->in_samplerate = info.in_samplerate;
             config->in_channels = info.in_channels;
@@ -158,7 +158,7 @@ static int sink_stream_write(audio_element_handle_t self, char *buffer, int len,
         if (config->sink_write && sink->out != NULL)
             status = config->sink_write(sink->out, buffer, bytes_wanted);
         if (status < 0) {
-            ESP_LOGE(TAG, "Failed to write pcm, ret:%d", status);
+            OS_LOGE(TAG, "Failed to write pcm, ret:%d", status);
             break;
         }
         else {
@@ -191,7 +191,7 @@ static int sink_stream_process(audio_element_handle_t self, char *in_buffer, int
                 r_size = sink->resampler->out_bytes;
             }
             else {
-                ESP_LOGE(TAG, "Failed to process resampler");
+                OS_LOGE(TAG, "Failed to process resampler");
                 return AEL_IO_FAIL;
             }
         }
@@ -208,7 +208,7 @@ static esp_err_t sink_stream_destroy(audio_element_handle_t self)
     sink_stream_t *sink = (sink_stream_t *)audio_element_getdata(self);
     sink_stream_cfg_t *config = &sink->config;
 
-    ESP_LOGV(TAG, "Destroy sink stream");
+    OS_LOGV(TAG, "Destroy sink stream");
 
 #if defined(ENABLE_SRC)
     if (sink->resampler)
@@ -226,7 +226,7 @@ static esp_err_t sink_stream_destroy(audio_element_handle_t self)
 
 audio_element_handle_t sink_stream_init(sink_stream_cfg_t *config)
 {
-    ESP_LOGV(TAG, "Init sink stream");
+    OS_LOGV(TAG, "Init sink stream");
 
     audio_element_handle_t el;
     audio_element_cfg_t cfg = DEFAULT_AUDIO_ELEMENT_CONFIG();
@@ -247,7 +247,7 @@ audio_element_handle_t sink_stream_init(sink_stream_cfg_t *config)
 
     el = audio_element_init(&cfg);
     if (el == NULL) {
-        ESP_LOGE(TAG, "Failed to init sink audio element");
+        OS_LOGE(TAG, "Failed to init sink audio element");
         audio_free(sink);
         return NULL;
     }

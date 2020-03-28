@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "esp_adf/esp_log.h"
+#include "msgutils/os_logger.h"
 #include "esp_adf/audio_common.h"
 #include "audio_stream/http_stream.h"
 #include "httpclient.h"
@@ -59,7 +59,7 @@ static int httpclient_wrapper_connect(http_handle_t handle)
 reconnect:
     ret = httpclient_connect(&priv->client, (char *)priv->url);
     if (ret != HTTPCLIENT_OK) {
-        ESP_LOGE(TAG, "Failed to connect, ret=%d, retry=%d", ret, priv->retrycount);
+        OS_LOGE(TAG, "Failed to connect, ret=%d, retry=%d", ret, priv->retrycount);
         if (priv->retrycount++ < HTTPCLIENT_RETRY_COUNT) {
             OS_THREAD_SLEEP_MSEC(2000);
             goto reconnect;
@@ -86,7 +86,7 @@ static int httpclient_wrapper_parse_content_length(char *header_buf, long long *
         memcpy(header_content, header_buf+val_pos, val_len);
         header_content[val_len] = '\0';
         *content_len = atoi(header_content);
-        ESP_LOGV(TAG, "Content-Length=%d", (int)(*content_len));
+        OS_LOGV(TAG, "Content-Length=%d", (int)(*content_len));
     }
     return ret;
 }
@@ -99,7 +99,7 @@ http_handle_t httpclient_wrapper_open(const char *url, long long content_pos, vo
 
     handle->url = audio_strdup(url);
     handle->content_pos = content_pos;
-    ESP_LOGD(TAG, "Connecting url:%s, content_pos:%d", url, (int)content_pos);
+    OS_LOGD(TAG, "Connecting url:%s, content_pos:%d", url, (int)content_pos);
     if (httpclient_wrapper_connect(handle) != HTTPCLIENT_OK) {
         audio_free(handle->url);
         audio_free(handle);
@@ -127,13 +127,13 @@ contiune_read:
         if (priv->content_pos > 0) {
             char tmp_buf[32] = {0};
             snprintf(tmp_buf, sizeof(tmp_buf), "Range: bytes=%ld-\r\n", (long)priv->content_pos);
-            ESP_LOGV(TAG, "Set http range: %s", tmp_buf);
+            OS_LOGV(TAG, "Set http range: %s", tmp_buf);
             httpclient_set_custom_header(client, tmp_buf);
         }
 
         ret = httpclient_send_request(client, url, HTTPCLIENT_GET, client_data);
         if (ret < 0) {
-            ESP_LOGE(TAG, "httpclient_send_request failed, ret=%d, retry=%d", ret, priv->retrycount);
+            OS_LOGE(TAG, "httpclient_send_request failed, ret=%d, retry=%d", ret, priv->retrycount);
             if (priv->retrycount++ >= HTTPCLIENT_RETRY_COUNT)
                 return -1;
             OS_THREAD_SLEEP_MSEC(2000);
@@ -143,15 +143,15 @@ contiune_read:
         priv->retrycount = 0;
     }
 
-    //ESP_LOGD(TAG, "httpclient reading: %d/%d", (int)priv->content_pos, (int)priv->content_len);
+    //OS_LOGD(TAG, "httpclient reading: %d/%d", (int)priv->content_pos, (int)priv->content_len);
     if (priv->content_len > 0 && priv->content_pos >= priv->content_len) {
-        ESP_LOGD(TAG, "httpclient read done: %d/%d", (int)priv->content_pos, (int)priv->content_len);
+        OS_LOGD(TAG, "httpclient read done: %d/%d", (int)priv->content_pos, (int)priv->content_len);
         return 0;
     }
 
     ret = httpclient_recv_response(client, client_data);
     if (ret < 0) {
-        ESP_LOGE(TAG, "httpclient_recv_response failed, ret=%d, reconnect", ret);
+        OS_LOGE(TAG, "httpclient_recv_response failed, ret=%d, reconnect", ret);
         goto reconnect;
     }
 
@@ -160,7 +160,7 @@ contiune_read:
         if (ret != 0)
             priv->content_len = client_data->response_content_len;
         priv->content_len += priv->content_pos;
-        ESP_LOGD(TAG, "content_pos=%d, response_content_len=%d, content_len=%d",
+        OS_LOGD(TAG, "content_pos=%d, response_content_len=%d, content_len=%d",
                  (int)priv->content_pos, (int)client_data->response_content_len, (int)priv->content_len);
         priv->first_response = true;
     }
@@ -170,25 +170,25 @@ contiune_read:
     resp_len = priv->retrieve_len - client_data->retrieve_len;
     priv->retrieve_len = client_data->retrieve_len;
 
-    //ESP_LOGV(TAG, "resp_len=%d, is_more=%d, response_buf_len=%d, retrieve_len=%d, content_len=%d",
+    //OS_LOGV(TAG, "resp_len=%d, is_more=%d, response_buf_len=%d, retrieve_len=%d, content_len=%d",
     //         resp_len, client_data->is_more,
     //         client_data->response_buf_len, priv->retrieve_len, (int)priv->content_len);
 
     if (resp_len < 0 || resp_len > client_data->response_buf_len) {
-        ESP_LOGE(TAG, "Invalid resp_len:%d", resp_len);
+        OS_LOGE(TAG, "Invalid resp_len:%d", resp_len);
         return HTTPCLIENT_ERROR;
     }
 
     priv->content_pos += resp_len;
 
-    //ESP_LOGV(TAG, "-->resp_len len=%d", resp_len);
+    //OS_LOGV(TAG, "-->resp_len len=%d", resp_len);
     return resp_len;
 
 reconnect:
     httpclient_wrapper_disconnect(priv);
     ret = httpclient_wrapper_connect(priv);
     if (ret != HTTPCLIENT_OK) {
-        ESP_LOGE(TAG, "httpclient reconnect failed, ret=%d", ret);
+        OS_LOGE(TAG, "httpclient reconnect failed, ret=%d", ret);
         return ret;
     } else {
         goto contiune_read;
@@ -206,7 +206,7 @@ int httpclient_wrapper_seek(http_handle_t handle, long offset)
 {
     httpclient_wrapper_priv_t *priv = (httpclient_wrapper_priv_t *)handle;
 
-    ESP_LOGD(TAG, "Seeking http client, content_pos=%d", offset);
+    OS_LOGD(TAG, "Seeking http client, content_pos=%d", offset);
     priv->content_pos = offset;
     httpclient_wrapper_disconnect(priv);
     OS_THREAD_SLEEP_MSEC(50);
@@ -217,9 +217,9 @@ void httpclient_wrapper_close(http_handle_t handle)
 {
     httpclient_wrapper_priv_t *priv = (httpclient_wrapper_priv_t *)handle;
 
-    ESP_LOGD(TAG, "Closing http client");
+    OS_LOGD(TAG, "Closing http client");
     httpclient_close(&priv->client);
     audio_free(priv->url);
     audio_free(priv);
-    ESP_LOGV(TAG, "Closed http client");
+    OS_LOGV(TAG, "Closed http client");
 }

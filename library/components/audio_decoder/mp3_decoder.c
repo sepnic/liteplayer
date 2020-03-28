@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "esp_adf/esp_log.h"
+#include "msgutils/os_logger.h"
 #include "esp_adf/audio_element.h"
 #include "esp_adf/audio_common.h"
 #include "audio_decoder/mp3_decoder.h"
@@ -30,7 +30,7 @@
 static esp_err_t mp3_decoder_destroy(audio_element_handle_t self)
 {
     mp3_decoder_handle_t decoder = (mp3_decoder_handle_t)audio_element_getdata(self);
-    ESP_LOGV(TAG, "Destroy mp3 decoder");
+    OS_LOGV(TAG, "Destroy mp3 decoder");
 
     if (decoder->handle != NULL)
         mp3_wrapper_deinit(decoder);
@@ -48,26 +48,26 @@ static esp_err_t mp3_decoder_open(audio_element_handle_t self)
     mp3_decoder_handle_t decoder = (mp3_decoder_handle_t)audio_element_getdata(self);
 
     if (decoder->handle != NULL) {
-        ESP_LOGD(TAG, "MP3 decoder already opened");
+        OS_LOGD(TAG, "MP3 decoder already opened");
         return ESP_OK;
     }
 
-    ESP_LOGV(TAG, "Open mp3 decoder");
+    OS_LOGV(TAG, "Open mp3 decoder");
 
     decoder->buf_in.data = audio_calloc(MP3_DECODER_INPUT_BUFFER_SIZE, sizeof(char));
     if (decoder->buf_in.data == NULL) {
-        ESP_LOGE(TAG, "Failed to allocate input buffer");
+        OS_LOGE(TAG, "Failed to allocate input buffer");
         return ESP_ERR_NO_MEM;
     }
 
     decoder->buf_out.data = audio_calloc(MP3_DECODER_OUTPUT_BUFFER_SIZE, sizeof(char));
     if (decoder->buf_out.data == NULL) {
-        ESP_LOGE(TAG, "Failed to allocate output buffer");
+        OS_LOGE(TAG, "Failed to allocate output buffer");
         return ESP_ERR_NO_MEM;
     }
 
     if(mp3_wrapper_init(decoder) != 0) {
-        ESP_LOGE(TAG, "Failed to init mp3 wrapper");
+        OS_LOGE(TAG, "Failed to init mp3 wrapper");
         status = ESP_FAIL;
     }
 
@@ -79,7 +79,7 @@ static esp_err_t mp3_decoder_close(audio_element_handle_t self)
     mp3_decoder_handle_t decoder = (mp3_decoder_handle_t)audio_element_getdata(self);
 
     if (audio_element_get_state(self) != AEL_STATE_PAUSED) {
-        ESP_LOGV(TAG, "Close mp3 decoder");
+        OS_LOGV(TAG, "Close mp3 decoder");
         mp3_wrapper_deinit(decoder);
         if (decoder->buf_in.data != NULL)
             audio_free(decoder->buf_in.data);
@@ -118,15 +118,15 @@ static int mp3_decoder_process(audio_element_handle_t self, char *in_buffer, int
         ret = mp3_wrapper_run(decoder);
         if (ret < 0) {
             if (ret == AEL_IO_TIMEOUT) {
-                ESP_LOGW(TAG, "mp3_wrapper_run AEL_IO_TIMEOUT");
+                OS_LOGW(TAG, "mp3_wrapper_run AEL_IO_TIMEOUT");
             }
             else if (ret != AEL_IO_DONE) {
-                ESP_LOGE(TAG, "mp3_wrapper_run failed:%d", ret);
+                OS_LOGE(TAG, "mp3_wrapper_run failed:%d", ret);
             }
             return ret;
         }
 
-        //ESP_LOGV(TAG, "ret=%d, length=%d", ret, decoder->buf_out.length);
+        //OS_LOGV(TAG, "ret=%d, length=%d", ret, decoder->buf_out.length);
         decoder->buf_out.offset = 0;
         byte_write = audio_element_output(self, decoder->buf_out.data, decoder->buf_out.length);
     }
@@ -144,7 +144,7 @@ static int mp3_decoder_process(audio_element_handle_t self, char *in_buffer, int
 
 audio_element_handle_t mp3_decoder_init(mp3_decoder_cfg_t *config)
 {
-    ESP_LOGV(TAG, "Init mp3 decoder");
+    OS_LOGV(TAG, "Init mp3 decoder");
 
     mp3_decoder_handle_t decoder = audio_calloc(1, sizeof(struct mp3_decoder));
     AUDIO_MEM_CHECK(TAG, decoder, return NULL);

@@ -29,8 +29,6 @@
 #include <stdbool.h>
 
 #include "msgutils/msgqueue.h"
-
-#include "esp_adf/esp_err.h"
 #include "esp_adf/queue.h"
 #include "esp_adf/audio_common.h"
 

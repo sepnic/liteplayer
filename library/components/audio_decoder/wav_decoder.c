@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "esp_adf/esp_log.h"
+#include "msgutils/os_logger.h"
 #include "esp_adf/audio_element.h"
 #include "esp_adf/audio_common.h"
 #include "audio_extractor/wav_extractor.h"
@@ -35,20 +35,20 @@ typedef struct wav_decoder {
 static esp_err_t wav_decoder_destroy(audio_element_handle_t self)
 {
     wav_decoder_t *wav = (wav_decoder_t *)audio_element_getdata(self);
-    ESP_LOGV(TAG, "Destroy wav decoder");
+    OS_LOGV(TAG, "Destroy wav decoder");
     audio_free(wav);
     return ESP_OK;
 }
 
 static esp_err_t wav_decoder_open(audio_element_handle_t self)
 {
-    ESP_LOGV(TAG, "Open wav decoder");
+    OS_LOGV(TAG, "Open wav decoder");
     return ESP_OK;
 }
 
 static esp_err_t wav_decoder_close(audio_element_handle_t self)
 {
-    ESP_LOGV(TAG, "Close wav decoder");
+    OS_LOGV(TAG, "Close wav decoder");
     if (AEL_STATE_PAUSED != audio_element_get_state(self)) {
         audio_element_info_t info = {0};
         audio_element_getinfo(self, &info);
@@ -74,7 +74,7 @@ static int wav_decoder_process(audio_element_handle_t self, char *in_buffer, int
         if (!wav->parsed_header) {
             wav_info_t wav_info;
             if (wav_parse_header(in_buffer, r_size, &wav_info) != 0) {
-                ESP_LOGE(TAG, "Failed to parse wav header");
+                OS_LOGE(TAG, "Failed to parse wav header");
                 return AEL_PROCESS_FAIL;
             }
             wav->parsed_header = true;
@@ -110,7 +110,7 @@ static int wav_decoder_process(audio_element_handle_t self, char *in_buffer, int
 
 audio_element_handle_t wav_decoder_init(wav_decoder_cfg_t *config)
 {
-    ESP_LOGV(TAG, "Init wav decoder");
+    OS_LOGV(TAG, "Init wav decoder");
 
     audio_element_cfg_t cfg = DEFAULT_AUDIO_ELEMENT_CONFIG();
     cfg.destroy     = wav_decoder_destroy;

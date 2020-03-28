@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "esp_adf/esp_log.h"
+#include "msgutils/os_logger.h"
 #include "esp_adf/audio_common.h"
 #include "esp_adf/audio_element.h"
 #include "audio_resampler/audio_resampler.h"
@@ -58,14 +58,14 @@ static int http_stream_read(audio_element_handle_t self, char *buffer, int len, 
         if (config->http_open)
             http->client = config->http_open(config->url, info.byte_pos, config->http_priv);
         if (http->client == NULL) {
-            ESP_LOGE(TAG, "Failed to connect httpclient");
+            OS_LOGE(TAG, "Failed to connect httpclient");
             return AEL_IO_FAIL;
         }
-        ESP_LOGD(TAG, "httpclient connected: url:%s, current_pos:%d, total_bytes:%d",
+        OS_LOGD(TAG, "httpclient connected: url:%s, current_pos:%d, total_bytes:%d",
                  config->url, (int)info.byte_pos, (int)info.total_bytes);
     }
 
-    //ESP_LOGV(TAG, "read len=%d, pos=%d/%d", len, (int)info.byte_pos, (int)info.total_bytes);
+    //OS_LOGV(TAG, "read len=%d, pos=%d/%d", len, (int)info.byte_pos, (int)info.total_bytes);
     if (info.total_bytes > 0 && info.byte_pos >= info.total_bytes) {
         audio_element_report_status(self, AEL_STATUS_INPUT_DONE);
         return ESP_OK;
@@ -99,7 +99,7 @@ static int http_stream_process(audio_element_handle_t self, char *in_buffer, int
     if (r_size > 0) {
         w_size = audio_element_output(self, in_buffer, r_size);
     } else if (r_size == AEL_IO_TIMEOUT) {
-        ESP_LOGW(TAG, "HTTP timeout, mark as IO_DONE");
+        OS_LOGW(TAG, "HTTP timeout, mark as IO_DONE");
         w_size = AEL_IO_DONE;
     } else {
         w_size = r_size;
@@ -112,7 +112,7 @@ static esp_err_t http_stream_close(audio_element_handle_t self)
     http_stream_t *http = (http_stream_t *)audio_element_getdata(self);
     http_stream_cfg_t *config = &http->config;
 
-    ESP_LOGV(TAG, "Close http stream");
+    OS_LOGV(TAG, "Close http stream");
 
     if (audio_element_get_state(self) != AEL_STATE_PAUSED) {
         if (config->http_close && http->client != NULL) {
@@ -133,7 +133,7 @@ static esp_err_t http_stream_destroy(audio_element_handle_t self)
     http_stream_t *http = (http_stream_t *)audio_element_getdata(self);
     http_stream_cfg_t *config = &http->config;
 
-    ESP_LOGV(TAG, "Destroy http stream");
+    OS_LOGV(TAG, "Destroy http stream");
 
     if (config->http_close && http->client != NULL) {
         config->http_close(http->client);
@@ -149,7 +149,7 @@ static esp_err_t http_stream_destroy(audio_element_handle_t self)
 
 audio_element_handle_t http_stream_init(http_stream_cfg_t *config)
 {
-    ESP_LOGV(TAG, "Init http stream");
+    OS_LOGV(TAG, "Init http stream");
 
     audio_element_handle_t el;
     audio_element_cfg_t cfg = DEFAULT_AUDIO_ELEMENT_CONFIG();
@@ -173,7 +173,7 @@ audio_element_handle_t http_stream_init(http_stream_cfg_t *config)
 
     el = audio_element_init(&cfg);
     if (el == NULL) {
-        ESP_LOGE(TAG, "Failed to init http audio element");
+        OS_LOGE(TAG, "Failed to init http audio element");
         audio_free(http);
         return NULL;
     }

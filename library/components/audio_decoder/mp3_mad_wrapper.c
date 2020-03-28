@@ -21,7 +21,7 @@
 
 #include "mp3-mad/mad.h"
 #include "mp3-mad/global.h"
-#include "esp_adf/esp_log.h"
+#include "msgutils/os_logger.h"
 #include "esp_adf/audio_common.h"
 #include "esp_adf/audio_element.h"
 #include "audio_decoder/mp3_decoder.h"
@@ -53,7 +53,7 @@ static enum mad_flow mad_wrapper_error(void *data, struct mad_stream *stream, st
 {
     mp3_decoder_handle_t decoder = (mp3_decoder_handle_t)data;
 
-    ESP_LOGV(TAG, "Decoding error 0x%04x (%s) at byte offset %d",
+    OS_LOGV(TAG, "Decoding error 0x%04x (%s) at byte offset %d",
              stream->error, mad_stream_errorstr(stream),
              stream->this_frame - (unsigned char*)decoder->buf_in.data);
 
@@ -76,7 +76,7 @@ static enum mad_flow mad_wrapper_input(void *data, struct mad_stream *stream)
         memmove(input->data, stream->next_frame, remain);
 
     if (input->eof) {
-        ESP_LOGV(TAG, "length=%d, frame_size=%d, error=0x%X",
+        OS_LOGV(TAG, "length=%d, frame_size=%d, error=0x%X",
                  input->length, decoder->frame_size, stream->error);
 
         if (stream->error == MAD_ERROR_BUFLEN)
@@ -105,11 +105,11 @@ static enum mad_flow mad_wrapper_input(void *data, struct mad_stream *stream)
             input->data[remain + size_read++] = 0;
     }
     else if (size_read == AEL_IO_TIMEOUT) {
-        ESP_LOGV(TAG, "Timeout to fetch data");
+        OS_LOGV(TAG, "Timeout to fetch data");
         return MAD_FLOW_TIMEOUT;
     }
     else if (size_read < 0) {
-        ESP_LOGE(TAG, "Unexpected bytes read: %d", size_read);
+        OS_LOGE(TAG, "Unexpected bytes read: %d", size_read);
         return MAD_FLOW_BREAK;
     }
 
@@ -161,7 +161,7 @@ static enum mad_flow mad_wrapper_header(void *context, struct mad_header const *
         info.out_channels   = MAD_NCHANNELS (header);
         info.bits           = 16;
 
-        ESP_LOGV(TAG,"Found mp3 header: SR=%d, CH=%d", info.out_samplerate, info.out_channels);
+        OS_LOGV(TAG,"Found mp3 header: SR=%d, CH=%d", info.out_samplerate, info.out_channels);
 
         decoder->parsed_header = true;
 
@@ -298,7 +298,7 @@ int mp3_wrapper_init(mp3_decoder_handle_t decoder)
 {
     struct mad_decoder *mad = audio_calloc(1, sizeof(struct mad_decoder));
     if (mad == NULL) {
-        ESP_LOGE(TAG, "Failed to allocate memory for mad decoder");
+        OS_LOGE(TAG, "Failed to allocate memory for mad decoder");
         return -1;
     }
 
@@ -316,7 +316,7 @@ int mp3_wrapper_init(mp3_decoder_handle_t decoder)
 
     mad->sync = audio_calloc(1, sizeof(*mad->sync));
     if (mad->sync == NULL) {
-        ESP_LOGE(TAG, "Failed to allocate memory for decoder sync");
+        OS_LOGE(TAG, "Failed to allocate memory for decoder sync");
         audio_free(mad);
         return -1;
     }

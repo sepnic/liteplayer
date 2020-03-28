@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "esp_adf/esp_log.h"
+#include "msgutils/os_logger.h"
 #include "esp_adf/audio_common.h"
 #include "audio_stream/http_stream.h"
 #include "audio_stream/file_stream.h"
@@ -56,7 +56,7 @@ static int media_parser_fetch(char *buf, int wanted_size, long offset, void *pri
 
     if (parser->source_info.source_type == MEDIA_SOURCE_FILE) {
         if (parser->offset != offset) {
-            ESP_LOGD(TAG, "file seek position: %ld>>%ld", parser->offset, offset);
+            OS_LOGD(TAG, "file seek position: %ld>>%ld", parser->offset, offset);
             if (parser->source_info.file_wrapper.seek(parser->file_handle, offset) != 0)
                 return ESP_FAIL;
             parser->offset = offset;
@@ -65,7 +65,7 @@ static int media_parser_fetch(char *buf, int wanted_size, long offset, void *pri
     }
     else if (parser->source_info.source_type == MEDIA_SOURCE_HTTP) {
         if (parser->offset != offset) {
-            ESP_LOGD(TAG, "http seek position: %ld>>%ld", parser->offset, offset);
+            OS_LOGD(TAG, "http seek position: %ld>>%ld", parser->offset, offset);
             if (parser->source_info.http_wrapper.seek(parser->http_handle, offset) != 0)
                 return ESP_FAIL;
             parser->offset = offset;
@@ -134,7 +134,7 @@ static int get_start_offset(char *buf)
                  (((int)(buf[9])) & 0x7F);
 
         frame_start_offset = id3v2_len + 10;
-        ESP_LOGV(TAG, "ID3 tag find with length[%d]", id3v2_len);
+        OS_LOGV(TAG, "ID3 tag find with length[%d]", id3v2_len);
     }
     return frame_start_offset;
 }
@@ -160,12 +160,12 @@ static int media_header_parse(media_source_info_t *source_info, media_codec_info
                                                 0,
                                                 source_info->http_wrapper.http_priv);
         if (client == NULL) {
-            ESP_LOGE(TAG, "Failed to connect http, url=%s", source_info->url);
+            OS_LOGE(TAG, "Failed to connect http, url=%s", source_info->url);
             goto parse_done;
         }
         bytes_read = source_info->http_wrapper.read(client, buf, DEFAULT_MEDIA_PARSER_BUFFER_SIZE);
         if (bytes_read <= 0) {
-            ESP_LOGE(TAG, "Failed to read http");
+            OS_LOGE(TAG, "Failed to read http");
             goto parse_done;
         }
         filesize = source_info->http_wrapper.filesize(client);
@@ -176,51 +176,51 @@ static int media_header_parse(media_source_info_t *source_info, media_codec_info
                                               0,
                                               source_info->file_wrapper.file_priv);
         if (file == NULL) {
-            ESP_LOGE(TAG, "Failed to open file, url=%s", source_info->url);
+            OS_LOGE(TAG, "Failed to open file, url=%s", source_info->url);
             goto parse_done;
         }
         bytes_read = source_info->file_wrapper.read(file, buf, DEFAULT_MEDIA_PARSER_BUFFER_SIZE);
         if (bytes_read <= 0) {
-            ESP_LOGE(TAG, "Failed to read file");
+            OS_LOGE(TAG, "Failed to read file");
             goto parse_done;
         }
         filesize = source_info->file_wrapper.filesize(file);
     }
 
     if (bytes_read < 64) {
-        ESP_LOGE(TAG, "Insufficient bytes read: %d", bytes_read);
+        OS_LOGE(TAG, "Insufficient bytes read: %d", bytes_read);
         goto parse_done;
     }
 
     if (memcmp(&buf[4], "ftyp", 4) == 0) {
-        ESP_LOGV(TAG, "Found M4A media");
+        OS_LOGV(TAG, "Found M4A media");
         media_info->codec_type = AUDIO_CODEC_M4A;
     }
     else if (memcmp(&buf[0], "ID3", 3) == 0) {
         if (media_info->codec_type == AUDIO_CODEC_MP3) {
-            ESP_LOGV(TAG, "Found MP3 media with ID3 tag");
+            OS_LOGV(TAG, "Found MP3 media with ID3 tag");
         }
         else if (media_info->codec_type == AUDIO_CODEC_AAC) {
-            ESP_LOGV(TAG, "Found AAC media with ID3 tag");
+            OS_LOGV(TAG, "Found AAC media with ID3 tag");
         }
         else {
-            ESP_LOGV(TAG, "Unknown type with ID3, assume codec is MP3");
+            OS_LOGV(TAG, "Unknown type with ID3, assume codec is MP3");
             media_info->codec_type = AUDIO_CODEC_MP3;
         }
     }
     else if ((buf[0] & 0xFF) == 0xFF && (buf[1] & 0xE0) == 0xE0) {
         if (media_info->codec_type == AUDIO_CODEC_AAC &&
             (buf[0] & 0xFF) == 0xFF && (buf[1] & 0xF0) == 0xF0) {
-            ESP_LOGV(TAG, "Found AAC media raw data");
+            OS_LOGV(TAG, "Found AAC media raw data");
             media_info->codec_type = AUDIO_CODEC_AAC;
         }
         else {
-            ESP_LOGV(TAG, "Found MP3 media raw data");
+            OS_LOGV(TAG, "Found MP3 media raw data");
             media_info->codec_type = AUDIO_CODEC_MP3;
         }
     }
     else if (memcmp(&buf[0], "RIFF", 4) == 0) {
-        ESP_LOGV(TAG, "Found wav media");
+        OS_LOGV(TAG, "Found wav media");
         media_info->codec_type = AUDIO_CODEC_WAV;
     }
 
@@ -310,7 +310,7 @@ static int media_header_parse(media_source_info_t *source_info, media_codec_info
         duration_ms = (long long)info.dataSize*1000/info.blockAlign/info.sampleRate;
     }
     else {
-        ESP_LOGE(TAG, "Unknown codec type");
+        OS_LOGE(TAG, "Unknown codec type");
         goto parse_done;
     }
 
@@ -322,7 +322,7 @@ static int media_header_parse(media_source_info_t *source_info, media_codec_info
 
 parse_done:
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to parse media info");
+        OS_LOGE(TAG, "Failed to parse media info");
     }
     if (source_info->source_type == MEDIA_SOURCE_HTTP && client != NULL)
         source_info->http_wrapper.close(client);
@@ -359,7 +359,7 @@ static void *media_parser_thread(void *arg)
                 priv->listener(MEDIA_PARSER_FAILED, &priv->media_info, priv->listener_priv);
         }
 
-        ESP_LOGV(TAG, "Waiting stop command");
+        OS_LOGV(TAG, "Waiting stop command");
         while (!priv->stop)
             OS_THREAD_COND_WAIT(priv->cond, priv->lock);
 
@@ -367,7 +367,7 @@ static void *media_parser_thread(void *arg)
     }
 
     media_parser_cleanup(priv);
-    ESP_LOGD(TAG, "Media parser task leave");
+    OS_LOGD(TAG, "Media parser task leave");
     return NULL;
 }
 
@@ -384,7 +384,7 @@ int media_info_parse(media_source_info_t *source_info, media_codec_info_t *media
             if (media_url != NULL) {
                 audio_free(source_info->url);
                 source_info->url = media_url;
-                ESP_LOGV(TAG, "M3U first url: %s", media_url);
+                OS_LOGV(TAG, "M3U first url: %s", media_url);
             }
         }
     }
@@ -404,7 +404,7 @@ int media_info_parse(media_source_info_t *source_info, media_codec_info_t *media
         else if (strstr(source_info->url, "aac") != NULL)
             media_info->codec_type = AUDIO_CODEC_AAC;
         if (media_header_parse(source_info, media_info) != ESP_OK) {
-            ESP_LOGE(TAG, "Failed to parse http url:[%s]", source_info->url);
+            OS_LOGE(TAG, "Failed to parse http url:[%s]", source_info->url);
             return ESP_FAIL;
         }
     }
@@ -423,13 +423,13 @@ int media_info_parse(media_source_info_t *source_info, media_codec_info_t *media
         else if (strstr(source_info->url, "aac") != NULL)
             media_info->codec_type = AUDIO_CODEC_AAC;
         if (media_header_parse(source_info, media_info) != ESP_OK) {
-            ESP_LOGE(TAG, "Failed to parse file url:[%s]", source_info->url);
+            OS_LOGE(TAG, "Failed to parse file url:[%s]", source_info->url);
             return ESP_FAIL;
         }
     }
 
 parse_succeed:
-    ESP_LOGI(TAG, "MediaInfo: codec_type[%d], samplerate[%d], channels[%d], offset[%d], length[%d]",
+    OS_LOGI(TAG, "MediaInfo: codec_type[%d], samplerate[%d], channels[%d], offset[%d], length[%d]",
              source_info->source_type, media_info->codec_samplerate, media_info->codec_channels,
              media_info->content_pos, media_info->content_len);
     return ESP_OK;

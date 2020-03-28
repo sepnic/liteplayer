@@ -20,8 +20,7 @@
 
 #include "msgutils/os_thread.h"
 #include "msgutils/ringbuf.h"
-#include "esp_adf/esp_log.h"
-#include "esp_adf/esp_err.h"
+#include "msgutils/os_logger.h"
 #include "esp_adf/audio_common.h"
 #include "liteplayer_config.h"
 #include "liteplayer_debug.h"
@@ -56,7 +55,7 @@ static int socket_connect(const char *addr, int port)
 
     int fd = socket(AF_INET, SOCK_STREAM, 0);
     if (fd < 0) {
-        ESP_LOGE(TAG, "Cannot create socket");
+        OS_LOGE(TAG, "Cannot create socket");
         return -1;
     }
 
@@ -66,7 +65,7 @@ static int socket_connect(const char *addr, int port)
     bzero(&(sockaddr_in.sin_zero), sizeof(sockaddr_in.sin_zero));
 
     if (connect(fd, (struct sockaddr *)(&sockaddr_in), sizeof(sockaddr_in)) < 0) {
-        ESP_LOGE(TAG, "Cannot connect to server\n");
+        OS_LOGE(TAG, "Cannot connect to server\n");
         close(fd);
         return -1;
     }
@@ -78,7 +77,7 @@ static int socket_send(int fd, void *data, int length)
     if (fd >= 0) {
         ssize_t ret = send(fd, data, length, 0);
         if (ret < 0) {
-            ESP_LOGE(TAG, "Failed to send data to server");
+            OS_LOGE(TAG, "Failed to send data to server");
         }
         return ret;
     }
@@ -107,13 +106,13 @@ static void *socket_upload_thread(void *arg)
 
     priv->fd = socket_connect(priv->addr, priv->port);
     if (priv->fd < 0) {
-        ESP_LOGE(TAG, "Failed to connect server:[%s:%d]", priv->addr, priv->port);
+        OS_LOGE(TAG, "Failed to connect server:[%s:%d]", priv->addr, priv->port);
         goto thread_exit;
     }
 
     ret = socket_send(priv->fd, DEFAULT_SOCKET_UPLOAD_START, strlen(DEFAULT_SOCKET_UPLOAD_START));
     if (ret < 0) {
-        ESP_LOGE(TAG, "Failed to send SOCKET_UPLOAD_START to server");
+        OS_LOGE(TAG, "Failed to send SOCKET_UPLOAD_START to server");
         goto thread_exit;
     }
 
@@ -122,19 +121,19 @@ static void *socket_upload_thread(void *arg)
         if (bytes_read > 0) {
             ret = socket_send(priv->fd, priv->buffer, bytes_read);
             if (ret < 0) {
-                ESP_LOGE(TAG, "Failed to send pcm data to server");
+                OS_LOGE(TAG, "Failed to send pcm data to server");
                 break;
             }
         }
         else {
             if (bytes_read == RB_DONE) {
-                ESP_LOGV(TAG, "RB done");
+                OS_LOGV(TAG, "RB done");
             }
             else if(bytes_read == RB_ABORT) {
-                ESP_LOGV(TAG, "RB abort");
+                OS_LOGV(TAG, "RB abort");
             }
             else {
-                ESP_LOGE(TAG, "RB read fail, ret=%d", bytes_read);
+                OS_LOGE(TAG, "RB read fail, ret=%d", bytes_read);
             }
             break;
         }
@@ -142,7 +141,7 @@ static void *socket_upload_thread(void *arg)
 
     ret = socket_send(priv->fd, DEFAULT_SOCKET_UPLOAD_END, strlen(DEFAULT_SOCKET_UPLOAD_END));
     if (ret < 0) {
-        ESP_LOGE(TAG, "Failed to send SOCKET_UPLOAD_END to server");
+        OS_LOGE(TAG, "Failed to send SOCKET_UPLOAD_END to server");
         goto thread_exit;
     }
 
@@ -151,7 +150,7 @@ thread_exit:
     rb_done_read(priv->rb);
     if (priv->fd >= 0)
         socket_disconnet(priv->fd);
-    ESP_LOGD(TAG, "Socket upload task leave");
+    OS_LOGD(TAG, "Socket upload task leave");
     return NULL;
 }
 
@@ -180,7 +179,7 @@ socket_upload_handle_t socket_upload_start(const char *server_addr, int server_p
     if (priv->tid == NULL)
         goto start_failed;
 
-    ESP_LOGD(TAG, "Socket upload start");
+    OS_LOGD(TAG, "Socket upload start");
     return priv;
 
 start_failed:
@@ -196,7 +195,7 @@ int socket_upload_fill_data(socket_upload_handle_t handle, char *data, int size)
 
     int ret = rb_write(priv->rb, data, size, DEFAULT_SOCKET_UPLOAD_WRITE_TIMEOUT*1000);
     if (ret == RB_TIMEOUT) {
-        ESP_LOGE(TAG, "Timeout to write ringbuf");
+        OS_LOGE(TAG, "Timeout to write ringbuf");
     }
     else if (ret > 0) {
         ret = 0;
@@ -211,7 +210,7 @@ void socket_upload_stop(socket_upload_handle_t handle)
     if (priv == NULL)
         return;
 
-    ESP_LOGD(TAG, "Socket upload stop");
+    OS_LOGD(TAG, "Socket upload stop");
 
     rb_done_write(priv->rb);
     priv->stop = true;

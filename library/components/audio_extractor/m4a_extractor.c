@@ -20,7 +20,7 @@
 #include <stdint.h>
 
 #include "msgutils/os_thread.h"
-#include "esp_adf/esp_log.h"
+#include "msgutils/os_logger.h"
 #include "esp_adf/audio_common.h"
 #include "audio_extractor/aac_extractor.h"
 #include "audio_extractor/m4a_extractor.h"
@@ -99,7 +99,7 @@ static int32_t atom_rb_read(atom_parser_handle_t handle, int32_t wanted_size)
     while (wanted_size > STREAM_BUFFER_SIZE) {
         byte_read = rb_read(handle->rb, (char *)handle->data, STREAM_BUFFER_SIZE, AUDIO_MAX_DELAY);
         if (byte_read < 0) {
-            ESP_LOGE(TAG, "Failed to read rb, ret=%d", byte_read);
+            OS_LOGE(TAG, "Failed to read rb, ret=%d", byte_read);
             return byte_read;
         } else {
             handle->offset += byte_read;
@@ -110,7 +110,7 @@ static int32_t atom_rb_read(atom_parser_handle_t handle, int32_t wanted_size)
     if (wanted_size != 0) {
         byte_read = rb_read(handle->rb, (char *)handle->data, wanted_size, AUDIO_MAX_DELAY);
         if (byte_read < 0) {
-            ESP_LOGE(TAG, "Failed to read rb, ret=%d", byte_read);
+            OS_LOGE(TAG, "Failed to read rb, ret=%d", byte_read);
             return byte_read;
         } else {
             handle->offset += byte_read;
@@ -173,7 +173,7 @@ static AAC_ERR_T hdlr1in(atom_parser_handle_t handle, uint32_t atom_size)
     uint8_t subtype[4] = {0};
     datain(subtype, buf, 4); buf += 4;
     if (memcmp("soun", subtype, 4) != 0) {
-        ESP_LOGE(TAG, "hdlr error, expect subtype is soun, subtype=%s", subtype);
+        OS_LOGE(TAG, "hdlr error, expect subtype is soun, subtype=%s", subtype);
         return AAC_ERR_UNSUPPORTED;
     }
 
@@ -201,7 +201,7 @@ static AAC_ERR_T stsdin(atom_parser_handle_t handle, uint32_t atom_size)
 
     uint32_t entries = u32in(buf); buf += 4;
     if (entries != 1) {
-        ESP_LOGE(TAG, "stsd error, number of entries should be 1, entries=%d", entries);
+        OS_LOGE(TAG, "stsd error, number of entries should be 1, entries=%d", entries);
         return AAC_ERR_UNSUPPORTED;
     }
     return AAC_ERR_NONE;
@@ -375,7 +375,7 @@ static AAC_ERR_T stszin(atom_parser_handle_t handle, uint32_t atom_size)
     * to store stsz header. And return fail if bigger than default buffer.
     */
     if (m4a_info->stszsize*sizeof(int16_t) > STSZ_MAX_BUFFER) {
-        ESP_LOGE(TAG, "Large STSZ(%u), out of memory", m4a_info->stszsize*sizeof(int16_t));
+        OS_LOGE(TAG, "Large STSZ(%u), out of memory", m4a_info->stszsize*sizeof(int16_t));
         return AAC_ERR_NOMEM;
     }
 
@@ -393,7 +393,7 @@ static AAC_ERR_T stszin(atom_parser_handle_t handle, uint32_t atom_size)
         m4a_info->stszdata[cnt] = frame_size & 0xFFFF;
     }
 
-    ESP_LOGV(TAG, "STSZ max frame size: %u", m4a_info->stszmax);
+    OS_LOGV(TAG, "STSZ max frame size: %u", m4a_info->stszmax);
     if (m4a_info->stszmax > 0xFFFF) {
         return AAC_ERR_UNSUPPORTED;
     }
@@ -415,7 +415,7 @@ static AAC_ERR_T stcoin(atom_parser_handle_t handle, uint32_t atom_size)
     // Number of entries
     uint32_t entries = u32in(buf); buf += 4;
     if (entries < 1) {
-        ESP_LOGE(TAG, "stco error, number of entries should > 1, entries=%d", entries);
+        OS_LOGE(TAG, "stco error, number of entries should > 1, entries=%d", entries);
         return AAC_ERR_UNSUPPORTED;
     }
 
@@ -431,18 +431,18 @@ static AAC_ERR_T atom_parse(atom_parser_handle_t handle)
     int32_t ret = AAC_ERR_NONE;
 
     if (handle->atom->opcode == ATOM_DESCENT) {
-        ESP_LOGV(TAG, "Atom is descent");
+        OS_LOGV(TAG, "Atom is descent");
         return AAC_ERR_NONE;
     } else if (handle->atom->opcode == ATOM_ASCENT) {
-        ESP_LOGV(TAG, "Atom is ascent");
+        OS_LOGV(TAG, "Atom is ascent");
         return AAC_ERR_NONE;
     }
 
     if (handle->atom->opcode != ATOM_NAME) {
-        ESP_LOGE(TAG, "Invalid opcode, expect ATOM_NAME");
+        OS_LOGE(TAG, "Invalid opcode, expect ATOM_NAME");
         return AAC_ERR_OPCODE;
     } else {
-        ESP_LOGV(TAG, "Looking for '%s' at offset[%u]", (char *)handle->atom->data, handle->offset);
+        OS_LOGV(TAG, "Looking for '%s' at offset[%u]", (char *)handle->atom->data, handle->offset);
     }
 
 _next_atom:
@@ -456,9 +456,9 @@ _next_atom:
     atom_size = u32in(buf); buf += 4;
     datain(atom_name, buf, 4); buf += 4;
 
-    ESP_LOGV(TAG, "atom[%s], size[%u], offset[%u]", atom_name, atom_size, handle->offset);
+    OS_LOGV(TAG, "atom[%s], size[%u], offset[%u]", atom_name, atom_size, handle->offset);
     if (memcmp(atom_name, handle->atom->data, sizeof(atom_name)) == 0) {
-        ESP_LOGV(TAG, "----OK----");
+        OS_LOGV(TAG, "----OK----");
         goto atom_found;
     }
     else {
@@ -472,12 +472,12 @@ _next_atom:
 atom_found:
     handle->atom++;
     if (handle->atom->opcode == ATOM_DESCENT) {
-        ESP_LOGV(TAG, "Atom is descent");
+        OS_LOGV(TAG, "Atom is descent");
         return AAC_ERR_NONE;
     }
 
     if (handle->atom->opcode != ATOM_DATA) {
-        ESP_LOGE(TAG, "Invalid opcode, expect ATOM_DATA");
+        OS_LOGE(TAG, "Invalid opcode, expect ATOM_DATA");
         return AAC_ERR_OPCODE;
     }
 
@@ -536,20 +536,20 @@ static AAC_ERR_T moovin(atom_parser_handle_t handle, uint32_t atom_size)
     handle->atom = mvhd;
     err = atom_parse(handle);
     if (err != AAC_ERR_NONE) {
-        ESP_LOGE(TAG, "Failed to parse mvhd atom");
+        OS_LOGE(TAG, "Failed to parse mvhd atom");
         return err;
     }
 
     handle->atom = trak;
     while (1) {
         if (handle->atom->opcode == 0){
-            ESP_LOGV(TAG, "Finisehd to parse trak atom");
+            OS_LOGV(TAG, "Finisehd to parse trak atom");
             break;
         }
 
         err = atom_parse(handle);
         if (err != AAC_ERR_NONE) {
-            ESP_LOGE(TAG, "Failed to parse trak atom");
+            OS_LOGE(TAG, "Failed to parse trak atom");
             return err;
         }
 
@@ -580,21 +580,21 @@ static int m4a_parse_asc(m4a_info_t *m4a_info)
 
 static void m4a_dump_info(m4a_info_t *m4a_info)
 {
-    ESP_LOGD(TAG, "M4A INFO:");
-    ESP_LOGD(TAG, "  >Channels          : %u", m4a_info->channels);
-    ESP_LOGD(TAG, "  >Sampling rate     : %u", m4a_info->samplerate);
-    ESP_LOGD(TAG, "  >Bits per sample   : %u", m4a_info->bits);
-    ESP_LOGD(TAG, "  >Buffer size       : %u", m4a_info->buffersize);
-    ESP_LOGD(TAG, "  >Max bitrate       : %u", m4a_info->bitratemax);
-    ESP_LOGD(TAG, "  >Average bitrate   : %u", m4a_info->bitrateavg);
-    ESP_LOGD(TAG, "  >Frames            : %u", m4a_info->stszsize);
-    ESP_LOGD(TAG, "  >ASC buff          : %x:%x:%x:%x:%x:%x:%x",
+    OS_LOGD(TAG, "M4A INFO:");
+    OS_LOGD(TAG, "  >Channels          : %u", m4a_info->channels);
+    OS_LOGD(TAG, "  >Sampling rate     : %u", m4a_info->samplerate);
+    OS_LOGD(TAG, "  >Bits per sample   : %u", m4a_info->bits);
+    OS_LOGD(TAG, "  >Buffer size       : %u", m4a_info->buffersize);
+    OS_LOGD(TAG, "  >Max bitrate       : %u", m4a_info->bitratemax);
+    OS_LOGD(TAG, "  >Average bitrate   : %u", m4a_info->bitrateavg);
+    OS_LOGD(TAG, "  >Frames            : %u", m4a_info->stszsize);
+    OS_LOGD(TAG, "  >ASC buff          : %x:%x:%x:%x:%x:%x:%x",
              m4a_info->asc.buf[0], m4a_info->asc.buf[1], m4a_info->asc.buf[2],
              m4a_info->asc.buf[3], m4a_info->asc.buf[4], m4a_info->asc.buf[5],
              m4a_info->asc.buf[6]);
-    ESP_LOGD(TAG, "  >ASC size          : %u", m4a_info->asc.size);
-    ESP_LOGD(TAG, "  >Duration          : %.1f sec", (float)m4a_info->duration/m4a_info->timescale);
-    ESP_LOGD(TAG, "  >Data offset/size  : %u/%u", m4a_info->mdatofs, m4a_info->mdatsize);
+    OS_LOGD(TAG, "  >ASC size          : %u", m4a_info->asc.size);
+    OS_LOGD(TAG, "  >Duration          : %.1f sec", (float)m4a_info->duration/m4a_info->timescale);
+    OS_LOGD(TAG, "  >Data offset/size  : %u/%u", m4a_info->mdatofs, m4a_info->mdatsize);
 }
 
 static AAC_ERR_T m4a_check_header(atom_parser_handle_t handle)
@@ -616,9 +616,9 @@ static AAC_ERR_T m4a_check_header(atom_parser_handle_t handle)
     atom_size = u32in(buf); buf += 4;
     datain(atom_name, buf, 4); buf += 4;
 
-    ESP_LOGV(TAG, "atom[%s], size[%u], offset[%u]", atom_name, atom_size, handle->offset);
+    OS_LOGV(TAG, "atom[%s], size[%u], offset[%u]", atom_name, atom_size, handle->offset);
     if (memcmp(atom_name, "ftyp", 4) != 0) {
-        ESP_LOGE(TAG, "Not M4A audio");
+        OS_LOGE(TAG, "Not M4A audio");
         return AAC_ERR_UNSUPPORTED;
     }
 
@@ -638,9 +638,9 @@ next_atom:
     atom_size = u32in(buf); buf += 4;
     datain(atom_name, buf, 4); buf += 4;
 
-    ESP_LOGV(TAG, "atom[%s], size[%u], offset[%u]", atom_name, atom_size, handle->offset);
+    OS_LOGV(TAG, "atom[%s], size[%u], offset[%u]", atom_name, atom_size, handle->offset);
     if (memcmp(atom_name, "mdat", 4) == 0) {
-        ESP_LOGV(TAG, "moov behide of mdat: mdatofs=%u, mdatsize=%u", pos, atom_size);
+        OS_LOGV(TAG, "moov behide of mdat: mdatofs=%u, mdatsize=%u", pos, atom_size);
         handle->m4a_info->mdatsize = atom_size;
         handle->m4a_info->mdatofs = pos;
         handle->m4a_info->moovofs = handle->m4a_info->mdatofs + handle->m4a_info->mdatsize;
@@ -648,7 +648,7 @@ next_atom:
         rb_reset(handle->rb);
         return AAC_ERR_AGAIN;
     } else if (memcmp(atom_name, "moov", 4) == 0) {
-        ESP_LOGV(TAG, "moov ahead of mdat");
+        OS_LOGV(TAG, "moov ahead of mdat");
         handle->m4a_info->moovtail = false;
         return moovin(handle, 8);
     } else {
@@ -679,14 +679,14 @@ int m4a_parse_header(ringbuf_handle_t rb, m4a_info_t *info)
             parser.offset = info->moovofs;
         }
         else {
-            ESP_LOGE(TAG, "Failed to check moov");
+            OS_LOGE(TAG, "Failed to check moov");
             goto finish;
         }
     }
     else {
         err = m4a_check_header(&parser);
         if (err == AAC_ERR_AGAIN) {
-            ESP_LOGV(TAG, "moov behide of mdat, please check again with new offset(%u)", info->moovofs);
+            OS_LOGV(TAG, "moov behide of mdat, please check again with new offset(%u)", info->moovofs);
         }
         goto finish;
     }
@@ -747,7 +747,7 @@ int m4a_extractor(m4a_fetch_cb fetch_cb, void *fetch_priv, m4a_info_t *info)
 m4a_parse:
     tid = OS_THREAD_CREATE(&tattr, m4a_reader_parse_thread, &priv);
     if (tid == NULL) {
-        ESP_LOGE(TAG, "Failed to create task to parse m4a");
+        OS_LOGE(TAG, "Failed to create task to parse m4a");
         goto m4a_finish;
     }
 
@@ -766,13 +766,13 @@ m4a_parse:
             }
             else {
                 if (bytes_writen == RB_DONE) {
-                    ESP_LOGV(TAG, "RB done write");
+                    OS_LOGV(TAG, "RB done write");
                 }
                 else if(bytes_writen == RB_ABORT) {
-                    ESP_LOGV(TAG, "RB abort write");
+                    OS_LOGV(TAG, "RB abort write");
                 }
                 else {
-                    ESP_LOGW(TAG, "RB write fail, ret=%d", bytes_writen);
+                    OS_LOGW(TAG, "RB write fail, ret=%d", bytes_writen);
                 }
                 goto m4a_writen;
             }

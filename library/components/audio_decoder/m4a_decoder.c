@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "esp_adf/esp_log.h"
+#include "msgutils/os_logger.h"
 #include "esp_adf/audio_common.h"
 #include "esp_adf/audio_element.h"
 #include "audio_decoder/m4a_decoder.h"
@@ -31,7 +31,7 @@
 static esp_err_t m4a_decoder_destroy(audio_element_handle_t self)
 {
     m4a_decoder_handle_t decoder = (m4a_decoder_handle_t)audio_element_getdata(self);
-    ESP_LOGV(TAG, "Destroy m4a decoder");
+    OS_LOGV(TAG, "Destroy m4a decoder");
 
     if (decoder->handle != NULL)
         m4a_wrapper_deinit(decoder);
@@ -50,21 +50,21 @@ static esp_err_t m4a_decoder_open(audio_element_handle_t self)
     m4a_decoder_handle_t decoder = (m4a_decoder_handle_t)audio_element_getdata(self);
 
     if (decoder->handle != NULL) {
-        ESP_LOGD(TAG, "M4A decoder already opened");
+        OS_LOGD(TAG, "M4A decoder already opened");
         return ESP_OK;
     }
 
-    ESP_LOGV(TAG, "Open m4a decoder");
+    OS_LOGV(TAG, "Open m4a decoder");
 
     decoder->buf_in.data = audio_calloc(AAC_DECODER_INPUT_BUFFER_SIZE, sizeof(char));
     if (decoder->buf_in.data == NULL) {
-        ESP_LOGE(TAG, "Failed to allocate input buffer");
+        OS_LOGE(TAG, "Failed to allocate input buffer");
         return ESP_ERR_NO_MEM;
     }
 
     decoder->buf_out.data = audio_calloc(AAC_DECODER_OUTPUT_BUFFER_SIZE, sizeof(char));
     if (decoder->buf_out.data == NULL) {
-        ESP_LOGE(TAG, "Failed to allocate output buffer");
+        OS_LOGE(TAG, "Failed to allocate output buffer");
         return ESP_ERR_NO_MEM;
     }
 
@@ -77,7 +77,7 @@ static esp_err_t m4a_decoder_close(audio_element_handle_t self)
     m4a_decoder_handle_t decoder = (m4a_decoder_handle_t)audio_element_getdata(self);
 
     if (audio_element_get_state(self) != AEL_STATE_PAUSED) {
-        ESP_LOGV(TAG, "Close m4a decoder");
+        OS_LOGV(TAG, "Close m4a decoder");
         m4a_wrapper_deinit(decoder);
         if (decoder->buf_in.data != NULL)
             audio_free(decoder->buf_in.data);
@@ -115,15 +115,15 @@ static int m4a_decoder_process(audio_element_handle_t self, char *in_buffer, int
         ret = m4a_wrapper_run(decoder);
         if (ret < 0) {
             if (ret == AEL_IO_TIMEOUT) {
-                ESP_LOGW(TAG, "m4a_wrapper_run AEL_IO_TIMEOUT");
+                OS_LOGW(TAG, "m4a_wrapper_run AEL_IO_TIMEOUT");
             }
             else if (ret != AEL_IO_DONE) {
-                ESP_LOGE(TAG, "m4a_wrapper_run failed:%d", ret);
+                OS_LOGE(TAG, "m4a_wrapper_run failed:%d", ret);
             }
             return ret;
         }
 
-        //ESP_LOGV(TAG, "ret=%d, length=%d", ret, decoder->buf_out.length);
+        //OS_LOGV(TAG, "ret=%d, length=%d", ret, decoder->buf_out.length);
         decoder->buf_out.offset = 0;
         byte_write = audio_element_output(self, (char*)decoder->buf_out.data, decoder->buf_out.length);
     }
@@ -141,7 +141,7 @@ static int m4a_decoder_process(audio_element_handle_t self, char *in_buffer, int
 
 audio_element_handle_t m4a_decoder_init(m4a_decoder_cfg_t *config)
 {
-    ESP_LOGV(TAG, "Init m4a decoder");
+    OS_LOGV(TAG, "Init m4a decoder");
 
     m4a_decoder_handle_t decoder = audio_calloc(1, sizeof(struct m4a_decoder));
     AUDIO_MEM_CHECK(TAG, decoder, return NULL);

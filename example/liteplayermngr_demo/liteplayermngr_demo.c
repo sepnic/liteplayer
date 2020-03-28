@@ -24,7 +24,7 @@
 #include <sys/stat.h>
 
 #include "msgutils/os_memory.h"
-#include "esp_adf/esp_log.h"
+#include "msgutils/os_logger.h"
 #include "esp_adf/audio_common.h"
 #include "liteplayer_main.h"
 #include "liteplayer_manager.h"
@@ -51,7 +51,7 @@ static int generate_playlist(const char *path)
 {
     DIR *dir = NULL;
     if ((dir = opendir(path)) == NULL) {
-        ESP_LOGE(TAG, "Failed to open dir[%s]", path);
+        OS_LOGE(TAG, "Failed to open dir[%s]", path);
         return -1;
     }
     else {
@@ -59,13 +59,13 @@ static int generate_playlist(const char *path)
         char buffer[256];
         FILE *file = fopen(PLAYLIST_FILE, "wb+");
         if (file == NULL) {
-            ESP_LOGE(TAG, "Failed to open playlist file");
+            OS_LOGE(TAG, "Failed to open playlist file");
             closedir(dir);
             return -1;
         }
 
         while ((entry = readdir(dir)) != NULL) {
-            ESP_LOGD(TAG, "-->d_name=[%s], d_type=[%d]", entry->d_name, entry->d_type);
+            OS_LOGD(TAG, "-->d_name=[%s], d_type=[%d]", entry->d_name, entry->d_type);
             if (entry->d_type == DT_REG &&
                 (strstr(entry->d_name, ".mp3") != NULL ||
                  strstr(entry->d_name, ".m4a") != NULL ||
@@ -90,38 +90,38 @@ static int liteplayer_test_state_callback(liteplayer_state_t state, int errcode,
 {
     switch (state) {
     case LITEPLAYER_IDLE:
-        ESP_LOGI(TAG, "-->LITEPLAYER_IDLE");
+        OS_LOGI(TAG, "-->LITEPLAYER_IDLE");
         g_state = state;
         break;
     case LITEPLAYER_INITED:
-        ESP_LOGI(TAG, "-->LITEPLAYER_INITED");
+        OS_LOGI(TAG, "-->LITEPLAYER_INITED");
         g_state = state;
         break;
     case LITEPLAYER_PREPARED:
-        ESP_LOGI(TAG, "-->LITEPLAYER_PREPARED");
+        OS_LOGI(TAG, "-->LITEPLAYER_PREPARED");
         g_state = state;
         break;
     case LITEPLAYER_STARTED:
-        ESP_LOGI(TAG, "-->LITEPLAYER_STARTED");
+        OS_LOGI(TAG, "-->LITEPLAYER_STARTED");
         g_state = state;
         break;
     case LITEPLAYER_PAUSED:
-        ESP_LOGI(TAG, "-->LITEPLAYER_PAUSED");
+        OS_LOGI(TAG, "-->LITEPLAYER_PAUSED");
         g_state = state;
         break;
     case LITEPLAYER_NEARLYCOMPLETED:
-        ESP_LOGI(TAG, "-->LITEPLAYER_NEARLYCOMPLETED");
+        OS_LOGI(TAG, "-->LITEPLAYER_NEARLYCOMPLETED");
         break;
     case LITEPLAYER_COMPLETED:
-        ESP_LOGI(TAG, "-->LITEPLAYER_COMPLETED");
+        OS_LOGI(TAG, "-->LITEPLAYER_COMPLETED");
         g_state = state;
         break;
     case LITEPLAYER_STOPPED:
-        ESP_LOGI(TAG, "-->LITEPLAYER_STOPPED");
+        OS_LOGI(TAG, "-->LITEPLAYER_STOPPED");
         g_state = state;
         break;
     case LITEPLAYER_ERROR:
-        ESP_LOGI(TAG, "-->LITEPLAYER_ERROR: %d", errcode);
+        OS_LOGI(TAG, "-->LITEPLAYER_ERROR: %d", errcode);
         g_state = state;
         break;
     default:
@@ -179,12 +179,12 @@ static void *liteplayer_test_thread(void *arg)
     liteplayer_mngr_register_http_wrapper(g_player, &http_wrapper);
 
     if (liteplayer_mngr_set_data_source(g_player, url) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to set data source");
+        OS_LOGE(TAG, "Failed to set data source");
         goto test_done;
     }
 
     if (liteplayer_mngr_prepare_async(g_player) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to prepare player");
+        OS_LOGE(TAG, "Failed to prepare player");
         goto test_done;
     }
 
@@ -193,12 +193,12 @@ static void *liteplayer_test_thread(void *arg)
     }
 
     if (g_state == LITEPLAYER_ERROR) {
-        ESP_LOGE(TAG, "Failed to prepare player");
+        OS_LOGE(TAG, "Failed to prepare player");
         goto test_done;
     }
 
     if (liteplayer_mngr_start(g_player) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to start player");
+        OS_LOGE(TAG, "Failed to start player");
         goto test_done;
     }
 
@@ -210,12 +210,12 @@ static void *liteplayer_test_thread(void *arg)
     }
 
     if (g_state == LITEPLAYER_STOPPED || g_state == LITEPLAYER_IDLE) {
-        ESP_LOGD(TAG, "Player has been stopped");
+        OS_LOGD(TAG, "Player has been stopped");
         goto test_done;
     }
 
     if (liteplayer_mngr_stop(g_player) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to stop player");
+        OS_LOGE(TAG, "Failed to stop player");
         goto test_done;
     }
 
@@ -231,7 +231,7 @@ test_done:
     OS_THREAD_SLEEP_MSEC(100);
     OS_MEMORY_DUMP();
 
-    ESP_LOGI(TAG, "liteplayer test thread leave");
+    OS_LOGI(TAG, "liteplayer test thread leave");
     g_exit = true;
     return NULL;
 }
@@ -239,7 +239,7 @@ test_done:
 int main(int argc, char *argv[])
 {
     if (argc != 2) {
-        ESP_LOGW(TAG, "Usage: %s [url]", argv[0]);
+        OS_LOGW(TAG, "Usage: %s [url]", argv[0]);
         return 0;
     }
 
@@ -255,7 +255,7 @@ int main(int argc, char *argv[])
     if (strstr(filename, "http") == NULL) {
         struct stat statbuf;
         if (stat(filename, &statbuf) < 0) {
-            ESP_LOGE(TAG, "Failed to stat path[%s]", filename);
+            OS_LOGE(TAG, "Failed to stat path[%s]", filename);
             goto done;
         }
 
@@ -271,56 +271,56 @@ int main(int argc, char *argv[])
     char input = 0;
     while (!g_exit) {
         if (input != '\n') {
-            ESP_LOGW(TAG, "Waiting enter command:");
-            ESP_LOGW(TAG, "  Q|q: quit");
-            ESP_LOGW(TAG, "  P|p: pause");
-            ESP_LOGW(TAG, "  R|r: resume");
-            ESP_LOGW(TAG, "  N|n: switch next");
-            ESP_LOGW(TAG, "  V|v: switch prev");
-            ESP_LOGW(TAG, "  O:   enable single looping");
-            ESP_LOGW(TAG, "  o:   disable single looping");
+            OS_LOGW(TAG, "Waiting enter command:");
+            OS_LOGW(TAG, "  Q|q: quit");
+            OS_LOGW(TAG, "  P|p: pause");
+            OS_LOGW(TAG, "  R|r: resume");
+            OS_LOGW(TAG, "  N|n: switch next");
+            OS_LOGW(TAG, "  V|v: switch prev");
+            OS_LOGW(TAG, "  O:   enable single looping");
+            OS_LOGW(TAG, "  o:   disable single looping");
         }
         input = getc(stdin);
 
         if (input == 'Q' || input == 'q') {
-           ESP_LOGI(TAG, "Quit");
+           OS_LOGI(TAG, "Quit");
             if (g_player)
                 liteplayer_mngr_reset(g_player);
             break;
         }
         else if (input == 'P' || input == 'p') {
-           ESP_LOGI(TAG, "Pause");
+           OS_LOGI(TAG, "Pause");
             if (g_player)
                 liteplayer_mngr_pause(g_player);
         }
         else if (input == 'R' || input == 'r') {
-           ESP_LOGI(TAG, "Resume");
+           OS_LOGI(TAG, "Resume");
             if (g_player)
                 liteplayer_mngr_resume(g_player);
         }
         else if (input == 'N' || input == 'n') {
-           ESP_LOGI(TAG, "Next");
+           OS_LOGI(TAG, "Next");
             if (g_player)
                 liteplayer_mngr_next(g_player);
         }
         else if (input == 'V' || input == 'v') {
-           ESP_LOGI(TAG, "Prev");
+           OS_LOGI(TAG, "Prev");
             if (g_player)
                 liteplayer_mngr_prev(g_player);
         }
         else if (input == 'O') {
-           ESP_LOGI(TAG, "Enable looping");
+           OS_LOGI(TAG, "Enable looping");
             if (g_player)
                 liteplayer_mngr_set_single_looping(g_player, true);
         }
         else if (input == 'o') {
-           ESP_LOGI(TAG, "Disable looping");
+           OS_LOGI(TAG, "Disable looping");
             if (g_player)
                 liteplayer_mngr_set_single_looping(g_player, false);
         }
         else {
             if (input != '\n')
-                ESP_LOGW(TAG, "Unknown command: %c", input);
+                OS_LOGW(TAG, "Unknown command: %c", input);
         }
     }
 
@@ -328,6 +328,6 @@ int main(int argc, char *argv[])
 
 done:
     audio_free(filename);
-    ESP_LOGI(TAG, "main thread leave");
+    OS_LOGI(TAG, "main thread leave");
     return 0;
 }

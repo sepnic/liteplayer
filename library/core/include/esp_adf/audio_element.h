@@ -29,7 +29,6 @@
 #include "msgutils/ringbuf.h"
 
 #include "esp_adf/queue.h"
-#include "esp_adf/esp_err.h"
 #include "esp_adf/audio_event_iface.h"
 #include "esp_adf/audio_common.h"
 

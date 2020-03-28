@@ -18,10 +18,9 @@
 #include <stdio.h>
 
 #include "msgutils/os_thread.h"
+#include "msgutils/os_logger.h"
 #include "msgutils/ringbuf.h"
 #include "msgutils/common_list.h"
-#include "esp_adf/esp_log.h"
-#include "esp_adf/esp_err.h"
 #include "esp_adf/audio_common.h"
 
 #include "liteplayer_config.h"
@@ -168,16 +167,16 @@ static int m3u_parser_resolve(media_source_priv_t *priv)
     client = priv->info.http_wrapper.open(
             priv->info.url, 0, priv->info.http_wrapper.http_priv);
     if (client == NULL) {
-        ESP_LOGE(TAG, "Failed to connect m3u url");
+        OS_LOGE(TAG, "Failed to connect m3u url");
         goto resolve_done;
     }
 
     int bytes_read = priv->info.http_wrapper.read(client, content, DEFAULT_M3U_BUFFER_SIZE);
     if (bytes_read <= 0) {
-        ESP_LOGE(TAG, "Failed to read m3u content");
+        OS_LOGE(TAG, "Failed to read m3u content");
         goto resolve_done;
     }
-    ESP_LOGV(TAG, "Succeed to read m3u content:\n%s", content);
+    OS_LOGV(TAG, "Succeed to read m3u content:\n%s", content);
 
     int index = 0, remain = bytes_read;
     char *line = NULL;
@@ -229,7 +228,7 @@ static int m3u_parser_resolve(media_source_priv_t *priv)
     int i = 0;
     list_for_each(item, &priv->m3u_list) {
         struct m3u_node *node = node_to_item(item, struct m3u_node, listnode);
-        ESP_LOGD(TAG, "-->url[%d]=[%s]", i++, node->url);
+        OS_LOGD(TAG, "-->url[%d]=[%s]", i++, node->url);
     }
 #endif
 
@@ -254,7 +253,7 @@ resolve_m3u:
         goto thread_exit;
     ret = m3u_parser_resolve(priv);
     if (ret != 0) {
-        ESP_LOGE(TAG, "Failed to parse m3u url");
+        OS_LOGE(TAG, "Failed to parse m3u url");
         goto thread_exit;
     }
 
@@ -279,7 +278,7 @@ dequeue_url:
             else
                 break;
         }
-        ESP_LOGV(TAG, "Current m3u list playdone, resolve more");
+        OS_LOGV(TAG, "Current m3u list playdone, resolve more");
         goto resolve_m3u;
     }
 
@@ -297,7 +296,7 @@ dequeue_url:
     audio_free(node);
 
     if (client == NULL) {
-        ESP_LOGE(TAG, "Connect failed, request next url");
+        OS_LOGE(TAG, "Connect failed, request next url");
         state = MEDIA_SOURCE_READ_FAILED;
         goto dequeue_url;
     }
@@ -309,12 +308,12 @@ dequeue_url:
         if (client != NULL)
             bytes_read = priv->info.http_wrapper.read(client, buffer, sizeof(buffer));
         if (bytes_read < 0) {
-            ESP_LOGE(TAG, "Read failed, request next url");
+            OS_LOGE(TAG, "Read failed, request next url");
             state = MEDIA_SOURCE_READ_FAILED;
             goto dequeue_url;
         }
         else if (bytes_read == 0) {
-            ESP_LOGD(TAG, "Read done, request next url");
+            OS_LOGD(TAG, "Read done, request next url");
             state = MEDIA_SOURCE_READ_DONE;
             goto dequeue_url;
         }
@@ -333,11 +332,11 @@ dequeue_url:
             }
             else {
                 if (bytes_written == RB_DONE || bytes_written == RB_ABORT || bytes_written == RB_OK) {
-                    ESP_LOGD(TAG, "Write done, abort left urls");
+                    OS_LOGD(TAG, "Write done, abort left urls");
                     state = MEDIA_SOURCE_WRITE_DONE;
                 }
                 else {
-                    ESP_LOGD(TAG, "Write failed, abort left urls");
+                    OS_LOGD(TAG, "Write failed, abort left urls");
                     state = MEDIA_SOURCE_WRITE_FAILED;
                 }
                 goto thread_exit;
@@ -361,7 +360,7 @@ thread_exit:
                 priv->listener(state, priv->listener_priv);
         }
 
-        ESP_LOGV(TAG, "Waiting stop command");
+        OS_LOGV(TAG, "Waiting stop command");
         while (!priv->stop)
             OS_THREAD_COND_WAIT(priv->cond, priv->lock);
 
@@ -369,7 +368,7 @@ thread_exit:
     }
 
     media_source_cleanup(priv);
-    ESP_LOGD(TAG, "M3U source task leave");
+    OS_LOGD(TAG, "M3U source task leave");
     return NULL;
 }
 
@@ -386,16 +385,16 @@ int m3u_get_first_url(media_source_info_t *info, char *buf, int buf_size)
 
     client = info->http_wrapper.open(info->url, 0, info->http_wrapper.http_priv);
     if (client == NULL) {
-        ESP_LOGE(TAG, "Failed to connect m3u url");
+        OS_LOGE(TAG, "Failed to connect m3u url");
         goto resolve_done;
     }
 
     int bytes_read = info->http_wrapper.read(client, content, DEFAULT_M3U_BUFFER_SIZE);
     if (bytes_read <= 0) {
-        ESP_LOGE(TAG, "Failed to read m3u content");
+        OS_LOGE(TAG, "Failed to read m3u content");
         goto resolve_done;
     }
-    ESP_LOGV(TAG, "Succeed to read m3u content:\n%s", content);
+    OS_LOGV(TAG, "Succeed to read m3u content:\n%s", content);
 
     int index = 0, remain = bytes_read;
     char *line = NULL;
@@ -551,12 +550,12 @@ static void *media_source_thread(void *arg)
             bytes_read = priv->info.file_wrapper.read(file, buffer, sizeof(buffer));
 
         if (bytes_read < 0) {
-            ESP_LOGE(TAG, "Media source read failed");
+            OS_LOGE(TAG, "Media source read failed");
             state = MEDIA_SOURCE_READ_FAILED;
             goto thread_exit;
         }
         else if (bytes_read == 0) {
-            ESP_LOGD(TAG, "Media source read done");
+            OS_LOGD(TAG, "Media source read done");
             state = MEDIA_SOURCE_READ_DONE;
             goto thread_exit;
         }
@@ -575,11 +574,11 @@ static void *media_source_thread(void *arg)
             }
             else {
                 if (bytes_written == RB_DONE || bytes_written == RB_ABORT || bytes_written == RB_OK) {
-                    ESP_LOGD(TAG, "Media source write done");
+                    OS_LOGD(TAG, "Media source write done");
                     state = MEDIA_SOURCE_WRITE_DONE;
                 }
                 else {
-                    ESP_LOGD(TAG, "Media source write failed");
+                    OS_LOGD(TAG, "Media source write failed");
                     state = MEDIA_SOURCE_WRITE_FAILED;
                 }
                 goto thread_exit;
@@ -605,7 +604,7 @@ thread_exit:
                 priv->listener(state, priv->listener_priv);
         }
 
-        ESP_LOGV(TAG, "Waiting stop command");
+        OS_LOGV(TAG, "Waiting stop command");
         while (!priv->stop)
             OS_THREAD_COND_WAIT(priv->cond, priv->lock);
 
@@ -613,7 +612,7 @@ thread_exit:
     }
 
     media_source_cleanup(priv);
-    ESP_LOGD(TAG, "Media source task leave");
+    OS_LOGD(TAG, "Media source task leave");
     return NULL;
 }
 

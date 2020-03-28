@@ -27,7 +27,7 @@
 #include <stdarg.h>
 
 #include "msgutils/ringbuf.h"
-#include "esp_adf/esp_log.h"
+#include "msgutils/os_logger.h"
 #include "esp_adf/audio_element.h"
 #include "esp_adf/queue.h"
 #include "esp_adf/audio_pipeline.h"
@@ -99,7 +99,7 @@ esp_err_t audio_pipeline_change_state(audio_pipeline_handle_t pipeline, audio_el
 static void audio_pipeline_register_element(audio_pipeline_handle_t pipeline, audio_element_handle_t el)
 {
     if (audio_pipeline_get_el_item_by_handle(pipeline, el) != NULL) {
-        ESP_LOGV(TAG, "%s already exist in pipeline", audio_element_get_tag(el));
+        OS_LOGV(TAG, "%s already exist in pipeline", audio_element_get_tag(el));
         return;
     }
     audio_element_item_t *el_item = audio_calloc(1, sizeof(audio_element_item_t));
@@ -135,16 +135,16 @@ static void debug_pipeline_lists(audio_pipeline_handle_t pipeline, int line, con
 {
     audio_element_item_t *el_item, *el_tmp;
     ringbuf_item_t *rb_item, *tmp;
-    ESP_LOGV(TAG, "FUNC:%s", func);
+    OS_LOGV(TAG, "FUNC:%s", func);
     STAILQ_FOREACH_SAFE(el_item, &pipeline->el_list, next, el_tmp) {
-        ESP_LOGV(TAG, "el-list:%d, linked:%d, kept:%d, el:%p, %8s, in_rb:%p, out_rb:%p",
+        OS_LOGV(TAG, "el-list:%d, linked:%d, kept:%d, el:%p, %8s, in_rb:%p, out_rb:%p",
                  line, el_item->linked, el_item->kept_ctx,
                  el_item->el, audio_element_get_tag(el_item->el),
                  audio_element_get_input_ringbuf(el_item->el),
                  audio_element_get_output_ringbuf(el_item->el));
     }
     STAILQ_FOREACH_SAFE(rb_item, &pipeline->rb_list, next, tmp) {
-        ESP_LOGV(TAG, "rb-list:%d, linked:%d, kept:%d, rb:%p, host_el:%p, %8s", line, rb_item->linked, rb_item->kept_ctx,
+        OS_LOGV(TAG, "rb-list:%d, linked:%d, kept:%d, rb:%p, host_el:%p, %8s", line, rb_item->linked, rb_item->kept_ctx,
                  rb_item->rb, rb_item->host_el,
                  rb_item->host_el != NULL ? audio_element_get_tag(rb_item->host_el) : "NULL");
     }
@@ -153,13 +153,13 @@ static void debug_pipeline_lists(audio_pipeline_handle_t pipeline, int line, con
 audio_element_handle_t audio_pipeline_get_el_by_tag(audio_pipeline_handle_t pipeline, const char *tag)
 {
     if (tag == NULL || pipeline == NULL) {
-        ESP_LOGE(TAG, "Invalid parameters, tag:%p, p:%p", tag, pipeline);
+        OS_LOGE(TAG, "Invalid parameters, tag:%p, p:%p", tag, pipeline);
         return NULL;
     }
     audio_element_item_t *item;
     STAILQ_FOREACH(item, &pipeline->el_list, next) {
         char *el_tag = audio_element_get_tag(item->el);
-        ESP_LOGV(TAG, "Get_el_by_tag, el:%p, kept:%d, linked:%d el-tag:%8s, in_tag:%s",
+        OS_LOGV(TAG, "Get_el_by_tag, el:%p, kept:%d, linked:%d el-tag:%8s, in_tag:%s",
                  item->el, item->kept_ctx, item->linked, item->el != NULL ? audio_element_get_tag(item->el) : "NULL", tag);
         if (item->kept_ctx) {
             continue;
@@ -174,7 +174,7 @@ audio_element_handle_t audio_pipeline_get_el_by_tag(audio_pipeline_handle_t pipe
 audio_element_handle_t audio_pipeline_get_el_once(audio_pipeline_handle_t pipeline, const audio_element_handle_t start_el, const char *tag)
 {
     if (tag == NULL || pipeline == NULL) {
-        ESP_LOGE(TAG, "Invalid parameters, tag:%p, p:%p", tag, pipeline);
+        OS_LOGE(TAG, "Invalid parameters, tag:%p, p:%p", tag, pipeline);
         return NULL;
     }
     audio_element_item_t *item;
@@ -186,7 +186,7 @@ audio_element_handle_t audio_pipeline_get_el_once(audio_pipeline_handle_t pipeli
             }
         } else {
             char *el_tag = audio_element_get_tag(item->el);
-            ESP_LOGV(TAG, "Get_el_by_el, el:%p, kept:%d, linked:%d el-tag:%8s, in_tag:%s",
+            OS_LOGV(TAG, "Get_el_by_el, el:%p, kept:%d, linked:%d el-tag:%8s, in_tag:%s",
                      item->el, item->kept_ctx, item->linked, item->el != NULL ? audio_element_get_tag(item->el) : "NULL", tag);
             if (item->kept_ctx) {
                 continue;
@@ -211,7 +211,7 @@ esp_err_t audio_pipeline_set_listener(audio_pipeline_handle_t pipeline, audio_ev
             continue;
         }
         if (audio_element_msg_set_listener(el_item->el, listener) != ESP_OK) {
-            ESP_LOGE(TAG, "Error register event with: %s", (char *)audio_element_get_tag(el_item->el));
+            OS_LOGE(TAG, "Error register event with: %s", (char *)audio_element_get_tag(el_item->el));
             return ESP_FAIL;
         }
     }
@@ -223,7 +223,7 @@ esp_err_t audio_pipeline_remove_listener(audio_pipeline_handle_t pipeline)
 {
     audio_element_item_t *el_item;
     if (pipeline->listener == NULL) {
-        ESP_LOGV(TAG, "There are no listener registered");
+        OS_LOGV(TAG, "There are no listener registered");
         return ESP_FAIL;
     }
     STAILQ_FOREACH(el_item, &pipeline->el_list, next) {
@@ -231,7 +231,7 @@ esp_err_t audio_pipeline_remove_listener(audio_pipeline_handle_t pipeline)
             continue;
         }
         if (audio_element_msg_remove_listener(el_item->el, pipeline->listener) != ESP_OK) {
-            ESP_LOGE(TAG, "Error unregister event with: %s", audio_element_get_tag(el_item->el));
+            OS_LOGE(TAG, "Error unregister event with: %s", audio_element_get_tag(el_item->el));
             return ESP_FAIL;
         }
     }
@@ -262,7 +262,7 @@ esp_err_t audio_pipeline_deinit(audio_pipeline_handle_t pipeline)
     audio_pipeline_unlink(pipeline);
     audio_element_item_t *el_item, *tmp;
     STAILQ_FOREACH_SAFE(el_item, &pipeline->el_list, next, tmp) {
-        ESP_LOGV(TAG, "[%8s]-[%p]element instance has been deleted", audio_element_get_tag(el_item->el), el_item->el);
+        OS_LOGV(TAG, "[%8s]-[%p]element instance has been deleted", audio_element_get_tag(el_item->el), el_item->el);
         audio_element_deinit(el_item->el);
         audio_pipeline_unregister(pipeline, el_item->el);
     }
@@ -304,9 +304,9 @@ esp_err_t audio_pipeline_resume(audio_pipeline_handle_t pipeline, float start_th
     audio_element_item_t *el_item;
     bool wait_first_el = true;
     esp_err_t ret = ESP_OK;
-    ESP_LOGV(TAG, "Pipeline resuming");
+    OS_LOGV(TAG, "Pipeline resuming");
     STAILQ_FOREACH(el_item, &pipeline->el_list, next) {
-        ESP_LOGV(TAG, "resume,linked:%d, state:%d,[%p]", el_item->linked, audio_element_get_state(el_item->el), el_item->el);
+        OS_LOGV(TAG, "resume,linked:%d, state:%d,[%p]", el_item->linked, audio_element_get_state(el_item->el), el_item->el);
         if (false == el_item->linked) {
             continue;
         }
@@ -318,7 +318,7 @@ esp_err_t audio_pipeline_resume(audio_pipeline_handle_t pipeline, float start_th
         }
     }
     audio_pipeline_change_state(pipeline, AEL_STATE_RUNNING);
-    ESP_LOGD(TAG, "Pipeline resumed");
+    OS_LOGD(TAG, "Pipeline resumed");
     return ret;
 }
 
@@ -326,28 +326,28 @@ esp_err_t audio_pipeline_pause(audio_pipeline_handle_t pipeline)
 {
     audio_element_item_t *el_item;
     esp_err_t ret = ESP_OK;
-    ESP_LOGV(TAG, "Pipeline pausing");
+    OS_LOGV(TAG, "Pipeline pausing");
     STAILQ_FOREACH(el_item, &pipeline->el_list, next) {
         if (false == el_item->linked) {
             continue;
         }
-        ESP_LOGV(TAG, "pause [%s]  %p", audio_element_get_tag(el_item->el), el_item->el);
+        OS_LOGV(TAG, "pause [%s]  %p", audio_element_get_tag(el_item->el), el_item->el);
         ret |= audio_element_pause(el_item->el);
     }
-    ESP_LOGD(TAG, "Pipeline paused");
+    OS_LOGD(TAG, "Pipeline paused");
     return ret;
 }
 
 esp_err_t audio_pipeline_run(audio_pipeline_handle_t pipeline, float start_threshold, int timeout_ms)
 {
     audio_element_item_t *el_item;
-    ESP_LOGV(TAG, "Pipeline starting");
+    OS_LOGV(TAG, "Pipeline starting");
     if (pipeline->state != AEL_STATE_INIT) {
-        ESP_LOGV(TAG, "Pipeline already started, state:%d", pipeline->state);
+        OS_LOGV(TAG, "Pipeline already started, state:%d", pipeline->state);
         return ESP_OK;
     }
     STAILQ_FOREACH(el_item, &pipeline->el_list, next) {
-        ESP_LOGV(TAG, "start el[%8s], linked:%d, state:%d,[%p], ", audio_element_get_tag(el_item->el), el_item->linked,  audio_element_get_state(el_item->el), el_item->el);
+        OS_LOGV(TAG, "start el[%8s], linked:%d, state:%d,[%p], ", audio_element_get_tag(el_item->el), el_item->linked,  audio_element_get_state(el_item->el), el_item->el);
         if (el_item->linked
             && ((AEL_STATE_INIT == audio_element_get_state(el_item->el))
                 || (AEL_STATE_STOPPED == audio_element_get_state(el_item->el))
@@ -358,7 +358,7 @@ esp_err_t audio_pipeline_run(audio_pipeline_handle_t pipeline, float start_thres
     }
 
     if (ESP_FAIL == audio_pipeline_resume(pipeline, start_threshold, timeout_ms)) {
-        ESP_LOGE(TAG, "audio_pipeline_resume failed");
+        OS_LOGE(TAG, "audio_pipeline_resume failed");
         audio_pipeline_change_state(pipeline, AEL_STATE_ERROR);
         audio_pipeline_terminate(pipeline);
         return ESP_FAIL;
@@ -366,14 +366,14 @@ esp_err_t audio_pipeline_run(audio_pipeline_handle_t pipeline, float start_thres
         audio_pipeline_change_state(pipeline, AEL_STATE_RUNNING);
     }
 
-    ESP_LOGD(TAG, "Pipeline started");
+    OS_LOGD(TAG, "Pipeline started");
     return ESP_OK;
 }
 
 esp_err_t audio_pipeline_terminate(audio_pipeline_handle_t pipeline)
 {
     audio_element_item_t *el_item;
-    ESP_LOGD(TAG, "Destroy audio_pipeline elements");
+    OS_LOGD(TAG, "Destroy audio_pipeline elements");
     audio_pipeline_stop(pipeline);
     audio_pipeline_wait_for_stop(pipeline);
     STAILQ_FOREACH(el_item, &pipeline->el_list, next) {
@@ -387,9 +387,9 @@ esp_err_t audio_pipeline_terminate(audio_pipeline_handle_t pipeline)
 esp_err_t audio_pipeline_stop(audio_pipeline_handle_t pipeline)
 {
     audio_element_item_t *el_item;
-    ESP_LOGV(TAG, "Pipeline stopping");
+    OS_LOGV(TAG, "Pipeline stopping");
     if (pipeline->state != AEL_STATE_RUNNING) {
-        ESP_LOGV(TAG, "audio_pipeline state is not running, %d", pipeline->state);
+        OS_LOGV(TAG, "audio_pipeline state is not running, %d", pipeline->state);
         return ESP_OK;
     }
     bool type = false;
@@ -397,7 +397,7 @@ esp_err_t audio_pipeline_stop(audio_pipeline_handle_t pipeline)
         if (el_item->linked
             && el_item->el_state == AEL_STATUS_STATE_FINISHED) {
             type = true;
-            ESP_LOGV(TAG, "audio_element_stop type is finished");
+            OS_LOGV(TAG, "audio_element_stop type is finished");
             break;
         }
     }
@@ -408,7 +408,7 @@ esp_err_t audio_pipeline_stop(audio_pipeline_handle_t pipeline)
         if (el_item->linked
             && el_item->el_state == AEL_STATUS_STATE_PAUSED) {
             type = false;
-            ESP_LOGV(TAG, "audio_element_stop has paused element");
+            OS_LOGV(TAG, "audio_element_stop has paused element");
             break;
         }
     }
@@ -421,7 +421,7 @@ esp_err_t audio_pipeline_stop(audio_pipeline_handle_t pipeline)
             }
         }
     }
-    ESP_LOGD(TAG, "Pipeline stopped");
+    OS_LOGD(TAG, "Pipeline stopped");
     return ESP_OK;
 }
 
@@ -429,10 +429,10 @@ esp_err_t audio_pipeline_wait_for_stop(audio_pipeline_handle_t pipeline)
 {
     audio_element_item_t *el_item;
     if (pipeline->state != AEL_STATE_RUNNING) {
-        ESP_LOGV(TAG, "audio_pipeline state is not running, %d", pipeline->state);
+        OS_LOGV(TAG, "audio_pipeline state is not running, %d", pipeline->state);
         return ESP_OK;
     }
-    ESP_LOGD(TAG, "audio_pipeline_wait_for_stop - IN");
+    OS_LOGD(TAG, "audio_pipeline_wait_for_stop - IN");
     esp_err_t ret = ESP_OK;
     STAILQ_FOREACH(el_item, &pipeline->el_list, next) {
         if (el_item->linked) {
@@ -447,7 +447,7 @@ esp_err_t audio_pipeline_wait_for_stop(audio_pipeline_handle_t pipeline)
         }
     }
     audio_pipeline_change_state(pipeline, AEL_STATE_INIT);
-    ESP_LOGD(TAG, "audio_pipeline_wait_for_stop - OUT");
+    OS_LOGD(TAG, "audio_pipeline_wait_for_stop - OUT");
     return ret;
 }
 
@@ -477,7 +477,7 @@ static esp_err_t _pipeline_rb_linked(audio_pipeline_handle_t pipeline, audio_ele
         rb_item->host_el = el;
         STAILQ_INSERT_TAIL(&pipeline->rb_list, rb_item, next);
         audio_element_set_output_ringbuf(el, rb);
-        ESP_LOGD(TAG, "link el->rb, el:%p, tag:%s, rb:%p, rb_size:%d", el, audio_element_get_tag(el) == NULL ? "NULL" : audio_element_get_tag(el), rb, rb_get_size(rb));
+        OS_LOGD(TAG, "link el->rb, el:%p, tag:%s, rb:%p, rb_size:%d", el, audio_element_get_tag(el) == NULL ? "NULL" : audio_element_get_tag(el), rb, rb_get_size(rb));
     }
     return ESP_OK;
 }
@@ -492,7 +492,7 @@ esp_err_t audio_pipeline_link(audio_pipeline_handle_t pipeline, const char *link
     for (int i = 0; i < link_num; i++) {
         audio_element_item_t *item = audio_pipeline_get_el_item_by_tag(pipeline, link_tag[i]);
         if (item == NULL) {
-            ESP_LOGE(TAG, "There is 1 link_tag invalid: %s", link_tag[i]);
+            OS_LOGE(TAG, "There is 1 link_tag invalid: %s", link_tag[i]);
             return ESP_FAIL;
         }
         item->linked = true;
@@ -524,7 +524,7 @@ esp_err_t audio_pipeline_unlink(audio_pipeline_handle_t pipeline)
             el_item->kept_ctx = false;
             audio_element_set_output_ringbuf(el_item->el, NULL);
             audio_element_set_input_ringbuf(el_item->el, NULL);
-            ESP_LOGV(TAG, "audio_pipeline_unlink, %p, %s", el_item->el, audio_element_get_tag(el_item->el));
+            OS_LOGV(TAG, "audio_pipeline_unlink, %p, %s", el_item->el, audio_element_get_tag(el_item->el));
         }
     }
     STAILQ_FOREACH_SAFE(rb_item, &pipeline->rb_list, next, tmp) {
@@ -533,10 +533,10 @@ esp_err_t audio_pipeline_unlink(audio_pipeline_handle_t pipeline)
         rb_item->linked = false;
         rb_item->kept_ctx = false;
         rb_item->host_el = NULL;
-        ESP_LOGV(TAG, "audio_pipeline_unlink, RB, %p,", rb_item->rb);
+        OS_LOGV(TAG, "audio_pipeline_unlink, RB, %p,", rb_item->rb);
         audio_free(rb_item);
     }
-    ESP_LOGV(TAG, "audio_pipeline_unlinked");
+    OS_LOGV(TAG, "audio_pipeline_unlinked");
     STAILQ_INIT(&pipeline->rb_list);
     pipeline->linked = false;
     return ESP_OK;
@@ -581,7 +581,7 @@ esp_err_t audio_pipeline_link_more(audio_pipeline_handle_t pipeline, audio_eleme
         audio_element_handle_t el = element_1;
         audio_element_item_t *item = audio_pipeline_get_el_item_by_handle(pipeline, element_1);
         if (item == NULL) {
-            ESP_LOGE(TAG, "Can't found element[%p-%s] item", element_1, audio_element_get_tag(element_1));
+            OS_LOGE(TAG, "Can't found element[%p-%s] item", element_1, audio_element_get_tag(element_1));
             va_end(args);
             return ESP_FAIL;
         }
@@ -607,7 +607,7 @@ esp_err_t audio_pipeline_link_insert(audio_pipeline_handle_t pipeline, bool firs
     if (first) {
         audio_pipeline_register_element(pipeline, prev);
     }
-    ESP_LOGV(TAG, "element is prev:%p, rb:%p, next:%p", prev, conect_rb, next);
+    OS_LOGV(TAG, "element is prev:%p, rb:%p, next:%p", prev, conect_rb, next);
     audio_pipeline_register_element(pipeline, next);
     audio_element_set_output_ringbuf(prev, conect_rb);
     audio_element_set_input_ringbuf(next, conect_rb);
@@ -627,9 +627,9 @@ esp_err_t audio_pipeline_listen_more(audio_pipeline_handle_t pipeline, audio_ele
         audio_event_iface_msg_t dummy = {0};
         while (1) {
             if (mqueue_receive(que, (char *)&dummy, 0) == 0) {
-                ESP_LOGV(TAG, "Listen_more el:%p, que :%p, OK", el, que);
+                OS_LOGV(TAG, "Listen_more el:%p, que :%p, OK", el, que);
             } else {
-                ESP_LOGV(TAG, "Listen_more el:%p, que :%p, FAIL", el, que);
+                OS_LOGV(TAG, "Listen_more el:%p, que :%p, FAIL", el, que);
                 break;
             }
         }
@@ -651,7 +651,7 @@ esp_err_t audio_pipeline_check_items_state(audio_pipeline_handle_t pipeline, aud
             continue;
         }
         el_cnt ++;
-        ESP_LOGV(TAG, "pipeline state check, pl:%p, el:%p, tag:%8s, state:%d, status:%d", pipeline, item->el,
+        OS_LOGV(TAG, "pipeline state check, pl:%p, el:%p, tag:%8s, state:%d, status:%d", pipeline, item->el,
                  audio_element_get_tag(item->el), item->el_state, status);
         if (item->el_state == AEL_STATUS_NONE) {
             continue;
@@ -661,28 +661,28 @@ esp_err_t audio_pipeline_check_items_state(audio_pipeline_handle_t pipeline, aud
         } else if (status == AEL_STATUS_STATE_RUNNING) {
             if ((item->el_state > AEL_STATUS_NONE) && (item->el_state < AEL_STATUS_INPUT_DONE)) {
                 el_sta_cnt++;
-                ESP_LOGV(TAG, "Check AEL RUNNING, pl:%p, el:%p, tag:%16s, state:%d, wanted:%d", pipeline, item->el,
+                OS_LOGV(TAG, "Check AEL RUNNING, pl:%p, el:%p, tag:%16s, state:%d, wanted:%d", pipeline, item->el,
                          audio_element_get_tag(item->el), item->el_state, status);
             }
         } else if (status == AEL_STATUS_STATE_PAUSED) {
             if ((item->el_state == AEL_STATUS_STATE_FINISHED)
                 || ((item->el_state > AEL_STATUS_NONE) && (item->el_state < AEL_STATUS_INPUT_DONE))) {
                 el_sta_cnt++;
-                ESP_LOGV(TAG, "Check AEL PAUSED, pl:%p, el:%p, tag:%16s, state:%d, wanted:%d", pipeline, item->el,
+                OS_LOGV(TAG, "Check AEL PAUSED, pl:%p, el:%p, tag:%16s, state:%d, wanted:%d", pipeline, item->el,
                          audio_element_get_tag(item->el), item->el_state, status);
             }
         } else if (status == AEL_STATUS_STATE_STOPPED) {
             if ((item->el_state == AEL_STATUS_STATE_FINISHED)
                 || ((item->el_state > AEL_STATUS_NONE) && (item->el_state < AEL_STATUS_INPUT_DONE))) {
                 el_sta_cnt++;
-                ESP_LOGV(TAG, "Check AEL STOPPED, pl:%p, el:%p, tag:%16s, state:%d, wanted:%d", pipeline, item->el,
+                OS_LOGV(TAG, "Check AEL STOPPED, pl:%p, el:%p, tag:%16s, state:%d, wanted:%d", pipeline, item->el,
                          audio_element_get_tag(item->el), item->el_state, status);
             }
         } else if (status == AEL_STATUS_STATE_FINISHED) {
             if ((item->el_state == AEL_STATUS_STATE_FINISHED)
                 || ((item->el_state > AEL_STATUS_NONE) && (item->el_state < AEL_STATUS_INPUT_DONE))) {
                 el_sta_cnt++;
-                ESP_LOGV(TAG, "Check AEL FINISHED, pl:%p, el:%p, tag:%16s, state:%d, wanted:%d", pipeline, item->el,
+                OS_LOGV(TAG, "Check AEL FINISHED, pl:%p, el:%p, tag:%16s, state:%d, wanted:%d", pipeline, item->el,
                          audio_element_get_tag(item->el), item->el_state, status);
             }
         } else {
@@ -699,7 +699,7 @@ esp_err_t audio_pipeline_check_items_state(audio_pipeline_handle_t pipeline, aud
 esp_err_t audio_pipeline_reset_items_state(audio_pipeline_handle_t pipeline)
 {
     audio_element_item_t *el_item;
-    ESP_LOGV(TAG, "audio_pipeline_reset_items_state");
+    OS_LOGV(TAG, "audio_pipeline_reset_items_state");
     STAILQ_FOREACH(el_item, &pipeline->el_list, next) {
         if (el_item->linked) {
             el_item->el_state = AEL_STATUS_NONE;
@@ -749,7 +749,7 @@ esp_err_t audio_pipeline_reset_kept_state(audio_pipeline_handle_t pipeline, audi
             rb_item->linked = false;
             rb_item->kept_ctx = false;
             rb_item->host_el = NULL;
-            ESP_LOGV(TAG, "kept_reset, rb:%p", rb);
+            OS_LOGV(TAG, "kept_reset, rb:%p", rb);
             break;
         }
     }
@@ -759,16 +759,16 @@ esp_err_t audio_pipeline_reset_kept_state(audio_pipeline_handle_t pipeline, audi
 esp_err_t audio_pipeline_breakup_elements(audio_pipeline_handle_t pipeline, audio_element_handle_t kept_ctx_el)
 {
     if (pipeline == NULL) {
-        ESP_LOGE(TAG, "%s have invalid args, %p", __func__, pipeline);
+        OS_LOGE(TAG, "%s have invalid args, %p", __func__, pipeline);
         return ESP_ERR_INVALID_ARG;
     }
     audio_pipeline_remove_listener(pipeline);
     audio_element_item_t *el_item, *el_tmp;
     ringbuf_item_t *rb_item, *tmp;
     bool kept = true;
-    ESP_LOGV(TAG, "audio_pipeline_breakup_elements IN,%p,%s", kept_ctx_el, kept_ctx_el != NULL ? audio_element_get_tag(kept_ctx_el) : "NULL");
+    OS_LOGV(TAG, "audio_pipeline_breakup_elements IN,%p,%s", kept_ctx_el, kept_ctx_el != NULL ? audio_element_get_tag(kept_ctx_el) : "NULL");
     STAILQ_FOREACH_SAFE(el_item, &pipeline->el_list, next, el_tmp) {
-        ESP_LOGV(TAG, "el:%p, %s, in_rb:%p, out_rb:%p, linked:%d, el-kept:%d",
+        OS_LOGV(TAG, "el:%p, %s, in_rb:%p, out_rb:%p, linked:%d, el-kept:%d",
                  el_item->el, audio_element_get_tag(el_item->el),
                  audio_element_get_input_ringbuf(el_item->el),
                  audio_element_get_output_ringbuf(el_item->el),
@@ -783,7 +783,7 @@ esp_err_t audio_pipeline_breakup_elements(audio_pipeline_handle_t pipeline, audi
                 if (audio_element_get_output_ringbuf(el_item->el) == NULL) {
                     el_item->linked = false;
                     el_item->kept_ctx = false;
-                    ESP_LOGV(TAG, "output ringbuf is null");
+                    OS_LOGV(TAG, "output ringbuf is null");
                     break;
                 } else if (rb_item->rb == audio_element_get_output_ringbuf(el_item->el)) {
                     el_item->linked = false;
@@ -792,7 +792,7 @@ esp_err_t audio_pipeline_breakup_elements(audio_pipeline_handle_t pipeline, audi
                     rb_item->linked = false;
                     rb_item->host_el = NULL;
                     audio_element_set_output_ringbuf(el_item->el, NULL);
-                    ESP_LOGV(TAG, "found output ringbuf, %p", el_item->el);
+                    OS_LOGV(TAG, "found output ringbuf, %p", el_item->el);
                     break;
                 }
                 audio_element_set_output_ringbuf(el_item->el, NULL);
@@ -806,9 +806,9 @@ esp_err_t audio_pipeline_breakup_elements(audio_pipeline_handle_t pipeline, audi
                         || (audio_element_get_state(el_item->el) == AEL_STATE_FINISHED)) {
                         el_item->kept_ctx = true;
                         rb_item->kept_ctx = true;
-                        ESP_LOGV(TAG, "found kept_ctx_el:%p and ringbuf:%p", el_item->el, rb_item->rb);
+                        OS_LOGV(TAG, "found kept_ctx_el:%p and ringbuf:%p", el_item->el, rb_item->rb);
                     } else {
-                        ESP_LOGW(TAG, "found kept_ctx_el and ringbuf, but not set kept");
+                        OS_LOGW(TAG, "found kept_ctx_el and ringbuf, but not set kept");
                     }
                     kept = false;
 
@@ -824,7 +824,7 @@ esp_err_t audio_pipeline_breakup_elements(audio_pipeline_handle_t pipeline, audi
             rb_item->linked = false;
             rb_reset(rb_item->rb);
         }
-        ESP_LOGV(TAG, "reset rb:%p kept:%d,linked:%d", rb_item->rb, rb_item->kept_ctx, rb_item->linked );
+        OS_LOGV(TAG, "reset rb:%p kept:%d,linked:%d", rb_item->rb, rb_item->kept_ctx, rb_item->linked );
     }
     pipeline->linked = false;
     audio_pipeline_change_state(pipeline, AEL_STATE_INIT);
@@ -841,21 +841,21 @@ static esp_err_t audio_pipeline_el_item_link(audio_pipeline_handle_t pipeline,
     // Found the kept ringbuffer if exist
     if (src_el_item->kept_ctx) {
         STAILQ_FOREACH_SAFE(rb_item, &pipeline->rb_list, next, rb_tmp) {
-            ESP_LOGV(TAG, "rb:%p host_el:%p kept:%d,linked:%d", rb_item->rb, rb_item->host_el, rb_item->kept_ctx, rb_item->linked);
+            OS_LOGV(TAG, "rb:%p host_el:%p kept:%d,linked:%d", rb_item->rb, rb_item->host_el, rb_item->kept_ctx, rb_item->linked);
             if (rb_item->host_el == el) {
                 cur_rb_item = rb_item;
                 cur_rb_item->linked = true;
                 cur_rb_item->kept_ctx = false;
                 cur_rb_item->host_el = el;
                 src_el_item->kept_ctx = false;
-                ESP_LOGV(TAG, "found kept rb:%p kept:%d,linked:%d, el:%p, name:%s", rb_item->rb, rb_item->kept_ctx,
+                OS_LOGV(TAG, "found kept rb:%p kept:%d,linked:%d, el:%p, name:%s", rb_item->rb, rb_item->kept_ctx,
                          rb_item->linked, src_el_item->el, audio_element_get_tag(src_el_item->el));
                 break;
             }
         }
     } else {
         STAILQ_FOREACH_SAFE(rb_item, &pipeline->rb_list, next, rb_tmp) {
-            ESP_LOGV(TAG, "rb:%p host_el:%p kept:%d,linked:%d", rb_item->rb, rb_item->host_el, rb_item->kept_ctx, rb_item->linked);
+            OS_LOGV(TAG, "rb:%p host_el:%p kept:%d,linked:%d", rb_item->rb, rb_item->host_el, rb_item->kept_ctx, rb_item->linked);
             if ((rb_item->linked == false)
                 && (rb_item->kept_ctx == false)) {
                 if (rb_item->host_el == NULL) {
@@ -864,7 +864,7 @@ static esp_err_t audio_pipeline_el_item_link(audio_pipeline_handle_t pipeline,
                     cur_rb_item->kept_ctx = false;
                     cur_rb_item->host_el = el;
                     rb_reset(cur_rb_item->rb);
-                    ESP_LOGV(TAG, "found not used rb:%p kept:%d,linked:%d", rb_item->rb, rb_item->kept_ctx, rb_item->linked);
+                    OS_LOGV(TAG, "found not used rb:%p kept:%d,linked:%d", rb_item->rb, rb_item->kept_ctx, rb_item->linked);
                     break;
                 }
                 rb_item->host_el = NULL;
@@ -887,9 +887,9 @@ static esp_err_t audio_pipeline_el_item_link(audio_pipeline_handle_t pipeline,
         cur_rb_item->kept_ctx = false;
         cur_rb_item->host_el = el;
         STAILQ_INSERT_TAIL(&pipeline->rb_list, cur_rb_item, next);
-        ESP_LOGV(TAG, "create new rb,rb:%p",  cur_rb_item->rb);
+        OS_LOGV(TAG, "create new rb,rb:%p",  cur_rb_item->rb);
     }
-    ESP_LOGV(TAG, "el:%p, tag:%s, cur_rb_item:%p, rb:%p, first:%d, last:%d\r\n", el,
+    OS_LOGV(TAG, "el:%p, tag:%s, cur_rb_item:%p, rb:%p, first:%d, last:%d\r\n", el,
              audio_element_get_tag(el), cur_rb_item, cur_rb_item != NULL ? cur_rb_item->rb : NULL, first, last);
     if (last) {
         audio_element_set_input_ringbuf(el, rb);
@@ -907,11 +907,11 @@ esp_err_t audio_pipeline_relink(audio_pipeline_handle_t pipeline, const char *li
 {
     if (pipeline == NULL
         || link_tag == NULL) {
-        ESP_LOGE(TAG, "%s have invalid args, %p, %p", __func__, pipeline, link_tag);
+        OS_LOGE(TAG, "%s have invalid args, %p, %p", __func__, pipeline, link_tag);
         return ESP_ERR_INVALID_ARG;
     }
     if (pipeline->linked) {
-        ESP_LOGE(TAG, "%s pipeline is already linked, can't relink", __func__);
+        OS_LOGE(TAG, "%s pipeline is already linked, can't relink", __func__);
         return ESP_FAIL;
     }
     esp_err_t ret = ESP_OK;
@@ -920,13 +920,13 @@ esp_err_t audio_pipeline_relink(audio_pipeline_handle_t pipeline, const char *li
     for (int i = 0; i < link_num; i++) {
         audio_element_item_t *src_el_item = audio_pipeline_get_el_item_by_tag(pipeline, link_tag[i]);
         if (src_el_item == NULL) {
-            ESP_LOGE(TAG, "There is link_tag invalid: %s", link_tag[i]);
+            OS_LOGE(TAG, "There is link_tag invalid: %s", link_tag[i]);
             ret = ESP_FAIL;
             goto relink_err;
         }
         audio_element_handle_t el = NULL;
         STAILQ_FOREACH_SAFE(el_item, &pipeline->el_list, next, el_tmp) {
-            ESP_LOGV(TAG, "linked:%d, kept:%d, el:%s, el:%p, tag:%s, target-el:%p", el_item->linked, el_item->kept_ctx,
+            OS_LOGV(TAG, "linked:%d, kept:%d, el:%s, el:%p, tag:%s, target-el:%p", el_item->linked, el_item->kept_ctx,
                      audio_element_get_tag(el_item->el), el_item->el, link_tag[i], src_el_item->el);
             if (src_el_item->el == el_item->el) {
                 el = el_item->el;
@@ -934,7 +934,7 @@ esp_err_t audio_pipeline_relink(audio_pipeline_handle_t pipeline, const char *li
             }
         }
         if (el == NULL) {
-            ESP_LOGE(TAG, "Can't find element, wanted_el:%s", link_tag[i]);
+            OS_LOGE(TAG, "Can't find element, wanted_el:%s", link_tag[i]);
             ret = ESP_FAIL;
             goto relink_err;
         }
@@ -953,7 +953,7 @@ esp_err_t audio_pipeline_relink_more(audio_pipeline_handle_t pipeline, audio_ele
 {
     AUDIO_NULL_CHECK(TAG, (pipeline || element_1), return ESP_ERR_INVALID_ARG);
     if (pipeline->linked) {
-        ESP_LOGE(TAG, "%s pipeline is already linked, can't relink", __func__);
+        OS_LOGE(TAG, "%s pipeline is already linked, can't relink", __func__);
         return ESP_FAIL;
     }
     va_list args;
@@ -967,7 +967,7 @@ esp_err_t audio_pipeline_relink_more(audio_pipeline_handle_t pipeline, audio_ele
 
         audio_element_handle_t el = NULL;
         STAILQ_FOREACH_SAFE(el_item, &pipeline->el_list, next, el_tmp) {
-            ESP_LOGV(TAG, "linked:%d, kept:%d, el:%s, el:%p, tag:%s, target-el:%p", el_item->linked, el_item->kept_ctx,
+            OS_LOGV(TAG, "linked:%d, kept:%d, el:%s, el:%p, tag:%s, target-el:%p", el_item->linked, el_item->kept_ctx,
                      audio_element_get_tag(el_item->el), el_item->el, audio_element_get_tag(src_el_item->el), src_el_item->el);
             if (src_el_item->el == el_item->el) {
                 el = el_item->el;
@@ -975,7 +975,7 @@ esp_err_t audio_pipeline_relink_more(audio_pipeline_handle_t pipeline, audio_ele
             }
         }
         if (el == NULL) {
-            ESP_LOGE(TAG, "Can't find element, wanted_el:%s", audio_element_get_tag(src_el_item->el));
+            OS_LOGE(TAG, "Can't find element, wanted_el:%s", audio_element_get_tag(src_el_item->el));
             va_end(args);
             return ESP_FAIL;
         }

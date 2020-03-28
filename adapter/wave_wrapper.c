@@ -19,7 +19,7 @@
 #include <string.h>
 
 #include "msgutils/os_time.h"
-#include "esp_adf/esp_log.h"
+#include "msgutils/os_logger.h"
 #include "esp_adf/audio_common.h"
 #include "audio_extractor/wav_extractor.h"
 #include "wave_wrapper.h"

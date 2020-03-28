@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "esp_adf/esp_log.h"
+#include "msgutils/os_logger.h"
 #include "esp_adf/audio_common.h"
 #include "audio_stream/file_stream.h"
 #include "fatfs_wrapper.h"
@@ -47,7 +47,7 @@ file_handle_t fatfs_wrapper_open(const char *url, file_mode_t mode, long long co
         file = fopen(url, "wb+");
 
     if (file == NULL) {
-        ESP_LOGE(TAG, "Failed to open file:%s", url);
+        OS_LOGE(TAG, "Failed to open file:%s", url);
         audio_free(file);
         return NULL;
     }
@@ -69,7 +69,7 @@ int fatfs_wrapper_read(file_handle_t handle, char *buffer, int size)
     fatfs_wrapper_priv_t *priv = (fatfs_wrapper_priv_t *)handle;
     if (priv->file) {
         if (priv->content_len > 0 && priv->content_pos >= priv->content_len) {
-            ESP_LOGD(TAG, "fatfs file read done: %d/%d", (int)priv->content_pos, (int)priv->content_len);
+            OS_LOGD(TAG, "fatfs file read done: %d/%d", (int)priv->content_pos, (int)priv->content_len);
             return 0;
         }
         size_t bytes_read = fread(buffer, 1, size, priv->file);

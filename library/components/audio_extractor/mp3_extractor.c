@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-#include "esp_adf/esp_log.h"
+#include "msgutils/os_logger.h"
 #include "esp_adf/audio_common.h"
 #include "audio_extractor/mp3_extractor.h"
 
@@ -49,7 +49,7 @@ int mp3_parse_header(char *buf, int buf_size, mp3_info_t *info)
 
 check_next_frame:
     if ((buf[0] & 0xFF) != 0xFF || (buf[1] & 0xE0) != 0xE0) {
-        ESP_LOGE(TAG, "Invalid sync word");
+        OS_LOGE(TAG, "Invalid sync word");
         return -1;
     }
 
@@ -63,14 +63,14 @@ check_next_frame:
 
     // check parameters to avoid indexing tables with bad values
     if (ver == 1 ||  srIdx >= 3 || layer == 0 || brIdx == 15 || brIdx == 0) {
-        ESP_LOGE(TAG, "Invalid mp3 header");
+        OS_LOGE(TAG, "Invalid mp3 header");
         return -1;
     }
 
     if (double_check)
         goto success;
 
-    ESP_LOGV(TAG, "srIdx=%d, ver=%d, layer=%d, brIdx=%d", srIdx, ver, layer, brIdx);
+    OS_LOGV(TAG, "srIdx=%d, ver=%d, layer=%d, brIdx=%d", srIdx, ver, layer, brIdx);
 
     static const int kSamplingRateV1[] = {44100, 48000, 32000};
     sample_rate = kSamplingRateV1[srIdx];
@@ -122,11 +122,11 @@ check_next_frame:
     info->bit_rate = bit_rate;
     info->frame_size = frame_size;
 
-    ESP_LOGD(TAG, "channels=%d, sample_rate=%d, bit_rate=%d, frame_size=%d",
+    OS_LOGD(TAG, "channels=%d, sample_rate=%d, bit_rate=%d, frame_size=%d",
              info->channels, info->sample_rate, info->bit_rate, info->frame_size);
 
     if (frame_size + 4 > buf_size) {
-        ESP_LOGW(TAG, "Not enough data to double check, but go on");
+        OS_LOGW(TAG, "Not enough data to double check, but go on");
         return 0;
     }
     buf += frame_size;
@@ -139,13 +139,13 @@ success:
 
 static void mp3_dump_info(mp3_info_t *info)
 {
-    ESP_LOGD(TAG, "MP3 INFO:");
-    ESP_LOGD(TAG, "  >channels          : %d", info->channels);
-    ESP_LOGD(TAG, "  >sample_rate       : %d", info->sample_rate);
-    ESP_LOGD(TAG, "  >bit_rate          : %d", info->bit_rate);
-    ESP_LOGD(TAG, "  >frame_size        : %d", info->frame_size);
-    ESP_LOGD(TAG, "  >frame_start_offset: %d", info->frame_start_offset);
-    ESP_LOGD(TAG, "  >id3v2_length      : %d", info->id3v2_length);
+    OS_LOGD(TAG, "MP3 INFO:");
+    OS_LOGD(TAG, "  >channels          : %d", info->channels);
+    OS_LOGD(TAG, "  >sample_rate       : %d", info->sample_rate);
+    OS_LOGD(TAG, "  >bit_rate          : %d", info->bit_rate);
+    OS_LOGD(TAG, "  >frame_size        : %d", info->frame_size);
+    OS_LOGD(TAG, "  >frame_start_offset: %d", info->frame_start_offset);
+    OS_LOGD(TAG, "  >id3v2_length      : %d", info->id3v2_length);
 }
 
 int mp3_extractor(mp3_fetch_cb fetch_cb, void *fetch_priv, mp3_info_t *info)
@@ -160,7 +160,7 @@ int mp3_extractor(mp3_fetch_cb fetch_cb, void *fetch_priv, mp3_info_t *info)
 
     buf_size = fetch_cb(buf, buf_size, 0, fetch_priv);
     if (buf_size < 4) {
-        ESP_LOGE(TAG, "Not enough data[%d] to parse", buf_size);
+        OS_LOGE(TAG, "Not enough data[%d] to parse", buf_size);
         goto finish;
     }
 
@@ -172,7 +172,7 @@ int mp3_extractor(mp3_fetch_cb fetch_cb, void *fetch_priv, mp3_info_t *info)
                  (((int)(buf[9])) & 0x7F);
 
         frame_start_offset = id3v2_len + 10;
-        ESP_LOGV(TAG, "ID3 tag find with length[%d]", id3v2_len);
+        OS_LOGV(TAG, "ID3 tag find with length[%d]", id3v2_len);
     }
 
     if (frame_start_offset + 4 <= buf_size) {
@@ -185,11 +185,11 @@ int mp3_extractor(mp3_fetch_cb fetch_cb, void *fetch_priv, mp3_info_t *info)
     }
 
     if (frame_start_offset != 0) {
-        ESP_LOGV(TAG, "Request more data to parse frame header");
+        OS_LOGV(TAG, "Request more data to parse frame header");
         buf_size = DEFAULT_MP3_PARSER_BUFFER_SIZE;
         buf_size = fetch_cb(buf, buf_size, frame_start_offset, fetch_priv);
         if (buf_size < 4) {
-            ESP_LOGE(TAG, "Not enough data[%d] to parse", buf_size);
+            OS_LOGE(TAG, "Not enough data[%d] to parse", buf_size);
             goto finish;
         }
     }
@@ -199,7 +199,7 @@ int mp3_extractor(mp3_fetch_cb fetch_cb, void *fetch_priv, mp3_info_t *info)
 
 find_syncword:
     if (last_position + 4 > buf_size) {
-        ESP_LOGE(TAG, "Not enough data[%d] to parse", buf_size);
+        OS_LOGE(TAG, "Not enough data[%d] to parse", buf_size);
         goto finish;
     }
 
@@ -212,13 +212,13 @@ find_syncword:
             goto finish;
         }
         else {
-            ESP_LOGV(TAG, "Retry to find sync word");
+            OS_LOGV(TAG, "Retry to find sync word");
             last_position++;
             goto find_syncword;
         }
     }
     else {
-        ESP_LOGE(TAG, "Can't find mp3 sync word");
+        OS_LOGE(TAG, "Can't find mp3 sync word");
         goto finish;
     }
 

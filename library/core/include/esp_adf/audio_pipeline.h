@@ -28,7 +28,7 @@
 #include <stdbool.h>
 
 #include "esp_adf/queue.h"
-#include "esp_adf/esp_err.h"
+#include "esp_adf/audio_common.h"
 #include "esp_adf/audio_element.h"
 
 #ifdef __cplusplus

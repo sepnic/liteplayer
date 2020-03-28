@@ -20,8 +20,8 @@
 #include <string.h>
 
 #include "msgutils/os_thread.h"
+#include "msgutils/os_logger.h"
 #include "msgutils/msglooper.h"
-#include "esp_adf/esp_log.h"
 #include "esp_adf/audio_common.h"
 #include "liteplayer_adapter.h"
 #include "liteplayer_config.h"
@@ -83,7 +83,7 @@ static int playlist_insert(liteplayer_mngr_handle_t mngr, const char *url)
     OS_THREAD_MUTEX_LOCK(mngr->lock);
 
     if (mngr->url_count >= DEFAULT_PLAYLIST_URL_MAX) {
-        ESP_LOGE(TAG, "Reach max url count: %d", mngr->url_count);
+        OS_LOGE(TAG, "Reach max url count: %d", mngr->url_count);
         OS_THREAD_MUTEX_UNLOCK(mngr->lock);
         return -1;
     }
@@ -133,22 +133,22 @@ static int playlist_resolve(liteplayer_mngr_handle_t mngr, const char *filename)
     file_handle_t file = NULL;
     char *content = audio_malloc(DEFAULT_PLAYLIST_BUFFER_SIZE);
     if (content == NULL) {
-        ESP_LOGE(TAG, "Failed to allocate playlist parser buffer");
+        OS_LOGE(TAG, "Failed to allocate playlist parser buffer");
         goto resolve_done;
     }
 
     file = mngr->file_wrapper.open(filename, FILE_READ, 0, mngr->file_wrapper.file_priv);
     if (file == NULL) {
-        ESP_LOGE(TAG, "Failed to open playlist");
+        OS_LOGE(TAG, "Failed to open playlist");
         goto resolve_done;
     }
 
     int bytes_read = mngr->file_wrapper.read(file, content, DEFAULT_PLAYLIST_BUFFER_SIZE);
     if (bytes_read <= 0) {
-        ESP_LOGE(TAG, "Failed to read playlist");
+        OS_LOGE(TAG, "Failed to read playlist");
         goto resolve_done;
     }
-    ESP_LOGV(TAG, "Succeed to read playlist:\n%s", content);
+    OS_LOGV(TAG, "Succeed to read playlist:\n%s", content);
 
     int index = 0, remain = bytes_read;
     char *line = NULL;
@@ -163,7 +163,7 @@ static int playlist_resolve(liteplayer_mngr_handle_t mngr, const char *filename)
     }
 #if 1
     for (int i = 0; i < mngr->url_count; i++) {
-        ESP_LOGV(TAG, "-->url[%d]=[%s]", i, mngr->url_list[i]);
+        OS_LOGV(TAG, "-->url[%d]=[%s]", i, mngr->url_list[i]);
     }
 #endif
     OS_THREAD_MUTEX_UNLOCK(mngr->lock);
@@ -447,7 +447,7 @@ int liteplayer_mngr_set_data_source(liteplayer_mngr_handle_t mngr, const char *u
 
     OS_THREAD_MUTEX_LOCK(mngr->lock);
     if (mngr->url_count > 0) {
-        ESP_LOGE(TAG, "Failed to set source, playlist isn't empty");
+        OS_LOGE(TAG, "Failed to set source, playlist isn't empty");
         OS_THREAD_MUTEX_UNLOCK(mngr->lock);
         return -1;
     }
@@ -458,13 +458,13 @@ int liteplayer_mngr_set_data_source(liteplayer_mngr_handle_t mngr, const char *u
 
     if (strstr(url, DEFAULT_PLAYLIST_FILE_SUFFIX) != NULL) {
         if (playlist_resolve(mngr, url) != 0) {
-            ESP_LOGE(TAG, "Failed to resolve playlist");
+            OS_LOGE(TAG, "Failed to resolve playlist");
             return -1;
         }
     }
     else {
         if (playlist_insert(mngr, url) != 0) {
-            ESP_LOGE(TAG, "Failed to insert playlist");
+            OS_LOGE(TAG, "Failed to insert playlist");
             return -1;
         }
     }
@@ -540,7 +540,7 @@ int liteplayer_mngr_next(liteplayer_mngr_handle_t mngr)
 
     OS_THREAD_MUTEX_LOCK(mngr->lock);
     if (!mngr->is_list) {
-        ESP_LOGE(TAG, "Failed to switch next without playlist");
+        OS_LOGE(TAG, "Failed to switch next without playlist");
         OS_THREAD_MUTEX_UNLOCK(mngr->lock);
         return -1;
     }
@@ -561,7 +561,7 @@ int liteplayer_mngr_prev(liteplayer_mngr_handle_t mngr)
 
     OS_THREAD_MUTEX_LOCK(mngr->lock);
     if (!mngr->is_list) {
-        ESP_LOGE(TAG, "Failed to switch prev without playlist");
+        OS_LOGE(TAG, "Failed to switch prev without playlist");
         OS_THREAD_MUTEX_UNLOCK(mngr->lock);
         return -1;
     }
@@ -586,7 +586,7 @@ int liteplayer_mngr_set_single_looping(liteplayer_mngr_handle_t mngr, bool enabl
         if (mngr->state == LITEPLAYER_INITED || mngr->state == LITEPLAYER_PREPARED ||
             mngr->state == LITEPLAYER_COMPLETED || mngr->state == LITEPLAYER_STOPPED ||
             mngr->state == LITEPLAYER_ERROR) {
-            ESP_LOGE(TAG, "Failed to set looping in critical state");
+            OS_LOGE(TAG, "Failed to set looping in critical state");
             OS_THREAD_MUTEX_UNLOCK(mngr->lock);
             return -1;
         }

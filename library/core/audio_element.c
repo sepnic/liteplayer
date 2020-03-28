@@ -26,8 +26,8 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include "msgutils/os_logger.h"
 #include "esp_adf/queue.h"
-#include "esp_adf/esp_log.h"
 #include "esp_adf/audio_event_iface.h"
 #include "esp_adf/audio_element.h"
 #include "esp_adf/audio_common.h"
@@ -165,7 +165,7 @@ static esp_err_t audio_element_cmd_send(audio_element_handle_t el, audio_element
         .source_type = AUDIO_ELEMENT_TYPE_ELEMENT,
         .cmd = cmd,
     };
-    ESP_LOGV(TAG, "[%s]evt internal cmd = %d", el->tag, msg.cmd);
+    OS_LOGV(TAG, "[%s]evt internal cmd = %d", el->tag, msg.cmd);
     return audio_event_iface_cmd(el->iface_event, &msg);
 }
 
@@ -176,7 +176,7 @@ static esp_err_t audio_element_msg_sendout(audio_element_handle_t el, audio_even
     if (el->events_type == EVENTS_TYPE_CB && el->callback_event.cb) {
         return el->callback_event.cb(el, msg, el->callback_event.ctx);
     }
-    ESP_LOGV(TAG, "[%s]evt external cmd = %d", el->tag, msg->cmd);
+    OS_LOGV(TAG, "[%s]evt external cmd = %d", el->tag, msg->cmd);
     return audio_event_iface_sendout(el->iface_event, msg);
 }
 
@@ -188,14 +188,14 @@ esp_err_t audio_element_process_init(audio_element_handle_t el)
         return ESP_OK;
     }
     if (el->open(el) == ESP_OK) {
-        ESP_LOGD(TAG, "[%s] el opened", el->tag);
+        OS_LOGD(TAG, "[%s] el opened", el->tag);
         el->is_open = true;
         audio_element_force_set_state(el, AEL_STATE_RUNNING);
         audio_element_report_status(el, AEL_STATUS_STATE_RUNNING);
         audio_element_set_state_event(el, STARTED_BIT);
         return ESP_OK;
     }
-    ESP_LOGE(TAG, "[%s] AEL_STATUS_ERROR_OPEN", el->tag);
+    OS_LOGE(TAG, "[%s] AEL_STATUS_ERROR_OPEN", el->tag);
     audio_element_report_status(el, AEL_STATUS_ERROR_OPEN);
     audio_element_cmd_send(el, AEL_MSG_CMD_ERROR);
     return ESP_FAIL;
@@ -207,7 +207,7 @@ esp_err_t audio_element_process_deinit(audio_element_handle_t el)
         if (el->close)
             el->close(el);
         el->is_open = false;
-        ESP_LOGD(TAG, "[%s] closed", el->tag);
+        OS_LOGD(TAG, "[%s] closed", el->tag);
     }
     return ESP_OK;
 }
@@ -217,7 +217,7 @@ static esp_err_t audio_element_on_cmd(audio_event_iface_msg_t *msg, void *contex
     audio_element_handle_t el = (audio_element_handle_t)context;
 
     if (msg->source_type != AUDIO_ELEMENT_TYPE_ELEMENT) {
-        ESP_LOGE(TAG, "[%s] Invalid event type, this event should be ELEMENT type", el->tag);
+        OS_LOGE(TAG, "[%s] Invalid event type, this event should be ELEMENT type", el->tag);
         return ESP_FAIL;
     }
     //process an event
@@ -230,12 +230,12 @@ static esp_err_t audio_element_on_cmd(audio_event_iface_msg_t *msg, void *contex
             audio_element_abort_output_ringbuf(el);
             el->is_running = false;
             audio_element_set_state_event(el, STOPPED_BIT);
-            ESP_LOGE(TAG, "[%s] AEL_MSG_CMD_ERROR", el->tag);
+            OS_LOGE(TAG, "[%s] AEL_MSG_CMD_ERROR", el->tag);
             break;
         case AEL_MSG_CMD_FINISH:
             if ((el->state == AEL_STATE_ERROR)
                 || (el->state == AEL_STATE_STOPPED)) {
-                ESP_LOGV(TAG, "[%s] AEL_MSG_CMD_FINISH, state:%d", el->tag, el->state);
+                OS_LOGV(TAG, "[%s] AEL_MSG_CMD_FINISH, state:%d", el->tag, el->state);
                 break;
             }
             audio_element_process_deinit(el);
@@ -244,7 +244,7 @@ static esp_err_t audio_element_on_cmd(audio_event_iface_msg_t *msg, void *contex
             audio_element_report_status(el, AEL_STATUS_STATE_FINISHED);
             el->is_running = false;
             audio_element_set_state_event(el, STOPPED_BIT);
-            ESP_LOGV(TAG, "[%s] AEL_MSG_CMD_FINISH", el->tag);
+            OS_LOGV(TAG, "[%s] AEL_MSG_CMD_FINISH", el->tag);
             break;
         case AEL_MSG_CMD_STOP:
             if ((el->state != AEL_STATE_FINISHED) && (el->state != AEL_STATE_STOPPED)) {
@@ -254,11 +254,11 @@ static esp_err_t audio_element_on_cmd(audio_event_iface_msg_t *msg, void *contex
                 audio_element_report_status(el, AEL_STATUS_STATE_STOPPED);
                 el->is_running = false;
                 el->stopping = false;
-                ESP_LOGV(TAG, "[%s] AEL_MSG_CMD_STOP", el->tag);
+                OS_LOGV(TAG, "[%s] AEL_MSG_CMD_STOP", el->tag);
                 audio_element_set_state_event(el, STOPPED_BIT);
             } else {
                 // Change element state to AEL_STATE_STOPPED, even if AEL_STATE_ERROR or AEL_STATE_FINISHED.
-                ESP_LOGV(TAG, "[%s] AEL_MSG_CMD_STOP, state:%d", el->tag, el->state);
+                OS_LOGV(TAG, "[%s] AEL_MSG_CMD_STOP, state:%d", el->tag, el->state);
                 el->state = AEL_STATE_STOPPED;
                 el->is_running = false;
                 el->stopping = false;
@@ -272,11 +272,11 @@ static esp_err_t audio_element_on_cmd(audio_event_iface_msg_t *msg, void *contex
             audio_event_iface_set_cmd_waiting_timeout(el->iface_event, AUDIO_MAX_DELAY);
             audio_element_report_status(el, AEL_STATUS_STATE_PAUSED);
             el->is_running = false;
-            ESP_LOGV(TAG, "[%s] AEL_MSG_CMD_PAUSE", el->tag);
+            OS_LOGV(TAG, "[%s] AEL_MSG_CMD_PAUSE", el->tag);
             audio_element_set_state_event(el, PAUSED_BIT);
             break;
         case AEL_MSG_CMD_RESUME:
-            ESP_LOGV(TAG, "[%s] AEL_MSG_CMD_RESUME,state:%d", el->tag, el->state);
+            OS_LOGV(TAG, "[%s] AEL_MSG_CMD_RESUME,state:%d", el->tag, el->state);
             if (el->state == AEL_STATE_RUNNING) {
                 el->is_running = true;
                 audio_element_set_state_event(el, RESUMED_BIT);
@@ -299,7 +299,7 @@ static esp_err_t audio_element_on_cmd(audio_event_iface_msg_t *msg, void *contex
         case AEL_MSG_CMD_DESTROY:
             el->task_run = false;
             el->is_running = false;
-            ESP_LOGV(TAG, "[%s] AEL_MSG_CMD_DESTROY", el->tag);
+            OS_LOGV(TAG, "[%s] AEL_MSG_CMD_DESTROY", el->tag);
             return ESP_FAIL;
     }
     return ESP_OK;
@@ -315,7 +315,7 @@ static esp_err_t audio_element_process_running(audio_element_handle_t el)
     if (process_len <= 0) {
         switch (process_len) {
             case AEL_IO_ABORT:
-                ESP_LOGE(TAG, "[%s] ERROR_PROCESS, AEL_IO_ABORT", el->tag);
+                OS_LOGE(TAG, "[%s] ERROR_PROCESS, AEL_IO_ABORT", el->tag);
                 break;
             case AEL_IO_DONE:
             case AEL_IO_OK:
@@ -330,20 +330,20 @@ static esp_err_t audio_element_process_running(audio_element_handle_t el)
                 audio_element_cmd_send(el, AEL_MSG_CMD_FINISH);
                 break;
             case AEL_IO_FAIL:
-                ESP_LOGE(TAG, "[%s] ERROR_PROCESS, AEL_IO_FAIL", el->tag);
+                OS_LOGE(TAG, "[%s] ERROR_PROCESS, AEL_IO_FAIL", el->tag);
                 audio_element_report_status(el, AEL_STATUS_ERROR_PROCESS);
                 audio_element_cmd_send(el, AEL_MSG_CMD_ERROR);
                 break;
             case AEL_IO_TIMEOUT:
-                ESP_LOGV(TAG, "[%s] ERROR_PROCESS, AEL_IO_TIMEOUT", el->tag);
+                OS_LOGV(TAG, "[%s] ERROR_PROCESS, AEL_IO_TIMEOUT", el->tag);
                 break;
             case AEL_PROCESS_FAIL:
-                ESP_LOGE(TAG, "[%s] ERROR_PROCESS, AEL_PROCESS_FAIL", el->tag);
+                OS_LOGE(TAG, "[%s] ERROR_PROCESS, AEL_PROCESS_FAIL", el->tag);
                 audio_element_report_status(el, AEL_STATUS_ERROR_PROCESS);
                 audio_element_cmd_send(el, AEL_MSG_CMD_ERROR);
                 break;
             default:
-                ESP_LOGW(TAG, "[%s] Process return error,ret:%d", el->tag, process_len);
+                OS_LOGW(TAG, "[%s] Process return error,ret:%d", el->tag, process_len);
                 break;
         }
     }
@@ -355,43 +355,43 @@ int audio_element_input(audio_element_handle_t el, char *buffer, int wanted_size
     int in_len = 0;
     if (el->read_type == IO_TYPE_CB) {
         if (el->in.read_cb.cb == NULL) {
-            ESP_LOGE(TAG, "[%s] Read IO Type callback but callback not set", el->tag);
+            OS_LOGE(TAG, "[%s] Read IO Type callback but callback not set", el->tag);
             return ESP_FAIL;
         }
         in_len = el->in.read_cb.cb(el, buffer, wanted_size, el->input_timeout_ms,
                                    el->in.read_cb.ctx);
     } else if (el->read_type == IO_TYPE_RB) {
         if (el->in.input_rb == NULL) {
-            ESP_LOGE(TAG, "[%s] Read IO type ringbuf but ringbuf not set", el->tag);
+            OS_LOGE(TAG, "[%s] Read IO type ringbuf but ringbuf not set", el->tag);
             return ESP_FAIL;
         }
         in_len = rb_read(el->in.input_rb, buffer, wanted_size, el->input_timeout_ms);
     } else {
-        ESP_LOGE(TAG, "[%s] Invalid read IO type", el->tag);
+        OS_LOGE(TAG, "[%s] Invalid read IO type", el->tag);
         return ESP_FAIL;
     }
     if (in_len <= 0) {
         switch (in_len) {
             case AEL_IO_ABORT:
-                ESP_LOGW(TAG, "IN-[%s] AEL_IO_ABORT", el->tag);
+                OS_LOGW(TAG, "IN-[%s] AEL_IO_ABORT", el->tag);
                 audio_element_set_ringbuf_done(el);
                 //audio_element_abort_output_ringbuf(el);
                 audio_element_stop(el);
                 break;
             case AEL_IO_DONE:
             case AEL_IO_OK:
-                ESP_LOGD(TAG, "IN-[%s] AEL_IO_DONE,%d", el->tag, in_len);
+                OS_LOGD(TAG, "IN-[%s] AEL_IO_DONE,%d", el->tag, in_len);
                 break;
             case AEL_IO_FAIL:
-                ESP_LOGE(TAG, "IN-[%s] AEL_STATUS_ERROR_INPUT", el->tag);
+                OS_LOGE(TAG, "IN-[%s] AEL_STATUS_ERROR_INPUT", el->tag);
                 audio_element_report_status(el, AEL_STATUS_ERROR_INPUT);
                 audio_element_cmd_send(el, AEL_MSG_CMD_ERROR);
                 break;
             case AEL_IO_TIMEOUT:
-                ESP_LOGV(TAG, "IN-[%s] AEL_IO_TIMEOUT", el->tag);
+                OS_LOGV(TAG, "IN-[%s] AEL_IO_TIMEOUT", el->tag);
                 break;
             default:
-                ESP_LOGE(TAG, "IN-[%s] Input return not support,ret:%d", el->tag, in_len);
+                OS_LOGE(TAG, "IN-[%s] Input return not support,ret:%d", el->tag, in_len);
                 audio_element_cmd_send(el, AEL_MSG_CMD_PAUSE);
                 break;
         }
@@ -411,7 +411,7 @@ int audio_element_output(audio_element_handle_t el, char *buffer, int write_size
         if (el->out.output_rb && write_size) {
             output_len = rb_write(el->out.output_rb, buffer, write_size, el->output_timeout_ms);
             if (!el->buffer_reach_level && ((rb_bytes_filled(el->out.output_rb) > el->out_buf_size_expect) || (output_len < 0))) {
-                ESP_LOGV(TAG, "OUT-[%s] BUFFER_REACH_LEVEL_BIT, rb_bytes_filled:%d, out_buf_size_expect:%d, output_len:%d",
+                OS_LOGV(TAG, "OUT-[%s] BUFFER_REACH_LEVEL_BIT, rb_bytes_filled:%d, out_buf_size_expect:%d, output_len:%d",
                          el->tag, rb_bytes_filled(el->out.output_rb), el->out_buf_size_expect, output_len);
                 audio_element_set_state_event(el, BUFFER_REACH_LEVEL_BIT);
             }
@@ -420,26 +420,26 @@ int audio_element_output(audio_element_handle_t el, char *buffer, int write_size
     if (output_len <= 0) {
         switch (output_len) {
             case AEL_IO_ABORT:
-                ESP_LOGW(TAG, "OUT-[%s] AEL_IO_ABORT", el->tag);
+                OS_LOGW(TAG, "OUT-[%s] AEL_IO_ABORT", el->tag);
                 audio_element_set_ringbuf_done(el);
                 //audio_element_abort_input_ringbuf(el);
                 audio_element_stop(el);
                 break;
             case AEL_IO_DONE:
             case AEL_IO_OK:
-                ESP_LOGD(TAG, "OUT-[%s] AEL_IO_DONE,%d", el->tag, output_len);
+                OS_LOGD(TAG, "OUT-[%s] AEL_IO_DONE,%d", el->tag, output_len);
                 break;
             case AEL_IO_FAIL:
-                ESP_LOGE(TAG, "OUT-[%s] AEL_STATUS_ERROR_OUTPUT", el->tag);
+                OS_LOGE(TAG, "OUT-[%s] AEL_STATUS_ERROR_OUTPUT", el->tag);
                 audio_element_report_status(el, AEL_STATUS_ERROR_OUTPUT);
                 audio_element_cmd_send(el, AEL_MSG_CMD_ERROR);
                 break;
             case AEL_IO_TIMEOUT:
-                ESP_LOGW(TAG, "OUT-[%s] AEL_IO_TIMEOUT", el->tag);
+                OS_LOGW(TAG, "OUT-[%s] AEL_IO_TIMEOUT", el->tag);
                 audio_element_cmd_send(el, AEL_MSG_CMD_PAUSE);
                 break;
             default:
-                ESP_LOGE(TAG, "OUT-[%s] Output return not support,ret:%d", el->tag, output_len);
+                OS_LOGE(TAG, "OUT-[%s] Output return not support,ret:%d", el->tag, output_len);
                 audio_element_cmd_send(el, AEL_MSG_CMD_PAUSE);
                 break;
         }
@@ -457,7 +457,7 @@ void *audio_element_task(void *pv)
         el->buf = audio_malloc(el->buf_size);
         AUDIO_MEM_CHECK(TAG, el->buf, {
             el->task_run = false;
-            ESP_LOGE(TAG, "[%s] Error malloc element buffer", el->tag);
+            OS_LOGE(TAG, "[%s] Error malloc element buffer", el->tag);
         });
     }
     audio_element_clear_state_event(el, STOPPED_BIT);
@@ -475,10 +475,10 @@ void *audio_element_task(void *pv)
         if (el->close)
             el->close(el);
         el->is_open = false;
-        ESP_LOGD(TAG, "[%s] el closed", el->tag);
+        OS_LOGD(TAG, "[%s] el closed", el->tag);
     }
     audio_free(el->buf);
-    ESP_LOGV(TAG, "[%s] el task deleted,%p", el->tag, OS_THREAD_SELF());
+    OS_LOGV(TAG, "[%s] el task deleted,%p", el->tag, OS_THREAD_SELF());
     el->task_run = false;
     audio_element_set_state_event(el, TASK_DESTROYED_BIT);
     return NULL;
@@ -602,7 +602,7 @@ esp_err_t audio_element_report_info(audio_element_handle_t el)
         audio_event_iface_msg_t msg = { 0 };
         msg.cmd = AEL_MSG_CMD_REPORT_MUSIC_INFO;
         msg.data = NULL;
-        ESP_LOGV(TAG, "REPORT_INFO,[%s]evt out cmd:%d,", el->tag, msg.cmd);
+        OS_LOGV(TAG, "REPORT_INFO,[%s]evt out cmd:%d,", el->tag, msg.cmd);
         audio_element_msg_sendout(el, &msg);
         return ESP_OK;
     }
@@ -615,7 +615,7 @@ esp_err_t audio_element_report_codec_fmt(audio_element_handle_t el)
         audio_event_iface_msg_t msg = { 0 };
         msg.cmd = AEL_MSG_CMD_REPORT_CODEC_FMT;
         msg.data = NULL;
-        ESP_LOGV(TAG, "REPORT_FMT,[%s]evt out cmd:%d,", el->tag, msg.cmd);
+        OS_LOGV(TAG, "REPORT_FMT,[%s]evt out cmd:%d,", el->tag, msg.cmd);
         audio_element_msg_sendout(el, &msg);
         return ESP_OK;
     }
@@ -628,7 +628,7 @@ esp_err_t audio_element_report_status(audio_element_handle_t el, audio_element_s
     msg.cmd = AEL_MSG_CMD_REPORT_STATUS;
     msg.data = (void *)status;
     msg.data_len = sizeof(status);
-    ESP_LOGV(TAG, "REPORT_STATUS,[%s]evt out cmd = %d,status:%d", el->tag, msg.cmd, status);
+    OS_LOGV(TAG, "REPORT_STATUS,[%s]evt out cmd = %d,status:%d", el->tag, msg.cmd, status);
     return audio_element_msg_sendout(el, &msg);
 }
 
@@ -639,7 +639,7 @@ esp_err_t audio_element_report_pos(audio_element_handle_t el)
         msg.cmd = AEL_MSG_CMD_REPORT_POSITION;
         msg.data = (void *)el->info.byte_pos;
         msg.data_len = sizeof(el->info.byte_pos);
-        //ESP_LOGV(TAG, "REPORT_POS,[%s]evt out cmd:%d,pos:%ld", el->tag, msg.cmd, (long)el->info.byte_pos);
+        //OS_LOGV(TAG, "REPORT_POS,[%s]evt out cmd:%d,pos:%ld", el->tag, msg.cmd, (long)el->info.byte_pos);
         audio_element_msg_sendout(el, &msg);
         return ESP_OK;
     }
@@ -833,7 +833,7 @@ esp_err_t audio_element_wait_for_stop(audio_element_handle_t el)
 {
     if (el->state == AEL_STATE_STOPPED
         || el->state == AEL_STATE_INIT) {
-        ESP_LOGV(TAG, "[%s] Element already stopped, no need waiting", el->tag);
+        OS_LOGV(TAG, "[%s] Element already stopped, no need waiting", el->tag);
         return ESP_OK;
     }
     esp_err_t ret = ESP_FAIL;
@@ -1009,10 +1009,10 @@ esp_err_t audio_element_run(audio_element_handle_t el)
     struct os_threadattr threadattr;
     esp_err_t ret = ESP_FAIL;
     if (el->task_run) {
-        ESP_LOGV(TAG, "[%s] Element already created", el->tag);
+        OS_LOGV(TAG, "[%s] Element already created", el->tag);
         return ESP_OK;
     }
-    ESP_LOGV(TAG, "[%s] Element starting...", el->tag);
+    OS_LOGV(TAG, "[%s] Element starting...", el->tag);
     snprintf(task_name, 32, "ael-%s", el->tag);
     threadattr.name = task_name;
     threadattr.priority = el->task_prio;
@@ -1021,7 +1021,7 @@ esp_err_t audio_element_run(audio_element_handle_t el)
     audio_event_iface_discard(el->iface_event);
     audio_element_clear_state_event(el, TASK_CREATED_BIT);
     if (OS_THREAD_CREATE(&threadattr, audio_element_task, (void *)el) == NULL) {
-        ESP_LOGE(TAG, "[%s] Error create element task", el->tag);
+        OS_LOGE(TAG, "[%s] Error create element task", el->tag);
         return ESP_FAIL;
     }
     OS_THREAD_MUTEX_LOCK(el->state_lock);
@@ -1032,19 +1032,19 @@ esp_err_t audio_element_run(audio_element_handle_t el)
     if ((el->state_event & TASK_CREATED_BIT) != 0)
         ret = ESP_OK;
     OS_THREAD_MUTEX_UNLOCK(el->state_lock);
-    ESP_LOGV(TAG, "[%s] Element task created", el->tag);
+    OS_LOGV(TAG, "[%s] Element task created", el->tag);
     return ret;
 }
 
 esp_err_t audio_element_terminate(audio_element_handle_t el)
 {
     if (!el->task_run) {
-        ESP_LOGV(TAG, "[%s] Element has not create when AUDIO_ELEMENT_TERMINATE", el->tag);
+        OS_LOGV(TAG, "[%s] Element has not create when AUDIO_ELEMENT_TERMINATE", el->tag);
         return ESP_OK;
     }
     audio_element_clear_state_event(el, TASK_DESTROYED_BIT);
     if (audio_element_cmd_send(el, AEL_MSG_CMD_DESTROY) != ESP_OK) {
-        ESP_LOGE(TAG, "[%s] Element destroy CMD failed", el->tag);
+        OS_LOGE(TAG, "[%s] Element destroy CMD failed", el->tag);
         return ESP_FAIL;
     }
     esp_err_t ret = ESP_FAIL;
@@ -1056,25 +1056,25 @@ esp_err_t audio_element_terminate(audio_element_handle_t el)
     if ((el->state_event & TASK_DESTROYED_BIT) != 0)
         ret = ESP_OK;
     OS_THREAD_MUTEX_UNLOCK(el->state_lock);
-    ESP_LOGV(TAG, "[%s] Element task destroyed", el->tag);
+    OS_LOGV(TAG, "[%s] Element task destroyed", el->tag);
     return ret;
 }
 
 esp_err_t audio_element_pause(audio_element_handle_t el)
 {
-    ESP_LOGV(TAG, "[%s] Element pausing", el->tag);
+    OS_LOGV(TAG, "[%s] Element pausing", el->tag);
     if (!el->task_run) {
-        ESP_LOGV(TAG, "[%s] Element has not create when AUDIO_ELEMENT_PAUSE", el->tag);
+        OS_LOGV(TAG, "[%s] Element has not create when AUDIO_ELEMENT_PAUSE", el->tag);
         return ESP_OK;
     }
     if ((el->state >= AEL_STATE_PAUSED)) {
         audio_element_force_set_state(el, AEL_STATE_PAUSED);
-        ESP_LOGV(TAG, "[%s] Element already paused, state:%d", el->tag, el->state);
+        OS_LOGV(TAG, "[%s] Element already paused, state:%d", el->tag, el->state);
         return ESP_OK;
     }
     audio_element_clear_state_event(el, PAUSED_BIT);
     if (audio_element_cmd_send(el, AEL_MSG_CMD_PAUSE) != ESP_OK) {
-        ESP_LOGE(TAG, "[%s] Element send cmd error when AUDIO_ELEMENT_PAUSE", el->tag);
+        OS_LOGE(TAG, "[%s] Element send cmd error when AUDIO_ELEMENT_PAUSE", el->tag);
         return ESP_FAIL;
     }
     esp_err_t ret = ESP_FAIL;
@@ -1084,11 +1084,11 @@ esp_err_t audio_element_pause(audio_element_handle_t el)
             break;
     }
     if ((el->state_event & PAUSED_BIT) != 0) {
-        ESP_LOGD(TAG, "[%s] Element paused", el->tag);
+        OS_LOGD(TAG, "[%s] Element paused", el->tag);
         ret = ESP_OK;
     }
     else {
-        ESP_LOGE(TAG, "[%s] Element failed when AUDIO_ELEMENT_PAUSE", el->tag);
+        OS_LOGE(TAG, "[%s] Element failed when AUDIO_ELEMENT_PAUSE", el->tag);
     }
     OS_THREAD_MUTEX_UNLOCK(el->state_lock);
     return ret;
@@ -1096,22 +1096,22 @@ esp_err_t audio_element_pause(audio_element_handle_t el)
 
 esp_err_t audio_element_resume(audio_element_handle_t el, float wait_for_rb_threshold, int timeout_ms)
 {
-    ESP_LOGV(TAG, "[%s] Element resuming", el->tag);
+    OS_LOGV(TAG, "[%s] Element resuming", el->tag);
     if (!el->task_run) {
-        ESP_LOGV(TAG, "[%s] Element has not create when AUDIO_ELEMENT_RESUME", el->tag);
+        OS_LOGV(TAG, "[%s] Element has not create when AUDIO_ELEMENT_RESUME", el->tag);
         return ESP_FAIL;
     }
     if (el->state == AEL_STATE_RUNNING) {
-        ESP_LOGV(TAG, "[%s] RESUME: Element is already running, state:%d, task_run:%d, is_running:%d",
+        OS_LOGV(TAG, "[%s] RESUME: Element is already running, state:%d, task_run:%d, is_running:%d",
                  el->tag, el->state, el->task_run, el->is_running);
         return ESP_OK;
     }
     if (el->state == AEL_STATE_ERROR) {
-        ESP_LOGE(TAG, "[%s] RESUME: Element error, state:%d", el->tag, el->state);
+        OS_LOGE(TAG, "[%s] RESUME: Element error, state:%d", el->tag, el->state);
         return ESP_FAIL;
     }
     if (el->state == AEL_STATE_FINISHED) {
-        ESP_LOGV(TAG, "[%s] RESUME: Element has finished, state:%d", el->tag, el->state);
+        OS_LOGV(TAG, "[%s] RESUME: Element has finished, state:%d", el->tag, el->state);
         audio_element_report_status(el, AEL_STATUS_STATE_FINISHED);
         return ESP_OK;
     }
@@ -1128,11 +1128,11 @@ esp_err_t audio_element_resume(audio_element_handle_t el, float wait_for_rb_thre
             break;
     }
     if ((el->state_event & RESUMED_BIT) != 0 && (el->is_running || el->state == AEL_STATE_FINISHED)) {
-        ESP_LOGD(TAG, "[%s] Element resumed", el->tag);
+        OS_LOGD(TAG, "[%s] Element resumed", el->tag);
         ret = ESP_OK;
     }
     else {
-        ESP_LOGE(TAG, "[%s] Element failed when AUDIO_ELEMENT_RESUME", el->tag);
+        OS_LOGE(TAG, "[%s] Element failed when AUDIO_ELEMENT_RESUME", el->tag);
     }
     OS_THREAD_MUTEX_UNLOCK(el->state_lock);
 
@@ -1147,7 +1147,7 @@ esp_err_t audio_element_resume(audio_element_handle_t el, float wait_for_rb_thre
 esp_err_t audio_element_stop(audio_element_handle_t el)
 {
     if (!el->task_run) {
-        ESP_LOGV(TAG, "[%s] Element has not create when AUDIO_ELEMENT_STOP", el->tag);
+        OS_LOGV(TAG, "[%s] Element has not create when AUDIO_ELEMENT_STOP", el->tag);
         return ESP_FAIL;
     }
     if (el->state == AEL_STATE_RUNNING) {
@@ -1160,11 +1160,11 @@ esp_err_t audio_element_stop(audio_element_handle_t el)
     if (el->is_running == false) {
         audio_element_set_state_event(el, STOPPED_BIT);
         audio_element_report_status(el, AEL_STATUS_STATE_STOPPED);
-        ESP_LOGV(TAG, "[%s] Element already stopped", el->tag);
+        OS_LOGV(TAG, "[%s] Element already stopped", el->tag);
         return ESP_OK;
     }
     if (el->stopping) {
-        ESP_LOGV(TAG, "[%s] Stop command has already sent, %d", el->tag, el->stopping);
+        OS_LOGV(TAG, "[%s] Stop command has already sent, %d", el->tag, el->stopping);
         return ESP_OK;
     }
     el->stopping = true;
@@ -1174,7 +1174,7 @@ esp_err_t audio_element_stop(audio_element_handle_t el)
         el->stopping = false;
         return ESP_FAIL;
     }
-    ESP_LOGV(TAG, "[%s] Send stop command", el->tag);
+    OS_LOGV(TAG, "[%s] Send stop command", el->tag);
     return ESP_OK;
 }
 
@@ -1183,7 +1183,7 @@ esp_err_t audio_element_wait_for_stop_ms(audio_element_handle_t el, int timeout_
     if (el->state == AEL_STATE_STOPPED
         || el->state == AEL_STATE_INIT
         || el->state == AEL_STATE_FINISHED) {
-        ESP_LOGV(TAG, "[%s] Element already stopped, return without waiting", el->tag);
+        OS_LOGV(TAG, "[%s] Element already stopped, return without waiting", el->tag);
         return ESP_OK;
     }
     esp_err_t ret = ESP_FAIL;
@@ -1208,7 +1208,7 @@ esp_err_t audio_element_multi_input(audio_element_handle_t el, char *buffer, int
 {
     esp_err_t ret = ESP_OK;
     if (index >= el->multi_in.max_rb_num) {
-        ESP_LOGE(TAG, "The index of ringbuffer is gather than and equal to ringbuffer maximum (%d)", el->multi_in.max_rb_num);
+        OS_LOGE(TAG, "The index of ringbuffer is gather than and equal to ringbuffer maximum (%d)", el->multi_in.max_rb_num);
         return ESP_FAIL;
     }
     if (el->multi_in.rb[index]) {

@@ -20,7 +20,7 @@
 #include <string.h>
 
 #include "msgutils/os_memory.h"
-#include "esp_adf/esp_log.h"
+#include "msgutils/os_logger.h"
 #include "esp_adf/audio_common.h"
 #include "liteplayer_main.h"
 #include "httpclient_wrapper.h"
@@ -39,38 +39,38 @@ static int liteplayer_test_state_listener(liteplayer_state_t state, int errcode,
 {
     switch (state) {
     case LITEPLAYER_IDLE:
-        ESP_LOGD(TAG, "-->LITEPLAYER_IDLE");
+        OS_LOGD(TAG, "-->LITEPLAYER_IDLE");
         g_state = state;
         break;
     case LITEPLAYER_INITED:
-        ESP_LOGD(TAG, "-->LITEPLAYER_INITED");
+        OS_LOGD(TAG, "-->LITEPLAYER_INITED");
         g_state = state;
         break;
     case LITEPLAYER_PREPARED:
-        ESP_LOGD(TAG, "-->LITEPLAYER_PREPARED");
+        OS_LOGD(TAG, "-->LITEPLAYER_PREPARED");
         g_state = state;
         break;
     case LITEPLAYER_STARTED:
-        ESP_LOGD(TAG, "-->LITEPLAYER_STARTED");
+        OS_LOGD(TAG, "-->LITEPLAYER_STARTED");
         g_state = state;
         break;
     case LITEPLAYER_PAUSED:
-        ESP_LOGD(TAG, "-->LITEPLAYER_PAUSED");
+        OS_LOGD(TAG, "-->LITEPLAYER_PAUSED");
         g_state = state;
         break;
     case LITEPLAYER_NEARLYCOMPLETED:
-        ESP_LOGD(TAG, "-->LITEPLAYER_NEARLYCOMPLETED");
+        OS_LOGD(TAG, "-->LITEPLAYER_NEARLYCOMPLETED");
         break;
     case LITEPLAYER_COMPLETED:
-        ESP_LOGD(TAG, "-->LITEPLAYER_COMPLETED");
+        OS_LOGD(TAG, "-->LITEPLAYER_COMPLETED");
         g_state = state;
         break;
     case LITEPLAYER_STOPPED:
-        ESP_LOGD(TAG, "-->LITEPLAYER_STOPPED");
+        OS_LOGD(TAG, "-->LITEPLAYER_STOPPED");
         g_state = state;
         break;
     case LITEPLAYER_ERROR:
-        ESP_LOGD(TAG, "-->LITEPLAYER_ERROR: %d", errcode);
+        OS_LOGD(TAG, "-->LITEPLAYER_ERROR: %d", errcode);
         g_state = state;
         break;
     default:
@@ -127,12 +127,12 @@ static int liteplayer_test(const char *url)
     liteplayer_register_http_wrapper(player, &http_wrapper);
 
     if (liteplayer_set_data_source(player, url) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to set data source");
+        OS_LOGE(TAG, "Failed to set data source");
         goto test_done;
     }
 
     if (liteplayer_prepare_async(player) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to prepare player");
+        OS_LOGE(TAG, "Failed to prepare player");
         goto test_done;
     }
 
@@ -141,12 +141,12 @@ static int liteplayer_test(const char *url)
     }
 
     if (g_state == LITEPLAYER_ERROR) {
-        ESP_LOGE(TAG, "Failed to prepare player");
+        OS_LOGE(TAG, "Failed to prepare player");
         goto test_done;
     }
 
     if (liteplayer_start(player) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to start player");
+        OS_LOGE(TAG, "Failed to start player");
         goto test_done;
     }
 
@@ -157,7 +157,7 @@ static int liteplayer_test(const char *url)
     }
 
     if (liteplayer_stop(player) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to stop player");
+        OS_LOGE(TAG, "Failed to stop player");
         goto test_done;
     }
 
@@ -179,7 +179,7 @@ test_done:
 int main(int argc, char *argv[])
 {
     if (argc != 2) {
-        ESP_LOGW(TAG, "Usage: %s [url]", argv[0]);
+        OS_LOGW(TAG, "Usage: %s [url]", argv[0]);
         return 0;
     }
 

@@ -19,7 +19,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "esp_adf/esp_log.h"
+#include "msgutils/os_logger.h"
 #include "esp_adf/audio_common.h"
 #include "audio_extractor/aac_extractor.h"
 
@@ -232,7 +232,7 @@ int aac_parse_adts_frame(char *buf, int buf_size, aac_info_t *info)
     ADTSHeader fhADTS = {0};
 
     if (buf_size < 9) {
-        ESP_LOGE(TAG, "Not enough data to parse");
+        OS_LOGE(TAG, "Not enough data to parse");
         return -1;
     }
 
@@ -241,7 +241,7 @@ int aac_parse_adts_frame(char *buf, int buf_size, aac_info_t *info)
 
     /* verify that first 12 bits of header are syncword */
     if (GetBits(&bsi, 12) != 0x0FFF) {
-        ESP_LOGE(TAG, "Not a valid AAC header[0x%X]", GetBits(&bsi, 12));
+        OS_LOGE(TAG, "Not a valid AAC header[0x%X]", GetBits(&bsi, 12));
         return ERR_AAC_INVALID_ADTS_HEADER;
     }
 
@@ -272,12 +272,12 @@ int aac_parse_adts_frame(char *buf, int buf_size, aac_info_t *info)
         fhADTS.profile != AAC_PROFILE_LC ||
         fhADTS.sampRateIdx >= NUM_SAMPLE_RATES ||
         fhADTS.channelConfig >= NUM_DEF_CHAN_MAPS) {
-        ESP_LOGE(TAG, "Validity check fail for AAC header");
+        OS_LOGE(TAG, "Validity check fail for AAC header");
         return ERR_AAC_INVALID_ADTS_HEADER;
     }
 
     //if (fhADTS.id != 0) {
-    //    ESP_LOGE(TAG, "AAC not MPEG4 supported");
+    //    OS_LOGE(TAG, "AAC not MPEG4 supported");
     //    return ERR_AAC_MPEG4_UNSUPPORTED;
     //}
 
@@ -289,11 +289,11 @@ int aac_parse_adts_frame(char *buf, int buf_size, aac_info_t *info)
 
 static void aac_dump_info(aac_info_t *info)
 {
-    ESP_LOGD(TAG, "AAC INFO:");
-    ESP_LOGD(TAG, "  >channels          : %d", info->channels);
-    ESP_LOGD(TAG, "  >sample_rate       : %d", info->sample_rate);
-    ESP_LOGD(TAG, "  >frame_start_offset: %d", info->frame_start_offset);
-    ESP_LOGD(TAG, "  >id3v2_length      : %d", info->id3v2_length);
+    OS_LOGD(TAG, "AAC INFO:");
+    OS_LOGD(TAG, "  >channels          : %d", info->channels);
+    OS_LOGD(TAG, "  >sample_rate       : %d", info->sample_rate);
+    OS_LOGD(TAG, "  >frame_start_offset: %d", info->frame_start_offset);
+    OS_LOGD(TAG, "  >id3v2_length      : %d", info->id3v2_length);
 }
 
 int aac_extractor(aac_fetch_cb fetch_cb, void *fetch_priv, aac_info_t *info)
@@ -308,7 +308,7 @@ int aac_extractor(aac_fetch_cb fetch_cb, void *fetch_priv, aac_info_t *info)
 
     buf_size = fetch_cb(buf, buf_size, 0, fetch_priv);
     if (buf_size < 9) {
-        ESP_LOGE(TAG, "Not enough data[%d] to parse", buf_size);
+        OS_LOGE(TAG, "Not enough data[%d] to parse", buf_size);
         goto finish;
     }
 
@@ -320,7 +320,7 @@ int aac_extractor(aac_fetch_cb fetch_cb, void *fetch_priv, aac_info_t *info)
                  (((int)(buf[9])) & 0x7F);
 
         frame_start_offset = id3v2_len + 10;
-        ESP_LOGV(TAG, "ID3 tag find with length[%d]", id3v2_len);
+        OS_LOGV(TAG, "ID3 tag find with length[%d]", id3v2_len);
     }
 
     if (frame_start_offset + 9 <= buf_size) {
@@ -332,11 +332,11 @@ int aac_extractor(aac_fetch_cb fetch_cb, void *fetch_priv, aac_info_t *info)
     }
 
     if (frame_start_offset != 0) {
-        ESP_LOGV(TAG, "Request more data to parse frame header");
+        OS_LOGV(TAG, "Request more data to parse frame header");
         buf_size = DEFAULT_AAC_PARSER_BUFFER_SIZE;
         buf_size = fetch_cb(buf, buf_size, frame_start_offset, fetch_priv);
         if (buf_size < 9) {
-            ESP_LOGE(TAG, "Not enough data[%d] to parse", buf_size);
+            OS_LOGE(TAG, "Not enough data[%d] to parse", buf_size);
             goto finish;
         }
     }
@@ -346,7 +346,7 @@ int aac_extractor(aac_fetch_cb fetch_cb, void *fetch_priv, aac_info_t *info)
 
 find_syncword:
     if (last_position + 9 > buf_size) {
-        ESP_LOGE(TAG, "Not enough data[%d] to parse", buf_size);
+        OS_LOGE(TAG, "Not enough data[%d] to parse", buf_size);
         goto finish;
     }
 
@@ -359,13 +359,13 @@ find_syncword:
             goto finish;
         }
         else {
-            ESP_LOGV(TAG, "Retry to find sync word");
+            OS_LOGV(TAG, "Retry to find sync word");
             last_position++;
             goto find_syncword;
         }
     }
     else {
-        ESP_LOGE(TAG, "Can't find aac sync word");
+        OS_LOGE(TAG, "Can't find aac sync word");
         goto finish;
     }
 

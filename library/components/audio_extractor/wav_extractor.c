@@ -19,7 +19,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "esp_adf/esp_log.h"
+#include "msgutils/os_logger.h"
 #include "esp_adf/audio_common.h"
 #include "audio_extractor/wav_extractor.h"
 
@@ -121,13 +121,13 @@ int wav_extractor(wav_fetch_cb fetch_cb, void *fetch_priv, wav_info_t *info)
 
     buf_size = fetch_cb(buf, buf_size, 0, fetch_priv);
     if (buf_size != sizeof(wav_header_t)) {
-        ESP_LOGE(TAG, "Not enough data[%d] to parse", buf_size);
+        OS_LOGE(TAG, "Not enough data[%d] to parse", buf_size);
         goto finish;
     }
 
     ret = wav_parse_header(buf, buf_size, info);
     if (ret != 0) {
-        ESP_LOGE(TAG, "Failed to parse wav header");
+        OS_LOGE(TAG, "Failed to parse wav header");
     }
 
 finish:

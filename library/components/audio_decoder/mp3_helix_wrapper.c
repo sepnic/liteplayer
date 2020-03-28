@@ -20,7 +20,7 @@
 #include <string.h>
 
 #include "mp3-helix/mp3common.h"
-#include "esp_adf/esp_log.h"
+#include "msgutils/os_logger.h"
 #include "esp_adf/audio_common.h"
 #include "esp_adf/audio_element.h"
 #include "audio_decoder/mp3_decoder.h"
@@ -109,7 +109,7 @@ next_offset:
     MP3FrameInfo fi;
     int ret = MP3GetNextFrameInfo(decoder->handle, &fi, in);
     if (ret == ERR_MP3_INVALID_FRAMEHEADER) {
-        ESP_LOGV(TAG, "Fake sync word, find next sync frame");
+        OS_LOGV(TAG, "Fake sync word, find next sync frame");
         // Need to update pointer if fake sync word
         decoder->buf_in.offset += sizeof(char);
         decoder->buf_in.length -= sizeof(char);
@@ -132,7 +132,7 @@ fill_data:
     ret = mp3_data_read(decoder);
     if (ret != ERR_MP3_NONE) {
         if (decoder->buf_in.eof) {
-            ESP_LOGV(TAG, "MP3 frame end");
+            OS_LOGV(TAG, "MP3 frame end");
             ret = AEL_IO_DONE;
         }
         return ret;
@@ -150,7 +150,7 @@ fill_data:
             goto fill_data;
     }
     else if (ret < ERR_MP3_NONE) {
-        ESP_LOGE(TAG, "MP3Decode error[%d],[%s]", ret, helix_stream_errorstr(ret));
+        OS_LOGE(TAG, "MP3Decode error[%d],[%s]", ret, helix_stream_errorstr(ret));
         if(decode_fail_cnt++ >= 4)
             return AEL_PROCESS_FAIL;
         goto fill_data;
@@ -163,7 +163,7 @@ fill_data:
     decoder->buf_out.length = fi.outputSamps * fi.bitsPerSample / 8;
 
     if (decoder->parsed_header == false) {
-        ESP_LOGV(TAG,"Found mp3 header: SR=%d, CH=%d", fi.samprate, fi.nChans);
+        OS_LOGV(TAG,"Found mp3 header: SR=%d, CH=%d", fi.samprate, fi.nChans);
         audio_element_info_t info = {0};
         info.out_samplerate = fi.samprate;
         info.out_channels   = fi.nChans;
@@ -179,7 +179,7 @@ int mp3_wrapper_init(mp3_decoder_handle_t decoder)
 {
     decoder->handle = MP3InitDecoder();
     if (decoder->handle == NULL) {
-        ESP_LOGE(TAG, "Failed to init mp3 decoder");
+        OS_LOGE(TAG, "Failed to init mp3 decoder");
         return -1;
     }
     return 0;

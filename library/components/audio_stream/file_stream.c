@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "esp_adf/esp_log.h"
+#include "msgutils/os_logger.h"
 #include "esp_adf/audio_common.h"
 #include "esp_adf/audio_element.h"
 #include "audio_extractor/wav_extractor.h"
@@ -68,7 +68,7 @@ static wr_stream_type_t get_type(const char *str)
     char *relt = strrchr(str, '.');
     if (relt != NULL) {
         relt ++;
-        ESP_LOGV(TAG, "result = %s", relt);
+        OS_LOGV(TAG, "result = %s", relt);
         if (strncasecmp(relt, FILE_PCM_SUFFIX_TYPE, 3) == 0)
             return STREAM_TYPE_PCM;
         else if (strncasecmp(relt, FILE_WAV_SUFFIX_TYPE, 3) == 0)
@@ -101,7 +101,7 @@ static file_handle_t file_default_open(const char *url, file_mode_t mode, long l
         file = fopen(url, "wb+");
 
     if (file == NULL) {
-        ESP_LOGE(TAG, "Failed to open file:%s", url);
+        OS_LOGE(TAG, "Failed to open file:%s", url);
         audio_free(priv);
         return NULL;
     }
@@ -168,16 +168,16 @@ static esp_err_t file_stream_open(audio_element_handle_t self)
     }
 
     if (file->file != NULL) {
-        ESP_LOGD(TAG, "File already opened");
+        OS_LOGD(TAG, "File already opened");
         return ESP_OK;
     }
 
-    ESP_LOGD(TAG, "file_stream_open, url:%s", config->url);
+    OS_LOGD(TAG, "file_stream_open, url:%s", config->url);
     if (config->type == AUDIO_STREAM_READER) {
         audio_element_info_t info;
         audio_element_getinfo(self, &info);
         file->file = config->file_open(config->url, FILE_READ, info.byte_pos, config->file_priv);
-        ESP_LOGV(TAG, "current_pos:%d, total_bytes:%ld", (int)info.byte_pos, (int)info.total_bytes);
+        OS_LOGV(TAG, "current_pos:%d, total_bytes:%ld", (int)info.byte_pos, (int)info.total_bytes);
     } else if (config->type == AUDIO_STREAM_WRITER) {
         file->w_type = get_type(config->url);
         file->file = config->file_open(config->url, FILE_WRITE, 0, config->file_priv);
@@ -189,7 +189,7 @@ static esp_err_t file_stream_open(audio_element_handle_t self)
     }
 
     if (file->file == NULL) {
-        ESP_LOGE(TAG, "Failed to open file %s", config->url);
+        OS_LOGE(TAG, "Failed to open file %s", config->url);
         return ESP_FAIL;
     }
     return ESP_OK;
@@ -202,7 +202,7 @@ static int file_stream_read(audio_element_handle_t self, char *buffer, int len, 
     audio_element_info_t info;
     audio_element_getinfo(self, &info);
 
-    //ESP_LOGV(TAG, "read len=%d, pos=%d/%d", len, (int)info.byte_pos, (int)info.total_bytes);
+    //OS_LOGV(TAG, "read len=%d, pos=%d/%d", len, (int)info.byte_pos, (int)info.total_bytes);
     if (info.total_bytes > 0 && info.byte_pos >= info.total_bytes) {
         audio_element_report_status(self, AEL_STATUS_INPUT_DONE);
         return ESP_OK;
@@ -257,7 +257,7 @@ static int file_stream_write(audio_element_handle_t self, char *buffer, int len,
 #endif
 
     int wlen = config->file_write(file->file, buffer, len);
-    //ESP_LOGV(TAG, "write,%d, pos:%d", wlen, info.byte_pos);
+    //OS_LOGV(TAG, "write,%d, pos:%d", wlen, info.byte_pos);
     if (wlen > 0) {
         info.byte_pos += wlen;
         audio_element_setinfo(self, &info);

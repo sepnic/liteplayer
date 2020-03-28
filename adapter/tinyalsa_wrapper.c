@@ -19,7 +19,7 @@
 #include <string.h>
 
 #include "msgutils/os_time.h"
-#include "esp_adf/esp_log.h"
+#include "msgutils/os_logger.h"
 #include "esp_adf/audio_common.h"
 #include "tinyalsa/asoundlib.h"
 #include "tinyalsa_wrapper.h"
@@ -38,14 +38,14 @@ static int tinyalsa_check_param(struct pcm_params *params, unsigned int param, u
 
     min = pcm_params_get_min(params, param);
     if (value < min) {
-        ESP_LOGE(TAG, "%s is %u%s, device only supports >= %u%s", param_name, value,
+        OS_LOGE(TAG, "%s is %u%s, device only supports >= %u%s", param_name, value,
                 param_unit, min, param_unit);
         is_within_bounds = 0;
     }
 
     max = pcm_params_get_max(params, param);
     if (value > max) {
-        ESP_LOGE(TAG, "%s is %u%s, device only supports <= %u%s", param_name, value,
+        OS_LOGE(TAG, "%s is %u%s, device only supports <= %u%s", param_name, value,
                 param_unit, max, param_unit);
         is_within_bounds = 0;
     }
@@ -62,7 +62,7 @@ static bool tinyalsa_can_play(unsigned int card, unsigned int device,
 
     params = pcm_params_get(card, device, PCM_OUT);
     if (params == NULL) {
-        ESP_LOGE(TAG, "Unable to open PCM device %u", device);
+        OS_LOGE(TAG, "Unable to open PCM device %u", device);
         return false;
     }
 
@@ -87,7 +87,7 @@ sink_handle_t tinyalsa_wrapper_open(int samplerate, int channels, void *sink_pri
     unsigned int period_count = 4;
 
     if (!tinyalsa_can_play(card, device, channels, samplerate, bits, period_size, period_count)) {
-        ESP_LOGE(TAG, "Invalid pcm params");
+        OS_LOGE(TAG, "Invalid pcm params");
         return NULL;
     }
 
@@ -103,7 +103,7 @@ sink_handle_t tinyalsa_wrapper_open(int samplerate, int channels, void *sink_pri
 
     pcm = pcm_open(DEFAULT_SND_CARD, DEFAULT_SND_DEVICE, PCM_OUT, &config);
     if (pcm == NULL || !pcm_is_ready(pcm)) {
-        ESP_LOGE(TAG, "Unable to open PCM (%s)", pcm_get_error(pcm));
+        OS_LOGE(TAG, "Unable to open PCM (%s)", pcm_get_error(pcm));
         return NULL;
     }
     return pcm;
@@ -113,7 +113,7 @@ int tinyalsa_wrapper_write(sink_handle_t handle, char *buffer, int size)
 {
     struct pcm *pcm = (struct pcm *)handle;
     if (pcm_write(pcm, buffer, size)) {
-        ESP_LOGE(TAG, "Error writing pcm\n");
+        OS_LOGE(TAG, "Error writing pcm\n");
         return -1;
     }
     return size;

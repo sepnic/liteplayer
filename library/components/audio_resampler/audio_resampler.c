@@ -20,7 +20,7 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "esp_adf/esp_log.h"
+#include "msgutils/os_logger.h"
 #include "esp_adf/audio_common.h"
 #include "speex/speex_resampler.h"
 #include "audio_resampler/audio_resampler.h"
@@ -73,7 +73,7 @@ static int audio_resampler_open(resample_converter_handle_t self, resample_cfg_t
     priv->enable_channels_convert = (in_channels != out_channels) ? true : false;
     priv->enable_rate_convert = (in_rate != out_rate) ? true : false;
 
-    ESP_LOGD(TAG, "Open resampler: in_channels(%d), in_rate(%d), out_channels(%d), out_rate(%d), bits(%d), quality(%d)",
+    OS_LOGD(TAG, "Open resampler: in_channels(%d), in_rate(%d), out_channels(%d), out_rate(%d), bits(%d), quality(%d)",
              in_channels, in_rate, out_channels, out_rate, bits, quality);
 
     if (priv->enable_rate_convert) {
@@ -123,7 +123,7 @@ static int audio_resampler_process(resample_converter_handle_t self, const short
             out_bytes *= 2;
 
         if (out_bytes > priv->out_bytes) {
-            ESP_LOGV(TAG, "Not enough buffer, realloc new size(%d)", out_bytes);
+            OS_LOGV(TAG, "Not enough buffer, realloc new size(%d)", out_bytes);
             converter->out_buf = (short *)audio_realloc(converter->out_buf, out_bytes);
             AUDIO_MEM_CHECK(TAG, converter->out_buf, return -1);
         }
@@ -160,7 +160,7 @@ static int audio_resampler_process(resample_converter_handle_t self, const short
         converter->out_bytes *= 2;
     }
 
-    //ESP_LOGV(TAG, "in_sample=%d, out_sample=%d, in_bytes=%d, out_bytes=%d",
+    //OS_LOGV(TAG, "in_sample=%d, out_sample=%d, in_bytes=%d, out_bytes=%d",
     //         in_sample, out_sample, in_bytes, converter->out_bytes);
     return ret;
 }
