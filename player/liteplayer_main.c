@@ -67,6 +67,10 @@ struct liteplayer {
     media_source_handle_t   media_source;
     media_parser_handle_t   media_parser;
     media_codec_info_t      media_info;
+
+    int                     sink_samplerate;
+    int                     sink_channels;
+    int                     sink_bits;
     long long               sink_position;
 };
 
@@ -176,7 +180,7 @@ static int liteplayer_element_listener(audio_element_handle_t el, audio_event_if
             }
         }
         else if (msg->cmd == AEL_MSG_CMD_REPORT_MUSIC_INFO) {
-            if (msg->source == (void *) handle->el_decoder) {
+            if (msg->source == (void *)handle->el_decoder) {
                 audio_element_info_t decoder_info = {0};
                 audio_element_getinfo(handle->el_decoder, &decoder_info);
                 OS_LOGI(TAG, "[ %s-%s ] Receive codec info: samplerate=%d, ch=%d, bits=%d",
@@ -194,6 +198,16 @@ static int liteplayer_element_listener(audio_element_handle_t el, audio_event_if
                     sink_info.in_samplerate = decoder_info.out_samplerate;
                     audio_element_setinfo(handle->el_sink, &sink_info);
                 }
+            }
+            else if (msg->source == (void *)handle->el_sink) {
+                audio_element_info_t sink_info = {0};
+                audio_element_getinfo(handle->el_sink, &sink_info);
+                OS_LOGI(TAG, "[ %s-%s ] Receive sink info: samplerate=%d, ch=%d, bits=%d",
+                         liteplayer_source_tag(handle->source_type), audio_element_get_tag(el),
+                         sink_info.out_samplerate, sink_info.out_channels, sink_info.bits);
+                handle->sink_samplerate = sink_info.out_samplerate;
+                handle->sink_channels = sink_info.out_channels;
+                handle->sink_bits = sink_info.bits;
             }
         }
         else if (msg->cmd == AEL_MSG_CMD_REPORT_POSITION) {
@@ -830,6 +844,9 @@ int liteplayer_reset(liteplayer_handle_t handle)
     }
     handle->source_type = MEDIA_SOURCE_UNKNOWN;
     handle->state_error = false;
+    handle->sink_samplerate = 0;
+    handle->sink_channels = 0;
+    handle->sink_bits = 0;
     handle->sink_position = 0;
     memset(&handle->media_info, 0x0, sizeof(handle->media_info));
 
@@ -868,26 +885,19 @@ int liteplayer_get_position(liteplayer_handle_t handle, long long *msec)
     if (handle == NULL || msec == NULL)
         return ESP_FAIL;
 
-    OS_THREAD_MUTEX_LOCK(handle->io_lock);
+    int samplerate = handle->sink_samplerate;
+    int channels = handle->sink_channels;
+    int bits = handle->sink_bits;
+    long long position = handle->sink_position;
 
-    if (handle->state < LITEPLAYER_STARTED) {
+    if (samplerate == 0 || channels == 0 || bits == 0 || position == 0) {
         *msec = 0;
-        OS_THREAD_MUTEX_UNLOCK(handle->io_lock);
         return ESP_OK;
     }
 
-    if (handle->el_sink != NULL) {
-        audio_element_info_t info;
-        audio_element_getinfo(handle->el_sink, &info);
-        int bytes_per_sample = info.out_channels * info.bits / 8;
-        long long out_samples = handle->sink_position / bytes_per_sample;
-        *msec = out_samples / (info.out_samplerate / 1000);
-    }
-    else {
-        *msec = 0;
-    }
-
-    OS_THREAD_MUTEX_UNLOCK(handle->io_lock);
+    int bytes_per_sample = channels * bits / 8;
+    long long out_samples = position / bytes_per_sample;
+    *msec = out_samples / (samplerate / 1000);
     return ESP_OK;
 }
 
@@ -896,17 +906,10 @@ int liteplayer_get_duration(liteplayer_handle_t handle, long long *msec)
     if (handle == NULL || msec == NULL)
         return ESP_FAIL;
 
-    OS_THREAD_MUTEX_LOCK(handle->io_lock);
-
-    if (handle->state < LITEPLAYER_PREPARED) {
-        *msec = 0;
-        OS_THREAD_MUTEX_UNLOCK(handle->io_lock);
-        return ESP_OK;
-    }
+    if (handle->state < LITEPLAYER_PREPARED)
+        return ESP_FAIL;
 
     *msec = handle->media_info.duration_ms;
-
-    OS_THREAD_MUTEX_UNLOCK(handle->io_lock);
     return ESP_OK;
 }
 

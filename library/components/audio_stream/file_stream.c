@@ -321,7 +321,6 @@ static esp_err_t file_stream_close(audio_element_handle_t self)
         config->file_close(file->file);
         file->file = NULL;
 
-        audio_element_report_info(self);
         audio_element_info_t info = {0};
         audio_element_getinfo(self, &info);
         info.byte_pos = 0;

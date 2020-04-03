@@ -149,7 +149,9 @@ static int sink_stream_write(audio_element_handle_t self, char *buffer, int len,
         info.in_channels = config->in_channels;
         info.out_samplerate = config->out_samplerate;
         info.out_channels = config->out_channels;
+        info.bits = 16;
         audio_element_setinfo(self, &info);
+        audio_element_report_info(self);
         sink->samplerate_checked = true;
     }
 
