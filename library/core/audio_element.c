@@ -34,7 +34,7 @@
 
 #define TAG  "AUDIO_ELEMENT"
 
-#define DEFAULT_WAIT_TIMEOUT_MS 12000 // ms
+#define DEFAULT_WAIT_TIMEOUT_MS 3000 // ms
 
 /**
  *  I/O Element Abstract
@@ -223,6 +223,7 @@ static esp_err_t audio_element_on_cmd(audio_event_iface_msg_t *msg, void *contex
     //process an event
     switch (msg->cmd) {
         case AEL_MSG_CMD_ERROR:
+            OS_LOGE(TAG, "[%s] AEL_MSG_CMD_ERROR", el->tag);
             audio_element_process_deinit(el);
             el->state = AEL_STATE_ERROR;
             audio_event_iface_set_cmd_waiting_timeout(el->iface_event, AUDIO_MAX_DELAY);
@@ -230,12 +231,11 @@ static esp_err_t audio_element_on_cmd(audio_event_iface_msg_t *msg, void *contex
             audio_element_abort_output_ringbuf(el);
             el->is_running = false;
             audio_element_set_state_event(el, STOPPED_BIT);
-            OS_LOGE(TAG, "[%s] AEL_MSG_CMD_ERROR", el->tag);
             break;
         case AEL_MSG_CMD_FINISH:
+            OS_LOGV(TAG, "[%s] AEL_MSG_CMD_FINISH, state:%d", el->tag, el->state);
             if ((el->state == AEL_STATE_ERROR)
                 || (el->state == AEL_STATE_STOPPED)) {
-                OS_LOGV(TAG, "[%s] AEL_MSG_CMD_FINISH, state:%d", el->tag, el->state);
                 break;
             }
             audio_element_process_deinit(el);
@@ -244,9 +244,9 @@ static esp_err_t audio_element_on_cmd(audio_event_iface_msg_t *msg, void *contex
             audio_element_report_status(el, AEL_STATUS_STATE_FINISHED);
             el->is_running = false;
             audio_element_set_state_event(el, STOPPED_BIT);
-            OS_LOGV(TAG, "[%s] AEL_MSG_CMD_FINISH", el->tag);
             break;
         case AEL_MSG_CMD_STOP:
+            OS_LOGV(TAG, "[%s] AEL_MSG_CMD_STOP, state:%d", el->tag, el->state);
             if ((el->state != AEL_STATE_FINISHED) && (el->state != AEL_STATE_STOPPED)) {
                 audio_element_process_deinit(el);
                 el->state = AEL_STATE_STOPPED;
@@ -254,11 +254,9 @@ static esp_err_t audio_element_on_cmd(audio_event_iface_msg_t *msg, void *contex
                 audio_element_report_status(el, AEL_STATUS_STATE_STOPPED);
                 el->is_running = false;
                 el->stopping = false;
-                OS_LOGV(TAG, "[%s] AEL_MSG_CMD_STOP", el->tag);
                 audio_element_set_state_event(el, STOPPED_BIT);
             } else {
                 // Change element state to AEL_STATE_STOPPED, even if AEL_STATE_ERROR or AEL_STATE_FINISHED.
-                OS_LOGV(TAG, "[%s] AEL_MSG_CMD_STOP, state:%d", el->tag, el->state);
                 el->state = AEL_STATE_STOPPED;
                 el->is_running = false;
                 el->stopping = false;
@@ -267,12 +265,12 @@ static esp_err_t audio_element_on_cmd(audio_event_iface_msg_t *msg, void *contex
             }
             break;
         case AEL_MSG_CMD_PAUSE:
+            OS_LOGV(TAG, "[%s] AEL_MSG_CMD_PAUSE", el->tag);
             el->state = AEL_STATE_PAUSED;
             audio_element_process_deinit(el);
             audio_event_iface_set_cmd_waiting_timeout(el->iface_event, AUDIO_MAX_DELAY);
             audio_element_report_status(el, AEL_STATUS_STATE_PAUSED);
             el->is_running = false;
-            OS_LOGV(TAG, "[%s] AEL_MSG_CMD_PAUSE", el->tag);
             audio_element_set_state_event(el, PAUSED_BIT);
             break;
         case AEL_MSG_CMD_RESUME:
@@ -297,9 +295,9 @@ static esp_err_t audio_element_on_cmd(audio_event_iface_msg_t *msg, void *contex
             audio_element_set_state_event(el, RESUMED_BIT);
             break;
         case AEL_MSG_CMD_DESTROY:
+            OS_LOGV(TAG, "[%s] AEL_MSG_CMD_DESTROY", el->tag);
             el->task_run = false;
             el->is_running = false;
-            OS_LOGV(TAG, "[%s] AEL_MSG_CMD_DESTROY", el->tag);
             return ESP_FAIL;
     }
     return ESP_OK;

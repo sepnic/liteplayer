@@ -39,7 +39,6 @@ static esp_err_t m4a_decoder_destroy(audio_element_handle_t self)
         audio_free(decoder->buf_in.data);
     if (decoder->buf_out.data != NULL)
         audio_free(decoder->buf_out.data);
-    audio_free(decoder->m4a_info.stszdata);
     audio_free(decoder);
     return ESP_OK;
 }

@@ -111,11 +111,11 @@ static int liteplayer_element_listener(audio_element_handle_t el, audio_event_if
 
         if (msg->cmd == AEL_MSG_CMD_REPORT_STATUS) {
             switch (el_status) {
-            case AEL_STATUS_ERROR_OPEN:
+            //case AEL_STATUS_ERROR_OPEN: // If failed to open element, report error in start()/resume()
             case AEL_STATUS_ERROR_INPUT:
             case AEL_STATUS_ERROR_PROCESS:
             case AEL_STATUS_ERROR_OUTPUT:
-            case AEL_STATUS_ERROR_CLOSE:
+            //case AEL_STATUS_ERROR_CLOSE: // If failed to close element, report error in stop()/pause()
             case AEL_STATUS_ERROR_TIMEOUT:
             case AEL_STATUS_ERROR_UNKNOWN:
                 OS_LOGE(TAG, "[ %s-%s ] Receive error[%d]",
@@ -823,6 +823,10 @@ int liteplayer_reset(liteplayer_handle_t handle)
     if (handle->url != NULL) {
         audio_free(handle->url);
         handle->url = NULL;
+    }
+    if (handle->media_info.m4a_info.stszdata != NULL) {
+        audio_free(handle->media_info.m4a_info.stszdata);
+        handle->media_info.m4a_info.stszdata = NULL;
     }
     handle->source_type = MEDIA_SOURCE_UNKNOWN;
     handle->state_error = false;

@@ -323,15 +323,16 @@ dequeue_url:
         do {
             OS_THREAD_MUTEX_LOCK(priv->lock);
             if (!priv->stop)
-                bytes_written = rb_write(priv->rb, &buffer[bytes_written], bytes_read, AUDIO_MAX_DELAY);
+                ret = rb_write(priv->rb, &buffer[bytes_written], bytes_read, AUDIO_MAX_DELAY);
             OS_THREAD_MUTEX_UNLOCK(priv->lock);
 
-            if (bytes_written > 0) {
-                bytes_read -= bytes_written;
-                priv->bytes_written += bytes_written;
+            if (ret > 0) {
+                bytes_read -= ret;
+                bytes_written += ret;
+                priv->bytes_written += ret;
             }
             else {
-                if (bytes_written == RB_DONE || bytes_written == RB_ABORT || bytes_written == RB_OK) {
+                if (ret == RB_DONE || ret == RB_ABORT || ret == RB_OK) {
                     OS_LOGD(TAG, "Write done, abort left urls");
                     state = MEDIA_SOURCE_WRITE_DONE;
                 }
@@ -542,6 +543,7 @@ static void *media_source_thread(void *arg)
 
     char buffer[DEFAULT_MEDIA_SOURCE_BUFFER_SIZE];
     int bytes_read = 0, bytes_written = 0;
+    int ret = 0;
 
     while (!priv->stop) {
         if (client != NULL)
@@ -565,15 +567,16 @@ static void *media_source_thread(void *arg)
         do {
             OS_THREAD_MUTEX_LOCK(priv->lock);
             if (!priv->stop)
-                bytes_written = rb_write(priv->rb, &buffer[bytes_written], bytes_read, AUDIO_MAX_DELAY);
+                ret = rb_write(priv->rb, &buffer[bytes_written], bytes_read, AUDIO_MAX_DELAY);
             OS_THREAD_MUTEX_UNLOCK(priv->lock);
 
-            if (bytes_written > 0) {
-                bytes_read -= bytes_written;
-                priv->bytes_written += bytes_written;
+            if (ret > 0) {
+                bytes_read -= ret;
+                bytes_written += ret;
+                priv->bytes_written += ret;
             }
             else {
-                if (bytes_written == RB_DONE || bytes_written == RB_ABORT || bytes_written == RB_OK) {
+                if (ret == RB_DONE || ret == RB_ABORT || ret == RB_OK) {
                     OS_LOGD(TAG, "Media source write done");
                     state = MEDIA_SOURCE_WRITE_DONE;
                 }
