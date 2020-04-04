@@ -796,3 +796,25 @@ m4a_finish:
     rb_destroy(rb_atom);
     return priv.ret;
 }
+
+int m4a_build_adts_header(uint8_t *adts_buf, uint32_t adts_size, uint8_t *asc_buf, uint32_t asc_size, uint32_t frame_size)
+{
+    if (adts_buf == NULL || adts_size != 7 || asc_buf == NULL || asc_size < 2) {
+        OS_LOGE(TAG, "Invalid arguments, adts_size=%u, asc_size=%u", adts_size, asc_size);
+        return -1;
+    }
+
+    uint8_t object_type = asc_buf[0] >> 3;
+    uint8_t sample_rate_index = ((asc_buf[0] & 0x07) << 1) | ((asc_buf[1] & 0x80) >> 7);
+    uint8_t channel_conf = (asc_buf[1] & 0x78) >> 3;
+    uint16_t aac_frame_length = (uint16_t)(frame_size + 7);
+
+    adts_buf[0] = 0xFF;
+    adts_buf[1] = 0xF1;
+    adts_buf[2] = (uint8_t)(((object_type - 1) << 6) + (sample_rate_index << 2) + (channel_conf >> 2));
+    adts_buf[3] = (uint8_t)(((channel_conf & 3) << 6) + (aac_frame_length >> 11));
+    adts_buf[4] = (uint8_t)((aac_frame_length & 0x7FF) >> 3);
+    adts_buf[5] = (uint8_t)(((aac_frame_length & 0x07) << 5) + 0x1F);
+    adts_buf[6] = 0xFC;
+    return 0;
+}

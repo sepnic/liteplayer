@@ -284,6 +284,7 @@ int aac_parse_adts_frame(char *buf, int buf_size, aac_info_t *info)
     /* update codec info */
     info->channels = channelMapTab[fhADTS.channelConfig];
     info->sample_rate = sampRateTab[fhADTS.sampRateIdx];
+    info->frame_size = fhADTS.frameLength;
     return 0;
 }
 

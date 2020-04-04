@@ -28,6 +28,7 @@ typedef int (*aac_fetch_cb)(char *buf, int wanted_size, long offset, void *fetch
 typedef struct aac_info {
     int channels;
     int sample_rate;
+    int frame_size;
     int frame_start_offset;
     int id3v2_length;
 } aac_info_t;

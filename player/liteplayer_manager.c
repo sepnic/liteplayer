@@ -185,7 +185,7 @@ static int manager_state_callback(liteplayer_state_t state, int errcode, void *p
 
     switch (state) {
     case LITEPLAYER_INITED:
-        if (mngr->url_index > 1 || mngr->is_completed) {
+        if (mngr->is_completed) {
             struct message *msg = message_obtain(PLAYER_DO_PREPARE, 0, 0, mngr);
             if (msg != NULL) {
                 state_sync = false;
@@ -195,7 +195,7 @@ static int manager_state_callback(liteplayer_state_t state, int errcode, void *p
         break;
 
     case LITEPLAYER_PREPARED:
-        if (mngr->url_index > 1 || mngr->is_completed) {
+        if (mngr->is_completed) {
             struct message *msg = message_obtain(PLAYER_DO_START, 0, 0, mngr);
             if (msg != NULL) {
                 state_sync = false;
@@ -205,7 +205,7 @@ static int manager_state_callback(liteplayer_state_t state, int errcode, void *p
         break;
 
     case LITEPLAYER_STARTED:
-        if (mngr->url_index > 1 || mngr->is_completed) {
+        if (mngr->is_completed) {
             state_sync = mngr->is_paused;
         }
         mngr->is_completed = false;
@@ -256,6 +256,11 @@ static int manager_state_callback(liteplayer_state_t state, int errcode, void *p
 
     case LITEPLAYER_IDLE:
         if ((mngr->is_list || mngr->is_looping) && mngr->is_completed) {
+            if (!mngr->is_looping) {
+                mngr->url_index++;
+                if (mngr->url_index >= mngr->url_count)
+                    mngr->url_index = 0;
+            }
             struct message *msg = message_obtain(PLAYER_DO_SET_SOURCE, 0, 0, mngr);
             if (msg != NULL) {
                 state_sync = false;
@@ -286,15 +291,7 @@ static void manager_looper_handle(struct message *msg)
     case PLAYER_DO_SET_SOURCE: {
         const char *url = NULL;
         OS_THREAD_MUTEX_LOCK(mngr->lock);
-        if (mngr->is_looping) {
-            mngr->url_index--;
-            if (mngr->url_index < 0)
-                mngr->url_index = mngr->url_count - 1;
-        }
         url = audio_strdup(mngr->url_list[mngr->url_index]);
-        mngr->url_index++;
-        if (mngr->url_index >= mngr->url_count)
-            mngr->url_index = 0;
         OS_THREAD_MUTEX_UNLOCK(mngr->lock);
         if (url != NULL) {
             liteplayer_set_data_source(mngr->player, url);
@@ -341,13 +338,10 @@ static void manager_looper_handle(struct message *msg)
             mngr->url_index--;
             if (mngr->url_index < 0)
                 mngr->url_index = mngr->url_count -1;
-            mngr->url_index--;
-            if (mngr->url_index < 0)
-                mngr->url_index = mngr->url_count -1;
-            if (mngr->is_looping) {
-                mngr->url_index++;
-                if (mngr->url_index >= mngr->url_count)
-                    mngr->url_index = 0;
+            if (!mngr->is_looping) {
+                mngr->url_index--;
+                if (mngr->url_index < 0)
+                    mngr->url_index = mngr->url_count -1;
             }
             mngr->is_completed = true;
         }
