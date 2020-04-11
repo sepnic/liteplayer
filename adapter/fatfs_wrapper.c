@@ -25,20 +25,20 @@
 
 #define TAG "fatfswrapper"
 
-typedef struct fatfs_wrapper_priv {
+struct fatfs_priv {
     const char *url;
     file_mode_t mode;
     FILE *file;
     long content_pos;
     long content_len;
-} fatfs_wrapper_priv_t;
+};
 
-file_handle_t fatfs_wrapper_open(const char *url, file_mode_t mode, long long content_pos, void *priv)
+file_handle_t fatfs_wrapper_open(const char *url, file_mode_t mode, long long content_pos, void *file_priv)
 {
-    fatfs_wrapper_priv_t *handle = audio_calloc(1, sizeof(fatfs_wrapper_priv_t));
+    struct fatfs_priv *priv = audio_calloc(1, sizeof(struct fatfs_priv));
     FILE *file = NULL;
 
-    if (handle == NULL)
+    if (priv == NULL)
         return NULL;
 
     if (mode == FILE_READ)
@@ -48,25 +48,25 @@ file_handle_t fatfs_wrapper_open(const char *url, file_mode_t mode, long long co
 
     if (file == NULL) {
         OS_LOGE(TAG, "Failed to open file:%s", url);
-        audio_free(file);
+        audio_free(priv);
         return NULL;
     }
 
-    handle->url = url;
-    handle->mode = mode;
-    handle->file = file;
-    handle->content_pos = (long)content_pos;
+    priv->url = url;
+    priv->mode = mode;
+    priv->file = file;
+    priv->content_pos = (long)content_pos;
 
-    fseek(handle->file, 0, SEEK_END);
-    handle->content_len = ftell(handle->file);
-    fseek(handle->file, handle->content_pos, SEEK_SET);
+    fseek(priv->file, 0, SEEK_END);
+    priv->content_len = ftell(priv->file);
+    fseek(priv->file, priv->content_pos, SEEK_SET);
 
-    return handle;
+    return priv;
 }
 
 int fatfs_wrapper_read(file_handle_t handle, char *buffer, int size)
 {
-    fatfs_wrapper_priv_t *priv = (fatfs_wrapper_priv_t *)handle;
+    struct fatfs_priv *priv = (struct fatfs_priv *)handle;
     if (priv->file) {
         if (priv->content_len > 0 && priv->content_pos >= priv->content_len) {
             OS_LOGD(TAG, "fatfs file read done: %d/%d", (int)priv->content_pos, (int)priv->content_len);
@@ -82,7 +82,7 @@ int fatfs_wrapper_read(file_handle_t handle, char *buffer, int size)
 
 int fatfs_wrapper_write(file_handle_t handle, char *buffer, int size)
 {
-    fatfs_wrapper_priv_t *priv = (fatfs_wrapper_priv_t *)handle;
+    struct fatfs_priv *priv = (struct fatfs_priv *)handle;
     if (priv->file) {
         size_t bytes_written = fwrite(buffer, 1, size, priv->file);
         if (bytes_written > 0)
@@ -94,7 +94,7 @@ int fatfs_wrapper_write(file_handle_t handle, char *buffer, int size)
 
 long long fatfs_wrapper_filesize(file_handle_t handle)
 {
-    fatfs_wrapper_priv_t *priv = (fatfs_wrapper_priv_t *)handle;
+    struct fatfs_priv *priv = (struct fatfs_priv *)handle;
     if (priv->file)
         return priv->content_len;
     return 0;
@@ -102,7 +102,7 @@ long long fatfs_wrapper_filesize(file_handle_t handle)
 
 int fatfs_wrapper_seek(file_handle_t handle, long offset)
 {
-    fatfs_wrapper_priv_t *priv = (fatfs_wrapper_priv_t *)handle;
+    struct fatfs_priv *priv = (struct fatfs_priv *)handle;
     if (priv->file) {
         int ret = fseek(priv->file, offset, SEEK_SET);
         if (ret == 0)
@@ -114,7 +114,7 @@ int fatfs_wrapper_seek(file_handle_t handle, long offset)
 
 void fatfs_wrapper_close(file_handle_t handle)
 {
-    fatfs_wrapper_priv_t *priv = (fatfs_wrapper_priv_t *)handle;
+    struct fatfs_priv *priv = (struct fatfs_priv *)handle;
     if (priv->file) {
         if (priv->mode == FILE_WRITE)
             fflush(priv->file);

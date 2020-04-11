@@ -29,7 +29,7 @@
 #define HTTPCLIENT_HEADER_BUFFER_SIZE 1024
 #define HTTPCLIENT_RETRY_COUNT        3
 
-typedef struct httpclient_wrapper_priv {
+struct httpclient_priv {
     const char          *url;
     char                 header_buf[HTTPCLIENT_HEADER_BUFFER_SIZE];
     httpclient_t         client;
@@ -40,11 +40,11 @@ typedef struct httpclient_wrapper_priv {
     bool                 first_request;
     bool                 first_response;
     int                  retrycount;
-} httpclient_wrapper_priv_t;
+};
 
 static int httpclient_wrapper_connect(http_handle_t handle)
 {
-    httpclient_wrapper_priv_t *priv = (httpclient_wrapper_priv_t *)handle;
+    struct httpclient_priv *priv = (struct httpclient_priv *)handle;
     HTTPCLIENT_RESULT ret = HTTPCLIENT_OK;
 
     memset(&priv->client, 0, sizeof(httpclient_t));
@@ -72,7 +72,7 @@ reconnect:
 
 static void httpclient_wrapper_disconnect(http_handle_t handle)
 {
-    httpclient_wrapper_priv_t *priv = (httpclient_wrapper_priv_t *)handle;
+    struct httpclient_priv *priv = (struct httpclient_priv *)handle;
     httpclient_close(&priv->client);
 }
 
@@ -91,26 +91,26 @@ static int httpclient_wrapper_parse_content_length(char *header_buf, long long *
     return ret;
 }
 
-http_handle_t httpclient_wrapper_open(const char *url, long long content_pos, void *priv)
+http_handle_t httpclient_wrapper_open(const char *url, long long content_pos, void *http_priv)
 {
-    httpclient_wrapper_priv_t *handle = audio_calloc(1, sizeof(httpclient_wrapper_priv_t));
-    if (handle == NULL)
+    struct httpclient_priv *priv = audio_calloc(1, sizeof(struct httpclient_priv));
+    if (priv == NULL)
         return NULL;
 
-    handle->url = audio_strdup(url);
-    handle->content_pos = content_pos;
+    priv->url = audio_strdup(url);
+    priv->content_pos = content_pos;
     OS_LOGD(TAG, "Connecting url:%s, content_pos:%d", url, (int)content_pos);
-    if (httpclient_wrapper_connect(handle) != HTTPCLIENT_OK) {
-        audio_free(handle->url);
-        audio_free(handle);
+    if (httpclient_wrapper_connect(priv) != HTTPCLIENT_OK) {
+        audio_free(priv->url);
+        audio_free(priv);
         return NULL;
     }
-    return handle;
+    return priv;
 }
 
 int httpclient_wrapper_read(http_handle_t handle, char *buffer, int size)
 {
-    httpclient_wrapper_priv_t *priv = (httpclient_wrapper_priv_t *)handle;
+    struct httpclient_priv *priv = (struct httpclient_priv *)handle;
     httpclient_t *client = &priv->client;
     httpclient_data_t *client_data = &priv->client_data;
     char *url = (char *)priv->url;
@@ -198,13 +198,13 @@ reconnect:
 
 long long httpclient_wrapper_filesize(http_handle_t handle)
 {
-    httpclient_wrapper_priv_t *priv = (httpclient_wrapper_priv_t *)handle;
+    struct httpclient_priv *priv = (struct httpclient_priv *)handle;
     return priv->content_len;
 }
 
 int httpclient_wrapper_seek(http_handle_t handle, long offset)
 {
-    httpclient_wrapper_priv_t *priv = (httpclient_wrapper_priv_t *)handle;
+    struct httpclient_priv *priv = (struct httpclient_priv *)handle;
 
     OS_LOGD(TAG, "Seeking http client, content_pos=%d", offset);
     priv->content_pos = offset;
@@ -215,7 +215,7 @@ int httpclient_wrapper_seek(http_handle_t handle, long offset)
 
 void httpclient_wrapper_close(http_handle_t handle)
 {
-    httpclient_wrapper_priv_t *priv = (httpclient_wrapper_priv_t *)handle;
+    struct httpclient_priv *priv = (struct httpclient_priv *)handle;
 
     OS_LOGD(TAG, "Closing http client");
     httpclient_close(&priv->client);

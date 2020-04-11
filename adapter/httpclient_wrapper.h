@@ -24,7 +24,7 @@
 extern "C" {
 #endif
 
-http_handle_t httpclient_wrapper_open(const char *url, long long content_pos, void *priv);
+http_handle_t httpclient_wrapper_open(const char *url, long long content_pos, void *http_priv);
 
 int httpclient_wrapper_read(http_handle_t handle, char *buffer, int size);
 
