@@ -127,13 +127,15 @@ static int m4a_decoder_process(audio_element_handle_t self, char *in_buffer, int
         byte_write = audio_element_output(self, (char*)decoder->buf_out.data, decoder->buf_out.length);
     }
 
-    decoder->buf_out.length -= byte_write;
-    decoder->buf_out.offset += byte_write;
+    if (byte_write > 0) {
+        decoder->buf_out.length -= byte_write;
+        decoder->buf_out.offset += byte_write;
 
-    audio_element_info_t audio_info = {0};
-    audio_element_getinfo(self, &audio_info);
-    audio_info.byte_pos += byte_write;
-    audio_element_setinfo(self, &audio_info);
+        audio_element_info_t audio_info = {0};
+        audio_element_getinfo(self, &audio_info);
+        audio_info.byte_pos += byte_write;
+        audio_element_setinfo(self, &audio_info);
+    }
 
     return byte_write;
 }

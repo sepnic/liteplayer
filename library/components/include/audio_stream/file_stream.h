@@ -37,11 +37,11 @@ typedef void *file_handle_t;
  * @brief   File Stream configurations, if any entry is zero then the configuration will be set to default values
  */
 typedef struct {
-    audio_stream_type_t type;           /*!< Stream type */
-    int                 task_prio;      /*!< Task priority (based on freeRTOS priority) */
-    int                 task_stack;     /*!< Task stack size */
-    int                 out_rb_size;    /*!< Size of output ringbuffer */
-    int                 buf_sz;         /*!< Audio Element Buffer size */
+    audio_stream_type_t type;        /*!< Stream type */
+    int              task_prio;      /*!< Task priority (based on freeRTOS priority) */
+    int              task_stack;     /*!< Task stack size */
+    int              out_rb_size;    /*!< Size of output ringbuffer */
+    int              buf_sz;         /*!< Audio Element Buffer size */
 
     const char      *url;
     void            *file_priv;

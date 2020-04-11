@@ -34,10 +34,10 @@ typedef void *http_handle_t;
  *             Default value will be used if any entry is zero
  */
 typedef struct {
-    int                     task_prio;      /*!< Task priority (based on freeRTOS priority) */
-    int                     task_stack;     /*!< Task stack size */
-    int                     out_rb_size;    /*!< Size of output ringbuffer */
-    int                     buf_sz;         /*!< Audio Element Buffer size */
+    int             task_prio;      /*!< Task priority (based on freeRTOS priority) */
+    int             task_stack;     /*!< Task stack size */
+    int             out_rb_size;    /*!< Size of output ringbuffer */
+    int             buf_sz;         /*!< Audio Element Buffer size */
 
     const char     *url;
     void           *http_priv;

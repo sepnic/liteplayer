@@ -799,6 +799,9 @@ int liteplayer_stop(liteplayer_handle_t handle)
 
     OS_THREAD_MUTEX_LOCK(handle->io_lock);
 
+    if (handle->state == LITEPLAYER_ERROR)
+        goto report_state;
+
     if (handle->state < LITEPLAYER_PREPARED || handle->state > LITEPLAYER_COMPLETED) {
         OS_LOGE(TAG, "Can't stop in state=[%d]", handle->state);
         OS_THREAD_MUTEX_UNLOCK(handle->io_lock);
@@ -812,6 +815,7 @@ int liteplayer_stop(liteplayer_handle_t handle)
     audio_pipeline_reset_ringbuffer(handle->pipeline);
     audio_pipeline_reset_items_state(handle->pipeline);
 
+report_state:
     {
         OS_THREAD_MUTEX_LOCK(handle->state_lock);
         handle->state = LITEPLAYER_STOPPED;
