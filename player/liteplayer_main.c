@@ -120,12 +120,21 @@ static int audio_element_state_callback(audio_element_handle_t el, audio_event_i
             case AEL_STATUS_ERROR_PROCESS:
             case AEL_STATUS_ERROR_OUTPUT:
             //case AEL_STATUS_ERROR_CLOSE: // If failed to close element, report error in stop/pause
-            //case AEL_STATUS_ERROR_TIMEOUT:
             case AEL_STATUS_ERROR_UNKNOWN:
                 OS_LOGE(TAG, "[ %s-%s ] Receive error[%d]",
                         media_source_tag(handle->source_type), audio_element_get_tag(el), el_status);
                 handle->state = LITEPLAYER_ERROR;
                 media_player_state_callback(handle, LITEPLAYER_ERROR, el_status);
+                break;
+
+            case AEL_STATUS_ERROR_TIMEOUT:
+                if (msg->source == (void *)handle->el_decoder) {
+                    OS_LOGW(TAG, "[ %s-%s ] Receive input timeout, filled/total: %d/%d",
+                            media_source_tag(handle->source_type),
+                            audio_element_get_tag(el),
+                            rb_bytes_filled(handle->source_rb),
+                            rb_get_size(handle->source_rb));
+                }
                 break;
 
             case AEL_STATUS_STATE_RUNNING:

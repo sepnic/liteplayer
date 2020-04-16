@@ -334,6 +334,7 @@ static esp_err_t audio_element_process_running(audio_element_handle_t el)
                 break;
             case AEL_IO_TIMEOUT:
                 OS_LOGV(TAG, "[%s] ERROR_PROCESS, AEL_IO_TIMEOUT", el->tag);
+                audio_element_report_status(el, AEL_STATUS_ERROR_TIMEOUT);
                 break;
             case AEL_PROCESS_FAIL:
                 OS_LOGE(TAG, "[%s] ERROR_PROCESS, AEL_PROCESS_FAIL", el->tag);
