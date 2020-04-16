@@ -28,7 +28,8 @@
 
 #define TAG "liteplayersource"
 
-#define DEFAULT_M3U_BUFFER_SIZE 4096
+#define DEFAULT_M3U_BUFFER_SIZE    ( 4096 )
+#define DEFAULT_M3U_FILL_THRESHOLD ( 32*1024 )
 
 typedef struct media_source_priv {
     media_source_info_t info;
@@ -258,21 +259,17 @@ resolve_m3u:
 
 dequeue_url:
     if (list_empty(&priv->m3u_list)) {
-        int fill_size = 0, total_size = 0;
+        int fill_size = 0;
         while (!priv->stop) {
             OS_THREAD_MUTEX_LOCK(priv->lock);
-            if (!priv->stop) {
+            if (!priv->stop)
                 fill_size = rb_bytes_filled(priv->rb);
-                total_size = rb_get_size(priv->rb);
-            }
-            else {
+            else
                 fill_size = 0;
-                total_size = 0;
-            }
             OS_THREAD_MUTEX_UNLOCK(priv->lock);
 
             // waiting decoder to consume the old data in the ringbuf
-            if (fill_size > total_size/4)
+            if (fill_size > DEFAULT_M3U_FILL_THRESHOLD)
                 OS_THREAD_SLEEP_MSEC(100);
             else
                 break;

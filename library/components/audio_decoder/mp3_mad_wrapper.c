@@ -72,6 +72,11 @@ static enum mad_flow mad_wrapper_input(void *data, struct mad_stream *stream)
     int size_read = 0;
     int remain = stream->bufend - stream->next_frame;
 
+    if (remain < 0 || remain >= MP3_DECODER_INPUT_BUFFER_SIZE) {
+        OS_LOGW(TAG, "Unexpected bytes remain: %d, occur dummy data?", remain);
+        return MAD_FLOW_STOP;
+    }
+
     if (stream->next_frame && remain > 0)
         memmove(input->data, stream->next_frame, remain);
 
@@ -95,14 +100,20 @@ static enum mad_flow mad_wrapper_input(void *data, struct mad_stream *stream)
                                     (char *)(input->data + remain),
                                     MP3_DECODER_INPUT_BUFFER_SIZE - remain);
     if (size_read > 0) {
-       while (size_read < MAD_BUFFER_GUARD)
-            input->data[remain + size_read++] = 0;
+        //while (size_read < MAD_BUFFER_GUARD &&
+        //       (remain + size_read) < MP3_DECODER_INPUT_BUFFER_SIZE) {
+        //    input->data[remain + size_read] = 0;
+        //    size_read++;
+        //}
     }
     else if (size_read == AEL_IO_OK || size_read == AEL_IO_DONE || size_read == AEL_IO_ABORT) {
         input->eof = true;
         size_read = 0;
-        while (size_read < MAD_BUFFER_GUARD)
-            input->data[remain + size_read++] = 0;
+        while (size_read < MAD_BUFFER_GUARD &&
+               (remain + size_read) < MP3_DECODER_INPUT_BUFFER_SIZE) {
+            input->data[remain + size_read] = 0;
+            size_read++;
+        }
     }
     else if (size_read == AEL_IO_TIMEOUT) {
         OS_LOGV(TAG, "Timeout to fetch data");

@@ -120,7 +120,7 @@ static int audio_element_state_callback(audio_element_handle_t el, audio_event_i
             case AEL_STATUS_ERROR_PROCESS:
             case AEL_STATUS_ERROR_OUTPUT:
             //case AEL_STATUS_ERROR_CLOSE: // If failed to close element, report error in stop/pause
-            case AEL_STATUS_ERROR_TIMEOUT:
+            //case AEL_STATUS_ERROR_TIMEOUT:
             case AEL_STATUS_ERROR_UNKNOWN:
                 OS_LOGE(TAG, "[ %s-%s ] Receive error[%d]",
                         media_source_tag(handle->source_type), audio_element_get_tag(el), el_status);
@@ -795,6 +795,8 @@ int liteplayer_stop(liteplayer_handle_t handle)
     if (handle == NULL)
         return ESP_FAIL;
 
+    int ret = ESP_OK;
+
     OS_LOGI(TAG, "Stopping player[%s]", media_source_tag(handle->source_type));
 
     OS_THREAD_MUTEX_LOCK(handle->io_lock);
@@ -808,7 +810,7 @@ int liteplayer_stop(liteplayer_handle_t handle)
         return ESP_FAIL;
     }
 
-    int ret = audio_pipeline_stop(handle->pipeline);
+    ret = audio_pipeline_stop(handle->pipeline);
     ret |= audio_pipeline_wait_for_stop(handle->pipeline);
     audio_element_reset_state(handle->el_decoder);
     audio_element_reset_state(handle->el_sink);
