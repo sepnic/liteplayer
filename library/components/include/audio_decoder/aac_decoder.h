@@ -66,7 +66,6 @@ typedef struct {
 
 typedef struct aac_buf_in {
     char         *data;
-    unsigned int offset;
     int          size_want;
     int          size_read;
     bool         eof;

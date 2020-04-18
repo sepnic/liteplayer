@@ -107,11 +107,11 @@ static int mp3_decoder_process(audio_element_handle_t self, char *in_buffer, int
     int ret = AEL_IO_OK;
     mp3_decoder_handle_t decoder = (mp3_decoder_handle_t)audio_element_getdata(self);
 
-    if(decoder->buf_out.length > 0) {
+    if(decoder->buf_out.bytes_remain > 0) {
         /* Output buffer have remain data */
         byte_write = audio_element_output(self,
-                                          decoder->buf_out.data+decoder->buf_out.offset,
-                                          decoder->buf_out.length);
+                                          decoder->buf_out.data+decoder->buf_out.bytes_written,
+                                          decoder->buf_out.bytes_remain);
     }
     else {
         /* More data need to be wrote */
@@ -126,14 +126,14 @@ static int mp3_decoder_process(audio_element_handle_t self, char *in_buffer, int
             return ret;
         }
 
-        //OS_LOGV(TAG, "ret=%d, length=%d", ret, decoder->buf_out.length);
-        decoder->buf_out.offset = 0;
-        byte_write = audio_element_output(self, decoder->buf_out.data, decoder->buf_out.length);
+        //OS_LOGV(TAG, "ret=%d, bytes_remain=%d", ret, decoder->buf_out.bytes_remain);
+        decoder->buf_out.bytes_written = 0;
+        byte_write = audio_element_output(self, decoder->buf_out.data, decoder->buf_out.bytes_remain);
     }
 
     if (byte_write > 0) {
-        decoder->buf_out.length -= byte_write;
-        decoder->buf_out.offset += byte_write;
+        decoder->buf_out.bytes_remain -= byte_write;
+        decoder->buf_out.bytes_written += byte_write;
 
         audio_element_info_t audio_info = {0};
         audio_element_getinfo(self, &audio_info);

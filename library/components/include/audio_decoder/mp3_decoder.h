@@ -53,15 +53,15 @@ typedef struct {
 
 typedef struct mp3_buf_in {
     char *data;
-    int length;
-    int offset;
-    bool eof;
+    int  bytes_want;     // bytes that want to read
+    int  bytes_read;     // bytes that have read
+    bool eof;            // if end of stream
 } mp3_buf_in_t;
 
 typedef struct mp3_buf_out {
-    char *data;          //data for output
-    int length;          //total lenght of current decoded frame
-    unsigned int offset; //total lenght of current decoded frame
+    char *data;
+    int  bytes_remain;   // bytes that remained to write
+    int  bytes_written;  // bytes that have written
 } mp3_buf_out_t;
 
 struct mp3_decoder {
@@ -70,7 +70,6 @@ struct mp3_decoder {
     mp3_buf_in_t            buf_in;
     mp3_buf_out_t           buf_out;
     bool                    parsed_header;
-    int                     frame_size;
 };
 
 typedef struct mp3_decoder *mp3_decoder_handle_t;

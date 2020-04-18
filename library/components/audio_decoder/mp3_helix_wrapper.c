@@ -55,7 +55,7 @@ static int mp3_data_read(mp3_decoder_handle_t decoder)
 
 next_offset:
     offset = decoder->buf_in.offset;
-    length = decoder->buf_in.length;
+    length = decoder->buf_in.bytes_read;
 
     do {
         int sync = MP3FindSyncWord(&in[offset], length-offset);
@@ -93,14 +93,14 @@ next_offset:
         memmove(in, &in[offset], length);
     }
     decoder->buf_in.offset = 0;
-    decoder->buf_in.length = length;
+    decoder->buf_in.bytes_read = length;
 
     // We have a sync word at 0 now, try and fill remainder of buffer
     if (!decoder->buf_in.eof) {
         if (length < MP3_DECODER_INPUT_BUFFER_SIZE) {
             int byte_read = audio_element_input(decoder->el, (char*)&in[length], MP3_DECODER_INPUT_BUFFER_SIZE-length);
             if (byte_read > 0)
-                decoder->buf_in.length += byte_read;
+                decoder->buf_in.bytes_read += byte_read;
             else if (byte_read == AEL_IO_OK || byte_read == AEL_IO_DONE || byte_read == AEL_IO_ABORT)
                 decoder->buf_in.eof = true;
         }
@@ -112,7 +112,7 @@ next_offset:
         OS_LOGV(TAG, "Fake sync word, find next sync frame");
         // Need to update pointer if fake sync word
         decoder->buf_in.offset += sizeof(char);
-        decoder->buf_in.length -= sizeof(char);
+        decoder->buf_in.bytes_read -= sizeof(char);
         goto next_offset;
     }
     else if (ret != ERR_MP3_NONE) {
@@ -140,7 +140,7 @@ fill_data:
 
     unsigned char *in = (unsigned char *)decoder->buf_in.data;
     short *out        = (short *)(decoder->buf_out.data);
-    int bytes_left    = decoder->buf_in.length;
+    int bytes_left    = decoder->buf_in.bytes_read;
 
     ret = MP3Decode(hMP3Decoder, &in, &bytes_left, out, 0);
     if (ret == ERR_MP3_INDATA_UNDERFLOW) {
@@ -156,7 +156,7 @@ fill_data:
         goto fill_data;
     }
 
-    decoder->buf_in.offset = decoder->buf_in.length - bytes_left;
+    decoder->buf_in.offset = decoder->buf_in.bytes_read - bytes_left;
 
     MP3FrameInfo fi;
     MP3GetLastFrameInfo(hMP3Decoder, &fi);
