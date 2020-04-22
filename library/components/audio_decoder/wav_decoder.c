@@ -72,30 +72,28 @@ static int wav_decoder_process(audio_element_handle_t self, char *in_buffer, int
         audio_element_getinfo(self, &info);
 
         if (!wav->parsed_header) {
-            wav_info_t wav_info;
-            if (wav_parse_header(in_buffer, r_size, &wav_info) != 0) {
-                OS_LOGE(TAG, "Failed to parse wav header");
-                return AEL_PROCESS_FAIL;
-            }
             wav->parsed_header = true;
-            int remain_data = r_size - wav_info.dataShift;
+            wav_info_t wav_info;
+            if (wav_parse_header(in_buffer, r_size, &wav_info) == 0) {
+                int remain_data = r_size - wav_info.dataShift;
 
-            info.out_samplerate = wav_info.sampleRate;
-            info.out_channels = wav_info.channels;
-            info.bits = wav_info.bits;
-            info.total_bytes = wav_info.dataSize;
-            info.byte_pos = remain_data;
+                info.out_samplerate = wav_info.sampleRate;
+                info.out_channels = wav_info.channels;
+                info.bits = wav_info.bits;
+                info.total_bytes = wav_info.dataSize;
+                info.byte_pos = remain_data;
 
-            audio_element_setinfo(self, &info);
-            audio_element_report_info(self);
-            if (remain_data > 0) {
-                audio_element_output(self, in_buffer + wav_info.dataShift, remain_data);
-                return remain_data;
+                audio_element_setinfo(self, &info);
+                audio_element_report_info(self);
+                if (remain_data > 0) {
+                    audio_element_output(self, in_buffer + wav_info.dataShift, remain_data);
+                    return remain_data;
+                }
+                return r_size;
             }
-            return r_size;
         }
 
-        if (info.byte_pos + r_size >= info.total_bytes)
+        if (info.total_bytes > 0 && info.byte_pos + r_size >= info.total_bytes)
             out_len = info.total_bytes - info.byte_pos;
         out_len = audio_element_output(self, in_buffer, out_len);
 
@@ -108,15 +106,23 @@ static int wav_decoder_process(audio_element_handle_t self, char *in_buffer, int
     return out_len;
 }
 
+static esp_err_t wav_decoder_seek(audio_element_handle_t self, long long offset)
+{
+    wav_decoder_t *wav = (wav_decoder_t *)audio_element_getdata(self);
+    wav->parsed_header = true;
+    return ESP_OK;
+}
+
 audio_element_handle_t wav_decoder_init(wav_decoder_cfg_t *config)
 {
     OS_LOGV(TAG, "Init wav decoder");
 
     audio_element_cfg_t cfg = DEFAULT_AUDIO_ELEMENT_CONFIG();
     cfg.destroy     = wav_decoder_destroy;
-    cfg.process     = wav_decoder_process;
     cfg.open        = wav_decoder_open;
     cfg.close       = wav_decoder_close;
+    cfg.process     = wav_decoder_process;
+    cfg.seek        = wav_decoder_seek;
     cfg.buffer_len  = WAV_DECODER_BUFFER_SIZE;
 
     cfg.task_stack  = config->task_stack;
@@ -136,6 +142,7 @@ audio_element_handle_t wav_decoder_init(wav_decoder_cfg_t *config)
     audio_element_setdata(el, wav);
 
     audio_element_info_t info = { 0 };
+    memset(&info, 0x0, sizeof(info));
     audio_element_setinfo(el, &info);
 
     audio_element_set_input_timeout(el, WAV_DECODER_INPUT_TIMEOUT_MAX);

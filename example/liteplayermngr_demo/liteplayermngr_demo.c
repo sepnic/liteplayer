@@ -109,6 +109,10 @@ static int liteplayer_test_state_callback(liteplayer_state_t state, int errcode,
         OS_LOGI(TAG, "-->LITEPLAYER_PAUSED");
         g_state = state;
         break;
+    case LITEPLAYER_SEEKCOMPLETED:
+        OS_LOGI(TAG, "-->LITEPLAYER_SEEKCOMPLETED");
+        g_state = state;
+        break;
     case LITEPLAYER_NEARLYCOMPLETED:
         OS_LOGI(TAG, "-->LITEPLAYER_NEARLYCOMPLETED");
         break;
@@ -206,6 +210,12 @@ static void *liteplayer_test_thread(void *arg)
 
     while (g_state != LITEPLAYER_COMPLETED && g_state != LITEPLAYER_ERROR &&
            g_state != LITEPLAYER_STOPPED && g_state != LITEPLAYER_IDLE) {
+        if (g_state == LITEPLAYER_SEEKCOMPLETED) {
+            if (liteplayer_mngr_start(g_player) != ESP_OK) {
+                OS_LOGE(TAG, "Failed to start player");
+                goto test_done;
+            }
+        }
         OS_THREAD_SLEEP_MSEC(100);
     }
 
@@ -297,6 +307,14 @@ int main(int argc, char *argv[])
            OS_LOGI(TAG, "Resume");
             if (g_player)
                 liteplayer_mngr_resume(g_player);
+        }
+        else if (input == 'S' || input == 's') {
+           OS_LOGI(TAG, "Seek 10S");
+            if (g_player) {
+                int position = 0;
+                liteplayer_mngr_get_position(g_player, &position);
+                liteplayer_mngr_seek(g_player, position+10000);
+            }
         }
         else if (input == 'N' || input == 'n') {
            OS_LOGI(TAG, "Next");

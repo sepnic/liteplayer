@@ -31,7 +31,7 @@
 #include "liteplayer_config.h"
 #include "liteplayer_parser.h"
 
-#define TAG "liteplayerparser"
+#define TAG "LITE_PARSER"
 
 typedef struct media_parser_priv {
     media_source_info_t source_info;
@@ -111,7 +111,7 @@ static int m4a_header_parse(media_source_info_t *source_info, media_codec_info_t
         media_info->content_pos = media_info->m4a_info.mdatofs;
         media_info->codec_samplerate = media_info->m4a_info.samplerate;
         media_info->codec_channels = media_info->m4a_info.channels;
-        media_info->duration_ms = (long long)media_info->m4a_info.duration*1000/media_info->m4a_info.timescale;
+        media_info->duration_ms = (int)(media_info->m4a_info.duration*1000/media_info->m4a_info.timescale);
         ret = ESP_OK;
     }
 
@@ -224,9 +224,9 @@ static int media_header_parse(media_source_info_t *source_info, media_codec_info
         media_info->codec_type = AUDIO_CODEC_WAV;
     }
 
-    int frame_start_offset = 0;
+    int frame_start_offset = 0, bytes_per_sec = 0;
     int sample_rate = 0, channels = 0;
-    long long duration_ms = 0;
+    int duration_ms = 0;
 
     if (media_info->codec_type == AUDIO_CODEC_MP3) {
         frame_start_offset = get_start_offset(buf);
@@ -261,6 +261,7 @@ static int media_header_parse(media_source_info_t *source_info, media_codec_info
 
         sample_rate = info.sample_rate;
         channels = info.channels;
+        bytes_per_sec = info.bit_rate*1000/8;
         if (filesize > frame_start_offset)
             duration_ms = (filesize - frame_start_offset)*8/info.bit_rate;
     }
@@ -297,6 +298,7 @@ static int media_header_parse(media_source_info_t *source_info, media_codec_info
 
         sample_rate = info.sample_rate;
         channels = info.channels;
+        //bytes_per_sec = info.bit_rate*1000/8;
         //if (filesize > frame_start_offset)
         //    duration_ms = (filesize - frame_start_offset)*8/info.bit_rate;
     }
@@ -305,9 +307,11 @@ static int media_header_parse(media_source_info_t *source_info, media_codec_info
         if (wav_parse_header(buf, bytes_read, &info) != 0)
             goto parse_done;
 
+        frame_start_offset = sizeof(wav_header_t);
         sample_rate = info.sampleRate;
         channels = info.channels;
-        duration_ms = (long long)info.dataSize*1000/info.blockAlign/info.sampleRate;
+        bytes_per_sec = info.blockAlign*info.sampleRate;
+        duration_ms = (int)(info.dataSize*1000/info.blockAlign/info.sampleRate);
     }
     else {
         OS_LOGE(TAG, "Unknown codec type");
@@ -317,6 +321,7 @@ static int media_header_parse(media_source_info_t *source_info, media_codec_info
     media_info->content_pos = frame_start_offset;
     media_info->codec_samplerate = sample_rate;
     media_info->codec_channels = channels;
+    media_info->bytes_per_sec = bytes_per_sec;
     media_info->duration_ms = duration_ms;
     ret = ESP_OK;
 
@@ -389,43 +394,22 @@ int media_info_parse(media_source_info_t *source_info, media_codec_info_t *media
         }
     }
 
-    if (source_info->source_type == MEDIA_SOURCE_HTTP) {
-        if (strstr(source_info->url, "m4a") != NULL) {
-            media_info->codec_type = AUDIO_CODEC_M4A;
-            if (m4a_header_parse(source_info, media_info) == ESP_OK)
-                goto parse_succeed;
-            // if failed, go ahead to check real codec type
-            media_info->codec_type = AUDIO_CODEC_NONE;
-        }
-        else if (strstr(source_info->url, "mp3") != NULL)
-            media_info->codec_type = AUDIO_CODEC_MP3;
-        else if (strstr(source_info->url, "wav") != NULL)
-            media_info->codec_type = AUDIO_CODEC_WAV;
-        else if (strstr(source_info->url, "aac") != NULL)
-            media_info->codec_type = AUDIO_CODEC_AAC;
-        if (media_header_parse(source_info, media_info) != ESP_OK) {
-            OS_LOGE(TAG, "Failed to parse http url:[%s]", source_info->url);
-            return ESP_FAIL;
-        }
+    if (strstr(source_info->url, "m4a") != NULL) {
+        media_info->codec_type = AUDIO_CODEC_M4A;
+        if (m4a_header_parse(source_info, media_info) == ESP_OK)
+            goto parse_succeed;
+        // if failed, go ahead to check real codec type
+        media_info->codec_type = AUDIO_CODEC_NONE;
     }
-    else {
-        if (strstr(source_info->url, "m4a") != NULL) {
-            media_info->codec_type = AUDIO_CODEC_M4A;
-            if (m4a_header_parse(source_info, media_info) == ESP_OK)
-                goto parse_succeed;
-            // if failed, go ahead to check real codec type
-            media_info->codec_type = AUDIO_CODEC_NONE;
-        }
-        else if (strstr(source_info->url, "mp3") != NULL)
-            media_info->codec_type = AUDIO_CODEC_MP3;
-        else if (strstr(source_info->url, "wav") != NULL)
-            media_info->codec_type = AUDIO_CODEC_WAV;
-        else if (strstr(source_info->url, "aac") != NULL)
-            media_info->codec_type = AUDIO_CODEC_AAC;
-        if (media_header_parse(source_info, media_info) != ESP_OK) {
-            OS_LOGE(TAG, "Failed to parse file url:[%s]", source_info->url);
-            return ESP_FAIL;
-        }
+    else if (strstr(source_info->url, "mp3") != NULL)
+        media_info->codec_type = AUDIO_CODEC_MP3;
+    else if (strstr(source_info->url, "wav") != NULL)
+        media_info->codec_type = AUDIO_CODEC_WAV;
+    else if (strstr(source_info->url, "aac") != NULL)
+        media_info->codec_type = AUDIO_CODEC_AAC;
+    if (media_header_parse(source_info, media_info) != ESP_OK) {
+        OS_LOGE(TAG, "Failed to parse file url:[%s]", source_info->url);
+        return ESP_FAIL;
     }
 
 parse_succeed:
@@ -453,7 +437,7 @@ media_parser_handle_t media_parser_start_async(media_source_info_t *source_info,
         goto start_failed;
 
     struct os_threadattr attr = {
-        .name = "ael_parser",
+        .name = "ael-parser",
         .priority = DEFAULT_MEDIA_PARSER_TASK_PRIO,
         .stacksize = DEFAULT_MEDIA_PARSER_TASK_STACKSIZE,
         .joinable = false,

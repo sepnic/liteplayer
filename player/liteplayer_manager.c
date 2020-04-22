@@ -28,7 +28,7 @@
 #include "liteplayer_main.h"
 #include "liteplayer_manager.h"
 
-#define TAG "liteplayermanager"
+#define TAG "LITE_MANAGER"
 
 struct liteplayer_mngr {
     liteplayer_handle_t  player;
@@ -58,6 +58,7 @@ enum {
     PLAYER_DO_START,
     PLAYER_DO_PAUSE,
     PLAYER_DO_RESUME,
+    PLAYER_DO_SEEK,
     PLAYER_DO_NEXT,
     PLAYER_DO_PREV,
     PLAYER_DO_STOP,
@@ -216,6 +217,10 @@ static int manager_state_callback(liteplayer_state_t state, int errcode, void *p
         mngr->is_paused = true;
         break;
 
+    case LITEPLAYER_SEEKCOMPLETED:
+        state_sync = true;
+        break;
+
     case LITEPLAYER_NEARLYCOMPLETED:
         if (mngr->is_list || mngr->is_looping) {
             state_sync = false;
@@ -316,6 +321,10 @@ static void manager_looper_handle(struct message *msg)
         liteplayer_resume(mngr->player);
         break;
 
+    case PLAYER_DO_SEEK:
+        liteplayer_seek(mngr->player, msg->arg1*1000+msg->arg2);
+        break;
+
     case PLAYER_DO_NEXT: {
         OS_THREAD_MUTEX_LOCK(mngr->lock);
         if (mngr->is_list) {
@@ -382,7 +391,7 @@ liteplayer_mngr_handle_t liteplayer_mngr_create()
             goto failed;
 
         struct os_threadattr attr = {
-            .name = "ael_manager",
+            .name = "ael-manager",
             .priority = DEFAULT_MANAGER_TASK_PRIO,
             .stacksize = DEFAULT_MANAGER_TASK_STACKSIZE,
             .joinable = true,
@@ -527,6 +536,18 @@ int liteplayer_mngr_resume(liteplayer_mngr_handle_t mngr)
     return -1;
 }
 
+int liteplayer_mngr_seek(liteplayer_mngr_handle_t mngr, int msec)
+{
+    if (mngr == NULL || msec < 0)
+        return -1;
+    struct message *msg = message_obtain(PLAYER_DO_SEEK, msec/1000, msec%1000, mngr);
+    if (msg != NULL) {
+        mlooper_post_message(mngr->looper, msg);
+        return 0;
+    }
+    return -1;
+}
+
 int liteplayer_mngr_next(liteplayer_mngr_handle_t mngr)
 {
     if (mngr == NULL)
@@ -628,14 +649,14 @@ int liteplayer_mngr_get_available_size(liteplayer_mngr_handle_t mngr)
     return liteplayer_get_available_size(mngr->player);
 }
 
-int liteplayer_mngr_get_position(liteplayer_mngr_handle_t mngr, long long *msec)
+int liteplayer_mngr_get_position(liteplayer_mngr_handle_t mngr, int *msec)
 {
     if (mngr == NULL || msec == NULL)
         return -1;
     return liteplayer_get_position(mngr->player, msec);
 }
 
-int liteplayer_mngr_get_duration(liteplayer_mngr_handle_t mngr, long long *msec)
+int liteplayer_mngr_get_duration(liteplayer_mngr_handle_t mngr, int *msec)
 {
     if (mngr == NULL || msec == NULL)
         return -1;

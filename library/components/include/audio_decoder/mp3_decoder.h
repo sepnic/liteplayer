@@ -55,6 +55,7 @@ typedef struct mp3_buf_in {
     char *data;
     int  bytes_want;     // bytes that want to read
     int  bytes_read;     // bytes that have read
+    int  bytes_discard;  // bytes that need to discard
     bool eof;            // if end of stream
 } mp3_buf_in_t;
 
@@ -69,7 +70,9 @@ struct mp3_decoder {
     audio_element_handle_t  el;
     mp3_buf_in_t            buf_in;
     mp3_buf_out_t           buf_out;
+    int                     frame_size;
     bool                    parsed_header;
+    bool                    seek_mode;
 };
 
 typedef struct mp3_decoder *mp3_decoder_handle_t;

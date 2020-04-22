@@ -262,131 +262,147 @@ write_err:
     return total_write_size > 0 ? total_write_size : ret_val;
 }
 
-int rb_read_nonblock(ringbuf_handle_t rb, char *buf, int buf_len)
+int rb_read_chunk(ringbuf_handle_t rb, char *buf, int size, unsigned int timeout_ms)
 {
-    int read_size = 0;
-    int total_read_size = 0;
+    int read_size = size;
     int ret_val = 0;
 
     //take buffer lock
     OS_THREAD_MUTEX_LOCK(rb->lock);
 
-    while (buf_len > 0) {
-        if (rb->fill_cnt < buf_len) {
+wait_filled:
+    if (rb->fill_cnt < size) {
+        if (rb->is_done_write)
             read_size = rb->fill_cnt;
-            /**
-             * When non-multiple of 4(word size) bytes are written to I2S, there is noise.
-             * Below is the kind of workaround to read only in multiple of 4. Avoids noise when rb is read in small chunks.
-             * Note that, when we have buf_len bytes available in rb, we still read those irrespective of if it's multiple of 4.
-             */
-            //read_size = read_size & 0xfffffffc;
-            //if ((read_size == 0) && rb->is_done_write) {
-            //    read_size = rb->fill_cnt;
-            //}
-        }
-        else {
-            read_size = buf_len;
-        }
-
-        if (read_size == 0) {
-            if (rb->is_done_write) {
-                ret_val = RB_DONE;
-            }
-            if (rb->abort_read) {
-                ret_val = RB_ABORT;
-            }
-            goto read_done;
-        }
-
-        if ((rb->p_r + read_size) > (rb->p_o + rb->size)) {
-            int rlen1 = rb->p_o + rb->size - rb->p_r;
-            int rlen2 = read_size - rlen1;
-            memcpy(buf, rb->p_r, rlen1);
-            memcpy(buf + rlen1, rb->p_o, rlen2);
-            rb->p_r = rb->p_o + rlen2;
-        }
-        else {
-            memcpy(buf, rb->p_r, read_size);
-            rb->p_r = rb->p_r + read_size;
-        }
-
-        buf_len -= read_size;
-        rb->fill_cnt -= read_size;
-        total_read_size += read_size;
-        buf += read_size;
+        else
+            read_size = 0;
+    }
+    else {
+        read_size = size;
     }
 
+    if (read_size == 0) {
+        if (rb->is_done_write) {
+            ret_val = RB_DONE;
+            goto read_done;
+        }
+        if (rb->abort_read) {
+            ret_val = RB_ABORT;
+            goto read_done;
+        }
+        if (rb->unblock_reader_flag) {
+            //reader_unblock is nothing but forced timeout
+            ret_val = RB_TIMEOUT;
+            goto read_done;
+        }
+        if (size > rb->size) {
+            ret_val = RB_FAIL;
+            goto read_done;
+        }
+        OS_THREAD_COND_SIGNAL(rb->can_write);
+        //wait till some data available to read
+        if (timeout_ms == 0)
+            ret_val = OS_THREAD_COND_WAIT(rb->can_read, rb->lock);
+        else
+            ret_val = OS_THREAD_COND_TIMEDWAIT(rb->can_read, rb->lock, timeout_ms*1000);
+        if (ret_val != 0) {
+            ret_val = RB_TIMEOUT;
+            goto read_done;
+        }
+        goto wait_filled;
+    }
+
+    if ((rb->p_r + read_size) > (rb->p_o + rb->size)) {
+        int rlen1 = rb->p_o + rb->size - rb->p_r;
+        int rlen2 = read_size - rlen1;
+        memcpy(buf, rb->p_r, rlen1);
+        memcpy(buf + rlen1, rb->p_o, rlen2);
+        rb->p_r = rb->p_o + rlen2;
+    }
+    else {
+        memcpy(buf, rb->p_r, read_size);
+        rb->p_r = rb->p_r + read_size;
+    }
+    rb->fill_cnt -= read_size;
+
 read_done:
-    if (total_read_size > 0) {
+    if (read_size > 0) {
         OS_THREAD_COND_SIGNAL(rb->can_write);
     }
     OS_THREAD_MUTEX_UNLOCK(rb->lock);
-    if (buf_len > total_read_size) {
-        OS_LOGV(LOG_TAG, "Insufficient filled data, read %d/%d bytes, lacked %d bytes",
-                total_read_size, buf_len, buf_len - total_read_size);
-    }
     if ((ret_val == RB_FAIL) || (ret_val == RB_ABORT)) {
-        total_read_size = ret_val;
+        read_size = ret_val;
     }
-    return total_read_size >= 0 ? total_read_size : ret_val;
+    return read_size > 0 ? read_size : ret_val;
 }
 
-int rb_write_nonblock(ringbuf_handle_t rb, char *buf, int buf_len)
+int rb_write_chunk(ringbuf_handle_t rb, char *buf, int size, unsigned int timeout_ms)
 {
     int write_size = 0;
-    int total_write_size = 0;
     int ret_val = 0;
 
     //take buffer lock
     OS_THREAD_MUTEX_LOCK(rb->lock);
 
-    while (buf_len > 0) {
-        write_size = rb_bytes_available(rb);
-        if (buf_len < write_size) {
-            write_size = buf_len;
-        }
-
-        if (write_size == 0) {
-            if (rb->is_done_write) {
-                ret_val = RB_DONE;
-            }
-            if (rb->abort_write) {
-                ret_val = RB_ABORT;
-            }
-            goto write_done;
-        }
-
-        if ((rb->p_w + write_size) > (rb->p_o + rb->size)) {
-            int wlen1 = rb->p_o + rb->size - rb->p_w;
-            int wlen2 = write_size - wlen1;
-            memcpy(rb->p_w, buf, wlen1);
-            memcpy(rb->p_o, buf + wlen1, wlen2);
-            rb->p_w = rb->p_o + wlen2;
-        }
-        else {
-            memcpy(rb->p_w, buf, write_size);
-            rb->p_w = rb->p_w + write_size;
-        }
-
-        buf_len -= write_size;
-        rb->fill_cnt += write_size;
-        total_write_size += write_size;
-        buf += write_size;
+wait_available:
+    if (rb_bytes_available(rb) < size) {
+        if (rb->is_done_write)
+            write_size = rb_bytes_available(rb);
+        else
+            write_size = 0;
+    }
+    else {
+        write_size = size;
     }
 
+    if (write_size == 0) {
+        if (rb->is_done_write) {
+            ret_val = RB_DONE;
+            goto write_done;
+        }
+        if (rb->abort_write) {
+            ret_val = RB_ABORT;
+            goto write_done;
+        }
+        if (size > rb->size) {
+            ret_val = RB_FAIL;
+            goto write_done;
+        }
+        OS_THREAD_COND_SIGNAL(rb->can_read);
+        //wait till we have some empty space to write
+        if (timeout_ms == 0)
+            ret_val = OS_THREAD_COND_WAIT(rb->can_write, rb->lock);
+        else
+            ret_val = OS_THREAD_COND_TIMEDWAIT(rb->can_write, rb->lock, timeout_ms*1000);
+        if (ret_val != 0) {
+            ret_val = RB_TIMEOUT;
+            goto write_done;
+        }
+        goto wait_available;
+    }
+
+    if ((rb->p_w + write_size) > (rb->p_o + rb->size)) {
+        int wlen1 = rb->p_o + rb->size - rb->p_w;
+        int wlen2 = write_size - wlen1;
+        memcpy(rb->p_w, buf, wlen1);
+        memcpy(rb->p_o, buf + wlen1, wlen2);
+        rb->p_w = rb->p_o + wlen2;
+    }
+    else {
+        memcpy(rb->p_w, buf, write_size);
+        rb->p_w = rb->p_w + write_size;
+    }
+    rb->fill_cnt += write_size;
+
 write_done:
-    if (total_write_size > 0) {
+    if (write_size > 0) {
         OS_THREAD_COND_SIGNAL(rb->can_read);
     }
     OS_THREAD_MUTEX_UNLOCK(rb->lock);
-    if (buf_len > total_write_size) {
-        OS_LOGW(LOG_TAG, "Insufficient available space, wrote %d/%d bytes, discarded %d bytes",
-                total_write_size, buf_len, buf_len - total_write_size);
-    }
     if ((ret_val == RB_FAIL) || (ret_val == RB_ABORT)) {
-        total_write_size = ret_val;
+        write_size = ret_val;
     }
-    return total_write_size >= 0 ? total_write_size : ret_val;
+    return write_size > 0 ? write_size : ret_val;
 }
 
 static void rb_abort_read(ringbuf_handle_t rb)

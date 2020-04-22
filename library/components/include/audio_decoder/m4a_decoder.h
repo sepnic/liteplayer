@@ -46,10 +46,11 @@ struct m4a_decoder {
     audio_element_handle_t  el;
     aac_buf_in_t            buf_in;
     aac_buf_out_t           buf_out;
-    bool                    parsed_header;
     m4a_info_t              m4a_info;
     unsigned int            size_proced;
     unsigned int            stsz_current;
+    bool                    parsed_header;
+    bool                    seek_mode;
 };
 
 typedef struct m4a_decoder *m4a_decoder_handle_t;

@@ -317,7 +317,14 @@ esp_err_t audio_pipeline_resume(audio_pipeline_handle_t pipeline, float start_th
             ret |= audio_element_resume(el_item->el, 0, 0);
         }
     }
-    audio_pipeline_change_state(pipeline, AEL_STATE_RUNNING);
+    if (ret != ESP_OK) {
+        OS_LOGE(TAG, "Pipeline resume failed");
+        audio_pipeline_change_state(pipeline, AEL_STATE_ERROR);
+        audio_pipeline_terminate(pipeline);
+    }
+    else {
+        audio_pipeline_change_state(pipeline, AEL_STATE_RUNNING);
+    }
     OS_LOGD(TAG, "Pipeline resumed");
     return ret;
 }
@@ -338,9 +345,26 @@ esp_err_t audio_pipeline_pause(audio_pipeline_handle_t pipeline)
     return ret;
 }
 
-esp_err_t audio_pipeline_run(audio_pipeline_handle_t pipeline, float start_threshold, int timeout_ms)
+esp_err_t audio_pipeline_seek(audio_pipeline_handle_t pipeline, long long offset)
 {
     audio_element_item_t *el_item;
+    esp_err_t ret = ESP_OK;
+    OS_LOGV(TAG, "Pipeline seeking");
+    STAILQ_FOREACH(el_item, &pipeline->el_list, next) {
+        if (false == el_item->linked) {
+            continue;
+        }
+        OS_LOGV(TAG, "seek [%s]  %p", audio_element_get_tag(el_item->el), el_item->el);
+        ret |= audio_element_seek(el_item->el, offset);
+    }
+    OS_LOGD(TAG, "Pipeline seeked");
+    return ret;
+}
+
+esp_err_t audio_pipeline_run(audio_pipeline_handle_t pipeline)
+{
+    audio_element_item_t *el_item;
+    esp_err_t ret = ESP_OK;
     OS_LOGV(TAG, "Pipeline starting");
     if (pipeline->state != AEL_STATE_INIT) {
         OS_LOGV(TAG, "Pipeline already started, state:%d", pipeline->state);
@@ -353,21 +377,11 @@ esp_err_t audio_pipeline_run(audio_pipeline_handle_t pipeline, float start_thres
                 || (AEL_STATE_STOPPED == audio_element_get_state(el_item->el))
                 || (AEL_STATE_FINISHED == audio_element_get_state(el_item->el))
                 || (AEL_STATE_ERROR == audio_element_get_state(el_item->el)))) {
-            audio_element_run(el_item->el);
+            ret |= audio_element_run(el_item->el);
         }
     }
-
-    if (ESP_FAIL == audio_pipeline_resume(pipeline, start_threshold, timeout_ms)) {
-        OS_LOGE(TAG, "audio_pipeline_resume failed");
-        audio_pipeline_change_state(pipeline, AEL_STATE_ERROR);
-        audio_pipeline_terminate(pipeline);
-        return ESP_FAIL;
-    } else {
-        audio_pipeline_change_state(pipeline, AEL_STATE_RUNNING);
-    }
-
     OS_LOGD(TAG, "Pipeline started");
-    return ESP_OK;
+    return ret;
 }
 
 esp_err_t audio_pipeline_terminate(audio_pipeline_handle_t pipeline)

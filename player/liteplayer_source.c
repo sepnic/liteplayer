@@ -26,15 +26,14 @@
 #include "liteplayer_config.h"
 #include "liteplayer_source.h"
 
-#define TAG "liteplayersource"
+#define TAG "LITE_SOURCE"
 
-#define DEFAULT_M3U_BUFFER_SIZE    ( 4096 )
+#define DEFAULT_M3U_BUFFER_SIZE    ( 16*1024 )
 #define DEFAULT_M3U_FILL_THRESHOLD ( 32*1024 )
 
 typedef struct media_source_priv {
     media_source_info_t info;
     ringbuf_handle_t rb;
-    long long bytes_written;
     struct listnode m3u_list;
 
     media_source_state_cb listener;
@@ -325,7 +324,6 @@ dequeue_url:
             if (ret > 0) {
                 bytes_read -= ret;
                 bytes_written += ret;
-                priv->bytes_written += ret;
             }
             else {
                 if (ret == RB_DONE || ret == RB_ABORT || ret == RB_OK) {
@@ -569,7 +567,6 @@ static void *media_source_thread(void *arg)
             if (ret > 0) {
                 bytes_read -= ret;
                 bytes_written += ret;
-                priv->bytes_written += ret;
             }
             else {
                 if (ret == RB_DONE || ret == RB_ABORT || ret == RB_OK) {
@@ -639,7 +636,7 @@ media_source_handle_t media_source_start(media_source_info_t *info,
         goto start_failed;
 
     struct os_threadattr attr = {
-        .name = "ael_source",
+        .name = "ael-source",
         .priority = DEFAULT_MEDIA_SOURCE_TASK_PRIO,
         .stacksize = DEFAULT_MEDIA_SOURCE_TASK_STACKSIZE,
         .joinable = false,
@@ -660,14 +657,6 @@ start_failed:
     return NULL;
 }
 
-long long media_source_bytes_written(media_source_handle_t handle)
-{
-    media_source_priv_t *priv = (media_source_priv_t *)handle;
-    if (priv == NULL)
-        return -1;
-    return priv->bytes_written;
-}
-
 void media_source_stop(media_source_handle_t handle)
 {
     media_source_priv_t *priv = (media_source_priv_t *)handle;
@@ -679,10 +668,8 @@ void media_source_stop(media_source_handle_t handle)
 
     {
         OS_THREAD_MUTEX_LOCK(priv->lock);
-
         priv->stop = true;
         OS_THREAD_COND_SIGNAL(priv->cond);
-
         OS_THREAD_MUTEX_UNLOCK(priv->lock);
     }
 }

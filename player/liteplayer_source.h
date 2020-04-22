@@ -58,8 +58,6 @@ media_source_handle_t media_source_start(media_source_info_t *info,
                                          media_source_state_cb listener,
                                          void *listener_priv);
 
-long long media_source_bytes_written(media_source_handle_t handle);
-
 void media_source_stop(media_source_handle_t handle);
 
 int m3u_get_first_url(media_source_info_t *info, char *buf, int buf_size);

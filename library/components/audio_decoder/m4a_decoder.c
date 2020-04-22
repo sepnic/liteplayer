@@ -54,20 +54,10 @@ static esp_err_t m4a_decoder_open(audio_element_handle_t self)
     }
 
     OS_LOGV(TAG, "Open m4a decoder");
-
-    decoder->buf_in.data = audio_calloc(AAC_DECODER_INPUT_BUFFER_SIZE, sizeof(char));
-    if (decoder->buf_in.data == NULL) {
-        OS_LOGE(TAG, "Failed to allocate input buffer");
-        return ESP_ERR_NO_MEM;
+    if (m4a_wrapper_init(decoder) != 0) {
+        OS_LOGE(TAG, "Failed to init m4a wrapper");
+        err = ESP_FAIL;
     }
-
-    decoder->buf_out.data = audio_calloc(AAC_DECODER_OUTPUT_BUFFER_SIZE, sizeof(char));
-    if (decoder->buf_out.data == NULL) {
-        OS_LOGE(TAG, "Failed to allocate output buffer");
-        return ESP_ERR_NO_MEM;
-    }
-
-    err = m4a_wrapper_init(decoder);
     return err;
 }
 
@@ -78,12 +68,15 @@ static esp_err_t m4a_decoder_close(audio_element_handle_t self)
     if (audio_element_get_state(self) != AEL_STATE_PAUSED) {
         OS_LOGV(TAG, "Close m4a decoder");
         m4a_wrapper_deinit(decoder);
-        if (decoder->buf_in.data != NULL)
-            audio_free(decoder->buf_in.data);
-        memset(&decoder->buf_in, 0x0, sizeof(aac_buf_in_t));
-        if (decoder->buf_out.data != NULL)
-            audio_free(decoder->buf_out.data);
-        memset(&decoder->buf_out, 0x0, sizeof(aac_buf_out_t));
+
+        memset(decoder->buf_in.data, 0x0, AAC_DECODER_INPUT_BUFFER_SIZE);
+        decoder->buf_in.size_want = 0;
+        decoder->buf_in.size_read = 0;
+        decoder->buf_in.eof = false;
+
+        memset(decoder->buf_out.data, 0x0, AAC_DECODER_OUTPUT_BUFFER_SIZE);
+        decoder->buf_out.length = 0;
+        decoder->buf_out.offset = 0;
 
         decoder->handle = NULL;
         decoder->parsed_header = false;
@@ -140,6 +133,29 @@ static int m4a_decoder_process(audio_element_handle_t self, char *in_buffer, int
     return byte_write;
 }
 
+static esp_err_t m4a_decoder_seek(audio_element_handle_t self, long long offset)
+{
+    m4a_decoder_handle_t decoder = (m4a_decoder_handle_t)audio_element_getdata(self);
+
+    m4a_wrapper_deinit(decoder);
+    if (m4a_wrapper_init(decoder) != 0) {
+        OS_LOGE(TAG, "Failed to init m4a wrapper");
+        return ESP_FAIL;
+    }
+
+    memset(decoder->buf_in.data, 0x0, AAC_DECODER_INPUT_BUFFER_SIZE);
+    decoder->buf_in.size_want = 0;
+    decoder->buf_in.size_read = 0;
+    decoder->buf_in.eof = false;
+
+    memset(decoder->buf_out.data, 0x0, AAC_DECODER_OUTPUT_BUFFER_SIZE);
+    decoder->buf_out.length = 0;
+    decoder->buf_out.offset = 0;
+
+    decoder->seek_mode = true;
+    return ESP_OK;
+}
+
 audio_element_handle_t m4a_decoder_init(m4a_decoder_cfg_t *config)
 {
     OS_LOGV(TAG, "Init m4a decoder");
@@ -147,11 +163,24 @@ audio_element_handle_t m4a_decoder_init(m4a_decoder_cfg_t *config)
     m4a_decoder_handle_t decoder = audio_calloc(1, sizeof(struct m4a_decoder));
     AUDIO_MEM_CHECK(TAG, decoder, return NULL);
 
+    decoder->buf_in.data = audio_calloc(AAC_DECODER_INPUT_BUFFER_SIZE, sizeof(char));
+    if (decoder->buf_in.data == NULL) {
+        OS_LOGE(TAG, "Failed to allocate input buffer");
+        goto m4a_init_error;
+    }
+
+    decoder->buf_out.data = audio_calloc(AAC_DECODER_OUTPUT_BUFFER_SIZE, sizeof(char));
+    if (decoder->buf_out.data == NULL) {
+        OS_LOGE(TAG, "Failed to allocate output buffer");
+        goto m4a_init_error;
+    }
+
     audio_element_cfg_t cfg = DEFAULT_AUDIO_ELEMENT_CONFIG();
     cfg.destroy = m4a_decoder_destroy;
-    cfg.process = m4a_decoder_process;
     cfg.open    = m4a_decoder_open;
     cfg.close   = m4a_decoder_close;
+    cfg.process = m4a_decoder_process;
+    cfg.seek    = m4a_decoder_seek;
     cfg.buffer_len = AAC_DECODER_BUFFER_SIZE;
     cfg.task_stack  = config->task_stack;
     cfg.task_prio   = config->task_prio;
@@ -173,6 +202,10 @@ audio_element_handle_t m4a_decoder_init(m4a_decoder_cfg_t *config)
     return el;
 
 m4a_init_error:
+    if (decoder->buf_in.data != NULL)
+        audio_free(decoder->buf_in.data);
+    if (decoder->buf_out.data != NULL)
+        audio_free(decoder->buf_out.data);
     audio_free(decoder);
     return NULL;
 }

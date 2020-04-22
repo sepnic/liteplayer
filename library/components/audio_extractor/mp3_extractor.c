@@ -26,7 +26,7 @@
 
 #define DEFAULT_MP3_PARSER_BUFFER_SIZE 2048
 
-static int mp3_find_syncword(char *buf, int size)
+int mp3_find_syncword(char *buf, int size)
 {
     if (size < 2)
         return -1;
@@ -126,7 +126,7 @@ check_next_frame:
              info->channels, info->sample_rate, info->bit_rate, info->frame_size);
 
     if (frame_size + 4 > buf_size) {
-        OS_LOGW(TAG, "Not enough data to double check, but go on");
+        OS_LOGD(TAG, "Not enough data to double check, but go on");
         return 0;
     }
     buf += frame_size;
@@ -155,6 +155,8 @@ int mp3_extractor(mp3_fetch_cb fetch_cb, void *fetch_priv, mp3_info_t *info)
     bool found = false;
     int buf_size = DEFAULT_MP3_PARSER_BUFFER_SIZE;
     char *buf = (char *)audio_calloc(1, buf_size);
+    int last_position = 0;
+    int sync_offset = 0;
 
     AUDIO_MEM_CHECK(TAG, buf, return -1);
 
@@ -194,9 +196,6 @@ int mp3_extractor(mp3_fetch_cb fetch_cb, void *fetch_priv, mp3_info_t *info)
         }
     }
 
-    int last_position = 0;
-    int sync_offset = 0;
-
 find_syncword:
     if (last_position + 4 > buf_size) {
         OS_LOGE(TAG, "Not enough data[%d] to parse", buf_size);
@@ -225,7 +224,7 @@ find_syncword:
 finish:
     if (found) {
         info->id3v2_length = id3v2_len;
-        info->frame_start_offset = frame_start_offset;
+        info->frame_start_offset = frame_start_offset + last_position;
         mp3_dump_info(info);
     }
 

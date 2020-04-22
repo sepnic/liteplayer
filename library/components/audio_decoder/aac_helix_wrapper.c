@@ -28,38 +28,38 @@
 
 #define TAG "AAC_WRAPPER"
 
-typedef enum aac_error {
-    AAC_ERR_NONE          = -0x00,    /* no error */
-    AAC_ERR_FAIL          = -0x01,    /* input buffer too small */
-    AAC_ERR_UNSUPPORTED   = -0x02,    /* invalid (null) buffer pointer */
-    AAC_ERR_NOMEM         = -0x03,    /* not enough memory */
-    AAC_ERR_OPCODE        = -0x04,    /* opcode error */
-    AAC_ERR_STARVE_0      = -0x05,    /* no data remaining, need more data */
-    AAC_ERR_STARVE_1      = -0x06,    /* still have data left but not enough for continue handling */
-    AAC_ERR_STARVE_2      = -0x07,    /* ATOM_DATA finish, no data remaining, need more data to process ATOM_NAME. */
-    AAC_ERR_LOSTSYNC      = -0x08,    /* lost synchronization */
-    AAC_ERR_EOF           = -0x09,    /* EOF */
-} aac_error_t;
-
-static int aac_adts_read(aac_decoder_handle_t handle)
+static int aac_adts_read(aac_decoder_handle_t decoder)
 {
-    int ret = AAC_ERR_NONE;
-    char *data = handle->buf_in.data;
-    int remain = handle->buf_in.size_read;
+    char *data = decoder->buf_in.data;
+    int remain = decoder->buf_in.size_read;
     int want = AAC_DECODER_INPUT_BUFFER_SIZE - remain;
+
+    if (decoder->seek_mode) {
+        // todo: find valid frame header
+        decoder->seek_mode = false;
+        OS_LOGE(TAG, "AAC unsupport seek now");
+        return AEL_IO_FAIL;
+    }
 
     if (remain != 0)
         memmove(data, &data[want], remain);
 
-    int byte_read = audio_element_input(handle->el, (char*)&data[remain], want);
-    if (byte_read >= 0) {
-        handle->buf_in.size_read += byte_read;
-    } else {
-        if (byte_read == RB_DONE)
-            handle->buf_in.eof = true;
-        ret = byte_read;
+    int ret = audio_element_input(decoder->el, (char*)&data[remain], want);
+    if (ret >= 0) {
+        decoder->buf_in.size_read += ret;
+        return AEL_IO_OK;
     }
-
+    else if (ret == AEL_IO_TIMEOUT) {
+        return AEL_IO_TIMEOUT;
+    }
+    else if (ret == AEL_IO_OK || ret == AEL_IO_DONE || ret == AEL_IO_ABORT) {
+        decoder->buf_in.eof = true;
+        return AEL_IO_DONE;
+    }
+    else {
+        OS_LOGE(TAG, "AAC read fail, ret=%d", ret);
+        return AEL_IO_FAIL;
+    }
     return ret;
 }
 
@@ -70,8 +70,8 @@ int aac_wrapper_run(aac_decoder_handle_t decoder)
 
 fill_data:
     ret = aac_adts_read(decoder);
-    if (ret != AAC_ERR_NONE) {
-        if (ret == AAC_ERR_EOF) {
+    if (ret != AEL_IO_OK) {
+        if (decoder->buf_in.eof) {
             OS_LOGV(TAG, "AAC frame end");
             ret = AEL_IO_DONE;
         }
@@ -136,74 +136,94 @@ void aac_wrapper_deinit(aac_decoder_handle_t decoder)
     }
 }
 
-static int m4a_mdat_read(m4a_decoder_handle_t handle)
+static int m4a_mdat_read(m4a_decoder_handle_t decoder)
 {
-    unsigned int stsz_entries = handle->m4a_info.stszsize;
-    unsigned int stsz_current = handle->stsz_current;
-    char *data = handle->buf_in.data;
-    int size_read = handle->buf_in.size_read;
-    int size_want = handle->buf_in.size_want;
-    int bytes_read = 0;
-    unsigned short frame_size = 0;
+    unsigned int stsz_entries = decoder->m4a_info.stszsize;
+    unsigned int stsz_current = decoder->stsz_current;
+    char *data = decoder->buf_in.data;
+    int size_read = decoder->buf_in.size_read;
+    int size_want = decoder->buf_in.size_want;
+    int frame_size = 0;
+    int ret = AEL_IO_OK;
+
+    if (decoder->seek_mode) {
+        // todo: find valid frame header
+        decoder->seek_mode = false;
+        OS_LOGE(TAG, "M4A unsupport seek now");
+        return AEL_IO_FAIL;
+    }
 
     if (size_read < size_want) {
-        bytes_read = audio_element_input(handle->el, &data[size_read], size_want-size_read);
-
-        if (bytes_read >= 0) {
-            handle->buf_in.size_read += bytes_read;
-            if (bytes_read < size_want - size_read) {
+        ret = audio_element_input(decoder->el, &data[size_read], size_want-size_read);
+        if (ret >= 0) {
+            decoder->buf_in.size_read += ret;
+            if (ret < size_want - size_read) {
                 OS_LOGW(TAG, "Remain size_read timeout with less data");
                 return AEL_IO_TIMEOUT;
             }
-            else if (bytes_read == size_want - size_read) {
+            else if (ret == size_want - size_read) {
                 goto finish;
             }
             else {
-                OS_LOGD(TAG, "Remain size_read error, stop decode");
-                return AAC_ERR_EOF;
+                OS_LOGE(TAG, "Remain size_read error, stop decode");
+                return AEL_IO_FAIL;
             }
         }
+        else if (ret == AEL_IO_TIMEOUT) {
+            return AEL_IO_TIMEOUT;
+        }
+        else if (ret == AEL_IO_OK || ret == AEL_IO_DONE || ret == AEL_IO_ABORT) {
+            decoder->buf_in.eof = true;
+            return AEL_IO_DONE;
+        }
         else {
-            OS_LOGE(TAG, "Remain size_read fail, ret=%d", bytes_read);
-            return bytes_read;
+            OS_LOGE(TAG, "Remain size_read fail, ret=%d", ret);
+            return AEL_IO_FAIL;
         }
     }
 
     /* Last size_read success */
-    handle->buf_in.size_read = 0;
-    handle->buf_in.size_want = 0;
-
-    if (stsz_current >= stsz_entries)
-        return AAC_ERR_EOF;
-
-    frame_size = handle->m4a_info.stszdata[stsz_current];
-    handle->buf_in.size_want = frame_size;
+    decoder->buf_in.size_read = 0;
+    decoder->buf_in.size_want = 0;
+    if (stsz_current >= stsz_entries) {
+        decoder->buf_in.eof = true;
+        return AEL_IO_DONE;
+    }
+    frame_size = decoder->m4a_info.stszdata[stsz_current];
+    decoder->buf_in.size_want = frame_size;
 
     /* Newly wanted size */
-    bytes_read = audio_element_input(handle->el, data, frame_size);
-    if (bytes_read >= 0) {
-        handle->buf_in.size_read += bytes_read;
-        if (bytes_read < frame_size) {
-            OS_LOGW(TAG, "Newly size_read timeout with less data[%d]", bytes_read);
+    ret = audio_element_input(decoder->el, data, frame_size);
+    if (ret >= 0) {
+        decoder->buf_in.size_read += ret;
+        if (ret < frame_size) {
+            OS_LOGW(TAG, "Newly size_read timeout with less data[%d]", ret);
             return AEL_IO_TIMEOUT;
         }
-        else if (bytes_read == frame_size) {
+        else if (ret == frame_size) {
             goto finish;
         }
         else {
-            OS_LOGD(TAG, "Newly size_read error, stop decode");
-            return AAC_ERR_EOF;
+            OS_LOGE(TAG, "Newly size_read error, stop decode");
+            return AEL_IO_FAIL;
         }
     }
+    else if (ret == AEL_IO_TIMEOUT) {
+        return AEL_IO_TIMEOUT;
+    }
+    else if (ret == AEL_IO_OK || ret == AEL_IO_DONE || ret == AEL_IO_ABORT) {
+        decoder->buf_in.eof = true;
+        return AEL_IO_DONE;
+    }
     else {
-        OS_LOGE(TAG, "Newly size_read fail, ret=%d", bytes_read);
-        return bytes_read;
+        OS_LOGE(TAG, "Newly size_read fail, ret=%d", ret);
+        return AEL_IO_FAIL;
     }
 
 finish:
-    handle->stsz_current += 1;
-    handle->size_proced  += frame_size;
-    return AAC_ERR_NONE;
+    decoder->stsz_current += 1;
+    decoder->size_proced += frame_size;
+    return AEL_IO_OK;
 }
 
 int m4a_wrapper_run(m4a_decoder_handle_t decoder)
@@ -213,8 +233,8 @@ int m4a_wrapper_run(m4a_decoder_handle_t decoder)
 
 fill_data:
     ret = m4a_mdat_read(decoder);
-    if (ret != AAC_ERR_NONE) {
-        if (ret == AAC_ERR_EOF) {
+    if (ret != AEL_IO_OK) {
+        if (decoder->buf_in.eof) {
             OS_LOGV(TAG, "M4A frame end");
             ret = AEL_IO_DONE;
         }

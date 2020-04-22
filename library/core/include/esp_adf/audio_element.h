@@ -68,8 +68,8 @@ typedef enum {
     AEL_MSG_CMD_STOP                = 3,
     AEL_MSG_CMD_PAUSE               = 4,
     AEL_MSG_CMD_RESUME              = 5,
-    AEL_MSG_CMD_DESTROY             = 6,
-    // AEL_MSG_CMD_CHANGE_STATE        = 7,
+    AEL_MSG_CMD_SEEK                = 6,
+    AEL_MSG_CMD_DESTROY             = 7,
     AEL_MSG_CMD_REPORT_STATUS       = 8,
     AEL_MSG_CMD_REPORT_MUSIC_INFO   = 9,
     AEL_MSG_CMD_REPORT_CODEC_FMT    = 10,
@@ -136,6 +136,7 @@ typedef struct {
 }
 
 typedef esp_err_t (*io_func)(audio_element_handle_t self);
+typedef esp_err_t (*seek_func)(audio_element_handle_t self, long long offset);
 typedef int (*process_func)(audio_element_handle_t self, char *el_buffer, int el_buf_len);
 typedef int (*stream_func)(audio_element_handle_t self, char *buffer, int len, int timeout_ms, void *context);
 typedef esp_err_t (*event_cb_func)(audio_element_handle_t el, audio_event_iface_msg_t *event, void *ctx);
@@ -149,7 +150,7 @@ typedef esp_err_t (*event_cb_func)(audio_element_handle_t el, audio_event_iface_
  */
 typedef struct {
     io_func             open;             /*!< Open callback function */
-    io_func             seek;             /*!< Seek callback function */
+    seek_func           seek;             /*!< Seek callback function */
     process_func        process;          /*!< Process callback function */
     io_func             close;            /*!< Close callback function */
     io_func             destroy;          /*!< Destroy callback function */
@@ -381,6 +382,18 @@ esp_err_t audio_element_pause(audio_element_handle_t el);
  *     - ESP_FAIL
  */
 esp_err_t audio_element_resume(audio_element_handle_t el, float wait_for_rb_threshold, int timeout_ms);
+
+/**
+ * @brief      Request audio Element seek to the offset.
+ *
+ * @param[in]  el                     The audio element handle
+ * @param[in]  offset                 The offset
+ *
+ * @return
+ *     - ESP_OK
+ *     - ESP_FAIL
+ */
+esp_err_t audio_element_seek(audio_element_handle_t el, long long offset);
 
 /**
  * @brief      This function will add a `listener` to listen to all events from audio element `el`.
@@ -643,6 +656,34 @@ int audio_element_input(audio_element_handle_t el, char *buffer, int wanted_size
 int audio_element_output(audio_element_handle_t el, char *buffer, int write_size);
 
 /**
+ * @brief      Call this function to provice Element input the whole chunk.
+ *             Depending on setup using ringbuffer or function callback, Element invokes read ringbuffer, or calls read callback funtion.
+ *
+ * @param[in]  el            The audio element handle
+ * @param      buffer        The buffer pointer
+ * @param[in]  wanted_size   The wanted size
+ *
+ * @return
+ *        - > 0 number of bytes produced
+ *        - <=0 audio_element_err_t
+ */
+int audio_element_input_chunk(audio_element_handle_t el, char *buffer, int wanted_size);
+
+/**
+ * @brief      Call this function to sendout Element output the whole chunk
+ *             Depending on setup using ringbuffer or function callback, Element will invoke write to ringbuffer, or call write callback funtion.
+ *
+ * @param[in]  el          The audio element handle
+ * @param      buffer      The buffer pointer
+ * @param[in]  write_size  The write size
+ *
+ * @return
+ *        - > 0 number of bytes written
+ *        - <=0 audio_element_err_t
+ */
+int audio_element_output_chunk(audio_element_handle_t el, char *buffer, int write_size);
+
+/**
  * @brief     This API allows the application to set a read callback for the first audio_element in the pipeline for
  *            allowing the pipeline to interface with other systems. The callback is invoked every time the audio
  *            element requires data to be processed.
@@ -809,28 +850,6 @@ ringbuf_handle_t audio_element_get_multi_input_ringbuf(audio_element_handle_t el
  *     - Others ringbuf_handle_t
  */
 ringbuf_handle_t audio_element_get_multi_output_ringbuf(audio_element_handle_t el, int index);
-
-/**
- * @brief      Provides a way to call element's `open`
- *
- * @param[in]  el    The audio element handle
- *
- * @return
- *     - ESP_OK
- *     - ESP_FAIL
- */
-esp_err_t audio_element_process_init(audio_element_handle_t el);
-
-/**
- * @brief      Provides a way to call elements's `close`
- *
- * @param[in]  el    The audio element handle
- *
- * @return
- *     - ESP_OK
- *     - ESP_FAIL
- */
-esp_err_t audio_element_process_deinit(audio_element_handle_t el);
 
 #ifdef __cplusplus
 }

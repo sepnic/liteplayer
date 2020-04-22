@@ -37,7 +37,7 @@
 #include <arpa/inet.h>
 #endif
 
-#define TAG "liteplayerdebug"
+#define TAG "LITE_DEBUG"
 
 typedef struct socket_upload_priv {
     int fd;
@@ -170,7 +170,7 @@ socket_upload_handle_t socket_upload_start(const char *server_addr, int server_p
         goto start_failed;
 
     struct os_threadattr attr = {
-        .name = "ael_debug",
+        .name = "ael-debug",
         .priority = DEFAULT_SOCKET_UPLOAD_TASK_PRIO,
         .stacksize = DEFAULT_SOCKET_UPLOAD_TASK_STACKSIZE,
         .joinable = true,

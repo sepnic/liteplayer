@@ -49,6 +49,8 @@ int liteplayer_mngr_pause(liteplayer_mngr_handle_t mngr);
 
 int liteplayer_mngr_resume(liteplayer_mngr_handle_t mngr);
 
+int liteplayer_mngr_seek(liteplayer_mngr_handle_t mngr, int msec);
+
 int liteplayer_mngr_next(liteplayer_mngr_handle_t mngr);
 
 int liteplayer_mngr_prev(liteplayer_mngr_handle_t mngr);
@@ -61,9 +63,9 @@ int liteplayer_mngr_reset(liteplayer_mngr_handle_t mngr);
 
 int liteplayer_mngr_get_available_size(liteplayer_mngr_handle_t mngr);
 
-int liteplayer_mngr_get_position(liteplayer_mngr_handle_t mngr, long long *msec);
+int liteplayer_mngr_get_position(liteplayer_mngr_handle_t mngr, int *msec);
 
-int liteplayer_mngr_get_duration(liteplayer_mngr_handle_t mngr, long long *msec);
+int liteplayer_mngr_get_duration(liteplayer_mngr_handle_t mngr, int *msec);
 
 void liteplayer_mngr_destroy(liteplayer_mngr_handle_t mngr);
 

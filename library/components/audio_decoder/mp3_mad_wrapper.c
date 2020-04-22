@@ -35,7 +35,6 @@ struct mad_wrapper {
     struct mad_synth synth;
     char data[MP3_DECODER_INPUT_BUFFER_SIZE*2];
     bool new_frame;    // if reading new frame
-    int frame_size;
 };
 
 static int mp3_frame_size(char *buf)
@@ -110,6 +109,44 @@ static int mp3_frame_size(char *buf)
     return frame_size;
 }
 
+static int mp3_find_sync_offset(char *buf, int buf_size, mp3_info_t *info)
+{
+    bool found = false;
+    int last_position = 0;
+    int sync_offset = 0;
+
+find_syncword:
+    if (last_position + 4 > buf_size) {
+        OS_LOGE(TAG, "Not enough data[%d] to parse", buf_size);
+        goto finish;
+    }
+
+    sync_offset = mp3_find_syncword(&buf[last_position], buf_size-last_position);
+    if (sync_offset >= 0) {
+        last_position += sync_offset;
+        int ret = mp3_parse_header(&buf[last_position], buf_size-last_position, info);
+        if (ret == 0) {
+            found = true;
+            goto finish;
+        }
+        else {
+            OS_LOGD(TAG, "Retry to find sync word");
+            last_position++;
+            goto find_syncword;
+        }
+    }
+    else {
+        OS_LOGE(TAG, "Can't find mp3 sync word");
+        goto finish;
+    }
+
+finish:
+    if (found) {
+        info->frame_start_offset = last_position;
+    }
+    return found ? 0 : -1;
+}
+
 static int mp3_data_read(mp3_decoder_handle_t decoder)
 {
     struct mad_wrapper *mad = (struct mad_wrapper *)(decoder->handle);
@@ -119,13 +156,67 @@ static int mp3_data_read(mp3_decoder_handle_t decoder)
     if (in->eof)
         return AEL_IO_DONE;
 
+    if (decoder->seek_mode) {
+        int bytes_want = MP3_DECODER_INPUT_BUFFER_SIZE;
+        if (decoder->frame_size > 0)
+            bytes_want = decoder->frame_size;
+        ret = audio_element_input_chunk(decoder->el, in->data, bytes_want);
+        if (ret <= 0) {
+            OS_LOGW(TAG, "Read chunk error: %d/%d", ret, bytes_want);
+            return ret;
+        }
+        else if (ret != bytes_want) {
+            OS_LOGW(TAG, "Read chunk insufficient: %d/%d", ret, bytes_want);
+            in->eof = true;
+            return AEL_IO_DONE;
+        }
+
+        mp3_info_t info;
+        ret = mp3_find_sync_offset(in->data, bytes_want, &info);
+        if (ret != 0) {
+            OS_LOGE(TAG, "Failed to find sync word after seeking");
+            return AEL_IO_FAIL;
+        }
+        OS_LOGV(TAG, "Found sync offset: %d/%d, frame_size=%d",
+                info.frame_start_offset, bytes_want, info.frame_size);
+
+        // todo: only work for fixed frame size
+        if (decoder->frame_size > 0 && info.frame_size != decoder->frame_size) {
+            OS_LOGE(TAG, "Failed to match frame size after seeking");
+            return AEL_IO_FAIL;
+        }
+        int discard = bytes_want - info.frame_start_offset;
+        discard = (discard/info.frame_size+1)*info.frame_size - discard;
+        in->bytes_discard = discard;
+
+        // found valid frame, go out to read next frame
+        in->bytes_want = 0;
+        in->bytes_read = 0;
+        decoder->seek_mode = false;
+    }
+
+    if (in->bytes_discard > 0) {
+        OS_LOGD(TAG, "Discard %d bytes after seeking", in->bytes_discard);
+        ret = audio_element_input_chunk(decoder->el, in->data, in->bytes_discard);
+        if (ret <= 0) {
+            OS_LOGW(TAG, "Read chunk error: %d/%d", ret, in->bytes_discard);
+            return ret;
+        }
+        else if (ret != in->bytes_discard) {
+            OS_LOGW(TAG, "Read chunk insufficient: %d/%d", ret, in->bytes_discard);
+            in->eof = true;
+            return AEL_IO_DONE;
+        }
+        in->bytes_discard = 0;
+    }
+
     if (in->bytes_want > 0) {
         if (mad->new_frame) {
             OS_LOGD(TAG, "Remain %d/4 bytes header needed to read", in->bytes_want);
             goto fill_header;
         }
         else {
-            OS_LOGD(TAG, "Remain %d/%d bytes frame needed to read", in->bytes_want, mad->frame_size);
+            OS_LOGD(TAG, "Remain %d/%d bytes frame needed to read", in->bytes_want, decoder->frame_size);
             goto fill_frame;
         }
     }
@@ -153,15 +244,15 @@ fill_header:
         }
     }
 
-    mad->frame_size = mp3_frame_size(in->data);
-    if (mad->frame_size <= 0 || mad->frame_size > MP3_DECODER_INPUT_BUFFER_SIZE) {
+    decoder->frame_size = mp3_frame_size(in->data);
+    if (decoder->frame_size <= 0 || decoder->frame_size > MP3_DECODER_INPUT_BUFFER_SIZE) {
         OS_LOGW(TAG, "MP3 demux dummy data, AEL_IO_DONE");
         //in->eof = true;
         return AEL_IO_DONE;
     }
 
     in->bytes_read = 4;
-    in->bytes_want = mad->frame_size - in->bytes_read;
+    in->bytes_want = decoder->frame_size - in->bytes_read;
     mad->new_frame = false;
 fill_frame:
     ret = audio_element_input(decoder->el, in->data + in->bytes_read, in->bytes_want);
@@ -183,7 +274,7 @@ fill_frame:
         }
     }
 
-    in->bytes_read = mad->frame_size;
+    in->bytes_read = decoder->frame_size;
     in->bytes_want = 0;
     return AEL_IO_OK;
 }
@@ -212,7 +303,7 @@ fill_data:
     if (ret != AEL_IO_OK) {
         if (decoder->buf_in.eof) {
             remain = stream->bufend - stream->next_frame;
-            if (stream->next_frame != NULL && remain >= mad->frame_size) {
+            if (stream->next_frame != NULL && remain >= decoder->frame_size) {
                 OS_LOGV(TAG, "Remain last frame %d bytes needed to decode", remain);
                 goto decode_data;
             }
@@ -255,7 +346,7 @@ decode_data:
             goto fill_data;
         }
         else if (MAD_RECOVERABLE(stream->error)) {
-            OS_LOGV(TAG, "Recoverable error: %s", mad_stream_errorstr(stream));
+            OS_LOGW(TAG, "Recoverable error: %s", mad_stream_errorstr(stream));
             goto fill_data;
         }
         else {

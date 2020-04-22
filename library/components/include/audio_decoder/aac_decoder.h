@@ -83,6 +83,7 @@ struct aac_decoder {
     aac_buf_in_t            buf_in;
     aac_buf_out_t           buf_out;
     bool                    parsed_header;
+    bool                    seek_mode;
 };
 
 typedef struct aac_decoder *aac_decoder_handle_t;

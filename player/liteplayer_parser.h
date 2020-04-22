@@ -40,7 +40,8 @@ typedef struct media_codec_info {
     int                 codec_channels;
     long                content_pos;
     long                content_len;
-    long long           duration_ms;
+    int                 bytes_per_sec;
+    int                 duration_ms;
     m4a_info_t          m4a_info;
 } media_codec_info_t;
 

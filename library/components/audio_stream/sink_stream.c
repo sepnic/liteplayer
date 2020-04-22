@@ -144,7 +144,7 @@ static int sink_stream_write(audio_element_handle_t self, char *buffer, int len,
             sink_stream_close(self);
             sink_stream_open(self);
         }
-        // Update element ifo once
+        // Update element info once
         info.in_samplerate = config->in_samplerate;
         info.in_channels = config->in_channels;
         info.out_samplerate = config->out_samplerate;
@@ -161,6 +161,7 @@ static int sink_stream_write(audio_element_handle_t self, char *buffer, int len,
             status = config->sink_write(sink->out, buffer, bytes_wanted);
         if (status < 0) {
             OS_LOGE(TAG, "Failed to write pcm, ret:%d", status);
+            bytes_written = ESP_FAIL;
             break;
         }
         else {
@@ -205,6 +206,16 @@ static int sink_stream_process(audio_element_handle_t self, char *in_buffer, int
     return w_size;
 }
 
+static esp_err_t sink_stream_seek(audio_element_handle_t self, long long offset)
+{
+    // reset byte_pos when seek
+    audio_element_info_t info = {0};
+    audio_element_getinfo(self, &info);
+    info.byte_pos = 0;
+    audio_element_setinfo(self, &info);
+    return ESP_OK;
+}
+
 static esp_err_t sink_stream_destroy(audio_element_handle_t self)
 {
     sink_stream_t *sink = (sink_stream_t *)audio_element_getdata(self);
@@ -234,8 +245,9 @@ audio_element_handle_t sink_stream_init(sink_stream_cfg_t *config)
     audio_element_cfg_t cfg = DEFAULT_AUDIO_ELEMENT_CONFIG();
     cfg.open = sink_stream_open;
     cfg.close = sink_stream_close;
-    cfg.process = sink_stream_process;
     cfg.destroy = sink_stream_destroy;
+    cfg.process = sink_stream_process;
+    cfg.seek = sink_stream_seek;
     cfg.task_stack = config->task_stack;
     cfg.task_prio = config->task_prio;
     cfg.out_rb_size = config->out_rb_size;

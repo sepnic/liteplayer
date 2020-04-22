@@ -34,6 +34,8 @@ typedef struct mp3_info {
     int id3v2_length;
 } mp3_info_t;
 
+int mp3_find_syncword(char *buf, int size);
+
 int mp3_parse_header(char *buf, int buf_size, mp3_info_t *info);
 
 int mp3_extractor(mp3_fetch_cb fetch_cb, void *fetch_priv, mp3_info_t *info);

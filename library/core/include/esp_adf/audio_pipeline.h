@@ -118,7 +118,7 @@ esp_err_t audio_pipeline_unregister(audio_pipeline_handle_t pipeline, audio_elem
  *     - ESP_OK on success
  *     - ESP_FAIL when any errors
  */
-esp_err_t audio_pipeline_run(audio_pipeline_handle_t pipeline, float start_threshold, int timeout_ms);
+esp_err_t audio_pipeline_run(audio_pipeline_handle_t pipeline);
 
 /**
  * @brief    Stop Audio Pipeline.
@@ -155,6 +155,17 @@ esp_err_t audio_pipeline_resume(audio_pipeline_handle_t pipeline, float start_th
  *     - ESP_FAIL when any errors
  */
 esp_err_t audio_pipeline_pause(audio_pipeline_handle_t pipeline);
+
+/**
+ * @brief      This function will seek all the elements to the offset.
+ *
+ * @param[in]  pipeline   The Audio Pipeline Handle
+ *
+ * @return
+ *     - ESP_OK on success
+ *     - ESP_FAIL when any errors
+ */
+esp_err_t audio_pipeline_seek(audio_pipeline_handle_t pipeline, long long offset);
 
 /**
  * @brief     Stop all elements and clear information of items. Free up memory for all task items.

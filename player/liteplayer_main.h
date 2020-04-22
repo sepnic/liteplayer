@@ -30,9 +30,10 @@ typedef enum liteplayer_state {
     LITEPLAYER_PREPARED        = 0x02,
     LITEPLAYER_STARTED         = 0x03,
     LITEPLAYER_PAUSED          = 0x04,
-    LITEPLAYER_NEARLYCOMPLETED = 0x05,
-    LITEPLAYER_COMPLETED       = 0x06,
-    LITEPLAYER_STOPPED         = 0x07,
+    LITEPLAYER_SEEKCOMPLETED   = 0x05,
+    LITEPLAYER_NEARLYCOMPLETED = 0x06,
+    LITEPLAYER_COMPLETED       = 0x07,
+    LITEPLAYER_STOPPED         = 0x08,
     LITEPLAYER_ERROR           = 0x09,
 } liteplayer_state_t;
 
@@ -64,15 +65,17 @@ int liteplayer_pause(liteplayer_handle_t handle);
 
 int liteplayer_resume(liteplayer_handle_t handle);
 
+int liteplayer_seek(liteplayer_handle_t handle, int msec);
+
 int liteplayer_stop(liteplayer_handle_t handle);
 
 int liteplayer_reset(liteplayer_handle_t handle);
 
 int liteplayer_get_available_size(liteplayer_handle_t handle);
 
-int liteplayer_get_position(liteplayer_handle_t handle, long long *msec);
+int liteplayer_get_position(liteplayer_handle_t handle, int *msec);
 
-int liteplayer_get_duration(liteplayer_handle_t handle, long long *msec);
+int liteplayer_get_duration(liteplayer_handle_t handle, int *msec);
 
 void liteplayer_destroy(liteplayer_handle_t handle);
 
