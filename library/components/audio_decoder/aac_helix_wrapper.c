@@ -31,7 +31,7 @@
 static int aac_adts_read(aac_decoder_handle_t decoder)
 {
     char *data = decoder->buf_in.data;
-    int remain = decoder->buf_in.size_read;
+    int remain = decoder->buf_in.bytes_read;
     int want = AAC_DECODER_INPUT_BUFFER_SIZE - remain;
 
     if (decoder->seek_mode) {
@@ -44,9 +44,9 @@ static int aac_adts_read(aac_decoder_handle_t decoder)
     if (remain != 0)
         memmove(data, &data[want], remain);
 
-    int ret = audio_element_input(decoder->el, (char*)&data[remain], want);
+    int ret = audio_element_input(decoder->el, &data[remain], want);
     if (ret >= 0) {
-        decoder->buf_in.size_read += ret;
+        decoder->buf_in.bytes_read += ret;
         return AEL_IO_OK;
     }
     else if (ret == AEL_IO_TIMEOUT) {
@@ -80,7 +80,7 @@ fill_data:
 
     unsigned char *in = (unsigned char *)(decoder->buf_in.data);
     short *out = (short *)(decoder->buf_out.data);
-    int size = decoder->buf_in.size_read;
+    int size = decoder->buf_in.bytes_read;
 
     ret = AACDecode(decoder->handle, &in, &size, out);
     if (ret == ERR_AAC_INDATA_UNDERFLOW) {
@@ -96,11 +96,11 @@ fill_data:
         goto fill_data;
     }
 
-    decoder->buf_in.size_read = size;
+    decoder->buf_in.bytes_read = size;
 
     AACFrameInfo frame_info;
     AACGetLastFrameInfo(decoder->handle, &frame_info);
-    decoder->buf_out.length = frame_info.outputSamps*frame_info.bitsPerSample/8;
+    decoder->buf_out.bytes_remain = frame_info.outputSamps*frame_info.bitsPerSample/8;
 
     if (!decoder->parsed_header && frame_info.sampRateCore != 0 && frame_info.nChans != 0) {
         audio_element_info_t info = {0};
@@ -140,10 +140,7 @@ static int m4a_mdat_read(m4a_decoder_handle_t decoder)
 {
     unsigned int stsz_entries = decoder->m4a_info.stszsize;
     unsigned int stsz_current = decoder->stsz_current;
-    char *data = decoder->buf_in.data;
-    int size_read = decoder->buf_in.size_read;
-    int size_want = decoder->buf_in.size_want;
-    int frame_size = 0;
+    aac_buf_in_t *in = &decoder->buf_in;
     int ret = AEL_IO_OK;
 
     if (decoder->seek_mode) {
@@ -153,76 +150,35 @@ static int m4a_mdat_read(m4a_decoder_handle_t decoder)
         return AEL_IO_FAIL;
     }
 
-    if (size_read < size_want) {
-        ret = audio_element_input(decoder->el, &data[size_read], size_want-size_read);
-        if (ret >= 0) {
-            decoder->buf_in.size_read += ret;
-            if (ret < size_want - size_read) {
-                OS_LOGW(TAG, "Remain size_read timeout with less data");
-                return AEL_IO_TIMEOUT;
-            }
-            else if (ret == size_want - size_read) {
-                goto finish;
-            }
-            else {
-                OS_LOGE(TAG, "Remain size_read error, stop decode");
-                return AEL_IO_FAIL;
-            }
-        }
-        else if (ret == AEL_IO_TIMEOUT) {
-            return AEL_IO_TIMEOUT;
-        }
-        else if (ret == AEL_IO_OK || ret == AEL_IO_DONE || ret == AEL_IO_ABORT) {
-            decoder->buf_in.eof = true;
-            return AEL_IO_DONE;
-        }
-        else {
-            OS_LOGE(TAG, "Remain size_read fail, ret=%d", ret);
-            return AEL_IO_FAIL;
-        }
-    }
-
-    /* Last size_read success */
-    decoder->buf_in.size_read = 0;
-    decoder->buf_in.size_want = 0;
     if (stsz_current >= stsz_entries) {
-        decoder->buf_in.eof = true;
+        in->eof = true;
         return AEL_IO_DONE;
     }
-    frame_size = decoder->m4a_info.stszdata[stsz_current];
-    decoder->buf_in.size_want = frame_size;
+    in->bytes_want = decoder->m4a_info.stszdata[stsz_current];
+    in->bytes_read = 0;
 
-    /* Newly wanted size */
-    ret = audio_element_input(decoder->el, data, frame_size);
-    if (ret >= 0) {
-        decoder->buf_in.size_read += ret;
-        if (ret < frame_size) {
-            OS_LOGW(TAG, "Newly size_read timeout with less data[%d]", ret);
-            return AEL_IO_TIMEOUT;
-        }
-        else if (ret == frame_size) {
-            goto finish;
-        }
-        else {
-            OS_LOGE(TAG, "Newly size_read error, stop decode");
-            return AEL_IO_FAIL;
-        }
-    }
-    else if (ret == AEL_IO_TIMEOUT) {
-        return AEL_IO_TIMEOUT;
+    ret = audio_element_input_chunk(decoder->el, in->data, in->bytes_want);
+    if (ret == in->bytes_want) {
+        in->bytes_read += ret;
+        goto read_done;
     }
     else if (ret == AEL_IO_OK || ret == AEL_IO_DONE || ret == AEL_IO_ABORT) {
-        decoder->buf_in.eof = true;
+        in->eof = true;
         return AEL_IO_DONE;
     }
+    else if (ret < 0) {
+        OS_LOGW(TAG, "Read chunk error: %d/%d", ret, in->bytes_want);
+        return ret;
+    }
     else {
-        OS_LOGE(TAG, "Newly size_read fail, ret=%d", ret);
-        return AEL_IO_FAIL;
+        OS_LOGW(TAG, "Read chunk insufficient: %d/%d, AEL_IO_DONE", ret, in->bytes_want);
+        in->eof = true;
+        return AEL_IO_DONE;
     }
 
-finish:
-    decoder->stsz_current += 1;
-    decoder->size_proced += frame_size;
+read_done:
+    decoder->stsz_current++;
+    decoder->size_proced += in->bytes_read;
     return AEL_IO_OK;
 }
 
@@ -243,7 +199,7 @@ fill_data:
 
     unsigned char *in = (unsigned char *)(decoder->buf_in.data);
     short *out = (short *)(decoder->buf_out.data);
-    int size = decoder->buf_in.size_want;
+    int size = decoder->buf_in.bytes_read;
 
     ret = AACDecode(decoder->handle, &in, &size, out);
     if (ret == ERR_AAC_INDATA_UNDERFLOW) {
@@ -260,7 +216,7 @@ fill_data:
 
     AACFrameInfo frame_info;
     AACGetLastFrameInfo(decoder->handle, &frame_info);
-    decoder->buf_out.length = frame_info.outputSamps*frame_info.bitsPerSample/8;
+    decoder->buf_out.bytes_remain = frame_info.outputSamps*frame_info.bitsPerSample/8;
 
     if (!decoder->parsed_header && frame_info.sampRateCore != 0 && frame_info.nChans != 0) {
         audio_element_info_t info = {0};

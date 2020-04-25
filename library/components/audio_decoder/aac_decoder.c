@@ -33,13 +33,8 @@ static esp_err_t aac_decoder_destroy(audio_element_handle_t self)
 {
     aac_decoder_handle_t decoder = (aac_decoder_handle_t)audio_element_getdata(self);
     OS_LOGV(TAG, "Destroy aac decoder");
-
     if (decoder->handle != NULL)
         aac_wrapper_deinit(decoder);
-    if (decoder->buf_in.data != NULL)
-        audio_free(decoder->buf_in.data);
-    if (decoder->buf_out.data != NULL)
-        audio_free(decoder->buf_out.data);
     audio_free(decoder);
     return ESP_OK;
 }
@@ -70,15 +65,8 @@ static esp_err_t aac_decoder_close(audio_element_handle_t self)
         OS_LOGV(TAG, "Close aac decoder");
         aac_wrapper_deinit(decoder);
 
-        memset(decoder->buf_in.data, 0x0, AAC_DECODER_INPUT_BUFFER_SIZE);
-        decoder->buf_in.size_want = 0;
-        decoder->buf_in.size_read = 0;
-        decoder->buf_in.eof = false;
-
-        memset(decoder->buf_out.data, 0x0, AAC_DECODER_OUTPUT_BUFFER_SIZE);
-        decoder->buf_out.length = 0;
-        decoder->buf_out.offset = 0;
-
+        memset(&decoder->buf_in, 0x0, sizeof(decoder->buf_in));
+        memset(&decoder->buf_out, 0x0, sizeof(decoder->buf_out));
         decoder->handle = NULL;
         decoder->parsed_header = false;
 
@@ -98,11 +86,11 @@ static int aac_decoder_process(audio_element_handle_t self, char *in_buffer, int
     int ret = AEL_IO_FAIL;
     aac_decoder_handle_t decoder = (aac_decoder_handle_t)audio_element_getdata(self);
 
-    if (decoder->buf_out.length > 0) {
+    if (decoder->buf_out.bytes_remain > 0) {
         /* Output buffer have remain data */
         byte_write = audio_element_output(self,
-                        (char*)(decoder->buf_out.data+decoder->buf_out.offset),
-                        decoder->buf_out.length);
+                        decoder->buf_out.data+decoder->buf_out.bytes_written,
+                        decoder->buf_out.bytes_remain);
     } else {
         /* More data need to be wrote */
         ret = aac_wrapper_run(decoder);
@@ -116,14 +104,16 @@ static int aac_decoder_process(audio_element_handle_t self, char *in_buffer, int
             return ret;
         }
 
-        //OS_LOGV(TAG, "ret=%d, length=%d", ret, decoder->buf_out.length);
-        decoder->buf_out.offset = 0;
-        byte_write = audio_element_output(self, (char*)decoder->buf_out.data, decoder->buf_out.length);
+        //OS_LOGV(TAG, "ret=%d, bytes_remain=%d", ret, decoder->buf_out.bytes_remain);
+        decoder->buf_out.bytes_written = 0;
+        byte_write = audio_element_output(self,
+                        decoder->buf_out.data,
+                        decoder->buf_out.bytes_remain);
     }
 
     if (byte_write > 0) {
-        decoder->buf_out.length -= byte_write;
-        decoder->buf_out.offset += byte_write;
+        decoder->buf_out.bytes_remain -= byte_write;
+        decoder->buf_out.bytes_written += byte_write;
 
         audio_element_info_t audio_info = {0};
         audio_element_getinfo(self, &audio_info);
@@ -144,15 +134,8 @@ static esp_err_t aac_decoder_seek(audio_element_handle_t self, long long offset)
         return ESP_FAIL;
     }
 
-    memset(decoder->buf_in.data, 0x0, AAC_DECODER_INPUT_BUFFER_SIZE);
-    decoder->buf_in.size_want = 0;
-    decoder->buf_in.size_read = 0;
-    decoder->buf_in.eof = false;
-
-    memset(decoder->buf_out.data, 0x0, AAC_DECODER_OUTPUT_BUFFER_SIZE);
-    decoder->buf_out.length = 0;
-    decoder->buf_out.offset = 0;
-
+    memset(&decoder->buf_in, 0x0, sizeof(decoder->buf_in));
+    memset(&decoder->buf_out, 0x0, sizeof(decoder->buf_out));
     decoder->seek_mode = true;
     return ESP_OK;
 }
@@ -164,18 +147,6 @@ audio_element_handle_t aac_decoder_init(aac_decoder_cfg_t *config)
     aac_decoder_handle_t decoder = audio_calloc(1, sizeof(struct aac_decoder));
     AUDIO_MEM_CHECK(TAG, decoder, return NULL);
 
-    decoder->buf_in.data = audio_calloc(AAC_DECODER_INPUT_BUFFER_SIZE, sizeof(char));
-    if (decoder->buf_in.data == NULL) {
-        OS_LOGE(TAG, "Failed to allocate input buffer");
-        goto aac_init_error;
-    }
-
-    decoder->buf_out.data = audio_calloc(AAC_DECODER_OUTPUT_BUFFER_SIZE, sizeof(char));
-    if (decoder->buf_out.data == NULL) {
-        OS_LOGE(TAG, "Failed to allocate output buffer");
-        goto aac_init_error;
-    }
-
     audio_element_cfg_t cfg = DEFAULT_AUDIO_ELEMENT_CONFIG();
     cfg.destroy = aac_decoder_destroy;
     cfg.open    = aac_decoder_open;
@@ -183,7 +154,7 @@ audio_element_handle_t aac_decoder_init(aac_decoder_cfg_t *config)
     cfg.process = aac_decoder_process;
     cfg.seek    = aac_decoder_seek;
     cfg.buffer_len = AAC_DECODER_BUFFER_SIZE;
-   
+
     cfg.task_stack  = config->task_stack;
     cfg.task_prio   = config->task_prio;
     cfg.out_rb_size = config->out_rb_size;
@@ -202,10 +173,6 @@ audio_element_handle_t aac_decoder_init(aac_decoder_cfg_t *config)
     return el;
 
 aac_init_error:
-    if (decoder->buf_in.data != NULL)
-        audio_free(decoder->buf_in.data);
-    if (decoder->buf_out.data != NULL)
-        audio_free(decoder->buf_out.data);
     audio_free(decoder);
     return NULL;
 }

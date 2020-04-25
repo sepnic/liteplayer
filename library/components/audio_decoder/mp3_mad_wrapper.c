@@ -33,8 +33,11 @@ struct mad_wrapper {
     struct mad_stream stream;
     struct mad_frame frame;
     struct mad_synth synth;
-    char data[MP3_DECODER_INPUT_BUFFER_SIZE*2];
+    char stream_buffer[MP3_DECODER_INPUT_BUFFER_SIZE*2];
     bool new_frame;    // if reading new frame
+    int  frame_size;
+    char seek_buffer[MP3_DECODER_INPUT_BUFFER_SIZE];
+    int  bytes_seek;
 };
 
 static int mp3_frame_size(char *buf)
@@ -117,10 +120,9 @@ static int mp3_find_sync_offset(char *buf, int buf_size, mp3_info_t *info)
 
 find_syncword:
     if (last_position + 4 > buf_size) {
-        OS_LOGE(TAG, "Not enough data[%d] to parse", buf_size);
+        OS_LOGE(TAG, "Not enough data to parse, size:%d", buf_size);
         goto finish;
     }
-
     sync_offset = mp3_find_syncword(&buf[last_position], buf_size-last_position);
     if (sync_offset >= 0) {
         last_position += sync_offset;
@@ -157,57 +159,97 @@ static int mp3_data_read(mp3_decoder_handle_t decoder)
         return AEL_IO_DONE;
 
     if (decoder->seek_mode) {
-        int bytes_want = MP3_DECODER_INPUT_BUFFER_SIZE;
-        if (decoder->frame_size > 0)
-            bytes_want = decoder->frame_size;
-        ret = audio_element_input_chunk(decoder->el, in->data, bytes_want);
-        if (ret <= 0) {
-            OS_LOGW(TAG, "Read chunk error: %d/%d", ret, bytes_want);
+        mad->bytes_seek = sizeof(mad->seek_buffer);
+        ret = audio_element_input_chunk(decoder->el, mad->seek_buffer, mad->bytes_seek);
+        if (ret == mad->bytes_seek) {
+            OS_LOGV(TAG, "SEEK_MODE: Read chunk succeed: %d/%d", ret, mad->bytes_seek);
+        }
+        else if (ret == AEL_IO_OK || ret == AEL_IO_DONE || ret == AEL_IO_ABORT) {
+            in->eof = true;
+            return AEL_IO_DONE;
+        }
+        else if (ret < 0) {
+            OS_LOGW(TAG, "SEEK_MODE: Read chunk error: %d/%d", ret, mad->bytes_seek);
             return ret;
         }
-        else if (ret != bytes_want) {
-            OS_LOGW(TAG, "Read chunk insufficient: %d/%d", ret, bytes_want);
+        else {
+            OS_LOGW(TAG, "SEEK_MODE: Read chunk insufficient: %d/%d", ret, mad->bytes_seek);
             in->eof = true;
             return AEL_IO_DONE;
         }
 
         mp3_info_t info;
-        ret = mp3_find_sync_offset(in->data, bytes_want, &info);
+        ret = mp3_find_sync_offset(mad->seek_buffer, mad->bytes_seek, &info);
         if (ret != 0) {
-            OS_LOGE(TAG, "Failed to find sync word after seeking");
+            OS_LOGE(TAG, "SEEK_MODE: Failed to find sync word after seeking");
             return AEL_IO_FAIL;
         }
-        OS_LOGV(TAG, "Found sync offset: %d/%d, frame_size=%d",
-                info.frame_start_offset, bytes_want, info.frame_size);
 
-        // todo: only work for fixed frame size
-        if (decoder->frame_size > 0 && info.frame_size != decoder->frame_size) {
-            OS_LOGE(TAG, "Failed to match frame size after seeking");
-            return AEL_IO_FAIL;
-        }
-        int discard = bytes_want - info.frame_start_offset;
-        discard = (discard/info.frame_size+1)*info.frame_size - discard;
-        in->bytes_discard = discard;
+        OS_LOGV(TAG, "SEEK_MODE: Found sync offset: %d/%d, frame_size=%d",
+                info.frame_start_offset, mad->bytes_seek, info.frame_size);
 
-        // found valid frame, go out to read next frame
+        mad->bytes_seek -= info.frame_start_offset;
+        if (mad->bytes_seek > 0)
+            memmove(mad->seek_buffer, &mad->seek_buffer[info.frame_start_offset], mad->bytes_seek);
         in->bytes_want = 0;
         in->bytes_read = 0;
+        mad->frame_size = info.frame_size;
         decoder->seek_mode = false;
     }
 
-    if (in->bytes_discard > 0) {
-        OS_LOGD(TAG, "Discard %d bytes after seeking", in->bytes_discard);
-        ret = audio_element_input_chunk(decoder->el, in->data, in->bytes_discard);
-        if (ret <= 0) {
-            OS_LOGW(TAG, "Read chunk error: %d/%d", ret, in->bytes_discard);
-            return ret;
+    if (mad->bytes_seek > 0) {
+        if (mad->bytes_seek < mad->frame_size) {
+            int remain = mad->frame_size - mad->bytes_seek;
+            OS_LOGD(TAG, "SEEK_MODE: Insufficient data, request more for whole frame, remain/frame: %d/%d",
+                    remain, mad->frame_size);
+            ret = audio_element_input_chunk(decoder->el,
+                        mad->seek_buffer+mad->bytes_seek,
+                        remain);
+            if (ret == remain) {
+                OS_LOGV(TAG, "SEEK_MODE: Read chunk succeed: %d/%d", ret, remain);
+                mad->bytes_seek = mad->frame_size;
+            }
+            else if (ret == AEL_IO_OK || ret == AEL_IO_DONE || ret == AEL_IO_ABORT) {
+                in->eof = true;
+                return AEL_IO_DONE;
+            }
+            else if (ret < 0) {
+                OS_LOGW(TAG, "SEEK_MODE: Read chunk error: %d/%d", ret, remain);
+                return ret;
+            }
+            else {
+                OS_LOGW(TAG, "SEEK_MODE: Read chunk insufficient: %d/%d", ret, remain);
+                in->eof = true;
+                return AEL_IO_DONE;
+            }
         }
-        else if (ret != in->bytes_discard) {
-            OS_LOGW(TAG, "Read chunk insufficient: %d/%d", ret, in->bytes_discard);
-            in->eof = true;
+
+        mad->frame_size = mp3_frame_size(mad->seek_buffer);
+        if (mad->frame_size <= 0 || mad->frame_size > mad->bytes_seek) {
+            OS_LOGW(TAG, "SEEK_MODE: MP3 demux dummy data, AEL_IO_DONE");
+            //in->eof = true;
+            mad->bytes_seek = 0;
             return AEL_IO_DONE;
         }
-        in->bytes_discard = 0;
+
+        memcpy(in->data, mad->seek_buffer, mad->frame_size);
+        in->bytes_read = mad->frame_size;
+        in->bytes_want = 0;
+
+        mad->bytes_seek -= mad->frame_size;
+        if (mad->bytes_seek > 0)
+            memmove(mad->seek_buffer, mad->seek_buffer+mad->frame_size, mad->bytes_seek);
+
+        if (mad->bytes_seek >= 4) {
+            mad->frame_size = mp3_frame_size(mad->seek_buffer);
+            if (mad->frame_size <= 0 || mad->frame_size > MP3_DECODER_INPUT_BUFFER_SIZE) {
+                OS_LOGW(TAG, "SEEK_MODE: MP3 demux dummy data, AEL_IO_DONE");
+                //in->eof = true;
+                mad->bytes_seek = 0;
+                return AEL_IO_DONE;
+            }
+        }
+        return AEL_IO_OK;
     }
 
     if (in->bytes_want > 0) {
@@ -216,7 +258,7 @@ static int mp3_data_read(mp3_decoder_handle_t decoder)
             goto fill_header;
         }
         else {
-            OS_LOGD(TAG, "Remain %d/%d bytes frame needed to read", in->bytes_want, decoder->frame_size);
+            OS_LOGD(TAG, "Remain %d/%d bytes frame needed to read", in->bytes_want, mad->frame_size);
             goto fill_frame;
         }
     }
@@ -225,7 +267,7 @@ static int mp3_data_read(mp3_decoder_handle_t decoder)
     in->bytes_read = 0;
     mad->new_frame = true;
 fill_header:
-    ret = audio_element_input(decoder->el, in->data + in->bytes_read, in->bytes_want);
+    ret = audio_element_input(decoder->el, in->data+in->bytes_read, in->bytes_want);
     if (ret < in->bytes_want) {
         if (ret >= 0) {
             in->bytes_read += ret;
@@ -244,18 +286,18 @@ fill_header:
         }
     }
 
-    decoder->frame_size = mp3_frame_size(in->data);
-    if (decoder->frame_size <= 0 || decoder->frame_size > MP3_DECODER_INPUT_BUFFER_SIZE) {
+    mad->frame_size = mp3_frame_size(in->data);
+    if (mad->frame_size <= 0 || mad->frame_size > MP3_DECODER_INPUT_BUFFER_SIZE) {
         OS_LOGW(TAG, "MP3 demux dummy data, AEL_IO_DONE");
         //in->eof = true;
         return AEL_IO_DONE;
     }
 
     in->bytes_read = 4;
-    in->bytes_want = decoder->frame_size - in->bytes_read;
+    in->bytes_want = mad->frame_size - in->bytes_read;
     mad->new_frame = false;
 fill_frame:
-    ret = audio_element_input(decoder->el, in->data + in->bytes_read, in->bytes_want);
+    ret = audio_element_input(decoder->el, in->data+in->bytes_read, in->bytes_want);
     if (ret < in->bytes_want) {
         if (ret >= 0) {
             in->bytes_read += ret;
@@ -274,7 +316,7 @@ fill_frame:
         }
     }
 
-    in->bytes_read = decoder->frame_size;
+    in->bytes_read = mad->frame_size;
     in->bytes_want = 0;
     return AEL_IO_OK;
 }
@@ -303,7 +345,7 @@ fill_data:
     if (ret != AEL_IO_OK) {
         if (decoder->buf_in.eof) {
             remain = stream->bufend - stream->next_frame;
-            if (stream->next_frame != NULL && remain >= decoder->frame_size) {
+            if (stream->next_frame != NULL && remain >= mad->frame_size) {
                 OS_LOGV(TAG, "Remain last frame %d bytes needed to decode", remain);
                 goto decode_data;
             }
@@ -320,20 +362,20 @@ decode_data:
             OS_LOGW(TAG, "Unexpected bytes remain: %d, dummy data?", remain);
             return AEL_IO_DONE;
         }
-        memmove(mad->data, stream->next_frame, remain);
+        memmove(mad->stream_buffer, stream->next_frame, remain);
     }
     if (decoder->buf_in.bytes_read > 0)
-        memcpy(mad->data+remain, decoder->buf_in.data, decoder->buf_in.bytes_read);
+        memcpy(mad->stream_buffer+remain, decoder->buf_in.data, decoder->buf_in.bytes_read);
 
     int bytes_read = decoder->buf_in.bytes_read;
     if (decoder->buf_in.eof) {
         while (bytes_read < MAD_BUFFER_GUARD && (bytes_read+remain) < MP3_DECODER_INPUT_BUFFER_SIZE) {
-            mad->data[remain+bytes_read] = 0;
+            mad->stream_buffer[remain+bytes_read] = 0;
             bytes_read++;
         }
     }
 
-    mad_stream_buffer(stream, (unsigned char *)mad->data, bytes_read+remain);
+    mad_stream_buffer(stream, (unsigned char *)mad->stream_buffer, bytes_read+remain);
     stream->error = MAD_ERROR_NONE;
 
     ret = mad_frame_decode(frame, stream);

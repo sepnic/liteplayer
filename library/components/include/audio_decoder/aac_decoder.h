@@ -65,16 +65,16 @@ typedef struct {
 }
 
 typedef struct aac_buf_in {
-    char         *data;
-    int          size_want;
-    int          size_read;
-    bool         eof;
+    char  data[AAC_DECODER_INPUT_BUFFER_SIZE];
+    int   bytes_want;
+    int   bytes_read;
+    bool  eof;
 } aac_buf_in_t;
 
 typedef struct aac_buf_out {
-    char         *data;
-    int          length;
-    unsigned int offset;
+    char  data[AAC_DECODER_OUTPUT_BUFFER_SIZE];
+    int   bytes_remain;
+    int   bytes_written;
 } aac_buf_out_t;
 
 struct aac_decoder {
