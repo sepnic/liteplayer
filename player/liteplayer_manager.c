@@ -322,7 +322,7 @@ static void manager_looper_handle(struct message *msg)
         break;
 
     case PLAYER_DO_SEEK:
-        liteplayer_seek(mngr->player, msg->arg1*1000+msg->arg2);
+        liteplayer_seek(mngr->player, msg->arg1);
         break;
 
     case PLAYER_DO_NEXT: {
@@ -540,7 +540,7 @@ int liteplayer_mngr_seek(liteplayer_mngr_handle_t mngr, int msec)
 {
     if (mngr == NULL || msec < 0)
         return -1;
-    struct message *msg = message_obtain(PLAYER_DO_SEEK, msec/1000, msec%1000, mngr);
+    struct message *msg = message_obtain(PLAYER_DO_SEEK, msec, 0, mngr);
     if (msg != NULL) {
         mlooper_post_message(mngr->looper, msg);
         return 0;

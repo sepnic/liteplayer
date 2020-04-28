@@ -108,10 +108,10 @@ static int m4a_header_parse(media_source_info_t *source_info, media_codec_info_t
     }
 
     if (m4a_extractor(media_parser_fetch, &m4a_priv, &media_info->m4a_info) == 0) {
-        media_info->content_pos = media_info->m4a_info.mdatofs;
-        media_info->codec_samplerate = media_info->m4a_info.samplerate;
-        media_info->codec_channels = media_info->m4a_info.channels;
-        media_info->duration_ms = (int)(media_info->m4a_info.duration*1000/media_info->m4a_info.timescale);
+        media_info->content_pos = media_info->m4a_info.mdat_offset;
+        media_info->codec_samplerate = media_info->m4a_info.asc.samplerate;
+        media_info->codec_channels = media_info->m4a_info.asc.channels;
+        media_info->duration_ms = (int)(media_info->m4a_info.duration/media_info->m4a_info.time_scale*1000);
         ret = ESP_OK;
     }
 

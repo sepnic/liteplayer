@@ -28,7 +28,7 @@
 #define TAG "M4A_EXTRACTOR"
 
 // FIXME: If low memory, please reduce STSZ_MAX_BUFFER, that will failed to parse for some m4a resource
-#define STSZ_MAX_BUFFER       (128*1024)
+#define STSZ_MAX_BUFFER       (256*1024)
 #define STREAM_BUFFER_SIZE    (1024)
 
 #define M4A_PARSER_TASK_PRIO  (OS_THREAD_PRIO_NORMAL)
@@ -141,8 +141,8 @@ static AAC_ERR_T mdhdin(atom_parser_handle_t handle, uint32_t atom_size)
     // Modification time
     u32in(buf); buf += 4;
     // Time scale
-    m4a_info->timescale = u32in(buf); buf += 4;
-    m4a_info->samplerate = m4a_info->timescale; // fixup after AudioSpecificConfig
+    m4a_info->time_scale = u32in(buf); buf += 4;
+    m4a_info->samplerate = m4a_info->time_scale; // fixup after AudioSpecificConfig
     // Duration
     m4a_info->duration = u32in(buf); buf += 4;
     // Language
@@ -312,11 +312,11 @@ static AAC_ERR_T esdsin(atom_parser_handle_t handle, uint32_t atom_size)
     // stream type
     u8in(buf); buf += 1;
     // buffer size db (24 bits)
-    m4a_info->buffersize = u16in(buf) << 8; buf += 2;
-    m4a_info->buffersize |= u8in(buf); buf += 1;
+    u16in(buf); buf += 2;
+    u8in(buf); buf += 1;
     // bitrate
-    m4a_info->bitratemax = u32in(buf); buf += 4;
-    m4a_info->bitrateavg = u32in(buf); buf += 4;
+    m4a_info->bitrate_max = u32in(buf); buf += 4;
+    m4a_info->bitrate_avg = u32in(buf); buf += 4;
 
     if (u8in(buf) != MP4DecSpecificDescrTag) {// 1
         return AAC_ERR_FAIL;
@@ -347,16 +347,85 @@ static AAC_ERR_T esdsin(atom_parser_handle_t handle, uint32_t atom_size)
 
 static AAC_ERR_T sttsin(atom_parser_handle_t handle, uint32_t atom_size)
 {
-    if (atom_size < 16) {   //min stts size
-        return AAC_ERR_FAIL;
+    m4a_info_t *m4a_info = handle->m4a_info;
+    uint16_t wanted_byte = 2*sizeof(uint32_t);
+    uint32_t remain_byte = atom_size - wanted_byte;
+    uint8_t *buf = handle->data;
+    int32_t ret = atom_rb_read(handle, wanted_byte);
+    AUDIO_ERR_CHECK(TAG, ret == 0, return ret);
+
+    // version/flags
+    u32in(buf); buf += 4;
+
+    m4a_info->stts_time2sample_entries = u32in(buf); buf += 4;
+    m4a_info->stts_time2sample =
+        (struct time2sample *)audio_calloc(m4a_info->stts_time2sample_entries, sizeof(struct time2sample));
+    if (m4a_info->stts_time2sample == NULL) {
+        return AAC_ERR_NOMEM;
     }
-    return atom_rb_read(handle, atom_size);
+
+    for (uint32_t cnt = 0; cnt < m4a_info->stts_time2sample_entries; cnt++) {
+        wanted_byte = 2*sizeof(uint32_t);
+        remain_byte -= wanted_byte;
+        ret = atom_rb_read(handle, wanted_byte);
+        AUDIO_ERR_CHECK(TAG, ret == 0, return ret);
+
+        buf = handle->data;
+        m4a_info->stts_time2sample[cnt].sample_count = u32in(buf); buf += 4;
+        m4a_info->stts_time2sample[cnt].sample_duration = u32in(buf); buf += 4;
+
+        OS_LOGV(TAG, "stts_time2sample[%d]: sample_count/sample_duration: %u:%u",
+                cnt,
+                m4a_info->stts_time2sample[cnt].sample_count,
+                m4a_info->stts_time2sample[cnt].sample_duration);
+    }
+    return atom_rb_read(handle, remain_byte);
+}
+
+static AAC_ERR_T stscin(atom_parser_handle_t handle, uint32_t atom_size)
+{
+    m4a_info_t *m4a_info = handle->m4a_info;
+    uint16_t wanted_byte = 2*sizeof(uint32_t);
+    uint32_t remain_byte = atom_size - wanted_byte;
+    uint8_t *buf = handle->data;
+    int32_t ret = atom_rb_read(handle, wanted_byte);
+    AUDIO_ERR_CHECK(TAG, ret == 0, return ret);
+
+    // version/flags
+    u32in(buf); buf += 4;
+
+    m4a_info->stsc_sample2chunk_entries = u32in(buf); buf += 4;
+    m4a_info->stsc_sample2chunk =
+        (struct sample2chunk *)audio_calloc(m4a_info->stsc_sample2chunk_entries, sizeof(struct sample2chunk));
+    if (m4a_info->stsc_sample2chunk == NULL) {
+        return AAC_ERR_NOMEM;
+    }
+
+    for (uint32_t cnt = 0; cnt < m4a_info->stsc_sample2chunk_entries; cnt++) {
+        wanted_byte = 3*sizeof(uint32_t);
+        remain_byte -= wanted_byte;
+        ret = atom_rb_read(handle, wanted_byte);
+        AUDIO_ERR_CHECK(TAG, ret == 0, return ret);
+
+        buf = handle->data;
+        m4a_info->stsc_sample2chunk[cnt].first_chunk = u32in(buf); buf += 4;
+        m4a_info->stsc_sample2chunk[cnt].samples_per_chunk = u32in(buf); buf += 4;
+        m4a_info->stsc_sample2chunk[cnt].sample_description_index = u32in(buf); buf += 4;
+
+        OS_LOGV(TAG, "stsc_sample2chunk[%d]: first_chunk/samples_per_chunk/sample_description_index: %u:%u:%u",
+                cnt,
+                m4a_info->stsc_sample2chunk[cnt].first_chunk,
+                m4a_info->stsc_sample2chunk[cnt].samples_per_chunk,
+                m4a_info->stsc_sample2chunk[cnt].sample_description_index);
+    }
+    return atom_rb_read(handle, remain_byte);
 }
 
 static AAC_ERR_T stszin(atom_parser_handle_t handle, uint32_t atom_size)
 {
     m4a_info_t *m4a_info = handle->m4a_info;
     uint16_t wanted_byte = 3*sizeof(uint32_t);
+    uint32_t remain_byte = atom_size - wanted_byte;
     uint8_t *buf = handle->data;
     int32_t ret = atom_rb_read(handle, wanted_byte);
     AUDIO_ERR_CHECK(TAG, ret == 0, return ret);
@@ -366,39 +435,46 @@ static AAC_ERR_T stszin(atom_parser_handle_t handle, uint32_t atom_size)
     // Sample size
     u32in(buf); buf += 4;
     // Number of entries
-    m4a_info->stszsize = u32in(buf);  buf += 4;
-    m4a_info->stszofs  = handle->offset;
+    m4a_info->stsz_samplesize_entries = u32in(buf);  buf += 4;
 
     /**
     * To save memeory, we assuem all frame size is 16bit width(not bigger than 0xFFFF)
     * So the moment we got frame count(stszsize), we'll check how many memory is needed
     * to store stsz header. And return fail if bigger than default buffer.
     */
-    if (m4a_info->stszsize*sizeof(int16_t) > STSZ_MAX_BUFFER) {
-        OS_LOGE(TAG, "Large STSZ(%u), out of memory", m4a_info->stszsize*sizeof(int16_t));
+    if (m4a_info->stsz_samplesize_entries*sizeof(int16_t) > STSZ_MAX_BUFFER) {
+        OS_LOGE(TAG, "Large STSZ(%u), out of memory", m4a_info->stsz_samplesize_entries*sizeof(int16_t));
+        return AAC_ERR_NOMEM;
+    }
+    m4a_info->stsz_samplesize = (uint16_t *)audio_calloc(m4a_info->stsz_samplesize_entries, sizeof(uint16_t));
+    if (m4a_info->stsz_samplesize == NULL) {
         return AAC_ERR_NOMEM;
     }
 
-    uint32_t frame_size = 0;
-    m4a_info->stszdata = (uint16_t*)audio_calloc(m4a_info->stszsize, sizeof(uint16_t));
-    for (int32_t cnt = 0; cnt < m4a_info->stszsize; cnt++) {
+    uint32_t sample_size = 0;
+    for (int32_t cnt = 0; cnt < m4a_info->stsz_samplesize_entries; cnt++) {
+        remain_byte -= 4;
         ret = atom_rb_read(handle, sizeof(uint32_t));
         AUDIO_ERR_CHECK(TAG, ret == 0, return ret);
 
         buf = handle->data;
-        frame_size = u32in(buf);
-        if (m4a_info->stszmax < frame_size) {
-            m4a_info->stszmax = frame_size;
+        sample_size = u32in(buf);
+        if (m4a_info->stsz_samplesize_max < sample_size) {
+            if (sample_size > 0xFFFF) {
+                OS_LOGE(TAG, "Large samplesize(%u), out of max size of short", sample_size);
+                return AAC_ERR_FAIL;
+            }
+            m4a_info->stsz_samplesize_max = sample_size;
         }
-        m4a_info->stszdata[cnt] = frame_size & 0xFFFF;
+        m4a_info->stsz_samplesize[cnt] = sample_size & 0xFFFF;
     }
 
-    OS_LOGV(TAG, "STSZ max frame size: %u", m4a_info->stszmax);
-    if (m4a_info->stszmax > 0xFFFF) {
+    OS_LOGV(TAG, "STSZ max sample size: %u", m4a_info->stsz_samplesize_max);
+    if (m4a_info->stsz_samplesize_max > 0xFFFF) {
         return AAC_ERR_UNSUPPORTED;
     }
 
-    return AAC_ERR_NONE;
+    return atom_rb_read(handle, remain_byte);;
 }
 
 static AAC_ERR_T stcoin(atom_parser_handle_t handle, uint32_t atom_size)
@@ -406,23 +482,63 @@ static AAC_ERR_T stcoin(atom_parser_handle_t handle, uint32_t atom_size)
     uint8_t *buf = handle->data;
     m4a_info_t *m4a_info = handle->m4a_info;
     uint16_t wanted_byte = 3*sizeof(uint32_t);
+    uint32_t remain_byte = atom_size - wanted_byte;
 
     int32_t ret = atom_rb_read(handle, wanted_byte);
     AUDIO_ERR_CHECK(TAG, ret == 0, return ret);
 
     // version/flags
     u32in(buf); buf += 4;
+
     // Number of entries
-    uint32_t entries = u32in(buf); buf += 4;
-    if (entries < 1) {
-        OS_LOGE(TAG, "stco error, number of entries should > 1, entries=%d", entries);
-        return AAC_ERR_UNSUPPORTED;
+    m4a_info->stco_chunk2offset_entries = u32in(buf); buf += 4;
+    m4a_info->stco_chunk2offset =
+        (struct chunk2offset *)audio_calloc(m4a_info->stco_chunk2offset_entries, sizeof(struct chunk2offset));
+    if (m4a_info->stco_chunk2offset == NULL) {
+        return AAC_ERR_NOMEM;
     }
 
     // first chunk offset
-    m4a_info->mdatofs = u32in(buf); buf += 4;
-    return AAC_ERR_NONE;
-    //return atom_rb_read(handle, atom_size-wanted_byte);
+    uint32_t offset = u32in(buf); buf += 4;
+    uint32_t new_chunk = 1, old_chunk = 1;
+    uint32_t old_first = m4a_info->stsc_sample2chunk[0].first_chunk;
+    uint32_t new_first = m4a_info->stsc_sample2chunk[1].first_chunk;
+    uint32_t old_samples = m4a_info->stsc_sample2chunk[0].samples_per_chunk;
+    uint32_t new_samples = 0;
+    uint32_t idx = 0;
+    for (int32_t cnt = 1; cnt < m4a_info->stco_chunk2offset_entries; cnt++) {
+        for (; new_chunk < m4a_info->stsc_sample2chunk_entries; new_chunk++) {
+            if (new_chunk > old_chunk) {
+                old_first = m4a_info->stsc_sample2chunk[new_chunk-1].first_chunk;
+                old_samples = m4a_info->stsc_sample2chunk[new_chunk-1].samples_per_chunk;
+                new_first = m4a_info->stsc_sample2chunk[new_chunk].first_chunk;
+                old_chunk = new_chunk;
+            }
+            if (new_first > cnt)
+                break;
+            new_samples = (new_first - old_first) * old_samples;
+        }
+        new_samples += (cnt - old_first) * old_samples;
+
+        m4a_info->stco_chunk2offset[idx].sample_index = new_samples;
+        m4a_info->stco_chunk2offset[idx].chunk_offset = offset;
+        idx++;
+
+        OS_LOGV(TAG, "STCO: ChunkOffset[%u]: index/offset: %u/%u", idx, new_samples, offset);
+
+        new_samples -= (cnt - old_first) * old_samples;
+
+        remain_byte -= 4;
+        ret = atom_rb_read(handle, sizeof(uint32_t));
+        AUDIO_ERR_CHECK(TAG, ret == 0, return ret);
+        offset = u32in(handle->data);
+    }
+    m4a_info->stco_chunk2offset[idx].sample_index = 0;
+    m4a_info->stco_chunk2offset[idx].chunk_offset = 0;
+
+    m4a_info->mdat_offset = m4a_info->stco_chunk2offset[0].chunk_offset;
+
+    return atom_rb_read(handle, remain_byte);
 }
 
 static AAC_ERR_T atom_parse(atom_parser_handle_t handle)
@@ -525,7 +641,7 @@ static AAC_ERR_T moovin(atom_parser_handle_t handle, uint32_t atom_size)
         {ATOM_NAME, "stts"},
         {ATOM_DATA, sttsin},
         {ATOM_NAME, "stsc"},
-        {ATOM_DATA, dummyin},
+        {ATOM_DATA, stscin},
         {ATOM_NAME, "stsz"},
         {ATOM_DATA, stszin},
         {ATOM_NAME, "stco"},
@@ -570,8 +686,8 @@ static int m4a_parse_asc(m4a_info_t *m4a_info)
         uint8_t sample_rate_index = (config >> 7) & 0x0f;
         uint8_t channels_num = (config >> 3) & 0x07;
         if (sample_rate_index < 12) {
-            m4a_info->samplerate = sample_rates[sample_rate_index];
-            m4a_info->channels = channels_num;
+            m4a_info->asc.samplerate = sample_rates[sample_rate_index];
+            m4a_info->asc.channels = channels_num;
             return AAC_ERR_NONE;
         }
     }
@@ -581,34 +697,38 @@ static int m4a_parse_asc(m4a_info_t *m4a_info)
 static void m4a_dump_info(m4a_info_t *m4a_info)
 {
     OS_LOGD(TAG, "M4A INFO:");
-    OS_LOGD(TAG, "  >Channels          : %u", m4a_info->channels);
-    OS_LOGD(TAG, "  >Sampling rate     : %u", m4a_info->samplerate);
-    OS_LOGD(TAG, "  >Bits per sample   : %u", m4a_info->bits);
-    OS_LOGD(TAG, "  >Buffer size       : %u", m4a_info->buffersize);
-    OS_LOGD(TAG, "  >Max bitrate       : %u", m4a_info->bitratemax);
-    OS_LOGD(TAG, "  >Average bitrate   : %u", m4a_info->bitrateavg);
-    OS_LOGD(TAG, "  >Frames            : %u", m4a_info->stszsize);
-    OS_LOGD(TAG, "  >ASC buff          : %x:%x:%x:%x:%x:%x:%x",
-             m4a_info->asc.buf[0], m4a_info->asc.buf[1], m4a_info->asc.buf[2],
-             m4a_info->asc.buf[3], m4a_info->asc.buf[4], m4a_info->asc.buf[5],
-             m4a_info->asc.buf[6]);
-    OS_LOGD(TAG, "  >ASC size          : %u", m4a_info->asc.size);
-    OS_LOGD(TAG, "  >Duration          : %.1f sec", (float)m4a_info->duration/m4a_info->timescale);
-    OS_LOGD(TAG, "  >Data offset/size  : %u/%u", m4a_info->mdatofs, m4a_info->mdatsize);
+    OS_LOGD(TAG, "  >Channels             : %u", m4a_info->channels);
+    OS_LOGD(TAG, "  >Sampling rate        : %u", m4a_info->samplerate);
+    OS_LOGD(TAG, "  >Bits per sample      : %u", m4a_info->bits);
+    OS_LOGD(TAG, "  >Max sample size      : %u", m4a_info->stsz_samplesize_max);
+    OS_LOGD(TAG, "  >Max bitrate          : %u", m4a_info->bitrate_max);
+    OS_LOGD(TAG, "  >Average bitrate      : %u", m4a_info->bitrate_avg);
+    OS_LOGD(TAG, "  >ASC buff             : %x:%x:%x:%x:%x:%x:%x",
+            m4a_info->asc.buf[0], m4a_info->asc.buf[1], m4a_info->asc.buf[2],
+            m4a_info->asc.buf[3], m4a_info->asc.buf[4], m4a_info->asc.buf[5],
+            m4a_info->asc.buf[6]);
+    OS_LOGD(TAG, "  >ASC size             : %u", m4a_info->asc.size);
+    OS_LOGD(TAG, "  >ASC sampling rate    : %u", m4a_info->asc.samplerate);
+    OS_LOGD(TAG, "  >ASC channels         : %u", m4a_info->asc.channels);
+    OS_LOGD(TAG, "  >Sample timescale     : %u", m4a_info->stts_time2sample[0].sample_duration);
+    OS_LOGD(TAG, "  >Duration             : %.1f sec", (float)m4a_info->duration/m4a_info->time_scale);
+    OS_LOGD(TAG, "  >MDAT offset/size     : %u/%u", m4a_info->mdat_offset, m4a_info->mdat_size);
+    OS_LOGD(TAG, "  >STSZ entries         : %u", m4a_info->stsz_samplesize_entries);
+    OS_LOGD(TAG, "  >STTS entries         : %u", m4a_info->stts_time2sample_entries);
+    OS_LOGD(TAG, "  >STSC entries         : %u", m4a_info->stsc_sample2chunk_entries);
+    OS_LOGD(TAG, "  >STCO entries         : %u", m4a_info->stco_chunk2offset_entries);
 }
 
 static AAC_ERR_T m4a_check_header(atom_parser_handle_t handle)
 {
     uint8_t *buf = handle->data;
-    uint32_t pos = 0;
     uint32_t atom_size = 0;
     uint8_t atom_name[4] = {0};
-    //m4a_info_t *m4a_info = handle->m4a_info;
-
     uint16_t wanted_byte = 2*sizeof(uint32_t);
+    uint32_t offset = 0;
     int32_t ret = 0;
 
-    handle->m4a_info->firstparse = true;
+    handle->m4a_info->parsed_once = true;
 
     ret = atom_rb_read(handle, wanted_byte);
     AUDIO_ERR_CHECK(TAG, ret == 0, return AAC_ERR_FAIL);
@@ -623,15 +743,14 @@ static AAC_ERR_T m4a_check_header(atom_parser_handle_t handle)
     }
 
 next_atom:
-    pos += atom_size;
+    offset += atom_size;
 
-    if (atom_size > 8) {
-        ret = atom_rb_read(handle, atom_size-8);
+    if (atom_size > wanted_byte) {
+        ret = atom_rb_read(handle, atom_size-wanted_byte);
         AUDIO_ERR_CHECK(TAG, ret == 0, return AAC_ERR_FAIL);
     }
 
     buf = handle->data;
-    wanted_byte = 2*sizeof(uint32_t);
     ret = atom_rb_read(handle, wanted_byte);
     AUDIO_ERR_CHECK(TAG, ret == 0, return AAC_ERR_FAIL);
 
@@ -640,18 +759,20 @@ next_atom:
 
     OS_LOGV(TAG, "atom[%s], size[%u], offset[%u]", atom_name, atom_size, handle->offset);
     if (memcmp(atom_name, "mdat", 4) == 0) {
-        OS_LOGV(TAG, "moov behide of mdat: mdatofs=%u, mdatsize=%u", pos, atom_size);
-        handle->m4a_info->mdatsize = atom_size;
-        handle->m4a_info->mdatofs = pos;
-        handle->m4a_info->moovofs = handle->m4a_info->mdatofs + handle->m4a_info->mdatsize;
-        handle->m4a_info->moovtail = true;
+        OS_LOGV(TAG, "moov behide of mdat: mdat_offset=%u, mdat_size=%u", offset, atom_size);
+        handle->m4a_info->mdat_size = atom_size;
+        handle->m4a_info->mdat_offset = offset;
+        handle->m4a_info->moov_offset = handle->m4a_info->mdat_offset + handle->m4a_info->mdat_size;
+        handle->m4a_info->moov_tail = true;
         rb_reset(handle->rb);
         return AAC_ERR_AGAIN;
-    } else if (memcmp(atom_name, "moov", 4) == 0) {
+    }
+    else if (memcmp(atom_name, "moov", 4) == 0) {
         OS_LOGV(TAG, "moov ahead of mdat");
-        handle->m4a_info->moovtail = false;
+        handle->m4a_info->moov_tail = false;
         return moovin(handle, 8);
-    } else {
+    }
+    else {
         goto next_atom;
     }
 
@@ -674,9 +795,9 @@ int m4a_parse_header(ringbuf_handle_t rb, m4a_info_t *info)
     };
     AAC_ERR_T err = AAC_ERR_FAIL;
 
-    if (info->firstparse) {
-        if (info->moovtail) {
-            parser.offset = info->moovofs;
+    if (info->parsed_once) {
+        if (info->moov_tail) {
+            parser.offset = info->moov_offset;
         }
         else {
             OS_LOGE(TAG, "Failed to check moov");
@@ -686,7 +807,7 @@ int m4a_parse_header(ringbuf_handle_t rb, m4a_info_t *info)
     else {
         err = m4a_check_header(&parser);
         if (err == AAC_ERR_AGAIN) {
-            OS_LOGV(TAG, "moov behide of mdat, please check again with new offset(%u)", info->moovofs);
+            OS_LOGV(TAG, "moov behide of mdat, please check again with new offset(%u)", info->moov_offset);
         }
         goto finish;
     }
@@ -785,9 +906,9 @@ m4a_writen:
 
     if (!double_check) {
         double_check = true;
-        if (priv.ret == AAC_ERR_AGAIN && info->firstparse && info->moovtail) {
+        if (priv.ret == AAC_ERR_AGAIN && info->parsed_once && info->moov_tail) {
             rb_reset(rb_atom);
-            offset = info->moovofs;
+            offset = info->moov_offset;
             goto m4a_parse;
         }
     }
@@ -795,6 +916,37 @@ m4a_writen:
 m4a_finish:
     rb_destroy(rb_atom);
     return priv.ret;
+}
+
+int m4a_get_seek_offset(int seek_ms, m4a_info_t *info, uint32_t *sample_index, uint32_t *sample_offset)
+{
+    if (seek_ms < 0 || info == NULL || sample_index == NULL || sample_offset == NULL)
+        return -1;
+
+    bool seek_done = false;
+    uint32_t seek_offset = 0;
+    uint32_t seek_index = 0;
+    uint32_t samples = (seek_ms*(info->time_scale/1000))/info->stts_time2sample[0].sample_duration;
+
+    for (int32_t cnt = 0; cnt < info->stco_chunk2offset_entries-1; cnt++) {
+        if (samples >= info->stco_chunk2offset[cnt].sample_index &&
+            samples <  info->stco_chunk2offset[cnt+1].sample_index) {
+            seek_offset = info->stco_chunk2offset[cnt].chunk_offset;
+            seek_index = info->stco_chunk2offset[cnt].sample_index;
+            seek_done = true;
+            OS_LOGD(TAG, "Found seek index/offset: %u/%u", seek_index, seek_offset);
+            break;
+        }
+    }
+
+    if (!seek_done || seek_offset < info->stco_chunk2offset[0].chunk_offset) {
+        OS_LOGE(TAG, "Failed to find seek offset");
+        return -1;
+    }
+
+    *sample_index = seek_index;
+    *sample_offset = seek_offset;
+    return 0;
 }
 
 int m4a_build_adts_header(uint8_t *adts_buf, uint32_t adts_size, uint8_t *asc_buf, uint32_t asc_size, uint32_t frame_size)

@@ -135,7 +135,6 @@ static esp_err_t m4a_decoder_seek(audio_element_handle_t self, long long offset)
 
     memset(&decoder->buf_in, 0x0, sizeof(decoder->buf_in));
     memset(&decoder->buf_out, 0x0, sizeof(decoder->buf_out));
-    decoder->seek_mode = true;
     return ESP_OK;
 }
 
@@ -161,11 +160,10 @@ audio_element_handle_t m4a_decoder_init(m4a_decoder_cfg_t *config)
 
     cfg.tag = "m4a";
 
-    memcpy(&decoder->m4a_info, config->m4a_info, sizeof(m4a_info_t));
-
     audio_element_handle_t el = audio_element_init(&cfg);
     AUDIO_MEM_CHECK(TAG, el, goto m4a_init_error);
 
+    decoder->m4a_info = config->m4a_info;
     decoder->el = el;
     audio_element_setdata(el, decoder);
 

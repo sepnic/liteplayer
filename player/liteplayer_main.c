@@ -818,23 +818,37 @@ int liteplayer_seek(liteplayer_handle_t handle, int msec)
         goto out;
     }
 
+    if (msec >= handle->media_info.duration_ms) {
+        OS_LOGE(TAG, "Invalid seek time");
+        ret = ESP_OK;
+        goto out;
+    }
+
     long long offset = 0;
     switch (handle->media_info.codec_type) {
     case AUDIO_CODEC_WAV:
-    case AUDIO_CODEC_MP3:
+    case AUDIO_CODEC_MP3: {
         offset = (handle->media_info.bytes_per_sec*(msec/1000));
         break;
-    case AUDIO_CODEC_M4A:
-        // todo
-        //break;
+    }
+    case AUDIO_CODEC_M4A: {
+        unsigned int sample_index = 0;
+        unsigned int sample_offset = 0;
+        if (m4a_get_seek_offset(msec, &handle->media_info.m4a_info, &sample_index, &sample_offset) != 0) {
+            ret = ESP_OK;
+            goto out;
+        }
+        offset = (long long)sample_offset - handle->media_info.content_pos;
+        handle->media_info.m4a_info.stsz_samplesize_index = sample_index;
+        break;
+    }
     default:
         OS_LOGE(TAG, "Unsupported seek for codec: %d", handle->media_info.codec_type);
         ret = ESP_OK;
         goto out;
     }
-    if (msec >= handle->media_info.duration_ms ||
-        (handle->media_info.content_len > 0 && offset >= handle->media_info.content_len)) {
-        OS_LOGE(TAG, "Invalid seek time/offset");
+    if (handle->media_info.content_len > 0 && offset >= handle->media_info.content_len) {
+        OS_LOGE(TAG, "Invalid seek offset");
         ret = ESP_OK;
         goto out;
     }
@@ -857,7 +871,7 @@ int liteplayer_seek(liteplayer_handle_t handle, int msec)
         OS_LOGE(TAG, "Failed to run pipeline");
         goto out;
     }
-    ret = audio_pipeline_seek(handle->pipeline, handle->seek_offset);// todo
+    ret = audio_pipeline_seek(handle->pipeline, handle->seek_offset);
     if (ret != ESP_OK) {
         OS_LOGE(TAG, "Failed to seek pipeline");
         goto out;
@@ -929,10 +943,24 @@ int liteplayer_reset(liteplayer_handle_t handle)
         audio_free(handle->url);
         handle->url = NULL;
     }
-    if (handle->media_info.m4a_info.stszdata != NULL) {
-        audio_free(handle->media_info.m4a_info.stszdata);
-        handle->media_info.m4a_info.stszdata = NULL;
+
+    if (handle->media_info.m4a_info.stsz_samplesize != NULL) {
+        audio_free(handle->media_info.m4a_info.stsz_samplesize);
+        handle->media_info.m4a_info.stsz_samplesize = NULL;
     }
+    if (handle->media_info.m4a_info.stts_time2sample != NULL) {
+        audio_free(handle->media_info.m4a_info.stts_time2sample);
+        handle->media_info.m4a_info.stts_time2sample = NULL;
+    }
+    if (handle->media_info.m4a_info.stsc_sample2chunk != NULL) {
+        audio_free(handle->media_info.m4a_info.stsc_sample2chunk);
+        handle->media_info.m4a_info.stsc_sample2chunk = NULL;
+    }
+    if (handle->media_info.m4a_info.stco_chunk2offset != NULL) {
+        audio_free(handle->media_info.m4a_info.stco_chunk2offset);
+        handle->media_info.m4a_info.stco_chunk2offset = NULL;
+    }
+
     handle->source_type = MEDIA_SOURCE_UNKNOWN;
     handle->state_error = false;
     handle->sink_samplerate = 0;

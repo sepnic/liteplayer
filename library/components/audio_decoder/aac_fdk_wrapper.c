@@ -34,13 +34,6 @@ static int aac_adts_read(aac_decoder_handle_t decoder)
     int remain = decoder->buf_in.bytes_read;
     int want = AAC_DECODER_INPUT_BUFFER_SIZE - remain;
 
-    if (decoder->seek_mode) {
-        // todo: find valid frame header
-        decoder->seek_mode = false;
-        OS_LOGE(TAG, "AAC unsupport seek now");
-        return AEL_IO_FAIL;
-    }
-
     if (remain != 0)
         memmove(data, &data[want], remain);
 
@@ -140,23 +133,16 @@ void aac_wrapper_deinit(aac_decoder_handle_t decoder)
 
 static int m4a_mdat_read(m4a_decoder_handle_t decoder)
 {
-    unsigned int stsz_entries = decoder->m4a_info.stszsize;
-    unsigned int stsz_current = decoder->stsz_current;
+    unsigned int stsz_entries = decoder->m4a_info->stsz_samplesize_entries;
+    unsigned int stsz_current = decoder->m4a_info->stsz_samplesize_index;
     aac_buf_in_t *in = &decoder->buf_in;
     int ret = AEL_IO_OK;
-
-    if (decoder->seek_mode) {
-        // todo: find valid frame header
-        decoder->seek_mode = false;
-        OS_LOGE(TAG, "M4A unsupport seek now");
-        return AEL_IO_FAIL;
-    }
 
     if (stsz_current >= stsz_entries) {
         in->eof = true;
         return AEL_IO_DONE;
     }
-    in->bytes_want = decoder->m4a_info.stszdata[stsz_current];
+    in->bytes_want = decoder->m4a_info->stsz_samplesize[stsz_current];
     in->bytes_read = 0;
 
     ret = audio_element_input_chunk(decoder->el, in->data, in->bytes_want);
@@ -179,8 +165,7 @@ static int m4a_mdat_read(m4a_decoder_handle_t decoder)
     }
 
 read_done:
-    decoder->stsz_current++;
-    decoder->size_proced += in->bytes_read;
+    decoder->m4a_info->stsz_samplesize_index++;
     return AEL_IO_OK;
 }
 
@@ -245,8 +230,8 @@ int m4a_wrapper_init(m4a_decoder_handle_t decoder)
         return -1;
     }
 
-    UCHAR *asc_buf = (UCHAR *)(decoder->m4a_info.asc.buf);
-    UINT asc_size = (UINT)(decoder->m4a_info.asc.size);
+    UCHAR *asc_buf = (UCHAR *)(decoder->m4a_info->asc.buf);
+    UINT asc_size = (UINT)(decoder->m4a_info->asc.size);
     AAC_DECODER_ERROR err = aacDecoder_ConfigRaw(hDecoder, &asc_buf, &asc_size);
     if (err != AAC_DEC_OK) {
         OS_LOGE(TAG, "Failed to decode the ASC");

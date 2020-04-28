@@ -29,39 +29,69 @@ extern "C" {
 // Return the data size obtained
 typedef int (*m4a_fetch_cb)(char *buf, int wanted_size, long offset, void *fetch_priv);
 
+struct time2sample {
+    uint32_t sample_count;
+    uint32_t sample_duration;
+};
+
+struct sample2chunk {
+    uint32_t first_chunk;
+    uint32_t samples_per_chunk;
+    uint32_t sample_description_index;
+};
+
+struct chunk2offset {
+    uint32_t sample_index;
+    uint32_t chunk_offset;
+};
+
+struct audio_specific_config {
+    uint8_t buf[15];
+    uint8_t size;
+    uint32_t samplerate;
+    uint32_t channels;
+};
+
 typedef struct m4a_info {
     uint32_t    samplerate;
     uint32_t    channels;
     uint32_t    bits;
-    uint32_t    buffersize;
-    uint32_t    bitratemax;
-    uint32_t    bitrateavg;
-    uint32_t    framesamples;
-    uint32_t    framesize;
-    uint32_t    timescale;
+    uint32_t    bitrate_max;
+    uint32_t    bitrate_avg;
+    uint32_t    time_scale;
     uint32_t    duration;
 
-    uint32_t    mdatsize;
-    uint32_t    mdatofs;
+    // stsz box: samplesize table
+    uint32_t    stsz_samplesize_entries;
+    uint32_t    stsz_samplesize_index;
+    uint16_t   *stsz_samplesize; // need to free when resetting player
+    uint32_t    stsz_samplesize_max;
 
-    uint32_t    stszsize;   /* How many stsz headers */
-    uint32_t    stszofs;    /* Offset of stsz headers */
-    uint32_t    stszmax;    /* Max frame size */
-    uint16_t    *stszdata;  /* Buffer to store stsz frame header, NOTE: TODO: need free by caller */
-    uint32_t    stszcurrent;
+    // stts box: time2sample table
+    uint32_t    stts_time2sample_entries;
+    struct time2sample *stts_time2sample;
+
+    // stsc box: sample2chunk table
+    uint32_t    stsc_sample2chunk_entries;
+    struct sample2chunk *stsc_sample2chunk;
+
+    // stco box: chunk2offset table
+    uint32_t    stco_chunk2offset_entries;
+    struct chunk2offset *stco_chunk2offset;
 
     // Audio Specific Config data:
-    struct {
-        uint8_t buf[15];
-        uint8_t size;
-    } asc;
+    struct audio_specific_config asc;
 
-    bool        firstparse;
-    bool        moovtail;
-    uint32_t    moovofs;
+    bool        parsed_once;
+    bool        moov_tail;
+    uint32_t    moov_offset;
+    uint32_t    mdat_size;
+    uint32_t    mdat_offset;
 } m4a_info_t;
 
 int m4a_parse_header(ringbuf_handle_t rb, m4a_info_t *info);
+
+int m4a_get_seek_offset(int seek_ms, m4a_info_t *info, uint32_t *sample_index, uint32_t *sample_offset);
 
 int m4a_extractor(m4a_fetch_cb fetch_cb, void *fetch_priv, m4a_info_t *info);
 
