@@ -27,7 +27,8 @@
 #define TAG "httpwrapper"
 
 #define HTTPCLIENT_HEADER_BUFFER_SIZE 1024
-#define HTTPCLIENT_RETRY_COUNT        3
+#define HTTPCLIENT_RETRY_COUNT        5
+#define HTTPCLIENT_RETRY_INTERVAL     3000
 
 struct httpclient_priv {
     const char          *url;
@@ -59,9 +60,9 @@ static int httpclient_wrapper_connect(http_handle_t handle)
 reconnect:
     ret = httpclient_connect(&priv->client, (char *)priv->url);
     if (ret != HTTPCLIENT_OK) {
-        OS_LOGE(TAG, "Failed to connect, ret=%d, retry=%d", ret, priv->retrycount);
+        OS_LOGE(TAG, "httpclient_connect failed, ret=%d, retry=%d", ret, priv->retrycount);
         if (priv->retrycount++ < HTTPCLIENT_RETRY_COUNT) {
-            OS_THREAD_SLEEP_MSEC(2000);
+            OS_THREAD_SLEEP_MSEC(HTTPCLIENT_RETRY_INTERVAL);
             goto reconnect;
         }
         httpclient_close(&priv->client);
@@ -136,11 +137,10 @@ contiune_read:
             OS_LOGE(TAG, "httpclient_send_request failed, ret=%d, retry=%d", ret, priv->retrycount);
             if (priv->retrycount++ >= HTTPCLIENT_RETRY_COUNT)
                 return -1;
-            OS_THREAD_SLEEP_MSEC(2000);
+            OS_THREAD_SLEEP_MSEC(HTTPCLIENT_RETRY_INTERVAL);
             goto reconnect;
         }
         priv->first_request = true;
-        priv->retrycount = 0;
     }
 
     //OS_LOGD(TAG, "httpclient reading: %d/%d", (int)priv->content_pos, (int)priv->content_len);
@@ -151,7 +151,9 @@ contiune_read:
 
     ret = httpclient_recv_response(client, client_data);
     if (ret < 0) {
-        OS_LOGE(TAG, "httpclient_recv_response failed, ret=%d, reconnect", ret);
+        OS_LOGE(TAG, "httpclient_recv_response failed, ret=%d, retry=%d", ret, priv->retrycount);
+        if (priv->retrycount++ >= HTTPCLIENT_RETRY_COUNT)
+            return -1;
         goto reconnect;
     }
 
@@ -163,6 +165,7 @@ contiune_read:
         OS_LOGD(TAG, "content_pos=%d, response_content_len=%d, content_len=%d",
                  (int)priv->content_pos, (int)client_data->response_content_len, (int)priv->content_len);
         priv->first_response = true;
+        priv->retrycount = 0;
     }
 
     if (priv->retrieve_len == -1)
