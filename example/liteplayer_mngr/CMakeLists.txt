@@ -218,6 +218,9 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DFPM_64BIT")
 # cflag: helix: __arm__/__amd64__, __GNUC__
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D__amd64__ -DUSE_DEFAULT_STDLIB")
 
+# cflag: if enable aac sbr
+#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DAAC_ENABLE_SBR")
+
 # cflag: libspeexdsp: FIXED_POINT/FLOATING_POINT, USE_NEON/USE_SSE
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DFLOATING_POINT -DUSE_SSE")
 

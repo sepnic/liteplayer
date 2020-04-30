@@ -95,9 +95,9 @@ fill_data:
     AACGetLastFrameInfo(decoder->handle, &frame_info);
     decoder->buf_out.bytes_remain = frame_info.outputSamps*frame_info.bitsPerSample/8;
 
-    if (!decoder->parsed_header && frame_info.sampRateCore != 0 && frame_info.nChans != 0) {
+    if (!decoder->parsed_header && frame_info.sampRateOut != 0 && frame_info.nChans != 0) {
         audio_element_info_t info = {0};
-        info.out_samplerate = frame_info.sampRateCore;
+        info.out_samplerate = frame_info.sampRateOut;
         info.out_channels   = frame_info.nChans;
         info.bits           = 16;
         audio_element_setinfo(decoder->el, &info);
@@ -203,9 +203,9 @@ fill_data:
     AACGetLastFrameInfo(decoder->handle, &frame_info);
     decoder->buf_out.bytes_remain = frame_info.outputSamps*frame_info.bitsPerSample/8;
 
-    if (!decoder->parsed_header && frame_info.sampRateCore != 0 && frame_info.nChans != 0) {
+    if (!decoder->parsed_header && frame_info.sampRateOut != 0 && frame_info.nChans != 0) {
         audio_element_info_t info = {0};
-        info.out_samplerate = frame_info.sampRateCore;
+        info.out_samplerate = frame_info.sampRateOut;
         info.out_channels   = frame_info.nChans;
         info.bits           = 16;
         audio_element_setinfo(decoder->el, &info);
