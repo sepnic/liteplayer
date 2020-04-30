@@ -31,62 +31,62 @@
 #include "wave_wrapper.h"
 #endif
 
-#define TAG "liteplayer_demo"
+#define TAG "LITEPLAYER_DEMO"
 
-static liteplayer_state_t g_state = LITEPLAYER_IDLE;
-
-static int liteplayer_test_state_listener(liteplayer_state_t state, int errcode, void *priv)
+static int liteplayer_demo_state_listener(liteplayer_state_t state, int errcode, void *priv)
 {
+    liteplayer_state_t *player_state = (liteplayer_state_t *)priv;
+    bool state_sync = true;
+
     switch (state) {
     case LITEPLAYER_IDLE:
         OS_LOGD(TAG, "-->LITEPLAYER_IDLE");
-        g_state = state;
         break;
     case LITEPLAYER_INITED:
         OS_LOGD(TAG, "-->LITEPLAYER_INITED");
-        g_state = state;
         break;
     case LITEPLAYER_PREPARED:
         OS_LOGD(TAG, "-->LITEPLAYER_PREPARED");
-        g_state = state;
         break;
     case LITEPLAYER_STARTED:
         OS_LOGD(TAG, "-->LITEPLAYER_STARTED");
-        g_state = state;
         break;
     case LITEPLAYER_PAUSED:
         OS_LOGD(TAG, "-->LITEPLAYER_PAUSED");
-        g_state = state;
         break;
     case LITEPLAYER_NEARLYCOMPLETED:
         OS_LOGD(TAG, "-->LITEPLAYER_NEARLYCOMPLETED");
+        state_sync = false;
         break;
     case LITEPLAYER_COMPLETED:
         OS_LOGD(TAG, "-->LITEPLAYER_COMPLETED");
-        g_state = state;
         break;
     case LITEPLAYER_STOPPED:
         OS_LOGD(TAG, "-->LITEPLAYER_STOPPED");
-        g_state = state;
         break;
     case LITEPLAYER_ERROR:
-        OS_LOGD(TAG, "-->LITEPLAYER_ERROR: %d", errcode);
-        g_state = state;
+        OS_LOGE(TAG, "-->LITEPLAYER_ERROR: %d", errcode);
         break;
     default:
+        OS_LOGE(TAG, "-->LITEPLAYER_UNKNOWN: %d", state);
+        state_sync = false;
         break;
     }
+
+    if (state_sync)
+        *player_state = state;
     return 0;
 }
 
-static int liteplayer_test(const char *url)
+static int liteplayer_demo(const char *url)
 {
     int ret = -1;
     liteplayer_handle_t player = liteplayer_create();
     if (player == NULL)
         return ret;
 
-    liteplayer_register_state_listener(player, liteplayer_test_state_listener, (void *)player);
+    liteplayer_state_t player_state = LITEPLAYER_IDLE;
+    liteplayer_register_state_listener(player, liteplayer_demo_state_listener, (void *)&player_state);
 
 #if defined(ENABLE_TINYALSA)
     sink_wrapper_t sink_wrapper = {
@@ -136,11 +136,11 @@ static int liteplayer_test(const char *url)
         goto test_done;
     }
 
-    while (g_state != LITEPLAYER_PREPARED && g_state != LITEPLAYER_ERROR) {
+    while (player_state != LITEPLAYER_PREPARED && player_state != LITEPLAYER_ERROR) {
         OS_THREAD_SLEEP_MSEC(100);
     }
 
-    if (g_state == LITEPLAYER_ERROR) {
+    if (player_state == LITEPLAYER_ERROR) {
         OS_LOGE(TAG, "Failed to prepare player");
         goto test_done;
     }
@@ -152,7 +152,7 @@ static int liteplayer_test(const char *url)
 
     OS_MEMORY_DUMP();
 
-    while (g_state != LITEPLAYER_COMPLETED && g_state != LITEPLAYER_ERROR) {
+    while (player_state != LITEPLAYER_COMPLETED && player_state != LITEPLAYER_ERROR) {
         OS_THREAD_SLEEP_MSEC(100);
     }
 
@@ -161,8 +161,8 @@ static int liteplayer_test(const char *url)
         goto test_done;
     }
 
-    while (g_state != LITEPLAYER_STOPPED) {
-        OS_THREAD_SLEEP_MSEC(50);
+    while (player_state != LITEPLAYER_STOPPED) {
+        OS_THREAD_SLEEP_MSEC(100);
     }
 
     ret = 0;
@@ -180,9 +180,9 @@ int main(int argc, char *argv[])
 {
     if (argc != 2) {
         OS_LOGW(TAG, "Usage: %s [url]", argv[0]);
-        return 0;
+        return -1;
     }
 
-    liteplayer_test(argv[1]);
+    liteplayer_demo(argv[1]);
     return 0;
 }

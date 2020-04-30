@@ -317,7 +317,7 @@ static int main_pipeline_init(liteplayer_handle_t handle)
         OS_LOGD(TAG, "[1.0] Create audio pipeline");
         audio_pipeline_cfg_t pipeline_cfg = DEFAULT_AUDIO_PIPELINE_CONFIG();
         handle->pipeline = audio_pipeline_init(&pipeline_cfg);
-        AUDIO_MEM_CHECK(TAG, handle->pipeline, goto init_failed);
+        AUDIO_MEM_CHECK(TAG, handle->pipeline, goto pipeline_fail);
     }
 
     {
@@ -344,7 +344,7 @@ static int main_pipeline_init(liteplayer_handle_t handle)
         sink_cfg.sink_write               = handle->sink_wrapper.write;
         sink_cfg.sink_close               = handle->sink_wrapper.close;
         handle->el_sink = sink_stream_init(&sink_cfg);
-        AUDIO_MEM_CHECK(TAG, handle->el_sink, goto init_failed);
+        AUDIO_MEM_CHECK(TAG, handle->el_sink, goto pipeline_fail);
 
         audio_element_info_t info;
         audio_element_getinfo(handle->el_sink, &info);
@@ -385,7 +385,7 @@ static int main_pipeline_init(liteplayer_handle_t handle)
             wav_cfg.out_rb_size          = DEFAULT_DECODER_RINGBUF_SIZE;
             handle->el_decoder = wav_decoder_init(&wav_cfg);
         }
-        AUDIO_MEM_CHECK(TAG, handle->el_decoder, goto init_failed);
+        AUDIO_MEM_CHECK(TAG, handle->el_decoder, goto pipeline_fail);
     }
 
     {
@@ -396,7 +396,7 @@ static int main_pipeline_init(liteplayer_handle_t handle)
             handle->source_rb = rb_create(DEFAULT_SOURCE_HTTP_RINGBUF_SIZE);
         else if (handle->source_type == MEDIA_SOURCE_FILE)
             handle->source_rb = rb_create(DEFAULT_SOURCE_FILE_RINGBUF_SIZE);
-        AUDIO_MEM_CHECK(TAG, handle->source_rb, goto init_failed);
+        AUDIO_MEM_CHECK(TAG, handle->source_rb, goto pipeline_fail);
 
         audio_element_set_input_ringbuf(handle->el_decoder, handle->source_rb);
 
@@ -414,7 +414,7 @@ static int main_pipeline_init(liteplayer_handle_t handle)
                 .content_pos = handle->media_info.content_pos + handle->seek_offset,
             };
             handle->media_source = media_source_start(&info, handle->source_rb, media_source_state_callback, handle);
-            AUDIO_MEM_CHECK(TAG, handle->media_source, goto init_failed);
+            AUDIO_MEM_CHECK(TAG, handle->media_source, goto pipeline_fail);
         }
         else if (handle->source_type == MEDIA_SOURCE_FILE) {
             media_source_info_t info = {
@@ -430,7 +430,7 @@ static int main_pipeline_init(liteplayer_handle_t handle)
                 .content_pos = handle->media_info.content_pos + handle->seek_offset,
             };
             handle->media_source = media_source_start(&info, handle->source_rb, media_source_state_callback, handle);
-            AUDIO_MEM_CHECK(TAG, handle->media_source, goto init_failed);
+            AUDIO_MEM_CHECK(TAG, handle->media_source, goto pipeline_fail);
         }
     }
 
@@ -447,9 +447,15 @@ static int main_pipeline_init(liteplayer_handle_t handle)
         audio_element_set_event_callback(handle->el_sink, audio_element_state_callback, handle);
     }
 
+    {
+        OS_LOGD(TAG, "[4.0] Run audio pipeline");
+        if (audio_pipeline_run(handle->pipeline) != 0)
+            goto pipeline_fail;
+    }
+
     return ESP_OK;
 
-init_failed:
+pipeline_fail:
     main_pipeline_deinit(handle);
     return ESP_FAIL;
 }
@@ -723,8 +729,6 @@ int liteplayer_start(liteplayer_handle_t handle)
     if (handle->state == LITEPLAYER_PREPARED) {
         if (handle->pipeline == NULL)
             ret = main_pipeline_init(handle);
-        if (ret == ESP_OK)
-            ret = audio_pipeline_run(handle->pipeline);
     }
     else {
         if (handle->pipeline == NULL)
@@ -815,13 +819,13 @@ int liteplayer_seek(liteplayer_handle_t handle, int msec)
     if (handle->state < LITEPLAYER_PREPARED || handle->state > LITEPLAYER_NEARLYCOMPLETED) {
         OS_LOGE(TAG, "Can't seek in state=[%d]", handle->state);
         ret = ESP_OK;
-        goto out;
+        goto seek_out;
     }
 
     if (msec >= handle->media_info.duration_ms) {
         OS_LOGE(TAG, "Invalid seek time");
         ret = ESP_OK;
-        goto out;
+        goto seek_out;
     }
 
     long long offset = 0;
@@ -836,7 +840,7 @@ int liteplayer_seek(liteplayer_handle_t handle, int msec)
         unsigned int sample_offset = 0;
         if (m4a_get_seek_offset(msec, &handle->media_info.m4a_info, &sample_index, &sample_offset) != 0) {
             ret = ESP_OK;
-            goto out;
+            goto seek_out;
         }
         offset = (long long)sample_offset - handle->media_info.content_pos;
         handle->media_info.m4a_info.stsz_samplesize_index = sample_index;
@@ -845,12 +849,12 @@ int liteplayer_seek(liteplayer_handle_t handle, int msec)
     default:
         OS_LOGE(TAG, "Unsupported seek for codec: %d", handle->media_info.codec_type);
         ret = ESP_OK;
-        goto out;
+        goto seek_out;
     }
     if (handle->media_info.content_len > 0 && offset >= handle->media_info.content_len) {
         OS_LOGE(TAG, "Invalid seek offset");
         ret = ESP_OK;
-        goto out;
+        goto seek_out;
     }
 
     handle->seek_time = (msec/1000)*1000;
@@ -858,26 +862,81 @@ int liteplayer_seek(liteplayer_handle_t handle, int msec)
     handle->sink_position = 0;
 
     state_sync = true;
-    // stop and destroy pipeline
-    main_pipeline_deinit(handle);
-    // create a new pipeline then run
-    ret = main_pipeline_init(handle);
-    if (ret != ESP_OK) {
-        OS_LOGE(TAG, "Failed to init pipeline");
-        goto out;
-    }
-    ret = audio_pipeline_run(handle->pipeline);
-    if (ret != ESP_OK) {
-        OS_LOGE(TAG, "Failed to run pipeline");
-        goto out;
-    }
-    ret = audio_pipeline_seek(handle->pipeline, handle->seek_offset);
-    if (ret != ESP_OK) {
-        OS_LOGE(TAG, "Failed to seek pipeline");
-        goto out;
+
+    if (handle->media_parser != NULL) {
+        media_parser_stop(handle->media_parser);
+        handle->media_parser = NULL;
     }
 
-out:
+    if (handle->pipeline == NULL) {
+        ret = main_pipeline_init(handle);
+        if (ret != ESP_OK)
+            goto seek_out;
+    }
+    else {
+        ret = audio_pipeline_pause(handle->pipeline);
+        if (ret != ESP_OK)
+            goto seek_out;
+
+        if (handle->media_source != NULL) {
+            media_source_stop(handle->media_source);
+            handle->media_source = NULL;
+        }
+        if (handle->source_rb != NULL) {
+            rb_destroy(handle->source_rb);
+            handle->source_rb = NULL;
+        }
+
+        if (handle->source_type == MEDIA_SOURCE_STREAM)
+            handle->source_rb = rb_create(DEFAULT_SOURCE_STREAM_RINGBUF_SIZE);
+        else if (handle->source_type == MEDIA_SOURCE_HTTP)
+            handle->source_rb = rb_create(DEFAULT_SOURCE_HTTP_RINGBUF_SIZE);
+        else if (handle->source_type == MEDIA_SOURCE_FILE)
+            handle->source_rb = rb_create(DEFAULT_SOURCE_FILE_RINGBUF_SIZE);
+        AUDIO_MEM_CHECK(TAG, handle->source_rb, goto seek_out);
+
+        audio_element_set_input_ringbuf(handle->el_decoder, handle->source_rb);
+        audio_element_reset_input_ringbuf(handle->el_sink);
+
+        if (handle->source_type == MEDIA_SOURCE_HTTP) {
+            media_source_info_t info = {
+                .url = handle->url,
+                .source_type = MEDIA_SOURCE_HTTP,
+                .http_wrapper = {
+                    .http_priv = handle->http_wrapper.http_priv,
+                    .open = handle->http_wrapper.open,
+                    .read = handle->http_wrapper.read,
+                    .seek = handle->http_wrapper.seek,
+                    .close = handle->http_wrapper.close,
+                },
+                .content_pos = handle->media_info.content_pos + handle->seek_offset,
+            };
+            handle->media_source = media_source_start(&info, handle->source_rb, media_source_state_callback, handle);
+            AUDIO_MEM_CHECK(TAG, handle->media_source, goto seek_out);
+        }
+        else if (handle->source_type == MEDIA_SOURCE_FILE) {
+            media_source_info_t info = {
+                .url = handle->url,
+                .source_type = MEDIA_SOURCE_FILE,
+                .file_wrapper = {
+                    .file_priv = handle->file_wrapper.file_priv,
+                    .open = handle->file_wrapper.open,
+                    .read = handle->file_wrapper.read,
+                    .seek = handle->file_wrapper.seek,
+                    .close = handle->file_wrapper.close,
+                },
+                .content_pos = handle->media_info.content_pos + handle->seek_offset,
+            };
+            handle->media_source = media_source_start(&info, handle->source_rb, media_source_state_callback, handle);
+            AUDIO_MEM_CHECK(TAG, handle->media_source, goto seek_out);
+        }
+    }
+
+    ret = audio_pipeline_seek(handle->pipeline, handle->seek_offset);
+    if (ret != ESP_OK)
+        goto seek_out;
+
+seek_out:
     if (state_sync) {
         OS_THREAD_MUTEX_LOCK(handle->state_lock);
         handle->state = (ret == ESP_OK) ? LITEPLAYER_SEEKCOMPLETED : LITEPLAYER_ERROR;
@@ -901,7 +960,7 @@ int liteplayer_stop(liteplayer_handle_t handle)
     OS_THREAD_MUTEX_LOCK(handle->io_lock);
 
     if (handle->state == LITEPLAYER_ERROR)
-        goto report_state;
+        goto stop_out;
 
     if (handle->state < LITEPLAYER_PREPARED || handle->state > LITEPLAYER_COMPLETED) {
         OS_LOGE(TAG, "Can't stop in state=[%d]", handle->state);
@@ -916,7 +975,7 @@ int liteplayer_stop(liteplayer_handle_t handle)
     audio_pipeline_reset_ringbuffer(handle->pipeline);
     audio_pipeline_reset_items_state(handle->pipeline);
 
-report_state:
+stop_out:
     {
         OS_THREAD_MUTEX_LOCK(handle->state_lock);
         handle->state = LITEPLAYER_STOPPED;

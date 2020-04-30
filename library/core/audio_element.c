@@ -305,7 +305,6 @@ static esp_err_t audio_element_on_cmd(audio_event_iface_msg_t *msg, void *contex
         case AEL_MSG_CMD_SEEK:
             OS_LOGV(TAG, "[%s] AEL_MSG_CMD_SEEK, state:%d, offset:%d", el->tag, el->state, el->offset);
             if (el->state == AEL_STATE_INIT || el->state == AEL_STATE_RUNNING || el->state == AEL_STATE_PAUSED) {
-                //audio_element_reset_input_ringbuf(el);
                 if (el->offset >= 0 && audio_element_process_seek(el, el->offset) == ESP_OK)
                     el->offset = SEEK_COMPLETED;
             }
@@ -330,7 +329,7 @@ static esp_err_t audio_element_process_running(audio_element_handle_t el)
     if (process_len <= 0) {
         switch (process_len) {
             case AEL_IO_ABORT:
-                OS_LOGE(TAG, "[%s] ERROR_PROCESS, AEL_IO_ABORT", el->tag);
+                OS_LOGW(TAG, "[%s] ERROR_PROCESS, AEL_IO_ABORT", el->tag);
                 break;
             case AEL_IO_DONE:
             case AEL_IO_OK:

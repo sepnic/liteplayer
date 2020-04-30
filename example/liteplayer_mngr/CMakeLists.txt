@@ -200,6 +200,7 @@ set (LITEPLAYER_SRC
     ${TOP_DIR}/player/liteplayer_parser.c
     ${TOP_DIR}/player/liteplayer_debug.c
     ${TOP_DIR}/player/liteplayer_main.c
+    ${TOP_DIR}/player/liteplayer_manager.c
 )
 
 # cflags: OS_LINUX, OS_ANDROID, OS_MACOSX, OS_IOS, OS_FREERTOS
@@ -228,6 +229,6 @@ set(CMAKE_LDFLAGS "${CMAKE_LDFLAGS} -Wl,-O1 -Wl,--hash-style=gnu -Wl,--as-needed
 
 #message("CMAKE_C_FLAGS: ${CMAKE_C_FLAGS}")
 
-# liteplayer_demo
-add_executable(liteplayer_demo liteplayer_demo.c ${ADAPTER_SRC} ${THIRDPARTY_SRC} ${LITEPLAYER_SRC})
-target_link_libraries(liteplayer_demo pthread m)
+# liteplayer_mngr
+add_executable(liteplayer_mngr liteplayer_mngr.c ${ADAPTER_SRC} ${THIRDPARTY_SRC} ${LITEPLAYER_SRC})
+target_link_libraries(liteplayer_mngr pthread m)
