@@ -22,6 +22,10 @@
  *
  */
 
+/*
+ * Copyright (c) 2019-2020 LUOYUN <sysu.zqlong@gmail.com>
+ */
+
 #include "msgutils/os_logger.h"
 #include "esp_adf/audio_event_iface.h"
 #include "esp_adf/audio_common.h"

@@ -22,6 +22,10 @@
  *
  */
 
+/*
+ * Copyright (c) 2019-2020 LUOYUN <sysu.zqlong@gmail.com>
+ */
+
 #ifndef _RINGBUF_H__
 #define _RINGBUF_H__
 

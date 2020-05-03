@@ -22,6 +22,10 @@
  *
  */
 
+/*
+ * Copyright (c) 2019-2020 LUOYUN <sysu.zqlong@gmail.com>
+ */
+
 #ifndef _AUDIO_ELEMENT_H_
 #define _AUDIO_ELEMENT_H_
 

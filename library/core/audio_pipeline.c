@@ -22,6 +22,10 @@
  *
  */
 
+/*
+ * Copyright (c) 2019-2020 LUOYUN <sysu.zqlong@gmail.com>
+ */
+
 #include <stdbool.h>
 #include <string.h>
 #include <stdarg.h>
