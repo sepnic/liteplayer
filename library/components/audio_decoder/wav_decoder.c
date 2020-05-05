@@ -75,7 +75,7 @@ static int wav_decoder_process(audio_element_handle_t self, char *in_buffer, int
             wav->parsed_header = true;
             wav_info_t wav_info;
             if (wav_parse_header(in_buffer, r_size, &wav_info) == 0) {
-                int remain_data = r_size - wav_info.dataShift;
+                int remain_data = r_size - wav_info.dataOffset;
 
                 info.out_samplerate = wav_info.sampleRate;
                 info.out_channels = wav_info.channels;
@@ -86,7 +86,7 @@ static int wav_decoder_process(audio_element_handle_t self, char *in_buffer, int
                 audio_element_setinfo(self, &info);
                 audio_element_report_info(self);
                 if (remain_data > 0) {
-                    audio_element_output(self, in_buffer + wav_info.dataShift, remain_data);
+                    audio_element_output(self, in_buffer + wav_info.dataOffset, remain_data);
                     return remain_data;
                 }
                 return r_size;

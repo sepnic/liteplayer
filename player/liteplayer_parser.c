@@ -116,6 +116,7 @@ static int m4a_header_parse(media_source_info_t *source_info, media_codec_info_t
         media_info->codec_samplerate = media_info->m4a_info.asc.samplerate;
         media_info->codec_channels = media_info->m4a_info.asc.channels;
     #endif
+        media_info->codec_bits = media_info->m4a_info.bits;
         media_info->duration_ms = (int)(media_info->m4a_info.duration/media_info->m4a_info.time_scale*1000);
         ret = ESP_OK;
     }
@@ -230,7 +231,7 @@ static int media_header_parse(media_source_info_t *source_info, media_codec_info
     }
 
     int frame_start_offset = 0, bytes_per_sec = 0;
-    int sample_rate = 0, channels = 0;
+    int sample_rate = 0, channels = 0, bits = 0;
     int duration_ms = 0;
 
     if (media_info->codec_type == AUDIO_CODEC_MP3) {
@@ -266,6 +267,7 @@ static int media_header_parse(media_source_info_t *source_info, media_codec_info
 
         sample_rate = info.sample_rate;
         channels = info.channels;
+        bits = 16;
         bytes_per_sec = info.bit_rate*1000/8;
         if (filesize > frame_start_offset)
             duration_ms = (filesize - frame_start_offset)*8/info.bit_rate;
@@ -303,6 +305,7 @@ static int media_header_parse(media_source_info_t *source_info, media_codec_info
 
         sample_rate = info.sample_rate;
         channels = info.channels;
+        bits = 16;
         //bytes_per_sec = info.bit_rate*1000/8;
         //if (filesize > frame_start_offset)
         //    duration_ms = (filesize - frame_start_offset)*8/info.bit_rate;
@@ -312,11 +315,11 @@ static int media_header_parse(media_source_info_t *source_info, media_codec_info
         if (wav_parse_header(buf, bytes_read, &info) != 0)
             goto parse_done;
 
-        frame_start_offset = sizeof(wav_header_t);
         sample_rate = info.sampleRate;
         channels = info.channels;
+        bits = info.bits;
         bytes_per_sec = info.blockAlign*info.sampleRate;
-        duration_ms = (int)(info.dataSize*1000/info.blockAlign/info.sampleRate);
+        duration_ms = (int)(info.dataSize/info.blockAlign/info.sampleRate*1000);
     }
     else {
         OS_LOGE(TAG, "Unknown codec type");
@@ -326,6 +329,7 @@ static int media_header_parse(media_source_info_t *source_info, media_codec_info
     media_info->content_pos = frame_start_offset;
     media_info->codec_samplerate = sample_rate;
     media_info->codec_channels = channels;
+    media_info->codec_bits = bits;
     media_info->bytes_per_sec = bytes_per_sec;
     media_info->duration_ms = duration_ms;
     ret = ESP_OK;
@@ -418,8 +422,9 @@ int media_info_parse(media_source_info_t *source_info, media_codec_info_t *media
     }
 
 parse_succeed:
-    OS_LOGI(TAG, "MediaInfo: codec_type[%d], samplerate[%d], channels[%d], offset[%d], length[%d]",
-             source_info->source_type, media_info->codec_samplerate, media_info->codec_channels,
+    OS_LOGI(TAG, "MediaInfo: codec_type[%d], samplerate[%d], channels[%d], bits[%d], offset[%d], length[%d]",
+             source_info->source_type,
+             media_info->codec_samplerate, media_info->codec_channels, media_info->codec_bits,
              media_info->content_pos, media_info->content_len);
     return ESP_OK;
 }

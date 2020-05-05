@@ -34,7 +34,7 @@ typedef struct {
 //fmt block
 typedef struct {
     uint32_t ChunkID;           //chunk id;"fmt ",0X20746D66
-    uint32_t ChunkSize ;        //Size of this fmt block (Not include ID and Size);16 or 18 or 40 bytes.
+    uint32_t ChunkSize;         //Size of this fmt block (Not include ID and Size);16 or 18 or 40 bytes.
     uint16_t AudioFormat;       //Format;0X01:linear PCM;0X11:IMA ADPCM
     uint16_t NumOfChannels;     //Number of channel;1: 1 channel;2: 2 channels;
     uint32_t SampleRate;        //sample rate;0X1F40 = 8Khz
@@ -47,7 +47,7 @@ typedef struct {
 //fact block
 typedef struct {
     uint32_t ChunkID;           //chunk id;"fact",0X74636166;
-    uint32_t ChunkSize ;        //Size(Not include ID and Size);4 byte
+    uint32_t ChunkSize;         //Size(Not include ID and Size);4 byte
     uint32_t NumOfSamples;      //number of sample
 } __attribute__((packed)) ChunkFACT;
 
@@ -66,7 +66,7 @@ typedef struct {
 //data block
 typedef struct {
     uint32_t ChunkID;           //chunk id;"data",0X5453494C
-    uint32_t ChunkSize ;        //Size of data block(Not include ID and Size)
+    uint32_t ChunkSize;         //Size of data block(Not include ID and Size)
 } __attribute__((packed)) ChunkDATA;
 
 //wav block
@@ -80,21 +80,39 @@ typedef struct {
 //wav control struct
 typedef struct {
     uint16_t audioFormat;         //format;0X01,linear PCM;0X11 IMA ADPCM
-    uint16_t channels;            //Number of channel;1: 1 channel;2: 2 channels;
+    uint32_t sampleRate;          //sample rate
+    uint16_t channels;            //Number of channel; 1: 1 channel; 2: 2 channels
+    uint16_t bits;                //bit length 16bit,24bit,32bit
+    uint32_t byteRate;            //byte sample rate
     uint16_t blockAlign;          //align
     uint32_t dataSize;            //size of data
-
-    uint32_t byteRate;            //byte sample rate
-    uint32_t sampleRate;          //sample rate
-    uint16_t bits;                //bit length 16bit,24bit,32bit
-
-    uint32_t dataShift;           //Data shift.
+    uint32_t dataOffset;          //offset of data
 } __attribute__((packed)) wav_info_t;
+
+//wav that dr_wav.h supported:
+/*Tested and supported internal formats include the following:
+  - Unsigned 8-bit PCM
+  - Signed 12-bit PCM
+  - Signed 16-bit PCM
+  - Signed 24-bit PCM
+  - Signed 32-bit PCM
+  - IEEE 32-bit floating point
+  - IEEE 64-bit floating point
+  - A-law and u-law
+  - Microsoft ADPCM
+  - IMA ADPCM (DVI, format code 0x11)
+ */
+typedef enum wav_format {
+    WAV_FMT_PCM = 0x0001,
+    WAV_FMT_ADPCM = 0x0002,
+    WAV_FMT_IEEE_FLOAT = 0x0003,
+    WAV_FMT_DVI_ADPCM = 0x0011,
+} wav_format_t;
 
 // Return the data size obtained
 typedef int (*wav_fetch_cb)(char *buf, int wanted_size, long offset, void *fetch_priv);
 
-void wav_build_header(wav_header_t *header, int samplerate, int bits, int channels, int datasize);
+void wav_build_header(wav_header_t *header, int samplerate, int bits, int channels, wav_format_t format, long datasize);
 
 int wav_parse_header(char *buf, int buf_size, wav_info_t *info);
 

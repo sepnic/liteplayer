@@ -80,7 +80,7 @@ void wave_wrapper_close(sink_handle_t handle)
 
     wav_header_t header;
     memset(&header, 0x0, sizeof(wav_header_t));
-    wav_build_header(&header, priv->samplerate, 16, priv->channels, (int)priv->offset);
+    wav_build_header(&header, priv->samplerate, 16, priv->channels, WAV_FMT_PCM, priv->offset);
     fseek(priv->file, 0, SEEK_SET);
     fwrite(&header, 1, sizeof(header), priv->file);
 

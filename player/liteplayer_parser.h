@@ -38,6 +38,7 @@ typedef struct media_codec_info {
     audio_codec_t       codec_type;
     int                 codec_samplerate;
     int                 codec_channels;
+    int                 codec_bits;
     long                content_pos;
     long                content_len;
     int                 bytes_per_sec;

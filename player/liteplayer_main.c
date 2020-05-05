@@ -830,7 +830,7 @@ int liteplayer_seek(liteplayer_handle_t handle, int msec)
 
     long long offset = 0;
     switch (handle->media_info.codec_type) {
-    case AUDIO_CODEC_WAV:
+    //case AUDIO_CODEC_WAV:
     case AUDIO_CODEC_MP3: {
         offset = (handle->media_info.bytes_per_sec*(msec/1000));
         break;

@@ -298,13 +298,15 @@ static esp_err_t file_stream_close(audio_element_handle_t self)
                           info.out_samplerate,
                           info.bits,
                           info.out_channels,
-                          (int)info.byte_pos);
+                          WAV_FMT_PCM,
+                          (long)info.byte_pos);
 #else
         wav_build_header(&header,
                           info.in_samplerate,
                           info.bits,
                           info.in_channels,
-                          (int)info.byte_pos);
+                          WAV_FMT_PCM,
+                          (long)info.byte_pos);
 #endif
         config->file_write(file->file, (char *)&header, sizeof(header));
     }
