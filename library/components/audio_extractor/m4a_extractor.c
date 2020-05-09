@@ -25,7 +25,7 @@
 #include "audio_extractor/aac_extractor.h"
 #include "audio_extractor/m4a_extractor.h"
 
-#define TAG "M4A_EXTRACTOR"
+#define TAG "[liteplayer]M4A_EXTRACTOR"
 
 // FIXME: If low memory, please reduce STSZ_MAX_BUFFER, that will failed to parse for some m4a resource
 #define STSZ_MAX_BUFFER       (256*1024)
@@ -66,7 +66,7 @@ struct atom_parser {
     uint8_t             data[STREAM_BUFFER_SIZE];
     uint32_t            offset;
     struct atom_box    *atom;
-    m4a_info_t         *m4a_info;
+    struct m4a_info    *m4a_info;
 };
 typedef struct atom_parser *atom_parser_handle_t;
 
@@ -128,7 +128,7 @@ static AAC_ERR_T dummyin(atom_parser_handle_t handle, uint32_t atom_size)
 static AAC_ERR_T mdhdin(atom_parser_handle_t handle, uint32_t atom_size)
 {
     uint8_t *buf = handle->data;
-    m4a_info_t *m4a_info = handle->m4a_info;
+    struct m4a_info *m4a_info = handle->m4a_info;
 
     uint16_t wanted_byte = 6*sizeof(uint32_t);
     int32_t ret = atom_rb_read(handle, wanted_byte);
@@ -210,7 +210,7 @@ static AAC_ERR_T stsdin(atom_parser_handle_t handle, uint32_t atom_size)
 static AAC_ERR_T mp4ain(atom_parser_handle_t handle, uint32_t atom_size)
 {
     uint8_t *buf = handle->data;
-    m4a_info_t *m4a_info = handle->m4a_info;
+    struct m4a_info *m4a_info = handle->m4a_info;
 
     uint16_t wanted_byte = 7*sizeof(uint32_t);
     int32_t ret = atom_rb_read(handle, wanted_byte);
@@ -278,7 +278,7 @@ static AAC_ERR_T esdsin(atom_parser_handle_t handle, uint32_t atom_size)
 
     uint8_t read = 0;
     uint8_t *buf = handle->data;
-    m4a_info_t *m4a_info = handle->m4a_info;
+    struct m4a_info *m4a_info = handle->m4a_info;
 
     int32_t ret = atom_rb_read(handle, atom_size);
     AUDIO_ERR_CHECK(TAG, ret == 0, return ret);
@@ -347,7 +347,7 @@ static AAC_ERR_T esdsin(atom_parser_handle_t handle, uint32_t atom_size)
 
 static AAC_ERR_T sttsin(atom_parser_handle_t handle, uint32_t atom_size)
 {
-    m4a_info_t *m4a_info = handle->m4a_info;
+    struct m4a_info *m4a_info = handle->m4a_info;
     uint16_t wanted_byte = 2*sizeof(uint32_t);
     uint32_t remain_byte = atom_size - wanted_byte;
     uint8_t *buf = handle->data;
@@ -384,7 +384,7 @@ static AAC_ERR_T sttsin(atom_parser_handle_t handle, uint32_t atom_size)
 
 static AAC_ERR_T stscin(atom_parser_handle_t handle, uint32_t atom_size)
 {
-    m4a_info_t *m4a_info = handle->m4a_info;
+    struct m4a_info *m4a_info = handle->m4a_info;
     uint16_t wanted_byte = 2*sizeof(uint32_t);
     uint32_t remain_byte = atom_size - wanted_byte;
     uint8_t *buf = handle->data;
@@ -423,7 +423,7 @@ static AAC_ERR_T stscin(atom_parser_handle_t handle, uint32_t atom_size)
 
 static AAC_ERR_T stszin(atom_parser_handle_t handle, uint32_t atom_size)
 {
-    m4a_info_t *m4a_info = handle->m4a_info;
+    struct m4a_info *m4a_info = handle->m4a_info;
     uint16_t wanted_byte = 3*sizeof(uint32_t);
     uint32_t remain_byte = atom_size - wanted_byte;
     uint8_t *buf = handle->data;
@@ -480,7 +480,7 @@ static AAC_ERR_T stszin(atom_parser_handle_t handle, uint32_t atom_size)
 static AAC_ERR_T stcoin(atom_parser_handle_t handle, uint32_t atom_size)
 {
     uint8_t *buf = handle->data;
-    m4a_info_t *m4a_info = handle->m4a_info;
+    struct m4a_info *m4a_info = handle->m4a_info;
     uint16_t wanted_byte = 3*sizeof(uint32_t);
     uint32_t remain_byte = atom_size - wanted_byte;
 
@@ -675,7 +675,7 @@ static AAC_ERR_T moovin(atom_parser_handle_t handle, uint32_t atom_size)
     return AAC_ERR_NONE;
 }
 
-static int m4a_parse_asc(m4a_info_t *m4a_info)
+static int m4a_parse_asc(struct m4a_info *m4a_info)
 {
     if (m4a_info->asc.size >= 2) {
         static const uint32_t sample_rates[] = {
@@ -694,7 +694,7 @@ static int m4a_parse_asc(m4a_info_t *m4a_info)
     return AAC_ERR_FAIL;
 }
 
-static void m4a_dump_info(m4a_info_t *m4a_info)
+static void m4a_dump_info(struct m4a_info *m4a_info)
 {
     OS_LOGD(TAG, "M4A INFO:");
     OS_LOGD(TAG, "  >Channels             : %u", m4a_info->channels);
@@ -779,7 +779,7 @@ next_atom:
     return AAC_ERR_FAIL;
 }
 
-int m4a_parse_header(ringbuf_handle_t rb, m4a_info_t *info)
+int m4a_parse_header(ringbuf_handle_t rb, struct m4a_info *info)
 {
     static struct atom_box moov[] = {
         {ATOM_NAME, "moov"},
@@ -828,7 +828,7 @@ finish:
 }
 
 struct m4a_reader_priv {
-    m4a_info_t *info;
+    struct m4a_info *info;
     ringbuf_handle_t rb;
     int ret;
 };
@@ -840,7 +840,7 @@ static void *m4a_reader_parse_thread(void *arg)
     return NULL;
 }
 
-int m4a_extractor(m4a_fetch_cb fetch_cb, void *fetch_priv, m4a_info_t *info)
+int m4a_extractor(m4a_fetch_cb fetch_cb, void *fetch_priv, struct m4a_info *info)
 {
     ringbuf_handle_t rb_atom = NULL;
     os_thread_t tid = NULL;
@@ -918,7 +918,7 @@ m4a_finish:
     return priv.ret;
 }
 
-int m4a_get_seek_offset(int seek_ms, m4a_info_t *info, uint32_t *sample_index, uint32_t *sample_offset)
+int m4a_get_seek_offset(int seek_ms, struct m4a_info *info, uint32_t *sample_index, uint32_t *sample_offset)
 {
     if (seek_ms < 0 || info == NULL || sample_index == NULL || sample_offset == NULL)
         return -1;

@@ -26,13 +26,13 @@
 #include "liteplayer_config.h"
 #include "liteplayer_source.h"
 
-#define TAG "LITE_SOURCE"
+#define TAG "[liteplayer]SOURCE"
 
 #define DEFAULT_M3U_BUFFER_SIZE    ( 16*1024 )
 #define DEFAULT_M3U_FILL_THRESHOLD ( 32*1024 )
 
-typedef struct media_source_priv {
-    media_source_info_t info;
+struct media_source_priv {
+    struct media_source_info info;
     ringbuf_handle_t rb;
     struct listnode m3u_list;
 
@@ -42,14 +42,14 @@ typedef struct media_source_priv {
     bool stop;
     os_mutex_t lock; // lock for rb/listener
     os_cond_t cond;  // wait stop to exit mediasource thread
-} media_source_priv_t;
+};
 
 struct m3u_node {
     const char *url;
     struct listnode listnode;
 };
 
-static void media_source_cleanup(media_source_priv_t *priv);
+static void media_source_cleanup(struct media_source_priv *priv);
 
 static void m3u_list_clear(struct listnode *list)
 {
@@ -103,7 +103,7 @@ static char *m3u_parser_get_line(char *buffer, int *index, int *remain)
     return NULL;
 }
 
-static int m3u_parser_process_line(media_source_priv_t *priv, char *line)
+static int m3u_parser_process_line(struct media_source_priv *priv, char *line)
 {
     char temp[256];
     int ret = -1;
@@ -156,7 +156,7 @@ static int m3u_parser_process_line(media_source_priv_t *priv, char *line)
     return ret;
 }
 
-static int m3u_parser_resolve(media_source_priv_t *priv)
+static int m3u_parser_resolve(struct media_source_priv *priv)
 {
     int ret = -1;
     http_handle_t http = NULL;
@@ -164,13 +164,13 @@ static int m3u_parser_resolve(media_source_priv_t *priv)
     if (content == NULL)
         goto resolve_done;
 
-    http = priv->info.http_wrapper.open(priv->info.url, 0, priv->info.http_wrapper.http_priv);
+    http = priv->info.http_ops.open(priv->info.url, 0, priv->info.http_ops.http_priv);
     if (http == NULL) {
         OS_LOGE(TAG, "Failed to connect m3u url");
         goto resolve_done;
     }
 
-    int bytes_read = priv->info.http_wrapper.read(http, content, DEFAULT_M3U_BUFFER_SIZE);
+    int bytes_read = priv->info.http_ops.read(http, content, DEFAULT_M3U_BUFFER_SIZE);
     if (bytes_read <= 0) {
         OS_LOGE(TAG, "Failed to read m3u content");
         goto resolve_done;
@@ -233,7 +233,7 @@ static int m3u_parser_resolve(media_source_priv_t *priv)
 
 resolve_done:
     if (http != NULL)
-        priv->info.http_wrapper.close(http);
+        priv->info.http_ops.close(http);
     if (content != NULL)
         audio_free(content);
     return ret;
@@ -241,8 +241,8 @@ resolve_done:
 
 static void *m3u_source_thread(void *arg)
 {
-    media_source_priv_t *priv = (media_source_priv_t *)arg;
-    media_source_state_t state = MEDIA_SOURCE_READ_FAILED;
+    struct media_source_priv *priv = (struct media_source_priv *)arg;
+    enum media_source_state state = MEDIA_SOURCE_READ_FAILED;
     http_handle_t http = NULL;
     long long pos = priv->info.content_pos;
     int ret = 0;
@@ -279,12 +279,12 @@ dequeue_url:
 
     if (http != NULL) {
         pos = 0;
-        priv->info.http_wrapper.close(http);
+        priv->info.http_ops.close(http);
     }
 
     struct listnode *front = list_head(&priv->m3u_list);
     struct m3u_node *node = node_to_item(front, struct m3u_node, listnode);
-    http = priv->info.http_wrapper.open(node->url, pos, priv->info.http_wrapper.http_priv);
+    http = priv->info.http_ops.open(node->url, pos, priv->info.http_ops.http_priv);
 
     list_remove(front);
     audio_free(node->url);
@@ -301,7 +301,7 @@ dequeue_url:
 
     while (!priv->stop) {
         if (http != NULL)
-            bytes_read = priv->info.http_wrapper.read(http, buffer, sizeof(buffer));
+            bytes_read = priv->info.http_ops.read(http, buffer, sizeof(buffer));
         if (bytes_read < 0) {
             OS_LOGE(TAG, "Read failed, request next url");
             state = MEDIA_SOURCE_READ_FAILED;
@@ -341,7 +341,7 @@ dequeue_url:
 
 thread_exit:
     if (http != NULL)
-        priv->info.http_wrapper.close(http);
+        priv->info.http_ops.close(http);
 
     {
         OS_THREAD_MUTEX_LOCK(priv->lock);
@@ -367,7 +367,7 @@ thread_exit:
     return NULL;
 }
 
-int m3u_get_first_url(media_source_info_t *info, char *buf, int buf_size)
+int m3u_get_first_url(struct media_source_info *info, char *buf, int buf_size)
 {
     if (info == NULL || info->url == NULL || buf == NULL || buf_size <=0)
         return -1;
@@ -378,13 +378,13 @@ int m3u_get_first_url(media_source_info_t *info, char *buf, int buf_size)
     if (content == NULL)
         goto resolve_done;
 
-    http = info->http_wrapper.open(info->url, 0, info->http_wrapper.http_priv);
+    http = info->http_ops.open(info->url, 0, info->http_ops.http_priv);
     if (http == NULL) {
         OS_LOGE(TAG, "Failed to connect m3u url");
         goto resolve_done;
     }
 
-    int bytes_read = info->http_wrapper.read(http, content, DEFAULT_M3U_BUFFER_SIZE);
+    int bytes_read = info->http_ops.read(http, content, DEFAULT_M3U_BUFFER_SIZE);
     if (bytes_read <= 0) {
         OS_LOGE(TAG, "Failed to read m3u content");
         goto resolve_done;
@@ -486,13 +486,13 @@ int m3u_get_first_url(media_source_info_t *info, char *buf, int buf_size)
 
 resolve_done:
     if (http != NULL)
-        info->http_wrapper.close(http);
+        info->http_ops.close(http);
     if (content != NULL)
         audio_free(content);
     return ret;
 }
 
-static void media_source_cleanup(media_source_priv_t *priv)
+static void media_source_cleanup(struct media_source_priv *priv)
 {
     if (priv->lock != NULL)
         OS_THREAD_MUTEX_DESTROY(priv->lock);
@@ -506,25 +506,25 @@ static void media_source_cleanup(media_source_priv_t *priv)
 
 static void *media_source_thread(void *arg)
 {
-    media_source_priv_t *priv = (media_source_priv_t *)arg;
-    media_source_state_t state = MEDIA_SOURCE_READ_FAILED;
+    struct media_source_priv *priv = (struct media_source_priv *)arg;
+    enum media_source_state state = MEDIA_SOURCE_READ_FAILED;
     http_handle_t http = NULL;
     file_handle_t file = NULL;
 
     if (priv->info.source_type == MEDIA_SOURCE_HTTP) {
-        http = priv->info.http_wrapper.open(priv->info.url,
-                                            priv->info.content_pos,
-                                            priv->info.http_wrapper.http_priv);
+        http = priv->info.http_ops.open(priv->info.url,
+                                        priv->info.content_pos,
+                                        priv->info.http_ops.http_priv);
         if (http == NULL) {
             state = MEDIA_SOURCE_READ_FAILED;
             goto thread_exit;
         }
     }
     else if (priv->info.source_type == MEDIA_SOURCE_FILE) {
-        file = priv->info.file_wrapper.open(priv->info.url,
-                                            FILE_READ,
-                                            priv->info.content_pos,
-                                            priv->info.file_wrapper.file_priv);
+        file = priv->info.file_ops.open(priv->info.url,
+                                        FILE_READ,
+                                        priv->info.content_pos,
+                                        priv->info.file_ops.file_priv);
         if (file == NULL) {
             state = MEDIA_SOURCE_READ_FAILED;
             goto thread_exit;
@@ -541,9 +541,9 @@ static void *media_source_thread(void *arg)
 
     while (!priv->stop) {
         if (http != NULL)
-            bytes_read = priv->info.http_wrapper.read(http, buffer, sizeof(buffer));
+            bytes_read = priv->info.http_ops.read(http, buffer, sizeof(buffer));
         else if (file != NULL)
-            bytes_read = priv->info.file_wrapper.read(file, buffer, sizeof(buffer));
+            bytes_read = priv->info.file_ops.read(file, buffer, sizeof(buffer));
 
         if (bytes_read < 0) {
             OS_LOGE(TAG, "Media source read failed");
@@ -584,9 +584,9 @@ static void *media_source_thread(void *arg)
 
 thread_exit:
     if (http != NULL)
-        priv->info.http_wrapper.close(http);
+        priv->info.http_ops.close(http);
     else if (file != NULL)
-        priv->info.file_wrapper.close(file);
+        priv->info.file_ops.close(file);
 
     {
         OS_THREAD_MUTEX_LOCK(priv->lock);
@@ -612,7 +612,7 @@ thread_exit:
     return NULL;
 }
 
-media_source_handle_t media_source_start(media_source_info_t *info,
+media_source_handle_t media_source_start(struct media_source_info *info,
                                          ringbuf_handle_t rb,
                                          media_source_state_cb listener,
                                          void *listener_priv)
@@ -620,11 +620,11 @@ media_source_handle_t media_source_start(media_source_info_t *info,
     if (info == NULL || info->url == NULL || rb == NULL)
         return NULL;
 
-    media_source_priv_t *priv = audio_calloc(1, sizeof(media_source_priv_t));
+    struct media_source_priv *priv = audio_calloc(1, sizeof(struct media_source_priv));
     if (priv == NULL)
         return NULL;
 
-    memcpy(&priv->info, info, sizeof(media_source_info_t));
+    memcpy(&priv->info, info, sizeof(struct media_source_info));
     priv->rb = rb;
     priv->listener = listener;
     priv->listener_priv = listener_priv;
@@ -659,7 +659,7 @@ start_failed:
 
 void media_source_stop(media_source_handle_t handle)
 {
-    media_source_priv_t *priv = (media_source_priv_t *)handle;
+    struct media_source_priv *priv = (struct media_source_priv *)handle;
     if (priv == NULL)
         return;
 

@@ -24,7 +24,7 @@
 #include "httpclient.h"
 #include "httpclient_wrapper.h"
 
-#define TAG "httpwrapper"
+#define TAG "[liteplayer]httpclient"
 
 #define HTTPCLIENT_HEADER_BUFFER_SIZE 1024
 #define HTTPCLIENT_RETRY_COUNT        5

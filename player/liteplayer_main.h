@@ -24,7 +24,7 @@
 extern "C" {
 #endif
 
-typedef enum liteplayer_state {
+enum liteplayer_state {
     LITEPLAYER_IDLE            = 0x00,
     LITEPLAYER_INITED          = 0x01,
     LITEPLAYER_PREPARED        = 0x02,
@@ -35,19 +35,19 @@ typedef enum liteplayer_state {
     LITEPLAYER_COMPLETED       = 0x07,
     LITEPLAYER_STOPPED         = 0x08,
     LITEPLAYER_ERROR           = 0x09,
-} liteplayer_state_t;
+};
 
-typedef int (*liteplayer_state_cb)(liteplayer_state_t state, int errcode, void *priv);
+typedef int (*liteplayer_state_cb)(enum liteplayer_state state, int errcode, void *priv);
 
 typedef struct liteplayer *liteplayer_handle_t;
 
 liteplayer_handle_t liteplayer_create();
 
-int liteplayer_register_file_wrapper(liteplayer_handle_t handle, file_wrapper_t *file_wrapper);
+int liteplayer_register_file_wrapper(liteplayer_handle_t handle, struct file_wrapper *file_ops);
 
-int liteplayer_register_http_wrapper(liteplayer_handle_t handle, http_wrapper_t *http_wrapper);
+int liteplayer_register_http_wrapper(liteplayer_handle_t handle, struct http_wrapper *http_ops);
 
-int liteplayer_register_sink_wrapper(liteplayer_handle_t handle, sink_wrapper_t *sink_wrapper);
+int liteplayer_register_sink_wrapper(liteplayer_handle_t handle, struct sink_wrapper *sink_ops);
 
 int liteplayer_register_state_listener(liteplayer_handle_t handle, liteplayer_state_cb listener, void *listener_priv);
 

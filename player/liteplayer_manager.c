@@ -28,19 +28,20 @@
 #include "liteplayer_main.h"
 #include "liteplayer_manager.h"
 
-#define TAG "LITE_MANAGER"
+#define TAG "[liteplayer]MANAGER"
 
 struct liteplayer_mngr {
     liteplayer_handle_t  player;
     mlooper_t            looper;
     os_mutex_t           lock;
-    liteplayer_state_t   state;
+
+    enum liteplayer_state state;
     liteplayer_state_cb  listener;
     void                *listener_priv;
 
-    file_wrapper_t       file_wrapper;
-    http_wrapper_t       http_wrapper;
-    sink_wrapper_t       sink_wrapper;
+    struct file_wrapper  file_ops;
+    struct http_wrapper  http_ops;
+    struct sink_wrapper  sink_ops;
 
     char                *url_list[DEFAULT_PLAYLIST_URL_MAX];
     int                  url_index;
@@ -138,13 +139,13 @@ static int playlist_resolve(liteplayer_mngr_handle_t mngr, const char *filename)
         goto resolve_done;
     }
 
-    file = mngr->file_wrapper.open(filename, FILE_READ, 0, mngr->file_wrapper.file_priv);
+    file = mngr->file_ops.open(filename, FILE_READ, 0, mngr->file_ops.file_priv);
     if (file == NULL) {
         OS_LOGE(TAG, "Failed to open playlist");
         goto resolve_done;
     }
 
-    int bytes_read = mngr->file_wrapper.read(file, content, DEFAULT_PLAYLIST_BUFFER_SIZE);
+    int bytes_read = mngr->file_ops.read(file, content, DEFAULT_PLAYLIST_BUFFER_SIZE);
     if (bytes_read <= 0) {
         OS_LOGE(TAG, "Failed to read playlist");
         goto resolve_done;
@@ -171,13 +172,13 @@ static int playlist_resolve(liteplayer_mngr_handle_t mngr, const char *filename)
 
 resolve_done:
     if (file != NULL)
-        mngr->file_wrapper.close(file);
+        mngr->file_ops.close(file);
     if (content != NULL)
         audio_free(content);
     return ret;
 }
 
-static int manager_state_callback(liteplayer_state_t state, int errcode, void *priv)
+static int manager_state_callback(enum liteplayer_state state, int errcode, void *priv)
 {
     liteplayer_mngr_handle_t mngr = (liteplayer_mngr_handle_t)priv;
     bool state_sync = true;
@@ -410,28 +411,28 @@ failed:
     return NULL;
 }
 
-int liteplayer_mngr_register_file_wrapper(liteplayer_mngr_handle_t mngr, file_wrapper_t *file_wrapper)
+int liteplayer_mngr_register_file_wrapper(liteplayer_mngr_handle_t mngr, struct file_wrapper *file_ops)
 {
-    if (mngr == NULL || file_wrapper == NULL)
+    if (mngr == NULL || file_ops == NULL)
         return -1;
-    memcpy(&mngr->file_wrapper, file_wrapper, sizeof(file_wrapper_t));
-    return liteplayer_register_file_wrapper(mngr->player, file_wrapper);
+    memcpy(&mngr->file_ops, file_ops, sizeof(struct file_wrapper));
+    return liteplayer_register_file_wrapper(mngr->player, file_ops);
 }
 
-int liteplayer_mngr_register_http_wrapper(liteplayer_mngr_handle_t mngr, http_wrapper_t *http_wrapper)
+int liteplayer_mngr_register_http_wrapper(liteplayer_mngr_handle_t mngr, struct http_wrapper *http_ops)
 {
-    if (mngr == NULL || http_wrapper == NULL)
+    if (mngr == NULL || http_ops == NULL)
         return -1;
-    memcpy(&mngr->http_wrapper, http_wrapper, sizeof(http_wrapper_t));
-    return liteplayer_register_http_wrapper(mngr->player, http_wrapper);
+    memcpy(&mngr->http_ops, http_ops, sizeof(struct http_wrapper));
+    return liteplayer_register_http_wrapper(mngr->player, http_ops);
 }
 
-int liteplayer_mngr_register_sink_wrapper(liteplayer_mngr_handle_t mngr, sink_wrapper_t *sink_wrapper)
+int liteplayer_mngr_register_sink_wrapper(liteplayer_mngr_handle_t mngr, struct sink_wrapper *sink_ops)
 {
-    if (mngr == NULL || sink_wrapper == NULL)
+    if (mngr == NULL || sink_ops == NULL)
         return -1;
-    memcpy(&mngr->sink_wrapper, sink_wrapper, sizeof(sink_wrapper_t));
-    return liteplayer_register_sink_wrapper(mngr->player, sink_wrapper);
+    memcpy(&mngr->sink_ops, sink_ops, sizeof(struct sink_wrapper));
+    return liteplayer_register_sink_wrapper(mngr->player, sink_ops);
 }
 
 int liteplayer_mngr_register_state_listener(liteplayer_mngr_handle_t mngr, liteplayer_state_cb listener, void *listener_priv)

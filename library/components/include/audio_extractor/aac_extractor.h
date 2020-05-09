@@ -25,17 +25,16 @@ extern "C" {
 // Return the data size obtained
 typedef int (*aac_fetch_cb)(char *buf, int wanted_size, long offset, void *fetch_priv);
 
-typedef struct aac_info {
+struct aac_info {
     int channels;
     int sample_rate;
     int frame_size;
     int frame_start_offset;
-    int id3v2_length;
-} aac_info_t;
+};
 
-int aac_parse_adts_frame(char *buf, int buf_size, aac_info_t *info);
+int aac_parse_adts_frame(char *buf, int buf_size, struct aac_info *info);
 
-int aac_extractor(aac_fetch_cb fetch_cb, void *fetch_priv, aac_info_t *info);
+int aac_extractor(aac_fetch_cb fetch_cb, void *fetch_priv, struct aac_info *info);
 
 #ifdef __cplusplus
 }

@@ -49,7 +49,7 @@ extern "C" {
 // decoder element definations
 #define DEFAULT_DECODER_TASK_PRIO            ( OS_THREAD_PRIO_HIGH )
 #define DEFAULT_DECODER_TASK_STACKSIZE       ( 16384 )
-#define DEFAULT_DECODER_RINGBUF_SIZE         ( 8*1024 )
+#define DEFAULT_DECODER_RINGBUF_SIZE         ( 32*1024 )
 #define DEFAULT_DECODER_BUFFER_SIZE          ( 512 )
 
 // sink element definations

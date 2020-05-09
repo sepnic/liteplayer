@@ -29,12 +29,12 @@
 extern "C" {
 #endif
 
-typedef enum media_parser_state {
+enum media_parser_state {
     MEDIA_PARSER_FAILED = -1,
     MEDIA_PARSER_SUCCEED = 0,
-} media_parser_state_t;
+};
 
-typedef struct media_codec_info {
+struct media_codec_info {
     audio_codec_t       codec_type;
     int                 codec_samplerate;
     int                 codec_channels;
@@ -43,16 +43,16 @@ typedef struct media_codec_info {
     long                content_len;
     int                 bytes_per_sec;
     int                 duration_ms;
-    m4a_info_t          m4a_info;
-} media_codec_info_t;
+    struct m4a_info     m4a_info;
+};
 
-typedef void (*media_parser_state_cb)(media_parser_state_t state, media_codec_info_t *media_info, void *priv);
+typedef void (*media_parser_state_cb)(enum media_parser_state state, struct media_codec_info *codec_info, void *priv);
 
 typedef void *media_parser_handle_t;
 
-int media_info_parse(media_source_info_t *source_info, media_codec_info_t *media_info);
+int media_info_parse(struct media_source_info *source_info, struct media_codec_info *codec_info);
 
-media_parser_handle_t media_parser_start_async(media_source_info_t *source_info,
+media_parser_handle_t media_parser_start_async(struct media_source_info *source_info,
                                                media_parser_state_cb listener,
                                                void *listener_priv);
 void media_parser_stop(media_parser_handle_t handle);

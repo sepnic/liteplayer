@@ -47,11 +47,11 @@ extern "C" {
 /**
  * @brief      AAC Decoder configurations
  */
-typedef struct {
+struct aac_decoder_cfg {
     int   out_rb_size;    /*!< Size of output ringbuffer */
     int   task_stack;     /*!< Task stack size */
     int   task_prio;      /*!< Task priority (based on freeRTOS priority) */
-} aac_decoder_cfg_t;
+};
 
 #define AAC_DECODER_TASK_STACK          (4 * 1024)
 #define AAC_DECODER_TASK_PRIO           (OS_THREAD_PRIO_NORMAL)
@@ -64,24 +64,24 @@ typedef struct {
     .task_prio      = AAC_DECODER_TASK_PRIO,\
 }
 
-typedef struct aac_buf_in {
+struct aac_buf_in {
     char  data[AAC_DECODER_INPUT_BUFFER_SIZE];
     int   bytes_want;
     int   bytes_read;
     bool  eof;
-} aac_buf_in_t;
+};
 
-typedef struct aac_buf_out {
+struct aac_buf_out {
     char  data[AAC_DECODER_OUTPUT_BUFFER_SIZE];
     int   bytes_remain;
     int   bytes_written;
-} aac_buf_out_t;
+};
 
 struct aac_decoder {
-    void                    *handle;
+    void                   *handle;
     audio_element_handle_t  el;
-    aac_buf_in_t            buf_in;
-    aac_buf_out_t           buf_out;
+    struct aac_buf_in       buf_in;
+    struct aac_buf_out      buf_out;
     bool                    parsed_header;
     bool                    seek_mode;
 };
@@ -99,7 +99,7 @@ int aac_wrapper_init(aac_decoder_handle_t decoder);
  *
  * @return     The audio element handle
  */
-audio_element_handle_t aac_decoder_init(aac_decoder_cfg_t *config);
+audio_element_handle_t aac_decoder_init(struct aac_decoder_cfg *config);
 
 #ifdef __cplusplus
 }

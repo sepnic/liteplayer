@@ -32,7 +32,7 @@ typedef void *sink_handle_t;
  * @brief      Sink stream configurations
  *             Default value will be used if any entry is zero
  */
-typedef struct {
+struct sink_stream_cfg {
     int             task_prio;      /*!< Task priority (based on freeRTOS priority) */
     int             task_stack;     /*!< Task stack size */
     int             out_rb_size;    /*!< Size of output ringbuffer */
@@ -46,7 +46,7 @@ typedef struct {
     sink_handle_t (*sink_open)(int samplerate, int channels, void *sink_priv);
     int           (*sink_write)(sink_handle_t handle, char *buffer, int size);
     void          (*sink_close)(sink_handle_t handle);
-} sink_stream_cfg_t;
+};
 
 #define SINK_STREAM_TASK_PRIO            (OS_THREAD_PRIO_HARD_REALTIME)
 #define SINK_STREAM_TASK_STACK           (4 * 1024)
@@ -72,7 +72,7 @@ typedef struct {
  *
  * @return     The Audio Element handle
  */
-audio_element_handle_t sink_stream_init(sink_stream_cfg_t *config);
+audio_element_handle_t sink_stream_init(struct sink_stream_cfg *config);
 
 #ifdef __cplusplus
 }

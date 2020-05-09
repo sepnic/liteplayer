@@ -24,7 +24,7 @@
 #include "audio_extractor/wav_extractor.h"
 #include "wave_wrapper.h"
 
-#define TAG "sinkwrapper"
+#define TAG "[liteplayer]wave"
 
 struct wave_priv {
     FILE *file;

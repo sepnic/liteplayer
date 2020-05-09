@@ -23,7 +23,7 @@
 #include "esp_adf/audio_common.h"
 #include "audio_extractor/wav_extractor.h"
 
-#define TAG "WAV_EXTRACTOR"
+#define TAG "[liteplayer]WAV_EXTRACTOR"
 
 #define WAV_PARSE_BUFFER_SIZE (2048)
 
@@ -68,7 +68,7 @@
 /* WAV_FMT_EXTENSIBLE format */
 #define WAV_GUID_TAG "/x00/x00/x00/x00/x10/x00/x80/x00/x00/xAA/x00/x38/x9B/x71"
 
-static void wav_dump_info(wav_info_t *info)
+static void wav_dump_info(struct wav_info *info)
 {
     OS_LOGD(TAG, "WAV INFO:");
     OS_LOGD(TAG, "  >audioFormat          : %u", info->audioFormat);
@@ -81,7 +81,7 @@ static void wav_dump_info(wav_info_t *info)
     OS_LOGD(TAG, "  >dataOffset           : %u", info->dataOffset);
 }
 
-int wav_parse_header(char *buf, int buf_size, wav_info_t *info)
+int wav_parse_header(char *buf, int buf_size, struct wav_info *info)
 {
     if (buf_size < sizeof(wav_header_t))
         return -1;
@@ -173,7 +173,7 @@ parse_done:
         OS_LOGE(TAG, "Unsupported AudioFormat:0x%x", info->audioFormat);
         return -1;
     }
-    if (info->channels != 1 && info->channels != 2) {
+    if (info->channels < 1 || info->channels > WAV_MAX_CHANNEL_COUNT) {
         OS_LOGE(TAG, "Unsupported NumOfChannels:%u", info->channels);
         return -1;
     }
@@ -193,7 +193,7 @@ parse_done:
     return 0;
 }
 
-void wav_build_header(wav_header_t *header, int samplerate, int bits, int channels, wav_format_t format, long datasize)
+void wav_build_header(wav_header_t *header, int samplerate, int bits, int channels, enum wav_format format, long datasize)
 {
     header->riff.ChunkID = WAV_CHUNK_RIFF;
     header->riff.Format = WAV_CHUNK_WAVE;
@@ -210,7 +210,7 @@ void wav_build_header(wav_header_t *header, int samplerate, int bits, int channe
     header->data.ChunkSize = LE_INT(datasize);
 }
 
-int wav_extractor(wav_fetch_cb fetch_cb, void *fetch_priv, wav_info_t *info)
+int wav_extractor(wav_fetch_cb fetch_cb, void *fetch_priv, struct wav_info *info)
 {
     int buf_size = WAV_PARSE_BUFFER_SIZE;
     char *buf = (char *)audio_calloc(1, buf_size);

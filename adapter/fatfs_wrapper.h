@@ -24,7 +24,7 @@
 extern "C" {
 #endif
 
-file_handle_t fatfs_wrapper_open(const char *url, file_mode_t mode, long long content_pos, void *file_priv);
+file_handle_t fatfs_wrapper_open(const char *url, enum file_mode mode, long long content_pos, void *file_priv);
 
 int fatfs_wrapper_read(file_handle_t handle, char *buffer, int size);
 

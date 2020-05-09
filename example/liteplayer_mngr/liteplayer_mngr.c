@@ -36,7 +36,7 @@
 #include "wave_wrapper.h"
 #endif
 
-#define TAG "LITEPLAYER_MNGR"
+#define TAG "[liteplayer]DEMO"
 
 #define PLAYLIST_FILE "liteplayermngr_demo.playlist"
 
@@ -46,7 +46,7 @@
 struct liteplayer_demo_priv {
     const char *url;
     liteplayer_mngr_handle_t mngr;
-    liteplayer_state_t state;
+    enum liteplayer_state state;
     bool exit;
 };
 
@@ -89,7 +89,7 @@ static int generate_playlist(const char *path)
     return -1;
 }
 
-static int liteplayer_demo_state_callback(liteplayer_state_t state, int errcode, void *priv)
+static int liteplayer_demo_state_callback(enum liteplayer_state state, int errcode, void *priv)
 {
     struct liteplayer_demo_priv *demo = (struct liteplayer_demo_priv *)priv;
     bool state_sync = true;
@@ -148,23 +148,23 @@ static void *liteplayer_demo_thread(void *arg)
     liteplayer_mngr_register_state_listener(demo->mngr, liteplayer_demo_state_callback, (void *)demo);
 
 #if defined(ENABLE_TINYALSA)
-    sink_wrapper_t sink_wrapper = {
+    struct sink_wrapper sink_ops = {
         .sink_priv = NULL,
         .open = tinyalsa_wrapper_open,
         .write = tinyalsa_wrapper_write,
         .close = tinyalsa_wrapper_close,
     };
 #else
-    sink_wrapper_t sink_wrapper = {
+    struct sink_wrapper sink_ops = {
         .sink_priv = NULL,
         .open = wave_wrapper_open,
         .write = wave_wrapper_write,
         .close = wave_wrapper_close,
     };
 #endif
-    liteplayer_mngr_register_sink_wrapper(demo->mngr, &sink_wrapper);
+    liteplayer_mngr_register_sink_wrapper(demo->mngr, &sink_ops);
 
-    file_wrapper_t file_wrapper = {
+    struct file_wrapper file_ops = {
         .file_priv = NULL,
         .open = fatfs_wrapper_open,
         .read = fatfs_wrapper_read,
@@ -173,9 +173,9 @@ static void *liteplayer_demo_thread(void *arg)
         .seek = fatfs_wrapper_seek,
         .close = fatfs_wrapper_close,
     };
-    liteplayer_mngr_register_file_wrapper(demo->mngr, &file_wrapper);
+    liteplayer_mngr_register_file_wrapper(demo->mngr, &file_ops);
 
-    http_wrapper_t http_wrapper = {
+    struct http_wrapper http_ops = {
         .http_priv = NULL,
         .open = httpclient_wrapper_open,
         .read = httpclient_wrapper_read,
@@ -183,7 +183,7 @@ static void *liteplayer_demo_thread(void *arg)
         .seek = httpclient_wrapper_seek,
         .close = httpclient_wrapper_close,
     };
-    liteplayer_mngr_register_http_wrapper(demo->mngr, &http_wrapper);
+    liteplayer_mngr_register_http_wrapper(demo->mngr, &http_ops);
 
     if (liteplayer_mngr_set_data_source(demo->mngr, demo->url) != ESP_OK) {
         OS_LOGE(TAG, "Failed to set data source");

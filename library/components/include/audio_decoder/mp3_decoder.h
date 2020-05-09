@@ -34,11 +34,11 @@ extern "C" {
 /**
  * @brief      Mp3 Decoder configurations
  */
-typedef struct {
+struct mp3_decoder_cfg {
     int   out_rb_size;    /*!< Size of output ringbuffer */
     int   task_stack;     /*!< Task stack size */
     int   task_prio;      /*!< Task priority (based on freeRTOS priority) */
-} mp3_decoder_cfg_t;
+};
 
 #define MP3_DECODER_TASK_STACK          (4 * 1024)
 #define MP3_DECODER_TASK_PRIO           (OS_THREAD_PRIO_NORMAL)
@@ -51,24 +51,24 @@ typedef struct {
     .task_prio      = MP3_DECODER_TASK_PRIO,\
 }
 
-typedef struct mp3_buf_in {
+struct mp3_buf_in {
     char data[MP3_DECODER_INPUT_BUFFER_SIZE];
     int  bytes_want;     // bytes that want to read
     int  bytes_read;     // bytes that have read
     bool eof;            // if end of stream
-} mp3_buf_in_t;
+};
 
-typedef struct mp3_buf_out {
+struct mp3_buf_out {
     char data[MP3_DECODER_OUTPUT_BUFFER_SIZE];
     int  bytes_remain;   // bytes that remained to write
     int  bytes_written;  // bytes that have written
-} mp3_buf_out_t;
+};
 
 struct mp3_decoder {
-    void                    *handle;
+    void                   *handle;
     audio_element_handle_t  el;
-    mp3_buf_in_t            buf_in;
-    mp3_buf_out_t           buf_out;
+    struct mp3_buf_in       buf_in;
+    struct mp3_buf_out      buf_out;
     bool                    parsed_header;
     bool                    seek_mode;
 };
@@ -86,7 +86,7 @@ int mp3_wrapper_run(mp3_decoder_handle_t decoder);
  *
  * @return     The audio element handle
  */
-audio_element_handle_t mp3_decoder_init(mp3_decoder_cfg_t *config);
+audio_element_handle_t mp3_decoder_init(struct mp3_decoder_cfg *config);
 
 #ifdef __cplusplus
 }

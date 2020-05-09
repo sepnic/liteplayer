@@ -28,12 +28,12 @@ extern "C" {
 /**
  * @brief      M4A Decoder configurations
  */
-typedef struct {
+struct m4a_decoder_cfg {
     int   out_rb_size;    /*!< Size of output ringbuffer */
     int   task_stack;     /*!< Task stack size */
     int   task_prio;      /*!< Task priority (based on freeRTOS priority) */
-    m4a_info_t *m4a_info;
-} m4a_decoder_cfg_t;
+    struct m4a_info *m4a_info;
+};
 
 #define DEFAULT_M4A_DECODER_CONFIG() {\
     .out_rb_size    = AAC_DECODER_RINGBUFFER_SIZE,\
@@ -44,9 +44,9 @@ typedef struct {
 struct m4a_decoder {
     void                   *handle;
     audio_element_handle_t  el;
-    aac_buf_in_t            buf_in;
-    aac_buf_out_t           buf_out;
-    m4a_info_t             *m4a_info;
+    struct aac_buf_in       buf_in;
+    struct aac_buf_out      buf_out;
+    struct m4a_info        *m4a_info;
     bool                    parsed_header;
 };
 
@@ -63,7 +63,7 @@ int m4a_wrapper_init(m4a_decoder_handle_t decoder);
  *
  * @return     The audio element handle
  */
-audio_element_handle_t m4a_decoder_init(m4a_decoder_cfg_t *config);
+audio_element_handle_t m4a_decoder_init(struct m4a_decoder_cfg *config);
 
 #ifdef __cplusplus
 }

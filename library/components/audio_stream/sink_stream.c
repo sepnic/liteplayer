@@ -25,7 +25,7 @@
 #include "audio_resampler/audio_resampler.h"
 #include "audio_stream/sink_stream.h"
 
-#define TAG "SINK_STREAM"
+#define TAG "[liteplayer]SINK_STREAM"
 
 //#define ENABLE_SRC
 
@@ -35,21 +35,21 @@
 
 #define SINK_INPUT_TIMEOUT_MAX  50
 
-typedef struct sink_stream {
-    sink_stream_cfg_t   config;
-    sink_handle_t       out;
-    bool                samplerate_checked;
+struct sink_stream {
+    struct sink_stream_cfg config;
+    sink_handle_t out;
+    bool first_write;
 #if defined(ENABLE_SRC)
     resample_converter_handle_t resampler;
     bool resampler_inited;
     bool resample_opened;
 #endif
-} sink_stream_t;
+};
 
 static esp_err_t sink_stream_open(audio_element_handle_t self)
 {
-    sink_stream_t *sink = (sink_stream_t *)audio_element_getdata(self);
-    sink_stream_cfg_t *config = &sink->config;
+    struct sink_stream *sink = (struct sink_stream *)audio_element_getdata(self);
+    struct sink_stream_cfg *config = &sink->config;
 
     OS_LOGV(TAG, "Open sink stream");
 
@@ -58,7 +58,7 @@ static esp_err_t sink_stream_open(audio_element_handle_t self)
         OS_LOGI(TAG, "Input: channels=%d, rate=%d, output:channels=%d, rate=%d",
                  config->in_channels, config->in_samplerate, config->out_channels, config->out_samplerate);
         if (config->in_samplerate != config->out_samplerate || config->in_channels != config->out_channels) {
-            resample_cfg_t cfg;
+            struct resample_cfg cfg;
             cfg.in_channels = config->in_channels;
             cfg.in_rate = config->in_samplerate;
             cfg.out_channels = config->out_channels;
@@ -98,8 +98,8 @@ static esp_err_t sink_stream_open(audio_element_handle_t self)
 
 static esp_err_t sink_stream_close(audio_element_handle_t self)
 {
-    sink_stream_t *sink = (sink_stream_t *)audio_element_getdata(self);
-    sink_stream_cfg_t *config = &sink->config;
+    struct sink_stream *sink = (struct sink_stream *)audio_element_getdata(self);
+    struct sink_stream_cfg *config = &sink->config;
 
     OS_LOGV(TAG, "Close sink stream");
 
@@ -127,11 +127,11 @@ static esp_err_t sink_stream_close(audio_element_handle_t self)
 
 static int sink_stream_write(audio_element_handle_t self, char *buffer, int len, int timeout_ms, void *context)
 {
-    sink_stream_t *sink = (sink_stream_t *)audio_element_getdata(self);
-    sink_stream_cfg_t *config = &sink->config;
+    struct sink_stream *sink = (struct sink_stream *)audio_element_getdata(self);
+    struct sink_stream_cfg *config = &sink->config;
     int bytes_written = 0, bytes_wanted = 0, status = -1;
 
-    if (!sink->samplerate_checked) {
+    if (!sink->first_write) {
         audio_element_info_t info = {0};
         audio_element_getinfo(self, &info);
         // If samplerate not matched with decoder info, reopen sink
@@ -152,7 +152,7 @@ static int sink_stream_write(audio_element_handle_t self, char *buffer, int len,
         info.bits = 16;
         audio_element_setinfo(self, &info);
         audio_element_report_info(self);
-        sink->samplerate_checked = true;
+        sink->first_write = true;
     }
 
     do {
@@ -186,7 +186,7 @@ static int sink_stream_process(audio_element_handle_t self, char *in_buffer, int
     int w_size = 0;
     if (r_size > 0) {
 #if defined(ENABLE_SRC)
-        sink_stream_t *sink = (sink_stream_t *)audio_element_getdata(self);
+        struct sink_stream *sink = (struct sink_stream *)audio_element_getdata(self);
         if (sink->resample_opened && sink->resampler) {
             int ret = sink->resampler->process(sink->resampler, (const short *)in_buffer, r_size);
             if (ret == 0) {
@@ -218,8 +218,8 @@ static esp_err_t sink_stream_seek(audio_element_handle_t self, long long offset)
 
 static esp_err_t sink_stream_destroy(audio_element_handle_t self)
 {
-    sink_stream_t *sink = (sink_stream_t *)audio_element_getdata(self);
-    sink_stream_cfg_t *config = &sink->config;
+    struct sink_stream *sink = (struct sink_stream *)audio_element_getdata(self);
+    struct sink_stream_cfg *config = &sink->config;
 
     OS_LOGV(TAG, "Destroy sink stream");
 
@@ -237,7 +237,7 @@ static esp_err_t sink_stream_destroy(audio_element_handle_t self)
     return ESP_OK;
 }
 
-audio_element_handle_t sink_stream_init(sink_stream_cfg_t *config)
+audio_element_handle_t sink_stream_init(struct sink_stream_cfg *config)
 {
     OS_LOGV(TAG, "Init sink stream");
 
@@ -255,9 +255,9 @@ audio_element_handle_t sink_stream_init(sink_stream_cfg_t *config)
     cfg.tag = "sink";
     cfg.write = sink_stream_write;
 
-    sink_stream_t *sink = audio_calloc(1, sizeof(sink_stream_t));
+    struct sink_stream *sink = audio_calloc(1, sizeof(struct sink_stream));
     AUDIO_MEM_CHECK(TAG, sink, return NULL);
-    memcpy(&sink->config, config, sizeof(sink_stream_cfg_t));
+    memcpy(&sink->config, config, sizeof(struct sink_stream_cfg));
 
     el = audio_element_init(&cfg);
     if (el == NULL) {

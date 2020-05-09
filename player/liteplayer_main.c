@@ -39,34 +39,34 @@
 #include "liteplayer_parser.h"
 #include "liteplayer_main.h"
 
-#define TAG "LITE_CORE"
+#define TAG "[liteplayer]CORE"
 
 struct liteplayer {
     const char             *url; // STREAM: /websocket/tts.mp3
                                  // HTTP  : http://..., https://...
                                  // FILE  : others
-    liteplayer_state_t      state;
+    enum liteplayer_state   state;
     os_mutex_t              state_lock;
     liteplayer_state_cb     state_listener;
-    void                   *state_listener_priv;
+    void                   *state_userdata;
     bool                    state_error;
 
     os_mutex_t              io_lock;
 
-    file_wrapper_t          file_wrapper;
-    http_wrapper_t          http_wrapper;
-    sink_wrapper_t          sink_wrapper;
+    struct file_wrapper     file_ops;
+    struct http_wrapper     http_ops;
+    struct sink_wrapper     sink_ops;
 
     audio_pipeline_handle_t pipeline;
     audio_element_handle_t  el_source;
     audio_element_handle_t  el_decoder;
     audio_element_handle_t  el_sink;
-
     ringbuf_handle_t        source_rb;
-    media_source_type_t     source_type;
+
+    enum media_source_type  source_type;
     media_source_handle_t   media_source;
     media_parser_handle_t   media_parser;
-    media_codec_info_t      media_info;
+    struct media_codec_info codec_info;
 
     int                     sink_samplerate;
     int                     sink_channels;
@@ -77,7 +77,7 @@ struct liteplayer {
     long long               seek_offset;
 };
 
-static const char *media_source_tag(media_source_type_t source)
+static const char *media_source_tag(enum media_source_type source)
 {
     switch (source) {
     case MEDIA_SOURCE_HTTP:
@@ -92,18 +92,18 @@ static const char *media_source_tag(media_source_type_t source)
     return "Unknown";
 }
 
-static void media_player_state_callback(liteplayer_handle_t handle, liteplayer_state_t state, int errcode)
+static void media_player_state_callback(liteplayer_handle_t handle, enum liteplayer_state state, int errcode)
 {
     if (state == LITEPLAYER_ERROR) {
         if (!handle->state_error) {
             handle->state_error = true;
             if (handle->state_listener)
-                handle->state_listener(LITEPLAYER_ERROR, errcode, handle->state_listener_priv);
+                handle->state_listener(LITEPLAYER_ERROR, errcode, handle->state_userdata);
         }
     }
     else {
         if (handle->state_listener)
-            handle->state_listener(state, 0, handle->state_listener_priv);
+            handle->state_listener(state, 0, handle->state_userdata);
     }
 }
 
@@ -234,7 +234,7 @@ static int audio_element_state_callback(audio_element_handle_t el, audio_event_i
     return ESP_OK;
 }
 
-static void media_source_state_callback(media_source_state_t state, void *priv)
+static void media_source_state_callback(enum media_source_state state, void *priv)
 {
     liteplayer_handle_t handle = (liteplayer_handle_t)priv;
 
@@ -259,7 +259,7 @@ static void media_source_state_callback(media_source_state_t state, void *priv)
     OS_THREAD_MUTEX_UNLOCK(handle->state_lock);
 }
 
-static void media_parser_state_callback(media_parser_state_t state, media_codec_info_t *media_info, void *priv)
+static void media_parser_state_callback(enum media_parser_state state, struct media_codec_info *codec_info, void *priv)
 {
     liteplayer_handle_t handle = (liteplayer_handle_t)priv;
 
@@ -273,7 +273,7 @@ static void media_parser_state_callback(media_parser_state_t state, media_codec_
         break;
     case MEDIA_PARSER_SUCCEED:
         OS_LOGD(TAG, "[ %s-PARSER ] Receive prepared event", media_source_tag(handle->source_type));
-        memcpy(&handle->media_info, media_info, sizeof(media_codec_info_t));
+        memcpy(&handle->codec_info, codec_info, sizeof(struct media_codec_info));
         handle->state = LITEPLAYER_PREPARED;
         media_player_state_callback(handle, LITEPLAYER_PREPARED, 0);
         break;
@@ -322,13 +322,13 @@ static int main_pipeline_init(liteplayer_handle_t handle)
 
     {
         OS_LOGD(TAG, "[2.0] Create sink element");
-        sink_stream_cfg_t sink_cfg = SINK_STREAM_CFG_DEFAULT();
+        struct sink_stream_cfg sink_cfg = SINK_STREAM_CFG_DEFAULT();
         sink_cfg.task_prio                = DEFAULT_SINK_TASK_PRIO;
         sink_cfg.task_stack               = DEFAULT_SINK_TASK_STACKSIZE;
         sink_cfg.out_rb_size              = DEFAULT_SINK_RINGBUF_SIZE;
         sink_cfg.buf_sz                   = DEFAULT_SINK_BUFFER_SIZE;
-        sink_cfg.in_channels              = handle->media_info.codec_channels;
-        sink_cfg.in_samplerate            = handle->media_info.codec_samplerate;
+        sink_cfg.in_channels              = handle->codec_info.codec_channels;
+        sink_cfg.in_samplerate            = handle->codec_info.codec_samplerate;
     #if defined(CONFIG_SRC_OUT_RATE)
         sink_cfg.out_samplerate           = CONFIG_SRC_OUT_RATE;
     #else
@@ -339,47 +339,47 @@ static int main_pipeline_init(liteplayer_handle_t handle)
     #else
         sink_cfg.out_channels             = DEFAULT_SINK_OUT_CHANNELS;
     #endif
-        sink_cfg.sink_priv                = handle->sink_wrapper.sink_priv;
-        sink_cfg.sink_open                = handle->sink_wrapper.open;
-        sink_cfg.sink_write               = handle->sink_wrapper.write;
-        sink_cfg.sink_close               = handle->sink_wrapper.close;
+        sink_cfg.sink_priv                = handle->sink_ops.sink_priv;
+        sink_cfg.sink_open                = handle->sink_ops.open;
+        sink_cfg.sink_write               = handle->sink_ops.write;
+        sink_cfg.sink_close               = handle->sink_ops.close;
         handle->el_sink = sink_stream_init(&sink_cfg);
         AUDIO_MEM_CHECK(TAG, handle->el_sink, goto pipeline_fail);
 
         audio_element_info_t info;
         audio_element_getinfo(handle->el_sink, &info);
-        info.in_channels = handle->media_info.codec_channels;
-        info.in_samplerate = handle->media_info.codec_samplerate;
+        info.in_channels = handle->codec_info.codec_channels;
+        info.in_samplerate = handle->codec_info.codec_samplerate;
         info.bits = 16;
         audio_element_setinfo(handle->el_sink, &info);
     }
 
     {
         OS_LOGD(TAG, "[2.1] Create decoder element");
-        if (handle->media_info.codec_type == AUDIO_CODEC_MP3) {
-            mp3_decoder_cfg_t mp3_cfg = DEFAULT_MP3_DECODER_CONFIG();
+        if (handle->codec_info.codec_type == AUDIO_CODEC_MP3) {
+            struct mp3_decoder_cfg mp3_cfg = DEFAULT_MP3_DECODER_CONFIG();
             mp3_cfg.task_prio            = DEFAULT_DECODER_TASK_PRIO;
             mp3_cfg.task_stack           = DEFAULT_DECODER_TASK_STACKSIZE;
             mp3_cfg.out_rb_size          = DEFAULT_DECODER_RINGBUF_SIZE;
             handle->el_decoder = mp3_decoder_init(&mp3_cfg);
         }
-        else if (handle->media_info.codec_type == AUDIO_CODEC_AAC) {
-            aac_decoder_cfg_t aac_cfg = DEFAULT_AAC_DECODER_CONFIG();
+        else if (handle->codec_info.codec_type == AUDIO_CODEC_AAC) {
+            struct aac_decoder_cfg aac_cfg = DEFAULT_AAC_DECODER_CONFIG();
             aac_cfg.task_prio            = DEFAULT_DECODER_TASK_PRIO;
             aac_cfg.task_stack           = DEFAULT_DECODER_TASK_STACKSIZE;
             aac_cfg.out_rb_size          = DEFAULT_DECODER_RINGBUF_SIZE;
             handle->el_decoder = aac_decoder_init(&aac_cfg);
         }
-        else if (handle->media_info.codec_type == AUDIO_CODEC_M4A) {
-            m4a_decoder_cfg_t m4a_cfg = DEFAULT_M4A_DECODER_CONFIG();
+        else if (handle->codec_info.codec_type == AUDIO_CODEC_M4A) {
+            struct m4a_decoder_cfg m4a_cfg = DEFAULT_M4A_DECODER_CONFIG();
             m4a_cfg.task_prio            = DEFAULT_DECODER_TASK_PRIO;
             m4a_cfg.task_stack           = DEFAULT_DECODER_TASK_STACKSIZE;
             m4a_cfg.out_rb_size          = DEFAULT_DECODER_RINGBUF_SIZE;
-            m4a_cfg.m4a_info = &handle->media_info.m4a_info;
+            m4a_cfg.m4a_info = &handle->codec_info.m4a_info;
             handle->el_decoder = m4a_decoder_init(&m4a_cfg);
         }
-        else if (handle->media_info.codec_type == AUDIO_CODEC_WAV) {
-            wav_decoder_cfg_t wav_cfg = DEFAULT_WAV_DECODER_CONFIG();
+        else if (handle->codec_info.codec_type == AUDIO_CODEC_WAV) {
+            struct wav_decoder_cfg wav_cfg = DEFAULT_WAV_DECODER_CONFIG();
             wav_cfg.task_prio            = DEFAULT_DECODER_TASK_PRIO;
             wav_cfg.task_stack           = DEFAULT_DECODER_TASK_STACKSIZE;
             wav_cfg.out_rb_size          = DEFAULT_DECODER_RINGBUF_SIZE;
@@ -401,33 +401,33 @@ static int main_pipeline_init(liteplayer_handle_t handle)
         audio_element_set_input_ringbuf(handle->el_decoder, handle->source_rb);
 
         if (handle->source_type == MEDIA_SOURCE_HTTP) {
-            media_source_info_t info = {
+            struct media_source_info info = {
                 .url = handle->url,
                 .source_type = MEDIA_SOURCE_HTTP,
-                .http_wrapper = {
-                    .http_priv = handle->http_wrapper.http_priv,
-                    .open = handle->http_wrapper.open,
-                    .read = handle->http_wrapper.read,
-                    .seek = handle->http_wrapper.seek,
-                    .close = handle->http_wrapper.close,
+                .http_ops = {
+                    .http_priv = handle->http_ops.http_priv,
+                    .open = handle->http_ops.open,
+                    .read = handle->http_ops.read,
+                    .seek = handle->http_ops.seek,
+                    .close = handle->http_ops.close,
                 },
-                .content_pos = handle->media_info.content_pos + handle->seek_offset,
+                .content_pos = handle->codec_info.content_pos + handle->seek_offset,
             };
             handle->media_source = media_source_start(&info, handle->source_rb, media_source_state_callback, handle);
             AUDIO_MEM_CHECK(TAG, handle->media_source, goto pipeline_fail);
         }
         else if (handle->source_type == MEDIA_SOURCE_FILE) {
-            media_source_info_t info = {
+            struct media_source_info info = {
                 .url = handle->url,
                 .source_type = MEDIA_SOURCE_FILE,
-                .file_wrapper = {
-                    .file_priv = handle->file_wrapper.file_priv,
-                    .open = handle->file_wrapper.open,
-                    .read = handle->file_wrapper.read,
-                    .seek = handle->file_wrapper.seek,
-                    .close = handle->file_wrapper.close,
+                .file_ops = {
+                    .file_priv = handle->file_ops.file_priv,
+                    .open = handle->file_ops.open,
+                    .read = handle->file_ops.read,
+                    .seek = handle->file_ops.seek,
+                    .close = handle->file_ops.close,
                 },
-                .content_pos = handle->media_info.content_pos + handle->seek_offset,
+                .content_pos = handle->codec_info.content_pos + handle->seek_offset,
             };
             handle->media_source = media_source_start(&info, handle->source_rb, media_source_state_callback, handle);
             AUDIO_MEM_CHECK(TAG, handle->media_source, goto pipeline_fail);
@@ -475,27 +475,27 @@ liteplayer_handle_t liteplayer_create()
     return handle;
 }
 
-int liteplayer_register_file_wrapper(liteplayer_handle_t handle, file_wrapper_t *file_wrapper)
+int liteplayer_register_file_wrapper(liteplayer_handle_t handle, struct file_wrapper *file_ops)
 {
-    if (handle == NULL || file_wrapper == NULL)
+    if (handle == NULL || file_ops == NULL)
         return ESP_FAIL;
-    memcpy(&handle->file_wrapper, file_wrapper, sizeof(file_wrapper_t));
+    memcpy(&handle->file_ops, file_ops, sizeof(struct file_wrapper));
     return ESP_OK;
 }
 
-int liteplayer_register_http_wrapper(liteplayer_handle_t handle, http_wrapper_t *http_wrapper)
+int liteplayer_register_http_wrapper(liteplayer_handle_t handle, struct http_wrapper *http_ops)
 {
-    if (handle == NULL || http_wrapper == NULL)
+    if (handle == NULL || http_ops == NULL)
         return ESP_FAIL;
-    memcpy(&handle->http_wrapper, http_wrapper, sizeof(http_wrapper_t));
+    memcpy(&handle->http_ops, http_ops, sizeof(struct http_wrapper));
     return ESP_OK;
 }
 
-int liteplayer_register_sink_wrapper(liteplayer_handle_t handle, sink_wrapper_t *sink_wrapper)
+int liteplayer_register_sink_wrapper(liteplayer_handle_t handle, struct sink_wrapper *sink_ops)
 {
-    if (handle == NULL || sink_wrapper == NULL)
+    if (handle == NULL || sink_ops == NULL)
         return ESP_FAIL;
-    memcpy(&handle->sink_wrapper, sink_wrapper, sizeof(sink_wrapper_t));
+    memcpy(&handle->sink_ops, sink_ops, sizeof(struct sink_wrapper));
     return ESP_OK;
 }
 
@@ -504,7 +504,7 @@ int liteplayer_register_state_listener(liteplayer_handle_t handle, liteplayer_st
     if (handle == NULL || listener == NULL)
         return ESP_FAIL;
     handle->state_listener = listener;
-    handle->state_listener_priv = listener_priv;
+    handle->state_userdata = listener_priv;
     return ESP_OK;
 }
 
@@ -563,23 +563,23 @@ int liteplayer_prepare(liteplayer_handle_t handle)
 
     if (handle->source_type == MEDIA_SOURCE_STREAM) {
         // TODO: Fixed mp3/16KHz/mono
-        handle->media_info.codec_type = DEFAULT_STREAM_FIXED_CODEC;
-        handle->media_info.codec_samplerate = DEFAULT_STREAM_FIXED_SAMPLERATE;
-        handle->media_info.codec_channels = DEFAULT_STREAM_FIXED_CHANNELS;
+        handle->codec_info.codec_type = DEFAULT_STREAM_FIXED_CODEC;
+        handle->codec_info.codec_samplerate = DEFAULT_STREAM_FIXED_SAMPLERATE;
+        handle->codec_info.codec_channels = DEFAULT_STREAM_FIXED_CHANNELS;
     }
     else if (handle->source_type == MEDIA_SOURCE_HTTP) {
-        media_source_info_t source_info = {0};
+        struct media_source_info source_info = {0};
         source_info.url = handle->url;
         source_info.source_type = MEDIA_SOURCE_HTTP;
-        memcpy(&source_info.http_wrapper, &handle->http_wrapper, sizeof(http_wrapper_t));
-        ret = media_info_parse(&source_info, &handle->media_info);
+        memcpy(&source_info.http_ops, &handle->http_ops, sizeof(struct http_wrapper));
+        ret = media_info_parse(&source_info, &handle->codec_info);
     }
     else {
-        media_source_info_t source_info = {0};
+        struct media_source_info source_info = {0};
         source_info.url = handle->url;
         source_info.source_type = MEDIA_SOURCE_FILE;
-        memcpy(&source_info.file_wrapper, &handle->file_wrapper, sizeof(file_wrapper_t));
-        ret = media_info_parse(&source_info, &handle->media_info);
+        memcpy(&source_info.file_ops, &handle->file_ops, sizeof(struct file_wrapper));
+        ret = media_info_parse(&source_info, &handle->codec_info);
     }
 
     if (ret == ESP_OK)
@@ -615,15 +615,15 @@ int liteplayer_prepare_async(liteplayer_handle_t handle)
 
     if (handle->source_type == MEDIA_SOURCE_STREAM) {
         // TODO: Fixed mp3/16KHz/mono
-        handle->media_info.codec_type = DEFAULT_STREAM_FIXED_CODEC;
-        handle->media_info.codec_samplerate = DEFAULT_STREAM_FIXED_SAMPLERATE;
-        handle->media_info.codec_channels = DEFAULT_STREAM_FIXED_CHANNELS;
+        handle->codec_info.codec_type = DEFAULT_STREAM_FIXED_CODEC;
+        handle->codec_info.codec_samplerate = DEFAULT_STREAM_FIXED_SAMPLERATE;
+        handle->codec_info.codec_channels = DEFAULT_STREAM_FIXED_CHANNELS;
     }
     else if (handle->source_type == MEDIA_SOURCE_HTTP) {
-        media_source_info_t source_info = {0};
+        struct media_source_info source_info = {0};
         source_info.url = handle->url;
         source_info.source_type = MEDIA_SOURCE_HTTP;
-        memcpy(&source_info.http_wrapper, &handle->http_wrapper, sizeof(http_wrapper_t));
+        memcpy(&source_info.http_ops, &handle->http_ops, sizeof(struct http_wrapper));
         handle->media_parser = media_parser_start_async(&source_info, media_parser_state_callback, handle);
         if (handle->media_parser == NULL) {
             ret = ESP_FAIL;
@@ -634,11 +634,11 @@ int liteplayer_prepare_async(liteplayer_handle_t handle)
         }
     }
     else {
-        media_source_info_t source_info = {0};
+        struct media_source_info source_info = {0};
         source_info.url = handle->url;
         source_info.source_type = MEDIA_SOURCE_FILE;
-        memcpy(&source_info.file_wrapper, &handle->file_wrapper, sizeof(file_wrapper_t));
-        ret = media_info_parse(&source_info, &handle->media_info);
+        memcpy(&source_info.file_ops, &handle->file_ops, sizeof(struct file_wrapper));
+        ret = media_info_parse(&source_info, &handle->codec_info);
     }
 
     if (handle->source_type != MEDIA_SOURCE_HTTP) {
@@ -822,36 +822,36 @@ int liteplayer_seek(liteplayer_handle_t handle, int msec)
         goto seek_out;
     }
 
-    if (msec >= handle->media_info.duration_ms) {
+    if (msec >= handle->codec_info.duration_ms) {
         OS_LOGE(TAG, "Invalid seek time");
         ret = ESP_OK;
         goto seek_out;
     }
 
     long long offset = 0;
-    switch (handle->media_info.codec_type) {
+    switch (handle->codec_info.codec_type) {
     //case AUDIO_CODEC_WAV:
     case AUDIO_CODEC_MP3: {
-        offset = (handle->media_info.bytes_per_sec*(msec/1000));
+        offset = (handle->codec_info.bytes_per_sec*(msec/1000));
         break;
     }
     case AUDIO_CODEC_M4A: {
         unsigned int sample_index = 0;
         unsigned int sample_offset = 0;
-        if (m4a_get_seek_offset(msec, &handle->media_info.m4a_info, &sample_index, &sample_offset) != 0) {
+        if (m4a_get_seek_offset(msec, &handle->codec_info.m4a_info, &sample_index, &sample_offset) != 0) {
             ret = ESP_OK;
             goto seek_out;
         }
-        offset = (long long)sample_offset - handle->media_info.content_pos;
-        handle->media_info.m4a_info.stsz_samplesize_index = sample_index;
+        offset = (long long)sample_offset - handle->codec_info.content_pos;
+        handle->codec_info.m4a_info.stsz_samplesize_index = sample_index;
         break;
     }
     default:
-        OS_LOGE(TAG, "Unsupported seek for codec: %d", handle->media_info.codec_type);
+        OS_LOGE(TAG, "Unsupported seek for codec: %d", handle->codec_info.codec_type);
         ret = ESP_OK;
         goto seek_out;
     }
-    if (handle->media_info.content_len > 0 && offset >= handle->media_info.content_len) {
+    if (handle->codec_info.content_len > 0 && offset >= handle->codec_info.content_len) {
         OS_LOGE(TAG, "Invalid seek offset");
         ret = ESP_OK;
         goto seek_out;
@@ -899,33 +899,33 @@ int liteplayer_seek(liteplayer_handle_t handle, int msec)
         audio_element_reset_input_ringbuf(handle->el_sink);
 
         if (handle->source_type == MEDIA_SOURCE_HTTP) {
-            media_source_info_t info = {
+            struct media_source_info info = {
                 .url = handle->url,
                 .source_type = MEDIA_SOURCE_HTTP,
-                .http_wrapper = {
-                    .http_priv = handle->http_wrapper.http_priv,
-                    .open = handle->http_wrapper.open,
-                    .read = handle->http_wrapper.read,
-                    .seek = handle->http_wrapper.seek,
-                    .close = handle->http_wrapper.close,
+                .http_ops = {
+                    .http_priv = handle->http_ops.http_priv,
+                    .open = handle->http_ops.open,
+                    .read = handle->http_ops.read,
+                    .seek = handle->http_ops.seek,
+                    .close = handle->http_ops.close,
                 },
-                .content_pos = handle->media_info.content_pos + handle->seek_offset,
+                .content_pos = handle->codec_info.content_pos + handle->seek_offset,
             };
             handle->media_source = media_source_start(&info, handle->source_rb, media_source_state_callback, handle);
             AUDIO_MEM_CHECK(TAG, handle->media_source, goto seek_out);
         }
         else if (handle->source_type == MEDIA_SOURCE_FILE) {
-            media_source_info_t info = {
+            struct media_source_info info = {
                 .url = handle->url,
                 .source_type = MEDIA_SOURCE_FILE,
-                .file_wrapper = {
-                    .file_priv = handle->file_wrapper.file_priv,
-                    .open = handle->file_wrapper.open,
-                    .read = handle->file_wrapper.read,
-                    .seek = handle->file_wrapper.seek,
-                    .close = handle->file_wrapper.close,
+                .file_ops = {
+                    .file_priv = handle->file_ops.file_priv,
+                    .open = handle->file_ops.open,
+                    .read = handle->file_ops.read,
+                    .seek = handle->file_ops.seek,
+                    .close = handle->file_ops.close,
                 },
-                .content_pos = handle->media_info.content_pos + handle->seek_offset,
+                .content_pos = handle->codec_info.content_pos + handle->seek_offset,
             };
             handle->media_source = media_source_start(&info, handle->source_rb, media_source_state_callback, handle);
             AUDIO_MEM_CHECK(TAG, handle->media_source, goto seek_out);
@@ -1003,21 +1003,21 @@ int liteplayer_reset(liteplayer_handle_t handle)
         handle->url = NULL;
     }
 
-    if (handle->media_info.m4a_info.stsz_samplesize != NULL) {
-        audio_free(handle->media_info.m4a_info.stsz_samplesize);
-        handle->media_info.m4a_info.stsz_samplesize = NULL;
+    if (handle->codec_info.m4a_info.stsz_samplesize != NULL) {
+        audio_free(handle->codec_info.m4a_info.stsz_samplesize);
+        handle->codec_info.m4a_info.stsz_samplesize = NULL;
     }
-    if (handle->media_info.m4a_info.stts_time2sample != NULL) {
-        audio_free(handle->media_info.m4a_info.stts_time2sample);
-        handle->media_info.m4a_info.stts_time2sample = NULL;
+    if (handle->codec_info.m4a_info.stts_time2sample != NULL) {
+        audio_free(handle->codec_info.m4a_info.stts_time2sample);
+        handle->codec_info.m4a_info.stts_time2sample = NULL;
     }
-    if (handle->media_info.m4a_info.stsc_sample2chunk != NULL) {
-        audio_free(handle->media_info.m4a_info.stsc_sample2chunk);
-        handle->media_info.m4a_info.stsc_sample2chunk = NULL;
+    if (handle->codec_info.m4a_info.stsc_sample2chunk != NULL) {
+        audio_free(handle->codec_info.m4a_info.stsc_sample2chunk);
+        handle->codec_info.m4a_info.stsc_sample2chunk = NULL;
     }
-    if (handle->media_info.m4a_info.stco_chunk2offset != NULL) {
-        audio_free(handle->media_info.m4a_info.stco_chunk2offset);
-        handle->media_info.m4a_info.stco_chunk2offset = NULL;
+    if (handle->codec_info.m4a_info.stco_chunk2offset != NULL) {
+        audio_free(handle->codec_info.m4a_info.stco_chunk2offset);
+        handle->codec_info.m4a_info.stco_chunk2offset = NULL;
     }
 
     handle->source_type = MEDIA_SOURCE_UNKNOWN;
@@ -1028,7 +1028,7 @@ int liteplayer_reset(liteplayer_handle_t handle)
     handle->sink_position = 0;
     handle->seek_time = 0;
     handle->seek_offset = 0;
-    memset(&handle->media_info, 0x0, sizeof(handle->media_info));
+    memset(&handle->codec_info, 0x0, sizeof(handle->codec_info));
 
     {
         OS_THREAD_MUTEX_LOCK(handle->state_lock);
@@ -1090,7 +1090,7 @@ int liteplayer_get_duration(liteplayer_handle_t handle, int *msec)
     if (handle->state < LITEPLAYER_PREPARED)
         return ESP_FAIL;
 
-    *msec = handle->media_info.duration_ms;
+    *msec = handle->codec_info.duration_ms;
     return ESP_OK;
 }
 

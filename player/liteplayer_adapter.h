@@ -26,31 +26,31 @@
 extern "C" {
 #endif
 
-typedef struct file_wrapper {
+struct file_wrapper {
     void            *file_priv;
-    file_handle_t  (*open)(const char *url, file_mode_t mode, long long content_pos, void *file_priv);
+    file_handle_t  (*open)(const char *url, enum file_mode mode, long long content_pos, void *file_priv);
     int            (*read)(file_handle_t handle, char *buffer, int size);
     int            (*write)(file_handle_t handle, char *buffer, int size);
     long long      (*filesize)(file_handle_t handle);
     int            (*seek)(file_handle_t handle, long offset);
     void           (*close)(file_handle_t handle);
-} file_wrapper_t;
+};
 
-typedef struct http_wrapper {
+struct http_wrapper {
     void            *http_priv;
     http_handle_t  (*open)(const char *url, long long content_pos, void *http_priv);
     int            (*read)(http_handle_t handle, char *buffer, int size);
     long long      (*filesize)(http_handle_t handle);
     int            (*seek)(http_handle_t handle, long offset);
     void           (*close)(http_handle_t handle);
-} http_wrapper_t;
+};
 
-typedef struct sink_wrapper {
+struct sink_wrapper {
     void            *sink_priv;
     sink_handle_t  (*open)(int samplerate, int channels, void *sink_priv);
     int            (*write)(sink_handle_t handle, char *buffer, int size);
     void           (*close)(sink_handle_t handle);
-} sink_wrapper_t;
+};
 
 #ifdef __cplusplus
 }

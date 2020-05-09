@@ -23,7 +23,7 @@
 #include "esp_adf/audio_common.h"
 #include "audio_extractor/aac_extractor.h"
 
-#define TAG "AAC_EXTRACTOR"
+#define TAG "[liteplayer]AAC_EXTRACTOR"
 
 #define DEFAULT_AAC_PARSER_BUFFER_SIZE 2048
 
@@ -82,7 +82,7 @@ static const int sampRateTab[NUM_SAMPLE_RATES] = {
     24000, 22050, 16000, 12000, 11025,  8000
 };
 
-typedef struct _ADTSHeader {
+struct ADTSHeader {
     /* fixed */
     unsigned char id;                             /* MPEG bit - should be 1 */
     unsigned char layer;                          /* MPEG layer - should be 0 */
@@ -103,14 +103,14 @@ typedef struct _ADTSHeader {
 
     /* CRC */
     int           crcCheckWord;                   /* 16-bit CRC check word (present if protectBit == 0) */
-} ADTSHeader;
+};
 
-typedef struct _BitStreamInfo {
+struct BitStreamInfo {
     unsigned char *bytePtr;
     unsigned int iCache;
     int cachedBits;
     int nBytes;
-} BitStreamInfo;
+};
 
 /**************************************************************************************
  * Function:    SetBitstreamPointer
@@ -125,7 +125,7 @@ typedef struct _BitStreamInfo {
  *
  * Return:      none
  **************************************************************************************/
-static void SetBitstreamPointer(BitStreamInfo *bsi, int nBytes, unsigned char *buf)
+static void SetBitstreamPointer(struct BitStreamInfo *bsi, int nBytes, unsigned char *buf)
 {
     /* init bitstream */
     bsi->bytePtr = buf;
@@ -150,7 +150,7 @@ static void SetBitstreamPointer(BitStreamInfo *bsi, int nBytes, unsigned char *b
  *              stores data as big-endian in cache, regardless of machine endian-ness
  **************************************************************************************/
 //Optimized for REV16, REV32 (FB)
-static __inline void RefillBitstreamCache(BitStreamInfo *bsi)
+static __inline void RefillBitstreamCache(struct BitStreamInfo *bsi)
 {
     int nBytes = bsi->nBytes;
     if (nBytes >= 4) {
@@ -190,7 +190,7 @@ static __inline void RefillBitstreamCache(BitStreamInfo *bsi)
  *              for speed, does not indicate error if you overrun bit buffer 
  *              if nBits == 0, returns 0
  **************************************************************************************/
-static unsigned int GetBits(BitStreamInfo *bsi, int nBits)
+static unsigned int GetBits(struct BitStreamInfo *bsi, int nBits)
 {
     unsigned int data, lowBits;
 
@@ -226,10 +226,10 @@ static int aac_find_adts_syncword(char *buf, int size)
     return -1;
 }
 
-int aac_parse_adts_frame(char *buf, int buf_size, aac_info_t *info)
+int aac_parse_adts_frame(char *buf, int buf_size, struct aac_info *info)
 {
-    BitStreamInfo bsi;
-    ADTSHeader fhADTS = {0};
+    struct BitStreamInfo bsi;
+    struct ADTSHeader fhADTS = {0};
 
     if (buf_size < 9) {
         OS_LOGE(TAG, "Not enough data to parse");
@@ -288,16 +288,15 @@ int aac_parse_adts_frame(char *buf, int buf_size, aac_info_t *info)
     return 0;
 }
 
-static void aac_dump_info(aac_info_t *info)
+static void aac_dump_info(struct aac_info *info)
 {
     OS_LOGD(TAG, "AAC INFO:");
     OS_LOGD(TAG, "  >channels          : %d", info->channels);
     OS_LOGD(TAG, "  >sample_rate       : %d", info->sample_rate);
     OS_LOGD(TAG, "  >frame_start_offset: %d", info->frame_start_offset);
-    OS_LOGD(TAG, "  >id3v2_length      : %d", info->id3v2_length);
 }
 
-int aac_extractor(aac_fetch_cb fetch_cb, void *fetch_priv, aac_info_t *info)
+int aac_extractor(aac_fetch_cb fetch_cb, void *fetch_priv, struct aac_info *info)
 {
     int frame_start_offset = 0;
     int id3v2_len = 0;
@@ -372,7 +371,6 @@ find_syncword:
 
 finish:
     if (found) {
-        info->id3v2_length = id3v2_len;
         info->frame_start_offset = frame_start_offset;
         aac_dump_info(info);
     }

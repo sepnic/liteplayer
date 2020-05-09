@@ -31,11 +31,11 @@
 #include "liteplayer_config.h"
 #include "liteplayer_parser.h"
 
-#define TAG "LITE_PARSER"
+#define TAG "[liteplayer]PARSER"
 
-typedef struct media_parser_priv {
-    media_source_info_t source_info;
-    media_codec_info_t media_info;
+struct media_parser_priv {
+    struct media_source_info source_info;
+    struct media_codec_info codec_info;
 
     http_handle_t http_handle;
     file_handle_t file_handle;
@@ -47,30 +47,30 @@ typedef struct media_parser_priv {
     bool stop;
     os_mutex_t lock; // lock for listener
     os_cond_t cond;  // wait stop to exit mediaparser thread
-} media_parser_priv_t;
+};
 
 static int media_parser_fetch(char *buf, int wanted_size, long offset, void *priv)
 {
-    media_parser_priv_t *parser = (media_parser_priv_t *)priv;
+    struct media_parser_priv *parser = (struct media_parser_priv *)priv;
     int bytes_read = ESP_FAIL;
 
     if (parser->source_info.source_type == MEDIA_SOURCE_FILE) {
         if (parser->offset != offset) {
             OS_LOGD(TAG, "file seek position: %ld>>%ld", parser->offset, offset);
-            if (parser->source_info.file_wrapper.seek(parser->file_handle, offset) != 0)
+            if (parser->source_info.file_ops.seek(parser->file_handle, offset) != 0)
                 return ESP_FAIL;
             parser->offset = offset;
         }
-        bytes_read = parser->source_info.file_wrapper.read(parser->file_handle, buf, wanted_size);
+        bytes_read = parser->source_info.file_ops.read(parser->file_handle, buf, wanted_size);
     }
     else if (parser->source_info.source_type == MEDIA_SOURCE_HTTP) {
         if (parser->offset != offset) {
             OS_LOGD(TAG, "http seek position: %ld>>%ld", parser->offset, offset);
-            if (parser->source_info.http_wrapper.seek(parser->http_handle, offset) != 0)
+            if (parser->source_info.http_ops.seek(parser->http_handle, offset) != 0)
                 return ESP_FAIL;
             parser->offset = offset;
         }
-        bytes_read = parser->source_info.http_wrapper.read(parser->http_handle, buf, wanted_size);
+        bytes_read = parser->source_info.http_ops.read(parser->http_handle, buf, wanted_size);
     }
 
     if (bytes_read > 0)
@@ -78,53 +78,53 @@ static int media_parser_fetch(char *buf, int wanted_size, long offset, void *pri
     return bytes_read;
 }
 
-static int m4a_header_parse(media_source_info_t *source_info, media_codec_info_t *media_info)
+static int m4a_header_parse(struct media_source_info *source_info, struct media_codec_info *codec_info)
 {
     if (source_info->source_type != MEDIA_SOURCE_FILE && source_info->source_type != MEDIA_SOURCE_HTTP)
         return ESP_FAIL;
 
-    media_parser_priv_t m4a_priv = {
+    struct media_parser_priv m4a_priv = {
         .offset = 0,
         .file_handle = NULL,
         .http_handle = NULL,
     };
-    memcpy(&m4a_priv.source_info, source_info, sizeof(media_source_info_t));
+    memcpy(&m4a_priv.source_info, source_info, sizeof(struct media_source_info));
     int ret = ESP_FAIL;
 
     if (source_info->source_type == MEDIA_SOURCE_FILE) {
-        m4a_priv.file_handle = source_info->file_wrapper.open(source_info->url,
-                                                              FILE_READ,
-                                                              0,
-                                                              source_info->file_wrapper.file_priv);
+        m4a_priv.file_handle = source_info->file_ops.open(source_info->url,
+                                                          FILE_READ,
+                                                          0,
+                                                          source_info->file_ops.file_priv);
         if (m4a_priv.file_handle == NULL)
             return ESP_FAIL;
     }
     else if (source_info->source_type == MEDIA_SOURCE_HTTP) {
-        m4a_priv.http_handle = source_info->http_wrapper.open(source_info->url,
-                                                              0,
-                                                              source_info->http_wrapper.http_priv);
+        m4a_priv.http_handle = source_info->http_ops.open(source_info->url,
+                                                          0,
+                                                          source_info->http_ops.http_priv);
         if (m4a_priv.http_handle == NULL)
             return ESP_FAIL;
     }
 
-    if (m4a_extractor(media_parser_fetch, &m4a_priv, &media_info->m4a_info) == 0) {
-        media_info->content_pos = media_info->m4a_info.mdat_offset;
+    if (m4a_extractor(media_parser_fetch, &m4a_priv, &codec_info->m4a_info) == 0) {
+        codec_info->content_pos = codec_info->m4a_info.mdat_offset;
     #if defined(AAC_ENABLE_SBR)
-        media_info->codec_samplerate = media_info->m4a_info.samplerate;
-        media_info->codec_channels = media_info->m4a_info.channels;
+        codec_info->codec_samplerate = codec_info->m4a_info.samplerate;
+        codec_info->codec_channels = codec_info->m4a_info.channels;
     #else
-        media_info->codec_samplerate = media_info->m4a_info.asc.samplerate;
-        media_info->codec_channels = media_info->m4a_info.asc.channels;
+        codec_info->codec_samplerate = codec_info->m4a_info.asc.samplerate;
+        codec_info->codec_channels = codec_info->m4a_info.asc.channels;
     #endif
-        media_info->codec_bits = media_info->m4a_info.bits;
-        media_info->duration_ms = (int)(media_info->m4a_info.duration/media_info->m4a_info.time_scale*1000);
+        codec_info->codec_bits = codec_info->m4a_info.bits;
+        codec_info->duration_ms = (int)(codec_info->m4a_info.duration/codec_info->m4a_info.time_scale*1000);
         ret = ESP_OK;
     }
 
     if (source_info->source_type == MEDIA_SOURCE_FILE)
-        source_info->file_wrapper.close(m4a_priv.file_handle);
+        source_info->file_ops.close(m4a_priv.file_handle);
     else if (source_info->source_type == MEDIA_SOURCE_HTTP)
-        source_info->http_wrapper.close(m4a_priv.http_handle);
+        source_info->http_ops.close(m4a_priv.http_handle);
 
     return ret;
 }
@@ -145,7 +145,7 @@ static int get_start_offset(char *buf)
     return frame_start_offset;
 }
 
-static int media_header_parse(media_source_info_t *source_info, media_codec_info_t *media_info)
+static int media_header_parse(struct media_source_info *source_info, struct media_codec_info *codec_info)
 {
     if (source_info->source_type != MEDIA_SOURCE_FILE &&
         source_info->source_type != MEDIA_SOURCE_HTTP)
@@ -162,35 +162,35 @@ static int media_header_parse(media_source_info_t *source_info, media_codec_info
         goto parse_done;
 
     if (source_info->source_type == MEDIA_SOURCE_HTTP) {
-        client = source_info->http_wrapper.open(source_info->url,
-                                                0,
-                                                source_info->http_wrapper.http_priv);
+        client = source_info->http_ops.open(source_info->url,
+                                            0,
+                                            source_info->http_ops.http_priv);
         if (client == NULL) {
             OS_LOGE(TAG, "Failed to connect http, url=%s", source_info->url);
             goto parse_done;
         }
-        bytes_read = source_info->http_wrapper.read(client, buf, DEFAULT_MEDIA_PARSER_BUFFER_SIZE);
+        bytes_read = source_info->http_ops.read(client, buf, DEFAULT_MEDIA_PARSER_BUFFER_SIZE);
         if (bytes_read <= 0) {
             OS_LOGE(TAG, "Failed to read http");
             goto parse_done;
         }
-        filesize = source_info->http_wrapper.filesize(client);
+        filesize = source_info->http_ops.filesize(client);
     }
     else if (source_info->source_type == MEDIA_SOURCE_FILE) {
-        file = source_info->file_wrapper.open(source_info->url,
-                                              FILE_READ,
-                                              0,
-                                              source_info->file_wrapper.file_priv);
+        file = source_info->file_ops.open(source_info->url,
+                                          FILE_READ,
+                                          0,
+                                          source_info->file_ops.file_priv);
         if (file == NULL) {
             OS_LOGE(TAG, "Failed to open file, url=%s", source_info->url);
             goto parse_done;
         }
-        bytes_read = source_info->file_wrapper.read(file, buf, DEFAULT_MEDIA_PARSER_BUFFER_SIZE);
+        bytes_read = source_info->file_ops.read(file, buf, DEFAULT_MEDIA_PARSER_BUFFER_SIZE);
         if (bytes_read <= 0) {
             OS_LOGE(TAG, "Failed to read file");
             goto parse_done;
         }
-        filesize = source_info->file_wrapper.filesize(file);
+        filesize = source_info->file_ops.filesize(file);
     }
 
     if (bytes_read < 64) {
@@ -200,43 +200,43 @@ static int media_header_parse(media_source_info_t *source_info, media_codec_info
 
     if (memcmp(&buf[4], "ftyp", 4) == 0) {
         OS_LOGV(TAG, "Found M4A media");
-        media_info->codec_type = AUDIO_CODEC_M4A;
+        codec_info->codec_type = AUDIO_CODEC_M4A;
     }
     else if (memcmp(&buf[0], "ID3", 3) == 0) {
-        if (media_info->codec_type == AUDIO_CODEC_MP3) {
+        if (codec_info->codec_type == AUDIO_CODEC_MP3) {
             OS_LOGV(TAG, "Found MP3 media with ID3 tag");
         }
-        else if (media_info->codec_type == AUDIO_CODEC_AAC) {
+        else if (codec_info->codec_type == AUDIO_CODEC_AAC) {
             OS_LOGV(TAG, "Found AAC media with ID3 tag");
         }
         else {
             OS_LOGV(TAG, "Unknown type with ID3, assume codec is MP3");
-            media_info->codec_type = AUDIO_CODEC_MP3;
+            codec_info->codec_type = AUDIO_CODEC_MP3;
         }
     }
     else if ((buf[0] & 0xFF) == 0xFF && (buf[1] & 0xE0) == 0xE0) {
-        if (media_info->codec_type == AUDIO_CODEC_AAC &&
+        if (codec_info->codec_type == AUDIO_CODEC_AAC &&
             (buf[0] & 0xFF) == 0xFF && (buf[1] & 0xF0) == 0xF0) {
             OS_LOGV(TAG, "Found AAC media raw data");
-            media_info->codec_type = AUDIO_CODEC_AAC;
+            codec_info->codec_type = AUDIO_CODEC_AAC;
         }
         else {
             OS_LOGV(TAG, "Found MP3 media raw data");
-            media_info->codec_type = AUDIO_CODEC_MP3;
+            codec_info->codec_type = AUDIO_CODEC_MP3;
         }
     }
     else if (memcmp(&buf[0], "RIFF", 4) == 0) {
         OS_LOGV(TAG, "Found wav media");
-        media_info->codec_type = AUDIO_CODEC_WAV;
+        codec_info->codec_type = AUDIO_CODEC_WAV;
     }
 
     int frame_start_offset = 0, bytes_per_sec = 0;
     int sample_rate = 0, channels = 0, bits = 0;
     int duration_ms = 0;
 
-    if (media_info->codec_type == AUDIO_CODEC_MP3) {
+    if (codec_info->codec_type == AUDIO_CODEC_MP3) {
         frame_start_offset = get_start_offset(buf);
-        mp3_info_t info = {0};
+        struct mp3_info info = {0};
         int remain_size = bytes_read - frame_start_offset;
 
         if (remain_size >= 4) {
@@ -246,18 +246,18 @@ static int media_header_parse(media_source_info_t *source_info, media_codec_info
         else {
             bytes_read = 0;
             if (source_info->source_type == MEDIA_SOURCE_HTTP) {
-                if (source_info->http_wrapper.seek(client, frame_start_offset) != 0)
+                if (source_info->http_ops.seek(client, frame_start_offset) != 0)
                     goto parse_done;
-                bytes_read = source_info->http_wrapper.read(client,
-                                                            buf,
-                                                            DEFAULT_MEDIA_PARSER_BUFFER_SIZE);
+                bytes_read = source_info->http_ops.read(client,
+                                                        buf,
+                                                        DEFAULT_MEDIA_PARSER_BUFFER_SIZE);
             }
             else if (source_info->source_type == MEDIA_SOURCE_FILE) {
-                if (source_info->file_wrapper.seek(file, frame_start_offset) != 0)
+                if (source_info->file_ops.seek(file, frame_start_offset) != 0)
                     goto parse_done;
-                bytes_read = source_info->file_wrapper.read(file,
-                                                            buf,
-                                                            DEFAULT_MEDIA_PARSER_BUFFER_SIZE);
+                bytes_read = source_info->file_ops.read(file,
+                                                        buf,
+                                                        DEFAULT_MEDIA_PARSER_BUFFER_SIZE);
             }
             if (bytes_read < 4)
                 goto parse_done;
@@ -272,9 +272,9 @@ static int media_header_parse(media_source_info_t *source_info, media_codec_info
         if (filesize > frame_start_offset)
             duration_ms = (filesize - frame_start_offset)*8/info.bit_rate;
     }
-    else if (media_info->codec_type == AUDIO_CODEC_AAC) {
+    else if (codec_info->codec_type == AUDIO_CODEC_AAC) {
         frame_start_offset = get_start_offset(buf);
-        aac_info_t info = {0};
+        struct aac_info info = {0};
         int remain_size = bytes_read - frame_start_offset;
 
         if (remain_size >= 9) {
@@ -284,18 +284,18 @@ static int media_header_parse(media_source_info_t *source_info, media_codec_info
         else {
             bytes_read = 0;
             if (source_info->source_type == MEDIA_SOURCE_HTTP) {
-                if (source_info->http_wrapper.seek(client, frame_start_offset) != 0)
+                if (source_info->http_ops.seek(client, frame_start_offset) != 0)
                     goto parse_done;
-                bytes_read = source_info->http_wrapper.read(client,
-                                                            buf,
-                                                            DEFAULT_MEDIA_PARSER_BUFFER_SIZE);
+                bytes_read = source_info->http_ops.read(client,
+                                                        buf,
+                                                        DEFAULT_MEDIA_PARSER_BUFFER_SIZE);
             }
             else if (source_info->source_type == MEDIA_SOURCE_FILE) {
-                if (source_info->file_wrapper.seek(file, frame_start_offset) != 0)
+                if (source_info->file_ops.seek(file, frame_start_offset) != 0)
                     goto parse_done;
-                bytes_read = source_info->file_wrapper.read(file,
-                                                            buf,
-                                                            DEFAULT_MEDIA_PARSER_BUFFER_SIZE);
+                bytes_read = source_info->file_ops.read(file,
+                                                        buf,
+                                                        DEFAULT_MEDIA_PARSER_BUFFER_SIZE);
             }
             if (bytes_read < 9)
                 goto parse_done;
@@ -310,8 +310,8 @@ static int media_header_parse(media_source_info_t *source_info, media_codec_info
         //if (filesize > frame_start_offset)
         //    duration_ms = (filesize - frame_start_offset)*8/info.bit_rate;
     }
-    else if (media_info->codec_type == AUDIO_CODEC_WAV) {
-        wav_info_t info = {0};
+    else if (codec_info->codec_type == AUDIO_CODEC_WAV) {
+        struct wav_info info = {0};
         if (wav_parse_header(buf, bytes_read, &info) != 0)
             goto parse_done;
 
@@ -326,12 +326,12 @@ static int media_header_parse(media_source_info_t *source_info, media_codec_info
         goto parse_done;
     }
 
-    media_info->content_pos = frame_start_offset;
-    media_info->codec_samplerate = sample_rate;
-    media_info->codec_channels = channels;
-    media_info->codec_bits = bits;
-    media_info->bytes_per_sec = bytes_per_sec;
-    media_info->duration_ms = duration_ms;
+    codec_info->content_pos = frame_start_offset;
+    codec_info->codec_samplerate = sample_rate;
+    codec_info->codec_channels = channels;
+    codec_info->codec_bits = bits;
+    codec_info->bytes_per_sec = bytes_per_sec;
+    codec_info->duration_ms = duration_ms;
     ret = ESP_OK;
 
 parse_done:
@@ -339,15 +339,15 @@ parse_done:
         OS_LOGE(TAG, "Failed to parse media info");
     }
     if (source_info->source_type == MEDIA_SOURCE_HTTP && client != NULL)
-        source_info->http_wrapper.close(client);
+        source_info->http_ops.close(client);
     if (source_info->source_type == MEDIA_SOURCE_FILE && file != NULL)
-        source_info->file_wrapper.close(file);
+        source_info->file_ops.close(file);
     if (buf != NULL)
         audio_free(buf);
     return ret;
 }
 
-static void media_parser_cleanup(media_parser_priv_t *priv)
+static void media_parser_cleanup(struct media_parser_priv *priv)
 {
     if (priv->lock != NULL)
         OS_THREAD_MUTEX_DESTROY(priv->lock);
@@ -360,17 +360,17 @@ static void media_parser_cleanup(media_parser_priv_t *priv)
 
 static void *media_parser_thread(void *arg)
 {
-    media_parser_priv_t *priv = (media_parser_priv_t *)arg;
-    int ret = media_info_parse(&priv->source_info, &priv->media_info);
+    struct media_parser_priv *priv = (struct media_parser_priv *)arg;
+    int ret = media_info_parse(&priv->source_info, &priv->codec_info);
 
     {
         OS_THREAD_MUTEX_LOCK(priv->lock);
 
         if (!priv->stop && priv->listener) {
             if (ret == ESP_OK)
-                priv->listener(MEDIA_PARSER_SUCCEED, &priv->media_info, priv->listener_priv);
+                priv->listener(MEDIA_PARSER_SUCCEED, &priv->codec_info, priv->listener_priv);
             else
-                priv->listener(MEDIA_PARSER_FAILED, &priv->media_info, priv->listener_priv);
+                priv->listener(MEDIA_PARSER_FAILED, &priv->codec_info, priv->listener_priv);
         }
 
         OS_LOGV(TAG, "Waiting stop command");
@@ -385,9 +385,9 @@ static void *media_parser_thread(void *arg)
     return NULL;
 }
 
-int media_info_parse(media_source_info_t *source_info, media_codec_info_t *media_info)
+int media_info_parse(struct media_source_info *source_info, struct media_codec_info *codec_info)
 {
-    if (source_info == NULL || source_info->url == NULL || media_info == NULL)
+    if (source_info == NULL || source_info->url == NULL || codec_info == NULL)
         return ESP_FAIL;
 
     if (strstr(source_info->url, ".m3u") != NULL) {
@@ -404,19 +404,19 @@ int media_info_parse(media_source_info_t *source_info, media_codec_info_t *media
     }
 
     if (strstr(source_info->url, "m4a") != NULL) {
-        media_info->codec_type = AUDIO_CODEC_M4A;
-        if (m4a_header_parse(source_info, media_info) == ESP_OK)
+        codec_info->codec_type = AUDIO_CODEC_M4A;
+        if (m4a_header_parse(source_info, codec_info) == ESP_OK)
             goto parse_succeed;
         // if failed, go ahead to check real codec type
-        media_info->codec_type = AUDIO_CODEC_NONE;
+        codec_info->codec_type = AUDIO_CODEC_NONE;
     }
     else if (strstr(source_info->url, "mp3") != NULL)
-        media_info->codec_type = AUDIO_CODEC_MP3;
+        codec_info->codec_type = AUDIO_CODEC_MP3;
     else if (strstr(source_info->url, "wav") != NULL)
-        media_info->codec_type = AUDIO_CODEC_WAV;
+        codec_info->codec_type = AUDIO_CODEC_WAV;
     else if (strstr(source_info->url, "aac") != NULL)
-        media_info->codec_type = AUDIO_CODEC_AAC;
-    if (media_header_parse(source_info, media_info) != ESP_OK) {
+        codec_info->codec_type = AUDIO_CODEC_AAC;
+    if (media_header_parse(source_info, codec_info) != ESP_OK) {
         OS_LOGE(TAG, "Failed to parse file url:[%s]", source_info->url);
         return ESP_FAIL;
     }
@@ -424,20 +424,20 @@ int media_info_parse(media_source_info_t *source_info, media_codec_info_t *media
 parse_succeed:
     OS_LOGI(TAG, "MediaInfo: codec_type[%d], samplerate[%d], channels[%d], bits[%d], offset[%d], length[%d]",
              source_info->source_type,
-             media_info->codec_samplerate, media_info->codec_channels, media_info->codec_bits,
-             media_info->content_pos, media_info->content_len);
+             codec_info->codec_samplerate, codec_info->codec_channels, codec_info->codec_bits,
+             codec_info->content_pos, codec_info->content_len);
     return ESP_OK;
 }
 
-media_parser_handle_t media_parser_start_async(media_source_info_t *source_info,
+media_parser_handle_t media_parser_start_async(struct media_source_info *source_info,
                                                media_parser_state_cb listener,
                                                void *listener_priv)
 {
-    media_parser_priv_t *priv = audio_calloc(1, sizeof(media_parser_priv_t));
+    struct media_parser_priv *priv = audio_calloc(1, sizeof(struct media_parser_priv));
     if (priv == NULL || source_info == NULL || source_info->url == NULL)
         goto start_failed;
 
-    memcpy(&priv->source_info, source_info, sizeof(media_source_info_t));
+    memcpy(&priv->source_info, source_info, sizeof(struct media_source_info));
     priv->listener = listener;
     priv->listener_priv = listener_priv;
     priv->lock = OS_THREAD_MUTEX_CREATE();
@@ -466,7 +466,7 @@ start_failed:
 
 void media_parser_stop(media_parser_handle_t handle)
 {
-    media_parser_priv_t *priv = (media_parser_priv_t *)handle;
+    struct media_parser_priv *priv = (struct media_parser_priv *)handle;
     if (priv == NULL)
         return;
 

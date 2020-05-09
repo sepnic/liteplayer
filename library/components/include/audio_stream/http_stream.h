@@ -33,7 +33,7 @@ typedef void *http_handle_t;
  * @brief      HTTP Stream configurations
  *             Default value will be used if any entry is zero
  */
-typedef struct {
+struct http_stream_cfg {
     int             task_prio;      /*!< Task priority (based on freeRTOS priority) */
     int             task_stack;     /*!< Task stack size */
     int             out_rb_size;    /*!< Size of output ringbuffer */
@@ -46,7 +46,7 @@ typedef struct {
     //  >0: bytes read; <0: error occur; =0: read done
     int           (*http_read)(http_handle_t handle, char *buffer, int size);
     void          (*http_close)(http_handle_t handle);
-} http_stream_cfg_t;
+};
 
 #define HTTP_STREAM_TASK_PRIO           (OS_THREAD_PRIO_SOFT_REALTIME)
 #define HTTP_STREAM_TASK_STACK          (4 * 1024)
@@ -72,7 +72,7 @@ typedef struct {
  *
  * @return     The Audio Element handle
  */
-audio_element_handle_t http_stream_init(http_stream_cfg_t *config);
+audio_element_handle_t http_stream_init(struct http_stream_cfg *config);
 
 #ifdef __cplusplus
 }

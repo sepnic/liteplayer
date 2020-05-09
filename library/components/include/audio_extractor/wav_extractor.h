@@ -78,7 +78,7 @@ typedef struct {
 } __attribute__((packed)) wav_header_t;
 
 //wav control struct
-typedef struct {
+struct wav_info {
     uint16_t audioFormat;         //format;0X01,linear PCM;0X11 IMA ADPCM
     uint32_t sampleRate;          //sample rate
     uint16_t channels;            //Number of channel; 1: 1 channel; 2: 2 channels
@@ -87,7 +87,7 @@ typedef struct {
     uint16_t blockAlign;          //align
     uint32_t dataSize;            //size of data
     uint32_t dataOffset;          //offset of data
-} __attribute__((packed)) wav_info_t;
+};
 
 //wav that dr_wav.h supported:
 /*Tested and supported internal formats include the following:
@@ -102,21 +102,23 @@ typedef struct {
   - Microsoft ADPCM
   - IMA ADPCM (DVI, format code 0x11)
  */
-typedef enum wav_format {
+enum wav_format {
     WAV_FMT_PCM = 0x0001,
     WAV_FMT_ADPCM = 0x0002,
     WAV_FMT_IEEE_FLOAT = 0x0003,
     WAV_FMT_DVI_ADPCM = 0x0011,
-} wav_format_t;
+};
+
+#define WAV_MAX_CHANNEL_COUNT 2
 
 // Return the data size obtained
 typedef int (*wav_fetch_cb)(char *buf, int wanted_size, long offset, void *fetch_priv);
 
-void wav_build_header(wav_header_t *header, int samplerate, int bits, int channels, wav_format_t format, long datasize);
+void wav_build_header(wav_header_t *header, int samplerate, int bits, int channels, enum wav_format format, long datasize);
 
-int wav_parse_header(char *buf, int buf_size, wav_info_t *info);
+int wav_parse_header(char *buf, int buf_size, struct wav_info *info);
 
-int wav_extractor(wav_fetch_cb fetch_cb, void *fetch_priv, wav_info_t *info);
+int wav_extractor(wav_fetch_cb fetch_cb, void *fetch_priv, struct wav_info *info);
 
 #ifdef __cplusplus
 }

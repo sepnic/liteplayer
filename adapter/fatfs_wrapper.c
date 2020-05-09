@@ -23,17 +23,17 @@
 #include "audio_stream/file_stream.h"
 #include "fatfs_wrapper.h"
 
-#define TAG "fatfswrapper"
+#define TAG "[liteplayer]fatfs"
 
 struct fatfs_priv {
     const char *url;
-    file_mode_t mode;
+    enum file_mode mode;
     FILE *file;
     long content_pos;
     long content_len;
 };
 
-file_handle_t fatfs_wrapper_open(const char *url, file_mode_t mode, long long content_pos, void *file_priv)
+file_handle_t fatfs_wrapper_open(const char *url, enum file_mode mode, long long content_pos, void *file_priv)
 {
     struct fatfs_priv *priv = audio_calloc(1, sizeof(struct fatfs_priv));
     FILE *file = NULL;

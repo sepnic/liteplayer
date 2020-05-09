@@ -24,7 +24,7 @@
 #include "tinyalsa/asoundlib.h"
 #include "tinyalsa_wrapper.h"
 
-#define TAG "sinkwrapper"
+#define TAG "[liteplayer]tinyalsa"
 
 #define DEFAULT_SND_CARD   0
 #define DEFAULT_SND_DEVICE 0

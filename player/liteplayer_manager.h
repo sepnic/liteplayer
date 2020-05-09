@@ -29,11 +29,11 @@ typedef struct liteplayer_mngr *liteplayer_mngr_handle_t;
 
 liteplayer_mngr_handle_t liteplayer_mngr_create();
 
-int liteplayer_mngr_register_file_wrapper(liteplayer_mngr_handle_t mngr, file_wrapper_t *file_wrapper);
+int liteplayer_mngr_register_file_wrapper(liteplayer_mngr_handle_t mngr, struct file_wrapper *file_ops);
 
-int liteplayer_mngr_register_http_wrapper(liteplayer_mngr_handle_t mngr, http_wrapper_t *http_wrapper);
+int liteplayer_mngr_register_http_wrapper(liteplayer_mngr_handle_t mngr, struct http_wrapper *http_ops);
 
-int liteplayer_mngr_register_sink_wrapper(liteplayer_mngr_handle_t mngr, sink_wrapper_t *sink_wrapper);
+int liteplayer_mngr_register_sink_wrapper(liteplayer_mngr_handle_t mngr, struct sink_wrapper *sink_ops);
 
 int liteplayer_mngr_register_state_listener(liteplayer_mngr_handle_t mngr, liteplayer_state_cb listener, void *listener_priv);
 

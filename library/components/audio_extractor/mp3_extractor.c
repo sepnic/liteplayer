@@ -22,7 +22,7 @@
 #include "esp_adf/audio_common.h"
 #include "audio_extractor/mp3_extractor.h"
 
-#define TAG "MP3_EXTRACTOR"
+#define TAG "[liteplayer]MP3_EXTRACTOR"
 
 #define DEFAULT_MP3_PARSER_BUFFER_SIZE 2048
 
@@ -38,7 +38,7 @@ int mp3_find_syncword(char *buf, int size)
     return -1;
 }
 
-int mp3_parse_header(char *buf, int buf_size, mp3_info_t *info)
+int mp3_parse_header(char *buf, int buf_size, struct mp3_info *info)
 {
     unsigned char ver, layer, brIdx, srIdx, sMode, padding;
     int sample_rate, bit_rate, frame_size;
@@ -137,7 +137,7 @@ success:
     return 0;
 }
 
-static void mp3_dump_info(mp3_info_t *info)
+static void mp3_dump_info(struct mp3_info *info)
 {
     OS_LOGD(TAG, "MP3 INFO:");
     OS_LOGD(TAG, "  >channels          : %d", info->channels);
@@ -145,10 +145,9 @@ static void mp3_dump_info(mp3_info_t *info)
     OS_LOGD(TAG, "  >bit_rate          : %d", info->bit_rate);
     OS_LOGD(TAG, "  >frame_size        : %d", info->frame_size);
     OS_LOGD(TAG, "  >frame_start_offset: %d", info->frame_start_offset);
-    OS_LOGD(TAG, "  >id3v2_length      : %d", info->id3v2_length);
 }
 
-int mp3_extractor(mp3_fetch_cb fetch_cb, void *fetch_priv, mp3_info_t *info)
+int mp3_extractor(mp3_fetch_cb fetch_cb, void *fetch_priv, struct mp3_info *info)
 {
     int frame_start_offset = 0;
     int id3v2_len = 0;
@@ -223,7 +222,6 @@ find_syncword:
 
 finish:
     if (found) {
-        info->id3v2_length = id3v2_len;
         info->frame_start_offset = frame_start_offset + last_position;
         mp3_dump_info(info);
     }

@@ -25,18 +25,17 @@
 #include "speex/speex_resampler.h"
 #include "audio_resampler/audio_resampler.h"
 
-#define TAG "AUDIO_RESAMPLER"
+#define TAG "[liteplayer]RESAMPLER"
 
-typedef struct resample_priv {
-    resample_converter_t converter;
+struct resample_priv {
+    struct resample_converter converter;
+    struct resample_cfg  cfg;
     SpeexResamplerState  *src_state;
-    resample_cfg_t       cfg;
     int                  in_bytes;
     int                  out_bytes;
     bool                 enable_rate_convert;
     bool                 enable_channels_convert;
-} resample_priv_t;
-
+};
 typedef struct resample_priv *resample_priv_handle_t;
 
 static int mono_to_stereo(short *buf, int nbytes)
@@ -57,7 +56,7 @@ static int stereo_to_mono(short *buf, int nbytes)
     return 0;
 }
 
-static int audio_resampler_open(resample_converter_handle_t self, resample_cfg_t *config)
+static int audio_resampler_open(resample_converter_handle_t self, struct resample_cfg *config)
 {
     resample_priv_handle_t priv = (resample_priv_handle_t)self;
     int in_channels = config->in_channels;
@@ -68,7 +67,7 @@ static int audio_resampler_open(resample_converter_handle_t self, resample_cfg_t
     int quality     = config->quality;
     int ret = 0;
 
-    memcpy(&priv->cfg, config, sizeof(resample_cfg_t));
+    memcpy(&priv->cfg, config, sizeof(struct resample_cfg));
 
     priv->enable_channels_convert = (in_channels != out_channels) ? true : false;
     priv->enable_rate_convert = (in_rate != out_rate) ? true : false;

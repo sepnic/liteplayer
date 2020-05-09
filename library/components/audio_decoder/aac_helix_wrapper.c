@@ -26,7 +26,7 @@
 #include "audio_decoder/m4a_decoder.h"
 #include "aac-helix/aacdec.h"
 
-#define TAG "AAC_WRAPPER"
+#define TAG "[liteplayer]HELIX_AAC"
 
 static int aac_adts_read(aac_decoder_handle_t decoder)
 {
@@ -133,7 +133,7 @@ static int m4a_mdat_read(m4a_decoder_handle_t decoder)
 {
     unsigned int stsz_entries = decoder->m4a_info->stsz_samplesize_entries;
     unsigned int stsz_current = decoder->m4a_info->stsz_samplesize_index;
-    aac_buf_in_t *in = &decoder->buf_in;
+    struct aac_buf_in *in = &decoder->buf_in;
     int ret = AEL_IO_OK;
 
     if (stsz_current >= stsz_entries) {

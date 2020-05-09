@@ -25,20 +25,19 @@ extern "C" {
 // Return the data size obtained
 typedef int (*mp3_fetch_cb)(char *buf, int wanted_size, long offset, void *fetch_priv);
 
-typedef struct mp3_info {
+struct mp3_info {
     int channels;
     int sample_rate;
     int bit_rate;
     int frame_size;
     int frame_start_offset;
-    int id3v2_length;
-} mp3_info_t;
+};
 
 int mp3_find_syncword(char *buf, int size);
 
-int mp3_parse_header(char *buf, int buf_size, mp3_info_t *info);
+int mp3_parse_header(char *buf, int buf_size, struct mp3_info *info);
 
-int mp3_extractor(mp3_fetch_cb fetch_cb, void *fetch_priv, mp3_info_t *info);
+int mp3_extractor(mp3_fetch_cb fetch_cb, void *fetch_priv, struct mp3_info *info);
 
 #ifdef __cplusplus
 }

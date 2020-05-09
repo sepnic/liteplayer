@@ -23,7 +23,7 @@
 #include "esp_adf/audio_common.h"
 #include "audio_decoder/mp3_decoder.h"
 
-#define TAG "MP3_DECODER"
+#define TAG "[liteplayer]MP3_DECODER"
 
 #define MP3_DECODER_INPUT_TIMEOUT_MAX  200
 
@@ -139,7 +139,7 @@ static int mp3_decoder_seek(audio_element_handle_t self, long long offset)
     return ESP_OK;
 }
 
-audio_element_handle_t mp3_decoder_init(mp3_decoder_cfg_t *config)
+audio_element_handle_t mp3_decoder_init(struct mp3_decoder_cfg *config)
 {
     OS_LOGV(TAG, "Init mp3 decoder");
 

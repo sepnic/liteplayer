@@ -28,11 +28,11 @@ extern "C" {
 /**
  * brief      WAV Decoder configurations
  */
-typedef struct {
+struct wav_decoder_cfg {
     int out_rb_size;    /*!< Size of output ringbuffer */
     int task_stack;     /*!< Task stack size */
     int task_prio;      /*!< Task priority (based on freeRTOS priority) */ 
-} wav_decoder_cfg_t;
+};
 
 #define WAV_DECODER_TASK_PRIO           (OS_THREAD_PRIO_NORMAL)
 #define WAV_DECODER_TASK_STACK          (4 * 1024)
@@ -52,7 +52,7 @@ typedef struct {
  *
  * @return     The audio element handle
  */
-audio_element_handle_t wav_decoder_init(wav_decoder_cfg_t *config);
+audio_element_handle_t wav_decoder_init(struct wav_decoder_cfg *config);
 
 
 #ifdef __cplusplus

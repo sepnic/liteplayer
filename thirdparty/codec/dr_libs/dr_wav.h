@@ -135,6 +135,9 @@ Notes
 #ifndef dr_wav_h
 #define dr_wav_h
 
+#define DR_WAV_IMPLEMENTATION
+#define DR_WAV_NO_STDIO
+
 #ifdef __cplusplus
 extern "C" {
 #endif

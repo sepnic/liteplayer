@@ -36,7 +36,7 @@
 #include "esp_adf/audio_element.h"
 #include "esp_adf/audio_common.h"
 
-#define TAG  "AUDIO_ELEMENT"
+#define TAG  "[liteplayer]AUDIO_ELEMENT"
 
 #define DEFAULT_WAIT_TIMEOUT_MS (3000) // ms
 

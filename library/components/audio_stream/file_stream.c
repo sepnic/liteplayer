@@ -25,7 +25,7 @@
 #include "audio_resampler/audio_resampler.h"
 #include "audio_stream/file_stream.h"
 
-#define TAG "FILE_STREAM"
+#define TAG "[liteplayer]FILE_STREAM"
 
 //#define ENABLE_SRC
 
@@ -46,24 +46,24 @@
 
 #define FILE_INPUT_TIMEOUT_MAX  30
 
-typedef enum {
+enum stream_type {
     STREAM_TYPE_UNKNOW,
     STREAM_TYPE_PCM,
     STREAM_TYPE_WAV,
-} wr_stream_type_t;
+};
 
-typedef struct file_stream {
-    file_stream_cfg_t config;
+struct file_stream {
+    struct file_stream_cfg config;
     file_handle_t file;
-    wr_stream_type_t w_type;
+    enum stream_type w_type;
 #if defined(ENABLE_SRC)
     resample_converter_handle_t resampler;
     bool resampler_inited;
     bool resample_opened;
 #endif
-} file_stream_t;
+};
 
-static wr_stream_type_t get_type(const char *str)
+static enum stream_type get_type(const char *str)
 {
     char *relt = strrchr(str, '.');
     if (relt != NULL) {
@@ -80,16 +80,16 @@ static wr_stream_type_t get_type(const char *str)
     }
 }
 
-typedef struct file_default_priv {
+struct file_default {
     const char *url;
-    file_mode_t mode;
+    enum file_mode mode;
     FILE *file;
     long long content_pos;
-} file_default_priv_t;
+};
 
-static file_handle_t file_default_open(const char *url, file_mode_t mode, long long content_pos, void *file_priv)
+static file_handle_t file_default_open(const char *url, enum file_mode mode, long long content_pos, void *file_priv)
 {
-    file_default_priv_t *priv = audio_calloc(1, sizeof(file_default_priv_t));
+    struct file_default *priv = audio_calloc(1, sizeof(struct file_default));
     FILE *file = NULL;
 
     if (priv == NULL)
@@ -118,7 +118,7 @@ static file_handle_t file_default_open(const char *url, file_mode_t mode, long l
 
 static int file_default_read(file_handle_t handle, char *buffer, int size)
 {
-    file_default_priv_t *priv = (file_default_priv_t *)handle;
+    struct file_default *priv = (struct file_default *)handle;
     if (priv->file != NULL)
         return fread(buffer, 1, size, priv->file);
     else
@@ -127,7 +127,7 @@ static int file_default_read(file_handle_t handle, char *buffer, int size)
 
 static int file_default_write(file_handle_t handle, char *buffer, int size)
 {
-    file_default_priv_t *priv = (file_default_priv_t *)handle;
+    struct file_default *priv = (struct file_default *)handle;
     if (priv->file != NULL)
         return fwrite(buffer, 1, size, priv->file);
     else
@@ -136,7 +136,7 @@ static int file_default_write(file_handle_t handle, char *buffer, int size)
 
 static int file_default_seek(file_handle_t handle, long offset)
 {
-    file_default_priv_t *priv = (file_default_priv_t *)handle;
+    struct file_default *priv = (struct file_default *)handle;
     if (priv->file != NULL)
         return fseek(priv->file, offset, SEEK_SET);
     else
@@ -145,7 +145,7 @@ static int file_default_seek(file_handle_t handle, long offset)
 
 static void file_default_close(file_handle_t handle)
 {
-    file_default_priv_t *priv = (file_default_priv_t *)handle;
+    struct file_default *priv = (struct file_default *)handle;
     if (priv->file != NULL) {
         if (priv->mode == FILE_WRITE)
             fflush(priv->file);
@@ -157,8 +157,8 @@ static void file_default_close(file_handle_t handle)
 
 static esp_err_t file_stream_open(audio_element_handle_t self)
 {
-    file_stream_t *file = (file_stream_t *)audio_element_getdata(self);
-    file_stream_cfg_t *config = &file->config;
+    struct file_stream *file = (struct file_stream *)audio_element_getdata(self);
+    struct file_stream_cfg *config = &file->config;
     const char *url = audio_element_get_uri(self);
 
     if (config->url == NULL) {
@@ -197,8 +197,8 @@ static esp_err_t file_stream_open(audio_element_handle_t self)
 
 static int file_stream_read(audio_element_handle_t self, char *buffer, int len, int timeout_ms, void *context)
 {
-    file_stream_t *file = (file_stream_t *)audio_element_getdata(self);
-    file_stream_cfg_t *config = &file->config;
+    struct file_stream *file = (struct file_stream *)audio_element_getdata(self);
+    struct file_stream_cfg *config = &file->config;
     audio_element_info_t info;
     audio_element_getinfo(self, &info);
 
@@ -225,15 +225,15 @@ static int file_stream_read(audio_element_handle_t self, char *buffer, int len, 
 
 static int file_stream_write(audio_element_handle_t self, char *buffer, int len, int timeout_ms, void *context)
 {
-    file_stream_t *file = (file_stream_t *)audio_element_getdata(self);
-    file_stream_cfg_t *config = &file->config;
+    struct file_stream *file = (struct file_stream *)audio_element_getdata(self);
+    struct file_stream_cfg *config = &file->config;
     audio_element_info_t info;
     audio_element_getinfo(self, &info);
 
 #if defined(ENABLE_SRC)
     if (!file->resampler_inited) {
         if (info.in_samplerate != CONFIG_SRC_OUT_RATE || info.in_channels != CONFIG_SRC_OUT_CHANNELS) {
-            resample_cfg_t cfg;
+            struct resample_cfg cfg;
             cfg.in_channels = info.in_channels;
             cfg.in_rate = info.in_samplerate;
             cfg.out_channels = CONFIG_SRC_OUT_CHANNELS;
@@ -279,8 +279,8 @@ static int file_stream_process(audio_element_handle_t self, char *in_buffer, int
 
 static esp_err_t file_stream_close(audio_element_handle_t self)
 {
-    file_stream_t *file = (file_stream_t *)audio_element_getdata(self);
-    file_stream_cfg_t *config = &file->config;
+    struct file_stream *file = (struct file_stream *)audio_element_getdata(self);
+    struct file_stream_cfg *config = &file->config;
 
     if (file->file == NULL)
         return ESP_FAIL;
@@ -333,8 +333,8 @@ static esp_err_t file_stream_close(audio_element_handle_t self)
 
 static esp_err_t file_stream_destroy(audio_element_handle_t self)
 {
-    file_stream_t *file = (file_stream_t *)audio_element_getdata(self);
-    file_stream_cfg_t *config = &file->config;
+    struct file_stream *file = (struct file_stream *)audio_element_getdata(self);
+    struct file_stream_cfg *config = &file->config;
 
 #if defined(ENABLE_SRC)
     if (file->resampler) {
@@ -358,10 +358,10 @@ static esp_err_t file_stream_destroy(audio_element_handle_t self)
     return ESP_OK;
 }
 
-audio_element_handle_t file_stream_init(file_stream_cfg_t *config)
+audio_element_handle_t file_stream_init(struct file_stream_cfg *config)
 {
     audio_element_handle_t el;
-    file_stream_t *file = audio_calloc(1, sizeof(file_stream_t));
+    struct file_stream *file = audio_calloc(1, sizeof(struct file_stream));
 
     AUDIO_MEM_CHECK(TAG, file, return NULL);
 
@@ -394,7 +394,7 @@ audio_element_handle_t file_stream_init(file_stream_cfg_t *config)
     if (config->file_close == NULL)
         config->file_close = file_default_close;
 
-    memcpy(&file->config, config, sizeof(file_stream_cfg_t));
+    memcpy(&file->config, config, sizeof(struct file_stream_cfg));
 
     if (config->url != NULL)
         file->config.url = audio_strdup(config->url);

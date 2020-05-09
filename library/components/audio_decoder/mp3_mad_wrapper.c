@@ -27,7 +27,7 @@
 #include "audio_extractor/mp3_extractor.h"
 #include "audio_decoder/mp3_decoder.h"
 
-#define TAG "MP3_WRAPPER"
+#define TAG "[liteplayer]MAD_MP3"
 
 struct mad_wrapper {
     struct mad_stream stream;
@@ -112,7 +112,7 @@ static int mp3_frame_size(char *buf)
     return frame_size;
 }
 
-static int mp3_find_sync_offset(char *buf, int buf_size, mp3_info_t *info)
+static int mp3_find_sync_offset(char *buf, int buf_size, struct mp3_info *info)
 {
     bool found = false;
     int last_position = 0;
@@ -152,7 +152,7 @@ finish:
 static int mp3_data_read(mp3_decoder_handle_t decoder)
 {
     struct mad_wrapper *mad = (struct mad_wrapper *)(decoder->handle);
-    mp3_buf_in_t *in = &decoder->buf_in;
+    struct mp3_buf_in *in = &decoder->buf_in;
     int ret = 0;
 
     if (in->eof)
@@ -178,7 +178,7 @@ static int mp3_data_read(mp3_decoder_handle_t decoder)
             return AEL_IO_DONE;
         }
 
-        mp3_info_t info;
+        struct mp3_info info;
         ret = mp3_find_sync_offset(mad->seek_buffer, mad->bytes_seek, &info);
         if (ret != 0) {
             OS_LOGE(TAG, "SEEK_MODE: Failed to find sync word after seeking");

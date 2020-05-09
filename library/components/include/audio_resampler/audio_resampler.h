@@ -33,26 +33,26 @@ extern "C" {
     .quality      = 8,                    \
 }
 
-typedef struct resample_cfg {
+struct resample_cfg {
     int  in_channels;
     int  in_rate;
     int  out_channels;
     int  out_rate;
     int  bits;
     int  quality;
-} resample_cfg_t;
+};
 
 struct resample_converter;
 typedef struct resample_converter *resample_converter_handle_t;
 
-typedef struct resample_converter {
-    int (*open)(resample_converter_handle_t self, resample_cfg_t *config);
+struct resample_converter {
+    int (*open)(resample_converter_handle_t self, struct resample_cfg *config);
     int (*process)(resample_converter_handle_t self, const short *in, int in_bytes);
     int (*close)(resample_converter_handle_t self);
     void (*destroy)(resample_converter_handle_t self);
     int out_bytes;          /*!< Output length for one converter */
     short  *out_buf;         /*!< Output pointer for rate converter */
-} resample_converter_t;
+};
 
 resample_converter_handle_t audio_resampler_init();
 

@@ -26,17 +26,17 @@
 extern "C" {
 #endif
 
-typedef enum file_mode {
+enum file_mode {
     FILE_WRITE = 0,
     FILE_READ = 1,
-} file_mode_t;
+};
 
 typedef void *file_handle_t;
 
 /**
  * @brief   File Stream configurations, if any entry is zero then the configuration will be set to default values
  */
-typedef struct {
+struct file_stream_cfg {
     audio_stream_type_t type;        /*!< Stream type */
     int              task_prio;      /*!< Task priority (based on freeRTOS priority) */
     int              task_stack;     /*!< Task stack size */
@@ -45,14 +45,14 @@ typedef struct {
 
     const char      *url;
     void            *file_priv;
-    file_handle_t  (*file_open)(const char *url, file_mode_t mode, long long content_pos, void *file_priv);
+    file_handle_t  (*file_open)(const char *url, enum file_mode mode, long long content_pos, void *file_priv);
     // File read callback return:
     //  >0: bytes read; <0: error occur; =0: read done
     int            (*file_read)(file_handle_t handle, char *buffer, int size);
     int            (*file_write)(file_handle_t handle, char *buffer, int size);
     int            (*file_seek)(file_handle_t handle, long offset);
     void           (*file_close)(file_handle_t handle);
-} file_stream_cfg_t;
+};
 
 #define FILE_STREAM_TASK_PRIO           (OS_THREAD_PRIO_NORMAL)
 #define FILE_STREAM_TASK_STACK          (4096)
@@ -83,7 +83,7 @@ typedef struct {
  *
  * @return     The Audio Element handle
  */
-audio_element_handle_t file_stream_init(file_stream_cfg_t *config);
+audio_element_handle_t file_stream_init(struct file_stream_cfg *config);
 
 #ifdef __cplusplus
 }

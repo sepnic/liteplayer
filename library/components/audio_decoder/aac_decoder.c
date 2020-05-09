@@ -25,7 +25,7 @@
 #include "esp_adf/audio_element.h"
 #include "audio_decoder/aac_decoder.h"
 
-#define TAG "AAC_DECODER"
+#define TAG "[liteplayer]AAC_DECODER"
 
 #define AAC_DECODER_INPUT_TIMEOUT_MAX  200
 
@@ -140,7 +140,7 @@ static esp_err_t aac_decoder_seek(audio_element_handle_t self, long long offset)
     return ESP_OK;
 }
 
-audio_element_handle_t aac_decoder_init(aac_decoder_cfg_t *config)
+audio_element_handle_t aac_decoder_init(struct aac_decoder_cfg *config)
 {
     OS_LOGV(TAG, "Init aac decoder");
 

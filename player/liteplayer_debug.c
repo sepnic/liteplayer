@@ -37,9 +37,9 @@
 #include <arpa/inet.h>
 #endif
 
-#define TAG "LITE_DEBUG"
+#define TAG "[liteplayer]DEBUG"
 
-typedef struct socket_upload_priv {
+struct socket_upload_priv {
     int fd;
     const char *addr;
     int port;
@@ -47,7 +47,7 @@ typedef struct socket_upload_priv {
     os_thread_t tid;
     char buffer[2048];
     bool stop;
-} socket_upload_priv_t;
+};
 
 static int socket_connect(const char *addr, int port)
 {
@@ -90,7 +90,7 @@ static void socket_disconnet(int fd)
         close(fd);
 }
 
-static void socket_upload_cleanup(socket_upload_priv_t *priv)
+static void socket_upload_cleanup(struct socket_upload_priv *priv)
 {
     if (priv->rb != NULL)
         rb_destroy(priv->rb);
@@ -101,7 +101,7 @@ static void socket_upload_cleanup(socket_upload_priv_t *priv)
 
 static void *socket_upload_thread(void *arg)
 {
-    socket_upload_priv_t *priv = (socket_upload_priv_t *)arg;
+    struct socket_upload_priv *priv = (struct socket_upload_priv *)arg;
     int ret = 0, bytes_read = 0;
 
     priv->fd = socket_connect(priv->addr, priv->port);
@@ -156,7 +156,7 @@ thread_exit:
 
 socket_upload_handle_t socket_upload_start(const char *server_addr, int server_port)
 {
-    socket_upload_priv_t *priv = OS_CALLOC(1, sizeof(socket_upload_priv_t));
+    struct socket_upload_priv *priv = OS_CALLOC(1, sizeof(struct socket_upload_priv));
     if (priv == NULL)
         return NULL;
 
@@ -189,7 +189,7 @@ start_failed:
 
 int socket_upload_fill_data(socket_upload_handle_t handle, char *data, int size)
 {
-    socket_upload_priv_t *priv = (socket_upload_priv_t *)handle;
+    struct socket_upload_priv *priv = (struct socket_upload_priv *)handle;
     if (priv == NULL || priv->stop || data == NULL || size <= 0)
         return -1;
 
@@ -206,7 +206,7 @@ int socket_upload_fill_data(socket_upload_handle_t handle, char *data, int size)
 
 void socket_upload_stop(socket_upload_handle_t handle)
 {
-    socket_upload_priv_t *priv = (socket_upload_priv_t *)handle;
+    struct socket_upload_priv *priv = (struct socket_upload_priv *)handle;
     if (priv == NULL)
         return;
 

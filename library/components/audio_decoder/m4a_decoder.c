@@ -24,7 +24,7 @@
 #include "esp_adf/audio_element.h"
 #include "audio_decoder/m4a_decoder.h"
 
-#define TAG "M4A_DECODER"
+#define TAG "[liteplayer]M4A_DECODER"
 
 #define M4A_DECODER_INPUT_TIMEOUT_MAX  200
 
@@ -138,7 +138,7 @@ static esp_err_t m4a_decoder_seek(audio_element_handle_t self, long long offset)
     return ESP_OK;
 }
 
-audio_element_handle_t m4a_decoder_init(m4a_decoder_cfg_t *config)
+audio_element_handle_t m4a_decoder_init(struct m4a_decoder_cfg *config)
 {
     OS_LOGV(TAG, "Init m4a decoder");
 

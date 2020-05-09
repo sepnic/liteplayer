@@ -25,17 +25,17 @@
 #include "audio_resampler/audio_resampler.h"
 #include "audio_stream/http_stream.h"
 
-#define TAG "HTTP_STREAM"
+#define TAG "[liteplayer]HTTP_STREAM"
 
-typedef struct http_stream {
-    http_stream_cfg_t   config;
-    http_handle_t       client;
-} http_stream_t;
+struct http_stream {
+    struct http_stream_cfg config;
+    http_handle_t client;
+};
 
 static esp_err_t http_stream_open(audio_element_handle_t self)
 {
-    http_stream_t *http = (http_stream_t *)audio_element_getdata(self);
-    http_stream_cfg_t *config = &http->config;
+    struct http_stream *http = (struct http_stream *)audio_element_getdata(self);
+    struct http_stream_cfg *config = &http->config;
     const char *url = audio_element_get_uri(self);
 
     if (config->url == NULL) {
@@ -48,8 +48,8 @@ static esp_err_t http_stream_open(audio_element_handle_t self)
 
 static int http_stream_read(audio_element_handle_t self, char *buffer, int len, int timeout_ms, void *context)
 {
-    http_stream_t *http = (http_stream_t *)audio_element_getdata(self);
-    http_stream_cfg_t *config = &http->config;
+    struct http_stream *http = (struct http_stream *)audio_element_getdata(self);
+    struct http_stream_cfg *config = &http->config;
     int rlen = 0;
     audio_element_info_t info;
     audio_element_getinfo(self, &info);
@@ -109,8 +109,8 @@ static int http_stream_process(audio_element_handle_t self, char *in_buffer, int
 
 static esp_err_t http_stream_close(audio_element_handle_t self)
 {
-    http_stream_t *http = (http_stream_t *)audio_element_getdata(self);
-    http_stream_cfg_t *config = &http->config;
+    struct http_stream *http = (struct http_stream *)audio_element_getdata(self);
+    struct http_stream_cfg *config = &http->config;
 
     OS_LOGV(TAG, "Close http stream");
 
@@ -130,8 +130,8 @@ static esp_err_t http_stream_close(audio_element_handle_t self)
 
 static esp_err_t http_stream_destroy(audio_element_handle_t self)
 {
-    http_stream_t *http = (http_stream_t *)audio_element_getdata(self);
-    http_stream_cfg_t *config = &http->config;
+    struct http_stream *http = (struct http_stream *)audio_element_getdata(self);
+    struct http_stream_cfg *config = &http->config;
 
     OS_LOGV(TAG, "Destroy http stream");
 
@@ -147,7 +147,7 @@ static esp_err_t http_stream_destroy(audio_element_handle_t self)
     return ESP_OK;
 }
 
-audio_element_handle_t http_stream_init(http_stream_cfg_t *config)
+audio_element_handle_t http_stream_init(struct http_stream_cfg *config)
 {
     OS_LOGV(TAG, "Init http stream");
 
@@ -164,9 +164,9 @@ audio_element_handle_t http_stream_init(http_stream_cfg_t *config)
     cfg.tag = "http";
     cfg.read = http_stream_read;
 
-    http_stream_t *http = audio_calloc(1, sizeof(http_stream_t));
+    struct http_stream *http = audio_calloc(1, sizeof(struct http_stream));
     AUDIO_MEM_CHECK(TAG, http, return NULL);
-    memcpy(&http->config, config, sizeof(http_stream_cfg_t));
+    memcpy(&http->config, config, sizeof(struct http_stream_cfg));
 
     if (config->url != NULL)
         http->config.url = audio_strdup(config->url);

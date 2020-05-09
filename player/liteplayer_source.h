@@ -25,42 +25,42 @@
 extern "C" {
 #endif
 
-typedef enum media_source_type {
+enum media_source_type {
     MEDIA_SOURCE_UNKNOWN,
     MEDIA_SOURCE_STREAM,
     MEDIA_SOURCE_HTTP,
     MEDIA_SOURCE_FILE,
-} media_source_type_t;
+};
 
-typedef enum media_source_state {
+enum media_source_state {
     MEDIA_SOURCE_READ_SUCCEED,
     MEDIA_SOURCE_READ_FAILED,
     MEDIA_SOURCE_READ_DONE,
     MEDIA_SOURCE_WRITE_SUCCEED,
     MEDIA_SOURCE_WRITE_FAILED,
     MEDIA_SOURCE_WRITE_DONE,
-} media_source_state_t;
+};
 
-typedef void (*media_source_state_cb)(media_source_state_t state, void *priv);
+typedef void (*media_source_state_cb)(enum media_source_state state, void *priv);
 
-typedef struct media_source_info {
+struct media_source_info {
     const char *url;
-    media_source_type_t source_type;
-    http_wrapper_t http_wrapper;
-    file_wrapper_t file_wrapper;
+    enum media_source_type source_type;
+    struct http_wrapper http_ops;
+    struct file_wrapper file_ops;
     long long content_pos;
-} media_source_info_t;
+};
 
 typedef void *media_source_handle_t;
 
-media_source_handle_t media_source_start(media_source_info_t *info,
+media_source_handle_t media_source_start(struct media_source_info *info,
                                          ringbuf_handle_t rb,
                                          media_source_state_cb listener,
                                          void *listener_priv);
 
 void media_source_stop(media_source_handle_t handle);
 
-int m3u_get_first_url(media_source_info_t *info, char *buf, int buf_size);
+int m3u_get_first_url(struct media_source_info *info, char *buf, int buf_size);
 
 #ifdef __cplusplus
 }
