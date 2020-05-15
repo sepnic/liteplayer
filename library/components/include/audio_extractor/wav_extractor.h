@@ -87,6 +87,8 @@ struct wav_info {
     uint16_t blockAlign;          //align
     uint32_t dataSize;            //size of data
     uint32_t dataOffset;          //offset of data
+    char    *header_buff;
+    uint32_t header_size;
 };
 
 //wav that dr_wav.h supported:

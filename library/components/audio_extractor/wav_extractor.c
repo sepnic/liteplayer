@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "msgutils/os_logger.h"
 #include "esp_adf/audio_common.h"
@@ -190,6 +191,13 @@ parse_done:
         return -1;
     }
 
+    info->header_size = info->dataOffset;
+    info->header_buff = (char *)audio_calloc(1, info->header_size);
+    if (info->header_buff == NULL) {
+        OS_LOGE(TAG, "Failed to allocate header buffer");
+        return -1;
+    }
+    memcpy(info->header_buff, buf, info->header_size);
     return 0;
 }
 

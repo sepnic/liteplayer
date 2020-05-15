@@ -43,7 +43,12 @@ struct media_codec_info {
     long                content_len;
     int                 bytes_per_sec;
     int                 duration_ms;
-    struct m4a_info     m4a_info;
+    union {
+        struct wav_info wav_info;
+        struct mp3_info mp3_info;
+        struct aac_info aac_info;
+        struct m4a_info m4a_info;
+    } detail;
 };
 
 typedef void (*media_parser_state_cb)(enum media_parser_state state, struct media_codec_info *codec_info, void *priv);

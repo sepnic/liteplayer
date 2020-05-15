@@ -107,17 +107,18 @@ static int m4a_header_parse(struct media_source_info *source_info, struct media_
             return ESP_FAIL;
     }
 
-    if (m4a_extractor(media_parser_fetch, &m4a_priv, &codec_info->m4a_info) == 0) {
-        codec_info->content_pos = codec_info->m4a_info.mdat_offset;
+    if (m4a_extractor(media_parser_fetch, &m4a_priv, &(codec_info->detail.m4a_info)) == 0) {
+        codec_info->content_pos = codec_info->detail.m4a_info.mdat_offset;
     #if defined(AAC_ENABLE_SBR)
-        codec_info->codec_samplerate = codec_info->m4a_info.samplerate;
-        codec_info->codec_channels = codec_info->m4a_info.channels;
+        codec_info->codec_samplerate = codec_info->detail.m4a_info.samplerate;
+        codec_info->codec_channels = codec_info->detail.m4a_info.channels;
     #else
-        codec_info->codec_samplerate = codec_info->m4a_info.asc.samplerate;
-        codec_info->codec_channels = codec_info->m4a_info.asc.channels;
+        codec_info->codec_samplerate = codec_info->detail.m4a_info.asc.samplerate;
+        codec_info->codec_channels = codec_info->detail.m4a_info.asc.channels;
     #endif
-        codec_info->codec_bits = codec_info->m4a_info.bits;
-        codec_info->duration_ms = (int)(codec_info->m4a_info.duration/codec_info->m4a_info.time_scale*1000);
+        codec_info->codec_bits = codec_info->detail.m4a_info.bits;
+        codec_info->duration_ms =
+            (int)(codec_info->detail.m4a_info.duration/codec_info->detail.m4a_info.time_scale*1000);
         ret = ESP_OK;
     }
 
@@ -236,11 +237,11 @@ static int media_header_parse(struct media_source_info *source_info, struct medi
 
     if (codec_info->codec_type == AUDIO_CODEC_MP3) {
         frame_start_offset = get_start_offset(buf);
-        struct mp3_info info = {0};
+        struct mp3_info *info = &(codec_info->detail.mp3_info);
         int remain_size = bytes_read - frame_start_offset;
 
         if (remain_size >= 4) {
-            if (mp3_parse_header(&buf[frame_start_offset], remain_size, &info) != 0)
+            if (mp3_parse_header(&buf[frame_start_offset], remain_size, info) != 0)
                 goto parse_done;
         }
         else {
@@ -261,24 +262,24 @@ static int media_header_parse(struct media_source_info *source_info, struct medi
             }
             if (bytes_read < 4)
                 goto parse_done;
-            if (mp3_parse_header(buf, bytes_read, &info) != 0)
+            if (mp3_parse_header(buf, bytes_read, info) != 0)
                 goto parse_done;
         }
 
-        sample_rate = info.sample_rate;
-        channels = info.channels;
+        sample_rate = info->sample_rate;
+        channels = info->channels;
         bits = 16;
-        bytes_per_sec = info.bit_rate*1000/8;
+        bytes_per_sec = info->bit_rate*1000/8;
         if (filesize > frame_start_offset)
-            duration_ms = (filesize - frame_start_offset)*8/info.bit_rate;
+            duration_ms = (filesize - frame_start_offset)*8/info->bit_rate;
     }
     else if (codec_info->codec_type == AUDIO_CODEC_AAC) {
         frame_start_offset = get_start_offset(buf);
-        struct aac_info info = {0};
+        struct aac_info *info = &(codec_info->detail.aac_info);
         int remain_size = bytes_read - frame_start_offset;
 
         if (remain_size >= 9) {
-            if (aac_parse_adts_frame(&buf[frame_start_offset], remain_size, &info) != 0)
+            if (aac_parse_adts_frame(&buf[frame_start_offset], remain_size, info) != 0)
                 goto parse_done;
         }
         else {
@@ -299,27 +300,28 @@ static int media_header_parse(struct media_source_info *source_info, struct medi
             }
             if (bytes_read < 9)
                 goto parse_done;
-            if (aac_parse_adts_frame(buf, bytes_read, &info) != 0)
+            if (aac_parse_adts_frame(buf, bytes_read, info) != 0)
                 goto parse_done;
         }
 
-        sample_rate = info.sample_rate;
-        channels = info.channels;
+        sample_rate = info->sample_rate;
+        channels = info->channels;
         bits = 16;
-        //bytes_per_sec = info.bit_rate*1000/8;
+        //bytes_per_sec = info->bit_rate*1000/8;
         //if (filesize > frame_start_offset)
-        //    duration_ms = (filesize - frame_start_offset)*8/info.bit_rate;
+        //    duration_ms = (filesize - frame_start_offset)*8/info->bit_rate;
     }
     else if (codec_info->codec_type == AUDIO_CODEC_WAV) {
-        struct wav_info info = {0};
-        if (wav_parse_header(buf, bytes_read, &info) != 0)
+        struct wav_info *info = &(codec_info->detail.wav_info);
+        if (wav_parse_header(buf, bytes_read, info) != 0)
             goto parse_done;
 
-        sample_rate = info.sampleRate;
-        channels = info.channels;
-        bits = info.bits;
-        bytes_per_sec = info.blockAlign*info.sampleRate;
-        duration_ms = (int)(info.dataSize/info.blockAlign/info.sampleRate*1000);
+        frame_start_offset = info->dataOffset;
+        sample_rate = info->sampleRate;
+        channels = info->channels;
+        bits = info->bits;
+        bytes_per_sec = info->blockAlign*info->sampleRate;
+        duration_ms = (int)(info->dataSize/info->blockAlign/info->sampleRate*1000);
     }
     else {
         OS_LOGE(TAG, "Unknown codec type");

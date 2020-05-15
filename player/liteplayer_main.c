@@ -102,8 +102,10 @@ static void media_player_state_callback(liteplayer_handle_t handle, enum litepla
         }
     }
     else {
-        if (handle->state_listener)
-            handle->state_listener(state, 0, handle->state_userdata);
+        if (!handle->state_error || state == LITEPLAYER_IDLE || state == LITEPLAYER_STOPPED) {
+            if (handle->state_listener)
+                handle->state_listener(state, 0, handle->state_userdata);
+        }
     }
 }
 
@@ -375,7 +377,7 @@ static int main_pipeline_init(liteplayer_handle_t handle)
             m4a_cfg.task_prio            = DEFAULT_DECODER_TASK_PRIO;
             m4a_cfg.task_stack           = DEFAULT_DECODER_TASK_STACKSIZE;
             m4a_cfg.out_rb_size          = DEFAULT_DECODER_RINGBUF_SIZE;
-            m4a_cfg.m4a_info = &handle->codec_info.m4a_info;
+            m4a_cfg.m4a_info = &(handle->codec_info.detail.m4a_info);
             handle->el_decoder = m4a_decoder_init(&m4a_cfg);
         }
         else if (handle->codec_info.codec_type == AUDIO_CODEC_WAV) {
@@ -383,6 +385,7 @@ static int main_pipeline_init(liteplayer_handle_t handle)
             wav_cfg.task_prio            = DEFAULT_DECODER_TASK_PRIO;
             wav_cfg.task_stack           = DEFAULT_DECODER_TASK_STACKSIZE;
             wav_cfg.out_rb_size          = DEFAULT_DECODER_RINGBUF_SIZE;
+            wav_cfg.wav_info = &(handle->codec_info.detail.wav_info);
             handle->el_decoder = wav_decoder_init(&wav_cfg);
         }
         AUDIO_MEM_CHECK(TAG, handle->el_decoder, goto pipeline_fail);
@@ -830,7 +833,7 @@ int liteplayer_seek(liteplayer_handle_t handle, int msec)
 
     long long offset = 0;
     switch (handle->codec_info.codec_type) {
-    //case AUDIO_CODEC_WAV:
+    case AUDIO_CODEC_WAV:
     case AUDIO_CODEC_MP3: {
         offset = (handle->codec_info.bytes_per_sec*(msec/1000));
         break;
@@ -838,12 +841,12 @@ int liteplayer_seek(liteplayer_handle_t handle, int msec)
     case AUDIO_CODEC_M4A: {
         unsigned int sample_index = 0;
         unsigned int sample_offset = 0;
-        if (m4a_get_seek_offset(msec, &handle->codec_info.m4a_info, &sample_index, &sample_offset) != 0) {
+        if (m4a_get_seek_offset(msec, &(handle->codec_info.detail.m4a_info), &sample_index, &sample_offset) != 0) {
             ret = ESP_OK;
             goto seek_out;
         }
         offset = (long long)sample_offset - handle->codec_info.content_pos;
-        handle->codec_info.m4a_info.stsz_samplesize_index = sample_index;
+        handle->codec_info.detail.m4a_info.stsz_samplesize_index = sample_index;
         break;
     }
     default:
@@ -1003,21 +1006,19 @@ int liteplayer_reset(liteplayer_handle_t handle)
         handle->url = NULL;
     }
 
-    if (handle->codec_info.m4a_info.stsz_samplesize != NULL) {
-        audio_free(handle->codec_info.m4a_info.stsz_samplesize);
-        handle->codec_info.m4a_info.stsz_samplesize = NULL;
+    if (handle->codec_info.codec_type == AUDIO_CODEC_M4A) {
+        if (handle->codec_info.detail.m4a_info.stsz_samplesize != NULL)
+            audio_free(handle->codec_info.detail.m4a_info.stsz_samplesize);
+        if (handle->codec_info.detail.m4a_info.stts_time2sample != NULL)
+            audio_free(handle->codec_info.detail.m4a_info.stts_time2sample);
+        if (handle->codec_info.detail.m4a_info.stsc_sample2chunk != NULL)
+            audio_free(handle->codec_info.detail.m4a_info.stsc_sample2chunk);
+        if (handle->codec_info.detail.m4a_info.stco_chunk2offset != NULL)
+            audio_free(handle->codec_info.detail.m4a_info.stco_chunk2offset);
     }
-    if (handle->codec_info.m4a_info.stts_time2sample != NULL) {
-        audio_free(handle->codec_info.m4a_info.stts_time2sample);
-        handle->codec_info.m4a_info.stts_time2sample = NULL;
-    }
-    if (handle->codec_info.m4a_info.stsc_sample2chunk != NULL) {
-        audio_free(handle->codec_info.m4a_info.stsc_sample2chunk);
-        handle->codec_info.m4a_info.stsc_sample2chunk = NULL;
-    }
-    if (handle->codec_info.m4a_info.stco_chunk2offset != NULL) {
-        audio_free(handle->codec_info.m4a_info.stco_chunk2offset);
-        handle->codec_info.m4a_info.stco_chunk2offset = NULL;
+    else if (handle->codec_info.codec_type == AUDIO_CODEC_WAV) {
+        if (handle->codec_info.detail.wav_info.header_buff != NULL)
+            audio_free(handle->codec_info.detail.wav_info.header_buff);
     }
 
     handle->source_type = MEDIA_SOURCE_UNKNOWN;

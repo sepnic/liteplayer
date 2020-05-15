@@ -41,6 +41,8 @@ file_handle_t fatfs_wrapper_open(const char *url, enum file_mode mode, long long
     if (priv == NULL)
         return NULL;
 
+    OS_LOGD(TAG, "Opening file:%s, content_pos:%d", url, (int)content_pos);
+
     if (mode == FILE_READ)
         file = fopen(url, "rb");
     else

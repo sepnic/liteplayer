@@ -58,6 +58,8 @@ struct wav_decoder {
     struct wav_buf_in       buf_in;
     struct wav_buf_out      buf_out;
     bool                    parsed_header;
+    bool                    filled_header;
+    struct wav_info        *wav_info;
 };
 typedef struct wav_decoder *wav_decoder_handle_t;
 
@@ -122,6 +124,36 @@ static int drwav_run(wav_decoder_handle_t wav)
     if (in->eof && in->bytes_read < wav->block_align) {
         OS_LOGV(TAG, "WAV frame end");
         return AEL_IO_DONE;
+    }
+
+    if (!wav->filled_header) {
+        if (in->bytes_read < wav->wav_info->header_size) {
+            if (wav->wav_info->header_size > WAV_DECODER_INPUT_BUFFER_SIZE)
+                return AEL_PROCESS_FAIL;
+            memcpy(in->data, wav->wav_info->header_buff, wav->wav_info->header_size);
+            in->bytes_read = wav->wav_info->header_size;
+        }
+
+        in->bytes_want = WAV_DECODER_INPUT_BUFFER_SIZE - in->bytes_read;
+        ret = audio_element_input_chunk(wav->el, in->data+in->bytes_read, in->bytes_want);
+        if (ret == in->bytes_want) {
+            in->bytes_read += ret;
+        }
+        else if (ret == AEL_IO_OK || ret == AEL_IO_DONE || ret == AEL_IO_ABORT) {
+            in->eof = true;
+            return AEL_IO_DONE;
+        }
+        else if (ret < 0) {
+            OS_LOGW(TAG, "Read chunk error: %d/%d", ret, in->bytes_want);
+            return ret;
+        }
+        else {
+            in->eof = true;
+            in->bytes_read += ret;
+        }
+
+        wav->drwav_offset = 0;
+        wav->filled_header = true;
     }
 
     if (in->bytes_read < wav->block_align) {
@@ -274,8 +306,10 @@ static int wav_decoder_process(audio_element_handle_t self, char *in_buffer, int
 
 static esp_err_t wav_decoder_seek(audio_element_handle_t self, long long offset)
 {
-    //wav_decoder_handle_t wav = (wav_decoder_handle_t)audio_element_getdata(self);
-    //wav->parsed_header = true;
+    wav_decoder_handle_t wav = (wav_decoder_handle_t)audio_element_getdata(self);
+    wav->drwav_offset = 0;
+    memset(&wav->buf_in, 0x0, sizeof(wav->buf_in));
+    memset(&wav->buf_out, 0x0, sizeof(wav->buf_out));
     return ESP_OK;
 }
 
@@ -305,7 +339,8 @@ audio_element_handle_t wav_decoder_init(struct wav_decoder_cfg *config)
     audio_element_handle_t el = audio_element_init(&cfg);
     AUDIO_MEM_CHECK(TAG, el, goto wav_init_error);
     wav->el = el;
-    wav->block_align = WAV_MAX_CHANNEL_COUNT * sizeof(uint64_t);
+    wav->block_align = config->wav_info->blockAlign;
+    wav->wav_info = config->wav_info;
     audio_element_setdata(el, wav);
 
     audio_element_info_t info = { 0 };

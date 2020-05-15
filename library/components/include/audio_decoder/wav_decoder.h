@@ -20,6 +20,7 @@
 
 #include "msgutils/os_thread.h"
 #include "esp_adf/audio_element.h"
+#include "audio_extractor/wav_extractor.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,7 +32,8 @@ extern "C" {
 struct wav_decoder_cfg {
     int out_rb_size;    /*!< Size of output ringbuffer */
     int task_stack;     /*!< Task stack size */
-    int task_prio;      /*!< Task priority (based on freeRTOS priority) */ 
+    int task_prio;      /*!< Task priority (based on freeRTOS priority) */
+    struct wav_info *wav_info;
 };
 
 #define WAV_DECODER_TASK_PRIO           (OS_THREAD_PRIO_NORMAL)
