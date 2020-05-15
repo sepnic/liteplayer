@@ -20,6 +20,7 @@
 
 #include "msgutils/os_thread.h"
 #include "esp_adf/audio_element.h"
+#include "audio_extractor/mp3_extractor.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,6 +39,7 @@ struct mp3_decoder_cfg {
     int   out_rb_size;    /*!< Size of output ringbuffer */
     int   task_stack;     /*!< Task stack size */
     int   task_prio;      /*!< Task priority (based on freeRTOS priority) */
+    struct mp3_info *mp3_info;
 };
 
 #define MP3_DECODER_TASK_STACK          (4 * 1024)
@@ -69,6 +71,7 @@ struct mp3_decoder {
     audio_element_handle_t  el;
     struct mp3_buf_in       buf_in;
     struct mp3_buf_out      buf_out;
+    struct mp3_info        *mp3_info;
     bool                    parsed_header;
     bool                    seek_mode;
 };

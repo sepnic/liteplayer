@@ -154,18 +154,15 @@ audio_element_handle_t aac_decoder_init(struct aac_decoder_cfg *config)
     cfg.process = aac_decoder_process;
     cfg.seek    = aac_decoder_seek;
     cfg.buffer_len = AAC_DECODER_BUFFER_SIZE;
-
     cfg.task_stack  = config->task_stack;
     cfg.task_prio   = config->task_prio;
     cfg.out_rb_size = config->out_rb_size;
     if (cfg.task_stack == 0)
         cfg.task_stack = AAC_DECODER_TASK_STACK;
-
     cfg.tag = "aac";
 
     audio_element_handle_t el = audio_element_init(&cfg);
     AUDIO_MEM_CHECK(TAG, el, goto aac_init_error);
-
     decoder->el = el;
     audio_element_setdata(el, decoder);
 

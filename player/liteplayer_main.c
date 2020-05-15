@@ -363,6 +363,7 @@ static int main_pipeline_init(liteplayer_handle_t handle)
             mp3_cfg.task_prio            = DEFAULT_DECODER_TASK_PRIO;
             mp3_cfg.task_stack           = DEFAULT_DECODER_TASK_STACKSIZE;
             mp3_cfg.out_rb_size          = DEFAULT_DECODER_RINGBUF_SIZE;
+            mp3_cfg.mp3_info             = &(handle->codec_info.detail.mp3_info);
             handle->el_decoder = mp3_decoder_init(&mp3_cfg);
         }
         else if (handle->codec_info.codec_type == AUDIO_CODEC_AAC) {
@@ -377,7 +378,7 @@ static int main_pipeline_init(liteplayer_handle_t handle)
             m4a_cfg.task_prio            = DEFAULT_DECODER_TASK_PRIO;
             m4a_cfg.task_stack           = DEFAULT_DECODER_TASK_STACKSIZE;
             m4a_cfg.out_rb_size          = DEFAULT_DECODER_RINGBUF_SIZE;
-            m4a_cfg.m4a_info = &(handle->codec_info.detail.m4a_info);
+            m4a_cfg.m4a_info             = &(handle->codec_info.detail.m4a_info);
             handle->el_decoder = m4a_decoder_init(&m4a_cfg);
         }
         else if (handle->codec_info.codec_type == AUDIO_CODEC_WAV) {
@@ -385,7 +386,7 @@ static int main_pipeline_init(liteplayer_handle_t handle)
             wav_cfg.task_prio            = DEFAULT_DECODER_TASK_PRIO;
             wav_cfg.task_stack           = DEFAULT_DECODER_TASK_STACKSIZE;
             wav_cfg.out_rb_size          = DEFAULT_DECODER_RINGBUF_SIZE;
-            wav_cfg.wav_info = &(handle->codec_info.detail.wav_info);
+            wav_cfg.wav_info             = &(handle->codec_info.detail.wav_info);
             handle->el_decoder = wav_decoder_init(&wav_cfg);
         }
         AUDIO_MEM_CHECK(TAG, handle->el_decoder, goto pipeline_fail);

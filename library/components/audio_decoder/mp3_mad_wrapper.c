@@ -114,6 +114,7 @@ static int mp3_frame_size(char *buf)
 
 static int mp3_find_sync_offset(char *buf, int buf_size, struct mp3_info *info)
 {
+    struct mp3_info temp;
     bool found = false;
     int last_position = 0;
     int sync_offset = 0;
@@ -126,8 +127,9 @@ find_syncword:
     sync_offset = mp3_find_syncword(&buf[last_position], buf_size-last_position);
     if (sync_offset >= 0) {
         last_position += sync_offset;
-        int ret = mp3_parse_header(&buf[last_position], buf_size-last_position, info);
-        if (ret == 0) {
+        int ret = mp3_parse_header(&buf[last_position], buf_size-last_position, &temp);
+        if (ret == 0 && temp.frame_size <= MP3_DECODER_INPUT_BUFFER_SIZE &&
+            temp.sample_rate == info->sample_rate && temp.channels == info->channels) {
             found = true;
             goto finish;
         }
@@ -144,6 +146,7 @@ find_syncword:
 
 finish:
     if (found) {
+        info->frame_size = temp.frame_size;
         info->frame_start_offset = last_position;
     }
     return found ? 0 : -1;
@@ -178,22 +181,22 @@ static int mp3_data_read(mp3_decoder_handle_t decoder)
             return AEL_IO_DONE;
         }
 
-        struct mp3_info info;
-        ret = mp3_find_sync_offset(mad->seek_buffer, mad->bytes_seek, &info);
+        struct mp3_info *info = decoder->mp3_info;
+        ret = mp3_find_sync_offset(mad->seek_buffer, mad->bytes_seek, info);
         if (ret != 0) {
             OS_LOGE(TAG, "SEEK_MODE: Failed to find sync word after seeking");
             return AEL_IO_FAIL;
         }
 
         OS_LOGV(TAG, "SEEK_MODE: Found sync offset: %d/%d, frame_size=%d",
-                info.frame_start_offset, mad->bytes_seek, info.frame_size);
+                info->frame_start_offset, mad->bytes_seek, info->frame_size);
 
-        mad->bytes_seek -= info.frame_start_offset;
+        mad->bytes_seek -= info->frame_start_offset;
         if (mad->bytes_seek > 0)
-            memmove(mad->seek_buffer, &mad->seek_buffer[info.frame_start_offset], mad->bytes_seek);
+            memmove(mad->seek_buffer, &mad->seek_buffer[info->frame_start_offset], mad->bytes_seek);
         in->bytes_want = 0;
         in->bytes_read = 0;
-        mad->frame_size = info.frame_size;
+        mad->frame_size = info->frame_size;
         decoder->seek_mode = false;
     }
 

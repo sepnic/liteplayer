@@ -192,7 +192,7 @@ parse_done:
     }
 
     info->header_size = info->dataOffset;
-    info->header_buff = (char *)audio_calloc(1, info->header_size);
+    info->header_buff = (uint8_t *)audio_calloc(1, info->header_size);
     if (info->header_buff == NULL) {
         OS_LOGE(TAG, "Failed to allocate header buffer");
         return -1;
