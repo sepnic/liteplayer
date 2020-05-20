@@ -19,8 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "mp3-mad/mad.h"
-#include "mp3-mad/global.h"
+#include "mp3-pvmp3/include/pvmp3decoder_api.h"
 #include "msgutils/os_logger.h"
 #include "esp_adf/audio_common.h"
 #include "esp_adf/audio_element.h"
@@ -29,11 +28,9 @@
 
 #define TAG "[liteplayer]MP3_DECODER"
 
-struct mad_wrapper {
-    struct mad_stream stream;
-    struct mad_frame frame;
-    struct mad_synth synth;
-    char stream_buffer[MP3_DECODER_INPUT_BUFFER_SIZE*2];
+struct pvmp3_wrapper {
+    tPVMP3DecoderExternal pvmp3_config;
+    void *pvmp3_buffer;
     bool new_frame;    // if reading new frame
     int  frame_size;
     char seek_buffer[MP3_DECODER_INPUT_BUFFER_SIZE];
@@ -154,7 +151,7 @@ finish:
 
 static int mp3_data_read(mp3_decoder_handle_t decoder)
 {
-    struct mad_wrapper *mad = (struct mad_wrapper *)(decoder->handle);
+    struct pvmp3_wrapper *wrap = (struct pvmp3_wrapper *)(decoder->handle);
     struct mp3_buf_in *in = &decoder->buf_in;
     int ret = 0;
 
@@ -162,55 +159,55 @@ static int mp3_data_read(mp3_decoder_handle_t decoder)
         return AEL_IO_DONE;
 
     if (decoder->seek_mode) {
-        mad->bytes_seek = sizeof(mad->seek_buffer);
-        ret = audio_element_input_chunk(decoder->el, mad->seek_buffer, mad->bytes_seek);
-        if (ret == mad->bytes_seek) {
-            OS_LOGV(TAG, "SEEK_MODE: Read chunk succeed: %d/%d", ret, mad->bytes_seek);
+        wrap->bytes_seek = sizeof(wrap->seek_buffer);
+        ret = audio_element_input_chunk(decoder->el, wrap->seek_buffer, wrap->bytes_seek);
+        if (ret == wrap->bytes_seek) {
+            OS_LOGV(TAG, "SEEK_MODE: Read chunk succeed: %d/%d", ret, wrap->bytes_seek);
         }
         else if (ret == AEL_IO_OK || ret == AEL_IO_DONE || ret == AEL_IO_ABORT) {
             in->eof = true;
             return AEL_IO_DONE;
         }
         else if (ret < 0) {
-            OS_LOGW(TAG, "SEEK_MODE: Read chunk error: %d/%d", ret, mad->bytes_seek);
+            OS_LOGW(TAG, "SEEK_MODE: Read chunk error: %d/%d", ret, wrap->bytes_seek);
             return ret;
         }
         else {
-            OS_LOGW(TAG, "SEEK_MODE: Read chunk insufficient: %d/%d", ret, mad->bytes_seek);
+            OS_LOGW(TAG, "SEEK_MODE: Read chunk insufficient: %d/%d", ret, wrap->bytes_seek);
             in->eof = true;
             return AEL_IO_DONE;
         }
 
         struct mp3_info *info = decoder->mp3_info;
-        ret = mp3_find_sync_offset(mad->seek_buffer, mad->bytes_seek, info);
+        ret = mp3_find_sync_offset(wrap->seek_buffer, wrap->bytes_seek, info);
         if (ret != 0) {
             OS_LOGE(TAG, "SEEK_MODE: Failed to find sync word after seeking");
             return AEL_IO_FAIL;
         }
 
         OS_LOGV(TAG, "SEEK_MODE: Found sync offset: %d/%d, frame_size=%d",
-                info->frame_start_offset, mad->bytes_seek, info->frame_size);
+                info->frame_start_offset, wrap->bytes_seek, info->frame_size);
 
-        mad->bytes_seek -= info->frame_start_offset;
-        if (mad->bytes_seek > 0)
-            memmove(mad->seek_buffer, &mad->seek_buffer[info->frame_start_offset], mad->bytes_seek);
+        wrap->bytes_seek -= info->frame_start_offset;
+        if (wrap->bytes_seek > 0)
+            memmove(wrap->seek_buffer, &wrap->seek_buffer[info->frame_start_offset], wrap->bytes_seek);
         in->bytes_want = 0;
         in->bytes_read = 0;
-        mad->frame_size = info->frame_size;
+        wrap->frame_size = info->frame_size;
         decoder->seek_mode = false;
     }
 
-    if (mad->bytes_seek > 0) {
-        if (mad->bytes_seek < mad->frame_size) {
-            int remain = mad->frame_size - mad->bytes_seek;
+    if (wrap->bytes_seek > 0) {
+        if (wrap->bytes_seek < wrap->frame_size) {
+            int remain = wrap->frame_size - wrap->bytes_seek;
             OS_LOGD(TAG, "SEEK_MODE: Insufficient data, request more for whole frame, remain/frame: %d/%d",
-                    remain, mad->frame_size);
+                    remain, wrap->frame_size);
             ret = audio_element_input_chunk(decoder->el,
-                        mad->seek_buffer+mad->bytes_seek,
+                        wrap->seek_buffer+wrap->bytes_seek,
                         remain);
             if (ret == remain) {
                 OS_LOGV(TAG, "SEEK_MODE: Read chunk succeed: %d/%d", ret, remain);
-                mad->bytes_seek = mad->frame_size;
+                wrap->bytes_seek = wrap->frame_size;
             }
             else if (ret == AEL_IO_OK || ret == AEL_IO_DONE || ret == AEL_IO_ABORT) {
                 in->eof = true;
@@ -227,28 +224,28 @@ static int mp3_data_read(mp3_decoder_handle_t decoder)
             }
         }
 
-        mad->frame_size = mp3_frame_size(mad->seek_buffer);
-        if (mad->frame_size <= 0 || mad->frame_size > mad->bytes_seek) {
+        wrap->frame_size = mp3_frame_size(wrap->seek_buffer);
+        if (wrap->frame_size <= 0 || wrap->frame_size > wrap->bytes_seek) {
             OS_LOGW(TAG, "SEEK_MODE: MP3 demux dummy data, AEL_IO_DONE");
             //in->eof = true;
-            mad->bytes_seek = 0;
+            wrap->bytes_seek = 0;
             return AEL_IO_DONE;
         }
 
-        memcpy(in->data, mad->seek_buffer, mad->frame_size);
-        in->bytes_read = mad->frame_size;
+        memcpy(in->data, wrap->seek_buffer, wrap->frame_size);
+        in->bytes_read = wrap->frame_size;
         in->bytes_want = 0;
 
-        mad->bytes_seek -= mad->frame_size;
-        if (mad->bytes_seek > 0)
-            memmove(mad->seek_buffer, mad->seek_buffer+mad->frame_size, mad->bytes_seek);
+        wrap->bytes_seek -= wrap->frame_size;
+        if (wrap->bytes_seek > 0)
+            memmove(wrap->seek_buffer, wrap->seek_buffer+wrap->frame_size, wrap->bytes_seek);
 
-        if (mad->bytes_seek >= 4) {
-            mad->frame_size = mp3_frame_size(mad->seek_buffer);
-            if (mad->frame_size <= 0 || mad->frame_size > MP3_DECODER_INPUT_BUFFER_SIZE) {
+        if (wrap->bytes_seek >= 4) {
+            wrap->frame_size = mp3_frame_size(wrap->seek_buffer);
+            if (wrap->frame_size <= 0 || wrap->frame_size > MP3_DECODER_INPUT_BUFFER_SIZE) {
                 OS_LOGW(TAG, "SEEK_MODE: MP3 demux dummy data, AEL_IO_DONE");
                 //in->eof = true;
-                mad->bytes_seek = 0;
+                wrap->bytes_seek = 0;
                 return AEL_IO_DONE;
             }
         }
@@ -256,19 +253,19 @@ static int mp3_data_read(mp3_decoder_handle_t decoder)
     }
 
     if (in->bytes_want > 0) {
-        if (mad->new_frame) {
+        if (wrap->new_frame) {
             OS_LOGD(TAG, "Remain %d/4 bytes header needed to read", in->bytes_want);
             goto fill_header;
         }
         else {
-            OS_LOGD(TAG, "Remain %d/%d bytes frame needed to read", in->bytes_want, mad->frame_size);
+            OS_LOGD(TAG, "Remain %d/%d bytes frame needed to read", in->bytes_want, wrap->frame_size);
             goto fill_frame;
         }
     }
 
     in->bytes_want = 4;
     in->bytes_read = 0;
-    mad->new_frame = true;
+    wrap->new_frame = true;
 fill_header:
     ret = audio_element_input(decoder->el, in->data+in->bytes_read, in->bytes_want);
     if (ret < in->bytes_want) {
@@ -289,16 +286,16 @@ fill_header:
         }
     }
 
-    mad->frame_size = mp3_frame_size(in->data);
-    if (mad->frame_size <= 0 || mad->frame_size > MP3_DECODER_INPUT_BUFFER_SIZE) {
+    wrap->frame_size = mp3_frame_size(in->data);
+    if (wrap->frame_size <= 0 || wrap->frame_size > MP3_DECODER_INPUT_BUFFER_SIZE) {
         OS_LOGW(TAG, "MP3 demux dummy data, AEL_IO_DONE");
         //in->eof = true;
         return AEL_IO_DONE;
     }
 
     in->bytes_read = 4;
-    in->bytes_want = mad->frame_size - in->bytes_read;
-    mad->new_frame = false;
+    in->bytes_want = wrap->frame_size - in->bytes_read;
+    wrap->new_frame = false;
 fill_frame:
     ret = audio_element_input(decoder->el, in->data+in->bytes_read, in->bytes_want);
     if (ret < in->bytes_want) {
@@ -319,109 +316,48 @@ fill_frame:
         }
     }
 
-    in->bytes_read = mad->frame_size;
+    in->bytes_read = wrap->frame_size;
     in->bytes_want = 0;
     return AEL_IO_OK;
 }
 
-static inline short scale(mad_fixed_t sample)
-{
-    sample += (1L << (MAD_F_FRACBITS - 16));
-    if (sample >= MAD_F_ONE)
-        sample = MAD_F_ONE - 1;
-    else if (sample < -MAD_F_ONE)
-        sample = -MAD_F_ONE;
-    return sample >> (MAD_F_FRACBITS + 1 - 16);
-}
-
 int mp3_wrapper_run(mp3_decoder_handle_t decoder) 
 {
-    struct mad_wrapper *mad = (struct mad_wrapper *)(decoder->handle);
-    struct mad_stream *stream = &mad->stream;
-    struct mad_frame *frame = &mad->frame;
-    struct mad_synth *synth = &mad->synth;
-    int remain = 0;
+    struct pvmp3_wrapper *wrap = (struct pvmp3_wrapper *)(decoder->handle);
     int ret = 0;
 
-fill_data:
     ret = mp3_data_read(decoder);
     if (ret != AEL_IO_OK) {
         if (decoder->buf_in.eof) {
-            remain = stream->bufend - stream->next_frame;
-            if (stream->next_frame != NULL && remain >= mad->frame_size) {
-                OS_LOGV(TAG, "Remain last frame %d bytes needed to decode", remain);
-                goto decode_data;
-            }
-            OS_LOGV(TAG, "MP3 frame end, remain bytes: %d", remain);
+            OS_LOGV(TAG, "MP3 frame end");
             ret = AEL_IO_DONE;
         }
         return ret;
     }
 
-decode_data:
-    remain = stream->bufend - stream->next_frame;
-    if (stream->next_frame != NULL && remain > 0) {
-        if (remain >= MP3_DECODER_INPUT_BUFFER_SIZE) {
-            OS_LOGW(TAG, "Unexpected bytes remain: %d, dummy data?", remain);
-            return AEL_IO_DONE;
-        }
-        memmove(mad->stream_buffer, stream->next_frame, remain);
+    wrap->pvmp3_config.inputBufferCurrentLength = decoder->buf_in.bytes_read;
+    wrap->pvmp3_config.inputBufferMaxLength = MP3_DECODER_INPUT_BUFFER_SIZE;
+    wrap->pvmp3_config.inputBufferUsedLength = 0;
+    wrap->pvmp3_config.pInputBuffer = (uint8 *)decoder->buf_in.data;
+    wrap->pvmp3_config.pOutputBuffer = (int16 *)decoder->buf_out.data;
+    wrap->pvmp3_config.outputFrameSize = MP3_DECODER_OUTPUT_BUFFER_SIZE / sizeof(int16_t);
+    wrap->pvmp3_config.crcEnabled = false;
+    ERROR_CODE decoderErr = pvmp3_framedecoder(&wrap->pvmp3_config, wrap->pvmp3_buffer);
+    if (decoderErr != NO_DECODING_ERROR) {
+        OS_LOGE(TAG, "PVMP3Decoder encountered error: %d", decoderErr);
+        return AEL_PROCESS_FAIL;
     }
-    if (decoder->buf_in.bytes_read > 0)
-        memcpy(mad->stream_buffer+remain, decoder->buf_in.data, decoder->buf_in.bytes_read);
+    decoder->buf_out.bytes_remain = wrap->pvmp3_config.outputFrameSize * sizeof(short);
 
-    int bytes_read = decoder->buf_in.bytes_read;
-    if (decoder->buf_in.eof) {
-        while (bytes_read < MAD_BUFFER_GUARD && (bytes_read+remain) < MP3_DECODER_INPUT_BUFFER_SIZE) {
-            mad->stream_buffer[remain+bytes_read] = 0;
-            bytes_read++;
-        }
-    }
-
-    mad_stream_buffer(stream, (unsigned char *)mad->stream_buffer, bytes_read+remain);
-    stream->error = MAD_ERROR_NONE;
-
-    ret = mad_frame_decode(frame, stream);
-    if (ret != 0) {
-        if (decoder->buf_in.eof) {
-            return AEL_IO_DONE;
-        }
-        if (stream->error == MAD_ERROR_BUFLEN) {
-            OS_LOGV(TAG, "Input buffer too small (or EOF)");
-            goto fill_data;
-        }
-        else if (MAD_RECOVERABLE(stream->error)) {
-            OS_LOGW(TAG, "Recoverable error: %s", mad_stream_errorstr(stream));
-            goto fill_data;
-        }
-        else {
-            OS_LOGE(TAG, "Unrecoverable error: %s", mad_stream_errorstr(stream));
-            return AEL_PROCESS_FAIL;
-        }
-    }
-
-    mad_synth_frame(synth, frame);
-
-    mad_fixed_t const *left  = synth->pcm.samples[0];
-    mad_fixed_t const *right = synth->pcm.samples[1];
-    short *out = (short *)(decoder->buf_out.data);
-    int k;
-    decoder->buf_out.bytes_remain = synth->pcm.length * synth->pcm.channels * sizeof(short);
-    if (synth->pcm.channels == 2) {
-        for (k = 0; k < synth->pcm.length; k++) {
-            out[k*2+0] = scale(*left++);
-            out[k*2+1] = scale(*right++);
-        }
-    }
-    else if (synth->pcm.channels == 1) {
-        for (k = 0; k < synth->pcm.length; k++)
-            out[k] = scale(*left++);
+    if (wrap->pvmp3_config.inputBufferUsedLength != wrap->pvmp3_config.inputBufferCurrentLength) {
+        OS_LOGW(TAG, "PVMP3Decoder data remaining: input_size=%d, used_size=%d",
+            wrap->pvmp3_config.inputBufferCurrentLength, wrap->pvmp3_config.inputBufferUsedLength);
     }
 
     if (!decoder->parsed_header) {
         audio_element_info_t info = {0};
-        info.out_samplerate = frame->header.samplerate;
-        info.out_channels   = MAD_NCHANNELS(&(frame->header));
+        info.out_samplerate = wrap->pvmp3_config.samplingRate;
+        info.out_channels   = wrap->pvmp3_config.num_channels;
         info.bits           = 16;
         OS_LOGV(TAG,"Found mp3 header: SR=%d, CH=%d", info.out_samplerate, info.out_channels);
         audio_element_setinfo(decoder->el, &info);
@@ -434,28 +370,30 @@ decode_data:
 
 int mp3_wrapper_init(mp3_decoder_handle_t decoder) 
 {
-    struct mad_wrapper *mad = audio_calloc(1, sizeof(struct mad_wrapper));
-    if (mad == NULL) {
-        OS_LOGE(TAG, "Failed to allocate memory for mad decoder");
+    struct pvmp3_wrapper *wrap = audio_calloc(1, sizeof(struct pvmp3_wrapper));
+    if (wrap == NULL) {
+        OS_LOGE(TAG, "Failed to allocate memory for pvmp3 decoder");
         return -1;
     }
 
-    mad_stream_init(&mad->stream);
-    mad->stream.options |= MAD_OPTION_IGNORECRC;
-    mad_frame_init(&mad->frame);
-    mad_synth_init(&mad->synth);
+    uint32_t memRequirements = pvmp3_decoderMemRequirements();
+    wrap->pvmp3_buffer = audio_malloc(memRequirements);
+    if (wrap->pvmp3_buffer == NULL) {
+        OS_LOGE(TAG, "Failed to allocate memory for pvmp3 decoder");
+        audio_free(wrap);
+        return -1;
+    }
+    pvmp3_InitDecoder(&wrap->pvmp3_config, wrap->pvmp3_buffer);
 
-    decoder->handle = (void *)mad;
+    decoder->handle = (void *)wrap;
     return 0;
 } 
 
 void mp3_wrapper_deinit(mp3_decoder_handle_t decoder)
 {
-    struct mad_wrapper *mad = (struct mad_wrapper *)decoder->handle;
-    if (mad == NULL) return;
+    struct pvmp3_wrapper *wrap = (struct pvmp3_wrapper *)decoder->handle;
+    if (wrap == NULL) return;
 
-    mad_synth_finish(&mad->synth);
-    mad_frame_finish(&mad->frame);
-    mad_stream_finish(&mad->stream);
-    audio_free(mad);
+    audio_free(wrap->pvmp3_buffer);
+    audio_free(wrap);
 }

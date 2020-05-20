@@ -139,7 +139,7 @@
 
 uint16 pvmp3_decode_huff_cw_tab0(tmp3Bits *pMainData)
 {
-    OSCL_UNUSED_ARG(pMainData);
+    (void)(pMainData);
     return(0);
 
 }

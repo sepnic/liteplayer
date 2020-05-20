@@ -17,6 +17,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <string.h>
 
 #include "msgutils/os_logger.h"
@@ -59,6 +60,7 @@ struct wav_decoder {
     struct wav_buf_out      buf_out;
     bool                    parsed_header;
     bool                    filled_header;
+    bool                    read_timeout;
     struct wav_info        *wav_info;
 };
 typedef struct wav_decoder *wav_decoder_handle_t;
@@ -87,55 +89,55 @@ static drwav_allocation_callbacks drwav_allocation = {
 
 static size_t drwav_on_read(void *pUserData, void *pBufferOut, size_t bytesToRead)
 {
-    wav_decoder_handle_t wav = (wav_decoder_handle_t)pUserData;
-    if (bytesToRead > wav->buf_in.bytes_read) {
-        OS_LOGW(TAG, "Insufficient data: %d/%d", bytesToRead, wav->buf_in.bytes_read);
-        bytesToRead = wav->buf_in.bytes_read;
+    wav_decoder_handle_t decoder = (wav_decoder_handle_t)pUserData;
+    if (bytesToRead > decoder->buf_in.bytes_read) {
+        OS_LOGW(TAG, "Insufficient data: %d/%d", bytesToRead, decoder->buf_in.bytes_read);
+        bytesToRead = decoder->buf_in.bytes_read;
     }
     if (bytesToRead > 0) {
-        memcpy(pBufferOut, &wav->buf_in.data[wav->drwav_offset], bytesToRead);
-        wav->drwav_offset += bytesToRead;
-        wav->buf_in.bytes_read -= bytesToRead;
+        memcpy(pBufferOut, &decoder->buf_in.data[decoder->drwav_offset], bytesToRead);
+        decoder->drwav_offset += bytesToRead;
+        decoder->buf_in.bytes_read -= bytesToRead;
     }
     return bytesToRead;
 }
 
 static drwav_bool32 drwav_on_seek(void *pUserData, int offset, drwav_seek_origin origin)
 {
-    wav_decoder_handle_t wav = (wav_decoder_handle_t)pUserData;
+    wav_decoder_handle_t decoder = (wav_decoder_handle_t)pUserData;
     if (origin != drwav_seek_origin_current) {
         OS_LOGE(TAG, "Unsupported seek mode");
         return DRWAV_FALSE;
     }
-    if (offset > wav->buf_in.bytes_read) {
-        OS_LOGE(TAG, "Offset overflow: %d:%d", offset, wav->buf_in.bytes_read);
+    if (offset > decoder->buf_in.bytes_read) {
+        OS_LOGE(TAG, "Offset overflow: %d:%d", offset, decoder->buf_in.bytes_read);
         return DRWAV_FALSE;
     }
-    wav->drwav_offset += offset;
-    wav->buf_in.bytes_read -= offset;
+    decoder->drwav_offset += offset;
+    decoder->buf_in.bytes_read -= offset;
     return DRWAV_TRUE;
 }
 
-static int drwav_run(wav_decoder_handle_t wav)
+static int drwav_run(wav_decoder_handle_t decoder)
 {
-    struct wav_buf_in *in = &wav->buf_in;
+    struct wav_buf_in *in = &decoder->buf_in;
     int ret = AEL_IO_OK;
 
-    if (in->eof && in->bytes_read < wav->block_align) {
+    if (in->eof && in->bytes_read < decoder->block_align) {
         OS_LOGV(TAG, "WAV frame end");
         return AEL_IO_DONE;
     }
 
-    if (!wav->filled_header) {
-        if (in->bytes_read < wav->wav_info->header_size) {
-            if (wav->wav_info->header_size > WAV_DECODER_INPUT_BUFFER_SIZE)
+    if (!decoder->filled_header) {
+        if (in->bytes_read < decoder->wav_info->header_size) {
+            if (decoder->wav_info->header_size > WAV_DECODER_INPUT_BUFFER_SIZE)
                 return AEL_PROCESS_FAIL;
-            memcpy(in->data, wav->wav_info->header_buff, wav->wav_info->header_size);
-            in->bytes_read = wav->wav_info->header_size;
+            memcpy(in->data, decoder->wav_info->header_buff, decoder->wav_info->header_size);
+            in->bytes_read = decoder->wav_info->header_size;
         }
 
         in->bytes_want = WAV_DECODER_INPUT_BUFFER_SIZE - in->bytes_read;
-        ret = audio_element_input_chunk(wav->el, in->data+in->bytes_read, in->bytes_want);
+        ret = audio_element_input_chunk(decoder->el, in->data+in->bytes_read, in->bytes_want);
         if (ret == in->bytes_want) {
             in->bytes_read += ret;
         }
@@ -152,26 +154,28 @@ static int drwav_run(wav_decoder_handle_t wav)
             in->bytes_read += ret;
         }
 
-        wav->drwav_offset = 0;
-        wav->filled_header = true;
+        decoder->drwav_offset = 0;
+        decoder->filled_header = true;
     }
 
-    if (in->bytes_read < wav->block_align) {
+    if (in->bytes_read < decoder->block_align) {
         if (in->bytes_read > 0) {
-            OS_LOGD(TAG, "Refill data with remaining bytes:%d, offset:%d",
-                    in->bytes_read, wav->drwav_offset);
-            memmove(in->data, in->data+wav->drwav_offset, in->bytes_read);
-            in->bytes_want = WAV_DECODER_INPUT_BUFFER_SIZE - in->bytes_read;
-            wav->drwav_offset = in->bytes_read;
+            if (!decoder->read_timeout) {
+                OS_LOGD(TAG, "Refill data with remaining bytes:%d, offset:%d",
+                        in->bytes_read, decoder->drwav_offset);
+                memmove(in->data, in->data+decoder->drwav_offset, in->bytes_read);
+                in->bytes_want = WAV_DECODER_INPUT_BUFFER_SIZE - in->bytes_read;
+                decoder->drwav_offset = in->bytes_read;
+            }
         }
         else {
             in->bytes_want = WAV_DECODER_INPUT_BUFFER_SIZE;
-            wav->drwav_offset = 0;
+            decoder->drwav_offset = 0;
         }
-        ret = audio_element_input_chunk(wav->el, in->data+wav->drwav_offset, in->bytes_want);
+        ret = audio_element_input_chunk(decoder->el, in->data+decoder->drwav_offset, in->bytes_want);
         if (ret == in->bytes_want) {
             in->bytes_read += ret;
-            wav->drwav_offset = 0;
+            decoder->drwav_offset = 0;
         }
         else if (ret == AEL_IO_OK || ret == AEL_IO_DONE || ret == AEL_IO_ABORT) {
             in->eof = true;
@@ -179,57 +183,59 @@ static int drwav_run(wav_decoder_handle_t wav)
         }
         else if (ret < 0) {
             OS_LOGW(TAG, "Read chunk error: %d/%d", ret, in->bytes_want);
+            decoder->read_timeout = true;
             return ret;
         }
         else {
             in->eof = true;
             in->bytes_read += ret;
-            wav->drwav_offset = 0;
+            decoder->drwav_offset = 0;
         }
+        decoder->read_timeout = false;
     }
 
-    if (!wav->drwav_inited) {
-        if (drwav_init_ex(&wav->drwav,
+    if (!decoder->drwav_inited) {
+        if (drwav_init_ex(&decoder->drwav,
                           drwav_on_read, drwav_on_seek, NULL,
-                          (void *)wav, NULL, DRWAV_SEQUENTIAL,
+                          (void *)decoder, NULL, DRWAV_SEQUENTIAL,
                           &drwav_allocation) != DRWAV_TRUE) {
             OS_LOGE(TAG, "Failed to init drwav decoder");
             return AEL_PROCESS_FAIL;
         }
 
-        if (!wav->parsed_header) {
+        if (!decoder->parsed_header) {
             audio_element_info_t info = {0};
-            info.out_samplerate = wav->drwav.sampleRate;
-            info.out_channels   = wav->drwav.channels;
+            info.out_samplerate = decoder->drwav.sampleRate;
+            info.out_channels   = decoder->drwav.channels;
             info.bits           = 16;
-            audio_element_setinfo(wav->el, &info);
-            audio_element_report_info(wav->el);
+            audio_element_setinfo(decoder->el, &info);
+            audio_element_report_info(decoder->el);
 
             OS_LOGV(TAG,"Found wav header: SR=%d, CH=%d", info.out_samplerate, info.out_channels);
-            wav->parsed_header = true;
+            decoder->parsed_header = true;
         }
-        wav->block_align = wav->drwav.channels*wav->drwav.bitsPerSample/8;
-        wav->drwav_inited = true;
+        decoder->block_align = decoder->drwav.channels*decoder->drwav.bitsPerSample/8;
+        decoder->drwav_inited = true;
     }
 
-    drwav_int16 *out = (drwav_int16 *)(wav->buf_out.data);
-    drwav_uint64 in_frames = (WAV_MAX_NSAMP > in->bytes_read/wav->block_align) ?
-                             in->bytes_read/wav->block_align : WAV_MAX_NSAMP;
-    drwav_uint64 out_frames = drwav_read_pcm_frames_s16le(&wav->drwav, in_frames, out);
+    drwav_int16 *out = (drwav_int16 *)(decoder->buf_out.data);
+    drwav_uint64 in_frames = (WAV_MAX_NSAMP > in->bytes_read/decoder->block_align) ?
+                             in->bytes_read/decoder->block_align : WAV_MAX_NSAMP;
+    drwav_uint64 out_frames = drwav_read_pcm_frames_s16le(&decoder->drwav, in_frames, out);
     if (out_frames == 0) {
         OS_LOGW(TAG, "WAVDecode dummy data, AEL_IO_DONE");
         return AEL_IO_DONE;
     }
     OS_LOGV(TAG, "WAVDecode out_frames: %d", out_frames);
-    wav->buf_out.bytes_remain = out_frames * wav->drwav.channels * sizeof(short);
+    decoder->buf_out.bytes_remain = out_frames * decoder->drwav.channels * sizeof(short);
     return 0;
 }
 
 static esp_err_t wav_decoder_destroy(audio_element_handle_t self)
 {
-    wav_decoder_handle_t wav = (wav_decoder_handle_t)audio_element_getdata(self);
+    wav_decoder_handle_t decoder = (wav_decoder_handle_t)audio_element_getdata(self);
     OS_LOGV(TAG, "Destroy wav decoder");
-    audio_free(wav);
+    audio_free(decoder);
     return ESP_OK;
 }
 
@@ -241,15 +247,15 @@ static esp_err_t wav_decoder_open(audio_element_handle_t self)
 
 static esp_err_t wav_decoder_close(audio_element_handle_t self)
 {
-    wav_decoder_handle_t wav = (wav_decoder_handle_t)audio_element_getdata(self);
+    wav_decoder_handle_t decoder = (wav_decoder_handle_t)audio_element_getdata(self);
 
     if (AEL_STATE_PAUSED != audio_element_get_state(self)) {
-        if (wav->drwav_inited) {
+        if (decoder->drwav_inited) {
             OS_LOGV(TAG, "Close drwav decoder");
-            drwav_uninit(&wav->drwav);
-            wav->drwav_inited = false;
+            drwav_uninit(&decoder->drwav);
+            decoder->drwav_inited = false;
         }
-        wav->parsed_header = false;
+        decoder->parsed_header = false;
 
         audio_element_info_t info = {0};
         audio_element_getinfo(self, &info);
@@ -264,16 +270,16 @@ static int wav_decoder_process(audio_element_handle_t self, char *in_buffer, int
 {
     int byte_write = 0;
     int ret = AEL_IO_FAIL;
-    wav_decoder_handle_t wav = (wav_decoder_handle_t)audio_element_getdata(self);
+    wav_decoder_handle_t decoder = (wav_decoder_handle_t)audio_element_getdata(self);
 
-    if (wav->buf_out.bytes_remain > 0) {
+    if (decoder->buf_out.bytes_remain > 0) {
         /* Output buffer have remain data */
         byte_write = audio_element_output(self,
-                        wav->buf_out.data+wav->buf_out.bytes_written,
-                        wav->buf_out.bytes_remain);
+                        decoder->buf_out.data+decoder->buf_out.bytes_written,
+                        decoder->buf_out.bytes_remain);
     } else {
         /* More data need to be wrote */
-        ret = drwav_run(wav);
+        ret = drwav_run(decoder);
         if (ret < 0) {
             if (ret == AEL_IO_TIMEOUT) {
                 OS_LOGW(TAG, "drwav_run AEL_IO_TIMEOUT");
@@ -284,16 +290,16 @@ static int wav_decoder_process(audio_element_handle_t self, char *in_buffer, int
             return ret;
         }
 
-        //OS_LOGV(TAG, "ret=%d, bytes_remain=%d", ret, wav->buf_out.bytes_remain);
-        wav->buf_out.bytes_written = 0;
+        //OS_LOGV(TAG, "ret=%d, bytes_remain=%d", ret, decoder->buf_out.bytes_remain);
+        decoder->buf_out.bytes_written = 0;
         byte_write = audio_element_output(self,
-                        wav->buf_out.data,
-                        wav->buf_out.bytes_remain);
+                        decoder->buf_out.data,
+                        decoder->buf_out.bytes_remain);
     }
 
     if (byte_write > 0) {
-        wav->buf_out.bytes_remain -= byte_write;
-        wav->buf_out.bytes_written += byte_write;
+        decoder->buf_out.bytes_remain -= byte_write;
+        decoder->buf_out.bytes_written += byte_write;
 
         audio_element_info_t audio_info = {0};
         audio_element_getinfo(self, &audio_info);
@@ -306,10 +312,11 @@ static int wav_decoder_process(audio_element_handle_t self, char *in_buffer, int
 
 static esp_err_t wav_decoder_seek(audio_element_handle_t self, long long offset)
 {
-    wav_decoder_handle_t wav = (wav_decoder_handle_t)audio_element_getdata(self);
-    wav->drwav_offset = 0;
-    memset(&wav->buf_in, 0x0, sizeof(wav->buf_in));
-    memset(&wav->buf_out, 0x0, sizeof(wav->buf_out));
+    wav_decoder_handle_t decoder = (wav_decoder_handle_t)audio_element_getdata(self);
+    decoder->drwav_offset = 0;
+    decoder->read_timeout = false;
+    memset(&decoder->buf_in, 0x0, sizeof(decoder->buf_in));
+    memset(&decoder->buf_out, 0x0, sizeof(decoder->buf_out));
     return ESP_OK;
 }
 
@@ -332,16 +339,16 @@ audio_element_handle_t wav_decoder_init(struct wav_decoder_cfg *config)
         cfg.task_stack = WAV_DECODER_TASK_STACK;
     cfg.tag = "wav_dec";
 
-    wav_decoder_handle_t wav = audio_calloc(1, sizeof(struct wav_decoder));
-    if (wav == NULL)
+    wav_decoder_handle_t decoder = audio_calloc(1, sizeof(struct wav_decoder));
+    if (decoder == NULL)
         return NULL;
 
     audio_element_handle_t el = audio_element_init(&cfg);
     AUDIO_MEM_CHECK(TAG, el, goto wav_init_error);
-    wav->el = el;
-    wav->block_align = config->wav_info->blockAlign;
-    wav->wav_info = config->wav_info;
-    audio_element_setdata(el, wav);
+    decoder->el = el;
+    decoder->block_align = config->wav_info->blockAlign;
+    decoder->wav_info = config->wav_info;
+    audio_element_setdata(el, decoder);
 
     audio_element_info_t info = { 0 };
     memset(&info, 0x0, sizeof(info));
@@ -351,6 +358,6 @@ audio_element_handle_t wav_decoder_init(struct wav_decoder_cfg *config)
     return el;
 
 wav_init_error:
-    audio_free(wav);
+    audio_free(decoder);
     return NULL;
 }

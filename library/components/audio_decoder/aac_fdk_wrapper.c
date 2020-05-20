@@ -26,7 +26,7 @@
 #include "audio_decoder/m4a_decoder.h"
 #include "aacdecoder_lib.h"
 
-#define TAG "[liteplayer]FDK_AAC"
+#define TAG "[liteplayer]AAC_DECODER"
 
 static int aac_adts_read(aac_decoder_handle_t decoder)
 {
