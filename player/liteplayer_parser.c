@@ -323,6 +323,11 @@ static int media_header_parse(struct media_source_info *source_info, struct medi
         bytes_per_sec = info->blockAlign*info->sampleRate;
         duration_ms = (int)(info->dataSize/info->blockAlign/info->sampleRate*1000);
     }
+    else if (codec_info->codec_type == AUDIO_CODEC_M4A) {
+        OS_LOGD(TAG, "Found M4A media without m4a suffix");
+        ret = m4a_header_parse(source_info, codec_info);
+        goto parse_done;
+    }
     else {
         OS_LOGE(TAG, "Unknown codec type");
         goto parse_done;
@@ -337,9 +342,6 @@ static int media_header_parse(struct media_source_info *source_info, struct medi
     ret = ESP_OK;
 
 parse_done:
-    if (ret != ESP_OK) {
-        OS_LOGE(TAG, "Failed to parse media info");
-    }
     if (source_info->source_type == MEDIA_SOURCE_HTTP && client != NULL)
         source_info->http_ops.close(client);
     if (source_info->source_type == MEDIA_SOURCE_FILE && file != NULL)
