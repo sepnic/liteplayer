@@ -18,13 +18,12 @@ set (THIRDPARTY_SRC
     ${THIRDPARTY_DIR}/msgutils/source/msgqueue.c
     ${THIRDPARTY_DIR}/msgutils/source/ringbuf.c
     ${THIRDPARTY_DIR}/msgutils/source/smartptr.c
-    ${THIRDPARTY_DIR}/msgutils/source/stllist.c
     ${THIRDPARTY_DIR}/msgutils/source/sw_timer.c
     ${THIRDPARTY_DIR}/msgutils/source/sw_watchdog.c
-    ${THIRDPARTY_DIR}/msgutils/source/portable/os_logger.c
-    ${THIRDPARTY_DIR}/msgutils/source/portable/os_thread.c
-    ${THIRDPARTY_DIR}/msgutils/source/portable/os_time.c
-    ${THIRDPARTY_DIR}/msgutils/source/portable/os_timer.c
+    ${THIRDPARTY_DIR}/msgutils/port/os_logger.c
+    ${THIRDPARTY_DIR}/msgutils/port/os_thread.c
+    ${THIRDPARTY_DIR}/msgutils/port/os_time.c
+    ${THIRDPARTY_DIR}/msgutils/port/os_timer.c
     ${THIRDPARTY_DIR}/codec/mp3-mad/bit.c
     ${THIRDPARTY_DIR}/codec/mp3-mad/decoder.c
     ${THIRDPARTY_DIR}/codec/mp3-mad/fixed.c

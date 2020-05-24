@@ -56,7 +56,7 @@ struct log_config {
 
 static struct log_config log_config = {
     .enable = true,
-    .prio   = OS_LOG_PRIO_DEBUG,
+    .prio   = OS_LOG_PRIO_VERBOSE,
 
     .file_enable    = LOG_FILE_ENABLE,
     .file_path      = LOG_FILE_PATH,

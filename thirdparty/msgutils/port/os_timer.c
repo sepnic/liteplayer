@@ -131,7 +131,7 @@ void OS_TIMER_DESTROY(os_timer_t timer)
 
 #elif defined(OS_MACOSX) || defined(OS_IOS) || defined(OS_FREERTOS)
 
-#include "../sw_timer.h"
+#include "msgutils/sw_timer.h"
 
 os_timer_t OS_TIMER_CREATE(struct os_timerattr *attr, void (*cb)())
 {

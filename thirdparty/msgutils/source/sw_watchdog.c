@@ -30,7 +30,7 @@
 #include "msgutils/os_thread.h"
 #include "msgutils/os_time.h"
 #include "msgutils/os_logger.h"
-#include "sw_watchdog.h"
+#include "msgutils/sw_watchdog.h"
 
 #define LOG_TAG "watchdog"
 

@@ -34,7 +34,7 @@ include_directories(${TOP_DIR}/thirdparty/codec/aac-fdk/libSACdec/include)
 # source files
 file(GLOB THIRDPARTY_SRC src
     ${TOP_DIR}/thirdparty/msgutils/source/*.c
-    ${TOP_DIR}/thirdparty/msgutils/source/portable/*.c
+    ${TOP_DIR}/thirdparty/msgutils/port/*.c
     ${TOP_DIR}/thirdparty/mbedtls/library/*.c
     ${TOP_DIR}/thirdparty/httpclient/*.c
     ${TOP_DIR}/thirdparty/codec/mp3-pvmp3/src/*.cpp

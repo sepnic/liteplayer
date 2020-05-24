@@ -9,13 +9,12 @@ set (LIBS_SRC ${CMAKE_SOURCE_DIR}/source/memory_detect.c
               ${CMAKE_SOURCE_DIR}/source/msgqueue.c
               ${CMAKE_SOURCE_DIR}/source/ringbuf.c
               ${CMAKE_SOURCE_DIR}/source/smartptr.c
-              ${CMAKE_SOURCE_DIR}/source/stllist.c
               ${CMAKE_SOURCE_DIR}/source/sw_timer.c
               ${CMAKE_SOURCE_DIR}/source/sw_watchdog.c
-              ${CMAKE_SOURCE_DIR}/source/portable/os_logger.c
-              ${CMAKE_SOURCE_DIR}/source/portable/os_thread.c
-              ${CMAKE_SOURCE_DIR}/source/portable/os_time.c
-              ${CMAKE_SOURCE_DIR}/source/portable/os_timer.c
+              ${CMAKE_SOURCE_DIR}/port/os_logger.c
+              ${CMAKE_SOURCE_DIR}/port/os_thread.c
+              ${CMAKE_SOURCE_DIR}/port/os_time.c
+              ${CMAKE_SOURCE_DIR}/port/os_timer.c
 )
 
 # cflags: OS_LINUX, OS_ANDROID, OS_MACOSX, OS_IOS, OS_FREERTOS

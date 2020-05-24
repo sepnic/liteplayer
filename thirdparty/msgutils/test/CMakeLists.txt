@@ -13,13 +13,12 @@ set (LIBS_SRC ${TOP_DIR}/source/memory_detect.c
               ${TOP_DIR}/source/msgqueue.c
               ${TOP_DIR}/source/ringbuf.c
               ${TOP_DIR}/source/smartptr.c
-              ${TOP_DIR}/source/stllist.c
               ${TOP_DIR}/source/sw_timer.c
               ${TOP_DIR}/source/sw_watchdog.c
-              ${TOP_DIR}/source/portable/os_logger.c
-              ${TOP_DIR}/source/portable/os_thread.c
-              ${TOP_DIR}/source/portable/os_time.c
-              ${TOP_DIR}/source/portable/os_timer.c
+              ${TOP_DIR}/port/os_logger.c
+              ${TOP_DIR}/port/os_thread.c
+              ${TOP_DIR}/port/os_time.c
+              ${TOP_DIR}/port/os_timer.c
 )
 
 # cflags
@@ -37,11 +36,6 @@ set(CMAKE_LDFLAGS "${CMAKE_LDFLAGS} -Wl,-O1 -Wl,--hash-style=gnu -Wl,--as-needed
 # msgutils lib
 add_library(msgutils   SHARED ${LIBS_SRC})
 add_library(msgutils_s STATIC ${LIBS_SRC})
-
-# stllist test
-add_executable(stllist_test ${CMAKE_SOURCE_DIR}/stllist_test.c)
-target_link_libraries(stllist_test msgutils pthread)
-#target_link_libraries(stllist_test rt)
 
 # msglooper test
 add_executable(msglooper ${CMAKE_SOURCE_DIR}/msglooper_test.c)

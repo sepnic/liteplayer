@@ -24,13 +24,12 @@ set (THIRDPARTY_SRC
     ${TOP_DIR}/thirdparty/msgutils/source/msgqueue.c
     ${TOP_DIR}/thirdparty/msgutils/source/ringbuf.c
     ${TOP_DIR}/thirdparty/msgutils/source/smartptr.c
-    ${TOP_DIR}/thirdparty/msgutils/source/stllist.c
     ${TOP_DIR}/thirdparty/msgutils/source/sw_timer.c
     ${TOP_DIR}/thirdparty/msgutils/source/sw_watchdog.c
-    ${TOP_DIR}/thirdparty/msgutils/source/portable/os_logger.c
-    ${TOP_DIR}/thirdparty/msgutils/source/portable/os_thread.c
-    ${TOP_DIR}/thirdparty/msgutils/source/portable/os_time.c
-    ${TOP_DIR}/thirdparty/msgutils/source/portable/os_timer.c
+    ${TOP_DIR}/thirdparty/msgutils/port/os_logger.c
+    ${TOP_DIR}/thirdparty/msgutils/port/os_thread.c
+    ${TOP_DIR}/thirdparty/msgutils/port/os_time.c
+    ${TOP_DIR}/thirdparty/msgutils/port/os_timer.c
 
     # httpclient src
     ${TOP_DIR}/thirdparty/httpclient/httpclient.c

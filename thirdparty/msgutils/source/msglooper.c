@@ -23,7 +23,7 @@
 
 #include <string.h>
 
-#include "sw_watchdog.h"
+#include "msgutils/sw_watchdog.h"
 #include "msgutils/common_list.h"
 #include "msgutils/os_thread.h"
 #include "msgutils/os_time.h"

@@ -30,7 +30,7 @@
 #include "msgutils/os_thread.h"
 #include "msgutils/os_time.h"
 #include "msgutils/os_logger.h"
-#include "sw_timer.h"
+#include "msgutils/sw_timer.h"
 
 #define LOG_TAG "timer"
 
