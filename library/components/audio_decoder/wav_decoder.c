@@ -226,7 +226,7 @@ static int drwav_run(wav_decoder_handle_t decoder)
         OS_LOGW(TAG, "WAVDecode dummy data, AEL_IO_DONE");
         return AEL_IO_DONE;
     }
-    OS_LOGV(TAG, "WAVDecode out_frames: %d", out_frames);
+    //OS_LOGV(TAG, "WAVDecode out_frames: %d", out_frames);
     decoder->buf_out.bytes_remain = out_frames * decoder->drwav.channels * sizeof(short);
     return 0;
 }

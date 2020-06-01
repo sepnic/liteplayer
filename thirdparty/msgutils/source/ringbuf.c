@@ -41,24 +41,26 @@ struct ringbuf {
     char *p_o;                   /**< Original pointer */
     char *volatile p_r;          /**< Read pointer */
     char *volatile p_w;          /**< Write pointer */
-    unsigned int fill_cnt;       /**< Number of filled slots */
-    unsigned int size;           /**< Buffer size */
+    int  fill_cnt;               /**< Number of filled slots */
+    int  threshold_cnt;          /**< Number of threshold slots */
+    int  size;                   /**< Buffer size */
     os_cond_t can_read;
     os_cond_t can_write;
     os_mutex_t lock;
     bool abort_read;
     bool abort_write;
-    bool is_done_write;         /**< To signal that we are done writing */
-    bool unblock_reader_flag;   /**< To unblock instantly from rb_read */
+    bool is_done_write;          /**< To signal that we are done writing */
+    bool unblock_reader_flag;    /**< To unblock instantly from rb_read */
+    bool is_reach_threshold;
 };
 
-ringbuf_handle_t rb_create(unsigned int size)
+ringbuf_handle_t rb_create(int size)
 {
     ringbuf_handle_t rb;
     char *buf = NULL;
     bool _success =
         (
-            (rb             = OS_MALLOC(sizeof(struct ringbuf))) &&
+            (rb             = OS_CALLOC(1, sizeof(struct ringbuf))) &&
             (buf            = OS_CALLOC(1, size))                &&
             (rb->lock       = OS_THREAD_MUTEX_CREATE())          &&
             (rb->can_read   = OS_THREAD_COND_CREATE())           &&
@@ -71,7 +73,6 @@ ringbuf_handle_t rb_create(unsigned int size)
     }
 
     rb->p_o = rb->p_r = rb->p_w = buf;
-    rb->fill_cnt = 0;
     rb->size = size;
     rb->is_done_write = false;
     rb->unblock_reader_flag = false;
@@ -144,7 +145,7 @@ int rb_read(ringbuf_handle_t rb, char *buf, int buf_len, unsigned int timeout_ms
             read_size = buf_len;
         }
 
-        if (read_size == 0) {
+        if (read_size == 0 || !rb->is_reach_threshold) {
             if (rb->is_done_write) {
                 ret_val = RB_DONE;
                 goto read_err;
@@ -218,10 +219,12 @@ int rb_write(ringbuf_handle_t rb, char *buf, int buf_len, unsigned int timeout_m
         if (write_size == 0) {
             if (rb->is_done_write) {
                 ret_val = RB_DONE;
+                rb->is_reach_threshold = true;
                 goto write_err;
             }
             if (rb->abort_write) {
                 ret_val = RB_ABORT;
+                rb->is_reach_threshold = true;
                 goto write_err;
             }
             OS_THREAD_COND_SIGNAL(rb->can_read);
@@ -253,10 +256,13 @@ int rb_write(ringbuf_handle_t rb, char *buf, int buf_len, unsigned int timeout_m
         rb->fill_cnt += write_size;
         total_write_size += write_size;
         buf += write_size;
+
+        if (!rb->is_reach_threshold && rb->fill_cnt >= rb->threshold_cnt)
+            rb->is_reach_threshold = true;
     }
 
 write_err:
-    if (total_write_size > 0) {
+    if (rb->is_reach_threshold && total_write_size > 0) {
         OS_THREAD_COND_SIGNAL(rb->can_read);
     }
     OS_THREAD_MUTEX_UNLOCK(rb->lock);
@@ -269,6 +275,7 @@ write_err:
 int rb_read_chunk(ringbuf_handle_t rb, char *buf, int size, unsigned int timeout_ms)
 {
     int read_size = size;
+    int total_read_size = 0;
     int ret_val = 0;
 
     //take buffer lock
@@ -285,7 +292,7 @@ wait_filled:
         read_size = size;
     }
 
-    if (read_size == 0) {
+    if (read_size == 0 || !rb->is_reach_threshold) {
         if (rb->is_done_write) {
             ret_val = RB_DONE;
             goto read_done;
@@ -328,21 +335,23 @@ wait_filled:
         rb->p_r = rb->p_r + read_size;
     }
     rb->fill_cnt -= read_size;
+    total_read_size += read_size;
 
 read_done:
-    if (read_size > 0) {
+    if (total_read_size > 0) {
         OS_THREAD_COND_SIGNAL(rb->can_write);
     }
     OS_THREAD_MUTEX_UNLOCK(rb->lock);
     if ((ret_val == RB_FAIL) || (ret_val == RB_ABORT)) {
-        read_size = ret_val;
+        total_read_size = ret_val;
     }
-    return read_size > 0 ? read_size : ret_val;
+    return total_read_size > 0 ? total_read_size : ret_val;
 }
 
 int rb_write_chunk(ringbuf_handle_t rb, char *buf, int size, unsigned int timeout_ms)
 {
     int write_size = 0;
+    int total_write_size = 0;
     int ret_val = 0;
 
     //take buffer lock
@@ -362,14 +371,17 @@ wait_available:
     if (write_size == 0) {
         if (rb->is_done_write) {
             ret_val = RB_DONE;
+            rb->is_reach_threshold = true;
             goto write_done;
         }
         if (rb->abort_write) {
             ret_val = RB_ABORT;
+            rb->is_reach_threshold = true;
             goto write_done;
         }
         if (size > rb->size) {
             ret_val = RB_FAIL;
+            rb->is_reach_threshold = true;
             goto write_done;
         }
         OS_THREAD_COND_SIGNAL(rb->can_read);
@@ -397,16 +409,20 @@ wait_available:
         rb->p_w = rb->p_w + write_size;
     }
     rb->fill_cnt += write_size;
+    total_write_size += write_size;
+
+    if (!rb->is_reach_threshold && rb->fill_cnt >= rb->threshold_cnt)
+        rb->is_reach_threshold = true;
 
 write_done:
-    if (write_size > 0) {
+    if (rb->is_reach_threshold && total_write_size > 0) {
         OS_THREAD_COND_SIGNAL(rb->can_read);
     }
     OS_THREAD_MUTEX_UNLOCK(rb->lock);
     if ((ret_val == RB_FAIL) || (ret_val == RB_ABORT)) {
-        write_size = ret_val;
+        total_write_size = ret_val;
     }
-    return write_size > 0 ? write_size : ret_val;
+    return total_write_size > 0 ? total_write_size : ret_val;
 }
 
 static void rb_abort_read(ringbuf_handle_t rb)
@@ -468,4 +484,21 @@ bool rb_is_done_write(ringbuf_handle_t rb)
 int rb_get_size(ringbuf_handle_t rb)
 {
     return rb->size;
+}
+
+void rb_set_threshold(ringbuf_handle_t rb, int threshold)
+{
+    OS_THREAD_MUTEX_LOCK(rb->lock);
+    rb->threshold_cnt = threshold <= rb->size ? threshold : rb->size;
+    OS_THREAD_MUTEX_UNLOCK(rb->lock);
+}
+
+int rb_get_threshold(ringbuf_handle_t rb)
+{
+    return rb->threshold_cnt;
+}
+
+bool rb_reach_threshold(ringbuf_handle_t rb)
+{
+    return rb->is_reach_threshold;
 }

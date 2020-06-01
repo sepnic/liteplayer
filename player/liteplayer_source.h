@@ -39,6 +39,7 @@ enum media_source_state {
     MEDIA_SOURCE_WRITE_SUCCEED,
     MEDIA_SOURCE_WRITE_FAILED,
     MEDIA_SOURCE_WRITE_DONE,
+    MEDIA_SOURCE_REACH_THRESHOLD,
 };
 
 typedef void (*media_source_state_cb)(enum media_source_state state, void *priv);

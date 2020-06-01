@@ -45,6 +45,8 @@ extern "C" {
 #define DEFAULT_SOURCE_FILE_RINGBUF_SIZE     ( 32*1024 )
 #define DEFAULT_SOURCE_STREAM_RINGBUF_SIZE   ( 32*1024 )
 #define DEFAULT_SOURCE_BUFFER_SIZE           ( 1024+1 )              // NOTUSED
+#define DEFAULT_SOURCE_HTTP_THRESHOLD_TIME   ( 8*1000 )              // msec
+#define DEFAULT_SOURCE_FILE_THRESHOLD_TIME   ( 0 )                   // msec
 
 // decoder element definations
 #define DEFAULT_DECODER_TASK_PRIO            ( OS_THREAD_PRIO_HIGH )

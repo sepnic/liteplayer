@@ -31,10 +31,11 @@ enum liteplayer_state {
     LITEPLAYER_STARTED         = 0x03,
     LITEPLAYER_PAUSED          = 0x04,
     LITEPLAYER_SEEKCOMPLETED   = 0x05,
-    LITEPLAYER_NEARLYCOMPLETED = 0x06,
-    LITEPLAYER_COMPLETED       = 0x07,
-    LITEPLAYER_STOPPED         = 0x08,
-    LITEPLAYER_ERROR           = 0x09,
+    LITEPLAYER_CACHECOMPLETED  = 0x06,
+    LITEPLAYER_NEARLYCOMPLETED = 0x07,
+    LITEPLAYER_COMPLETED       = 0x08,
+    LITEPLAYER_STOPPED         = 0x09,
+    LITEPLAYER_ERROR           = 0x0A,
 };
 
 typedef int (*liteplayer_state_cb)(enum liteplayer_state state, int errcode, void *priv);

@@ -113,6 +113,10 @@ static int liteplayer_demo_state_callback(enum liteplayer_state state, int errco
     case LITEPLAYER_SEEKCOMPLETED:
         OS_LOGI(TAG, "-->LITEPLAYER_SEEKCOMPLETED");
         break;
+    case LITEPLAYER_CACHECOMPLETED:
+        OS_LOGI(TAG, "-->LITEPLAYER_CACHECOMPLETED");
+        state_sync = false;
+        break;
     case LITEPLAYER_NEARLYCOMPLETED:
         OS_LOGI(TAG, "-->LITEPLAYER_NEARLYCOMPLETED");
         state_sync = false;

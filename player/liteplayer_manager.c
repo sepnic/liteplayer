@@ -222,6 +222,7 @@ static int manager_state_callback(enum liteplayer_state state, int errcode, void
         state_sync = true;
         break;
 
+    case LITEPLAYER_CACHECOMPLETED:
     case LITEPLAYER_NEARLYCOMPLETED:
         if (mngr->is_list || mngr->is_looping) {
             state_sync = false;

@@ -40,6 +40,7 @@ struct media_source_priv {
     void *listener_priv;
 
     bool stop;
+    bool reach_threshold;
     os_mutex_t lock; // lock for rb/listener
     os_cond_t cond;  // wait stop to exit mediasource thread
 };
@@ -337,6 +338,14 @@ dequeue_url:
                 goto thread_exit;
             }
         } while (!priv->stop && bytes_read > 0);
+
+        if (!priv->reach_threshold) {
+            OS_THREAD_MUTEX_LOCK(priv->lock);
+            priv->reach_threshold = rb_reach_threshold(priv->rb);
+            if (priv->reach_threshold && priv->listener)
+                priv->listener(MEDIA_SOURCE_REACH_THRESHOLD, priv->listener_priv);
+            OS_THREAD_MUTEX_UNLOCK(priv->lock);
+        }
     }
 
 thread_exit:
@@ -580,6 +589,14 @@ static void *media_source_thread(void *arg)
                 goto thread_exit;
             }
         } while (!priv->stop && bytes_read > 0);
+
+        if (!priv->reach_threshold) {
+            OS_THREAD_MUTEX_LOCK(priv->lock);
+            priv->reach_threshold = rb_reach_threshold(priv->rb);
+            if (priv->reach_threshold && priv->listener)
+                priv->listener(MEDIA_SOURCE_REACH_THRESHOLD, priv->listener_priv);
+            OS_THREAD_MUTEX_UNLOCK(priv->lock);
+        }
     }
 
 thread_exit:

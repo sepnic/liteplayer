@@ -523,8 +523,7 @@ static AAC_ERR_T stcoin(atom_parser_handle_t handle, uint32_t atom_size)
         m4a_info->stco_chunk2offset[idx].sample_index = new_samples;
         m4a_info->stco_chunk2offset[idx].chunk_offset = offset;
         idx++;
-
-        OS_LOGV(TAG, "STCO: ChunkOffset[%u]: index/offset: %u/%u", idx, new_samples, offset);
+        //OS_LOGV(TAG, "STCO: ChunkOffset[%u]: index/offset: %u/%u", idx, new_samples, offset);
 
         new_samples -= (cnt - old_first) * old_samples;
 

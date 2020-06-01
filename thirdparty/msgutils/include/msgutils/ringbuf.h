@@ -30,6 +30,7 @@
 #define _RINGBUF_H__
 
 #include <stdio.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,7 +51,7 @@ typedef struct ringbuf *ringbuf_handle_t;
  *
  * @return     ringbuf_handle_t
  */
-ringbuf_handle_t rb_create(unsigned int size);
+ringbuf_handle_t rb_create(int size);
 
 /**
  * @brief      Cleanup and free all memory created by ringbuf_handle_t
@@ -170,6 +171,27 @@ void rb_done_read(ringbuf_handle_t rb);
  * @param[in]  rb    The Ringbuffer handle
  */
 void rb_unblock_reader(ringbuf_handle_t rb);
+
+/**
+ * @brief      Set reader threshold
+ *
+ * @param[in]  rb    The Ringbuffer handle
+ */
+void rb_set_threshold(ringbuf_handle_t rb, int threshold);
+
+/**
+ * @brief      Get reader threshold
+ *
+ * @param[in]  rb    The Ringbuffer handle
+ */
+int rb_get_threshold(ringbuf_handle_t rb);
+
+/**
+ * @brief      Check whether reader reach threshold
+ *
+ * @param[in]  rb    The Ringbuffer handle
+ */
+bool rb_reach_threshold(ringbuf_handle_t rb);
 
 #ifdef __cplusplus
 }

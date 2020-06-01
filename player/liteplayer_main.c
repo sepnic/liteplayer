@@ -254,6 +254,12 @@ static void media_source_state_callback(enum media_source_state state, void *pri
         if (handle->source_type == MEDIA_SOURCE_HTTP)
             media_player_state_callback(handle, LITEPLAYER_NEARLYCOMPLETED, 0);
         break;
+    case MEDIA_SOURCE_REACH_THRESHOLD:
+        OS_LOGI(TAG, "[ %s-SOURCE ] Receive threshold event: threshold/total=%d/%d", media_source_tag(handle->source_type),
+                rb_get_threshold(handle->source_rb), rb_get_size(handle->source_rb));
+        if (handle->source_type == MEDIA_SOURCE_HTTP)
+            media_player_state_callback(handle, LITEPLAYER_CACHECOMPLETED, 0);
+        break;
     default:
         break;
     }
@@ -284,6 +290,47 @@ static void media_parser_state_callback(enum media_parser_state state, struct me
     }
 
     OS_THREAD_MUTEX_UNLOCK(handle->state_lock);
+}
+
+static int media_source_set_threshold(liteplayer_handle_t handle, int threshold_ms)
+{
+    int threshold_size = 0;
+    int ret = ESP_OK;
+
+    if (threshold_ms <= 0)
+        return ESP_OK;
+
+    if (threshold_ms > handle->codec_info.duration_ms)
+        threshold_ms = handle->codec_info.duration_ms;
+
+    switch (handle->codec_info.codec_type) {
+    case AUDIO_CODEC_WAV:
+    case AUDIO_CODEC_MP3: {
+        threshold_size = (handle->codec_info.bytes_per_sec*(threshold_ms/1000));
+        break;
+    }
+    case AUDIO_CODEC_M4A: {
+        unsigned int sample_index = 0;
+        unsigned int sample_offset = 0;
+        if (m4a_get_seek_offset(threshold_ms, &(handle->codec_info.detail.m4a_info), &sample_index, &sample_offset) == 0)
+            threshold_size = (int)sample_offset;
+        else
+            ret = ESP_FAIL;
+        break;
+    }
+    default:
+        ret = ESP_FAIL;
+        break;
+    }
+
+    if (ret == ESP_OK && threshold_size > 0 && handle->source_rb != NULL) {
+        int ringbuf_size = rb_get_size(handle->source_rb);
+        threshold_size = threshold_size <= ringbuf_size ? threshold_size : ringbuf_size;
+        OS_LOGD(TAG, "Media source set threshold: %d/%d", threshold_size, ringbuf_size);
+        rb_set_threshold(handle->source_rb, threshold_size);
+    }
+
+    return ret;
 }
 
 static void main_pipeline_deinit(liteplayer_handle_t handle)
@@ -417,6 +464,7 @@ static int main_pipeline_init(liteplayer_handle_t handle)
                 },
                 .content_pos = handle->codec_info.content_pos + handle->seek_offset,
             };
+            media_source_set_threshold(handle, DEFAULT_SOURCE_HTTP_THRESHOLD_TIME);
             handle->media_source = media_source_start(&info, handle->source_rb, media_source_state_callback, handle);
             AUDIO_MEM_CHECK(TAG, handle->media_source, goto pipeline_fail);
         }
@@ -433,6 +481,7 @@ static int main_pipeline_init(liteplayer_handle_t handle)
                 },
                 .content_pos = handle->codec_info.content_pos + handle->seek_offset,
             };
+            media_source_set_threshold(handle, DEFAULT_SOURCE_FILE_THRESHOLD_TIME);
             handle->media_source = media_source_start(&info, handle->source_rb, media_source_state_callback, handle);
             AUDIO_MEM_CHECK(TAG, handle->media_source, goto pipeline_fail);
         }
