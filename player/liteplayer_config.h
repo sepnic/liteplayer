@@ -65,7 +65,7 @@ extern "C" {
 // media source definations
 #define DEFAULT_MEDIA_SOURCE_TASK_PRIO       ( OS_THREAD_PRIO_HIGH )
 #define DEFAULT_MEDIA_SOURCE_TASK_STACKSIZE  ( 6*1024 )
-#define DEFAULT_MEDIA_SOURCE_BUFFER_SIZE     ( 1024+1 )
+#define DEFAULT_MEDIA_SOURCE_BUFFER_SIZE     ( 8*1024+1 )
 
 // media parser definations
 #define DEFAULT_MEDIA_PARSER_TASK_PRIO       ( OS_THREAD_PRIO_NORMAL )

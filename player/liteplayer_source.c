@@ -245,8 +245,15 @@ static void *m3u_source_thread(void *arg)
     struct media_source_priv *priv = (struct media_source_priv *)arg;
     enum media_source_state state = MEDIA_SOURCE_READ_FAILED;
     http_handle_t http = NULL;
+    char *buffer = NULL;
     long long pos = priv->info.content_pos;
     int ret = 0;
+
+    buffer = audio_malloc(DEFAULT_MEDIA_SOURCE_BUFFER_SIZE);
+    if (buffer == NULL) {
+        OS_LOGE(TAG, "Failed to allocate response buffer");
+        goto thread_exit;
+    }
 
 resolve_m3u:
     if (priv->stop)
@@ -297,12 +304,10 @@ dequeue_url:
         goto dequeue_url;
     }
 
-    char buffer[DEFAULT_MEDIA_SOURCE_BUFFER_SIZE];
     int bytes_read = 0, bytes_written = 0;
-
     while (!priv->stop) {
         if (http != NULL)
-            bytes_read = priv->info.http_ops.read(http, buffer, sizeof(buffer));
+            bytes_read = priv->info.http_ops.read(http, buffer, DEFAULT_MEDIA_SOURCE_BUFFER_SIZE);
         if (bytes_read < 0) {
             OS_LOGE(TAG, "Read failed, request next url");
             state = MEDIA_SOURCE_READ_FAILED;
@@ -351,6 +356,8 @@ dequeue_url:
 thread_exit:
     if (http != NULL)
         priv->info.http_ops.close(http);
+    if (buffer != NULL)
+        audio_free(buffer);
 
     {
         OS_THREAD_MUTEX_LOCK(priv->lock);
@@ -519,6 +526,13 @@ static void *media_source_thread(void *arg)
     enum media_source_state state = MEDIA_SOURCE_READ_FAILED;
     http_handle_t http = NULL;
     file_handle_t file = NULL;
+    char *buffer = NULL;
+
+    buffer = audio_malloc(DEFAULT_MEDIA_SOURCE_BUFFER_SIZE);
+    if (buffer == NULL) {
+        OS_LOGE(TAG, "Failed to allocate response buffer");
+        goto thread_exit;
+    }
 
     if (priv->info.source_type == MEDIA_SOURCE_HTTP) {
         http = priv->info.http_ops.open(priv->info.url,
@@ -544,15 +558,13 @@ static void *media_source_thread(void *arg)
         goto thread_exit;
     }
 
-    char buffer[DEFAULT_MEDIA_SOURCE_BUFFER_SIZE];
     int bytes_read = 0, bytes_written = 0;
     int ret = 0;
-
     while (!priv->stop) {
         if (http != NULL)
-            bytes_read = priv->info.http_ops.read(http, buffer, sizeof(buffer));
+            bytes_read = priv->info.http_ops.read(http, buffer, DEFAULT_MEDIA_SOURCE_BUFFER_SIZE);
         else if (file != NULL)
-            bytes_read = priv->info.file_ops.read(file, buffer, sizeof(buffer));
+            bytes_read = priv->info.file_ops.read(file, buffer, DEFAULT_MEDIA_SOURCE_BUFFER_SIZE);
 
         if (bytes_read < 0) {
             OS_LOGE(TAG, "Media source read failed");
@@ -604,6 +616,8 @@ thread_exit:
         priv->info.http_ops.close(http);
     else if (file != NULL)
         priv->info.file_ops.close(file);
+    if (buffer != NULL)
+        audio_free(buffer);
 
     {
         OS_THREAD_MUTEX_LOCK(priv->lock);
