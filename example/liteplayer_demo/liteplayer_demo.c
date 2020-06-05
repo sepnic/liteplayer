@@ -33,6 +33,8 @@
 
 #define TAG "[liteplayer]DEMO"
 
+#define LITEPLYAER_DEMO_THRESHOLD_MS (5000)
+
 static int liteplayer_demo_state_listener(enum liteplayer_state state, int errcode, void *priv)
 {
     enum liteplayer_state *player_state = (enum liteplayer_state *)priv;
@@ -130,7 +132,7 @@ static int liteplayer_demo(const char *url)
     };
     liteplayer_register_http_wrapper(player, &http_ops);
 
-    if (liteplayer_set_data_source(player, url) != ESP_OK) {
+    if (liteplayer_set_data_source(player, url, LITEPLYAER_DEMO_THRESHOLD_MS) != ESP_OK) {
         OS_LOGE(TAG, "Failed to set data source");
         goto test_done;
     }

@@ -40,8 +40,9 @@
 
 #define PLAYLIST_FILE "liteplayermngr_demo.playlist"
 
-#define LITEPLYAER_DEMO_TASK_PRIO  (OS_THREAD_PRIO_NORMAL)
-#define LITEPLYAER_DEMO_TASK_STACK (8192)
+#define LITEPLYAER_DEMO_TASK_PRIO    (OS_THREAD_PRIO_NORMAL)
+#define LITEPLYAER_DEMO_TASK_STACK   (8192)
+#define LITEPLYAER_DEMO_THRESHOLD_MS (5000)
 
 struct liteplayer_demo_priv {
     const char *url;
@@ -189,7 +190,7 @@ static void *liteplayer_demo_thread(void *arg)
     };
     liteplayer_mngr_register_http_wrapper(demo->mngr, &http_ops);
 
-    if (liteplayer_mngr_set_data_source(demo->mngr, demo->url) != ESP_OK) {
+    if (liteplayer_mngr_set_data_source(demo->mngr, demo->url, LITEPLYAER_DEMO_THRESHOLD_MS) != ESP_OK) {
         OS_LOGE(TAG, "Failed to set data source");
         goto thread_exit;
     }

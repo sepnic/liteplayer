@@ -50,6 +50,7 @@ struct media_source_info {
     struct http_wrapper http_ops;
     struct file_wrapper file_ops;
     long long content_pos;
+    int threshold_size;
 };
 
 typedef void *media_source_handle_t;

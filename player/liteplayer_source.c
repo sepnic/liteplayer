@@ -255,6 +255,18 @@ static void *m3u_source_thread(void *arg)
         goto thread_exit;
     }
 
+    if (priv->info.threshold_size > 0) {
+        OS_THREAD_MUTEX_LOCK(priv->lock);
+        if (!priv->stop) {
+            int total_size = rb_get_size(priv->rb);
+            if (priv->info.threshold_size > total_size)
+                priv->info.threshold_size = total_size;
+            OS_LOGD(TAG, "Media source set threshold: %d/%d", priv->info.threshold_size, total_size);
+            rb_set_threshold(priv->rb, priv->info.threshold_size);
+        }
+        OS_THREAD_MUTEX_UNLOCK(priv->lock);
+    }
+
 resolve_m3u:
     if (priv->stop)
         goto thread_exit;
@@ -556,6 +568,18 @@ static void *media_source_thread(void *arg)
     else {
         state = MEDIA_SOURCE_READ_FAILED;
         goto thread_exit;
+    }
+
+    if (priv->info.threshold_size > 0) {
+        OS_THREAD_MUTEX_LOCK(priv->lock);
+        if (!priv->stop) {
+            int total_size = rb_get_size(priv->rb);
+            if (priv->info.threshold_size > total_size)
+                priv->info.threshold_size = total_size;
+            OS_LOGD(TAG, "Media source set threshold: %d/%d", priv->info.threshold_size, total_size);
+            rb_set_threshold(priv->rb, priv->info.threshold_size);
+        }
+        OS_THREAD_MUTEX_UNLOCK(priv->lock);
     }
 
     int bytes_read = 0, bytes_written = 0;

@@ -52,7 +52,7 @@ int liteplayer_register_sink_wrapper(liteplayer_handle_t handle, struct sink_wra
 
 int liteplayer_register_state_listener(liteplayer_handle_t handle, liteplayer_state_cb listener, void *listener_priv);
 
-int liteplayer_set_data_source(liteplayer_handle_t handle, const char *url);
+int liteplayer_set_data_source(liteplayer_handle_t handle, const char *url, int threshold_ms);
 
 int liteplayer_prepare(liteplayer_handle_t handle);
 

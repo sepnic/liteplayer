@@ -67,6 +67,7 @@ struct liteplayer {
     media_source_handle_t   media_source;
     media_parser_handle_t   media_parser;
     struct media_codec_info codec_info;
+    int                     threshold_ms;
 
     int                     sink_samplerate;
     int                     sink_channels;
@@ -292,13 +293,11 @@ static void media_parser_state_callback(enum media_parser_state state, struct me
     OS_THREAD_MUTEX_UNLOCK(handle->state_lock);
 }
 
-static int media_source_set_threshold(liteplayer_handle_t handle, int threshold_ms)
+static int media_source_get_threshold(liteplayer_handle_t handle, int threshold_ms)
 {
     int threshold_size = 0;
-    int ret = ESP_OK;
-
     if (threshold_ms <= 0)
-        return ESP_OK;
+        return threshold_size;
 
     if (threshold_ms > handle->codec_info.duration_ms)
         threshold_ms = handle->codec_info.duration_ms;
@@ -314,23 +313,13 @@ static int media_source_set_threshold(liteplayer_handle_t handle, int threshold_
         unsigned int sample_offset = 0;
         if (m4a_get_seek_offset(threshold_ms, &(handle->codec_info.detail.m4a_info), &sample_index, &sample_offset) == 0)
             threshold_size = (int)sample_offset;
-        else
-            ret = ESP_FAIL;
         break;
     }
     default:
-        ret = ESP_FAIL;
         break;
     }
 
-    if (ret == ESP_OK && threshold_size > 0 && handle->source_rb != NULL) {
-        int ringbuf_size = rb_get_size(handle->source_rb);
-        threshold_size = threshold_size <= ringbuf_size ? threshold_size : ringbuf_size;
-        OS_LOGD(TAG, "Media source set threshold: %d/%d", threshold_size, ringbuf_size);
-        rb_set_threshold(handle->source_rb, threshold_size);
-    }
-
-    return ret;
+    return threshold_size;
 }
 
 static void main_pipeline_deinit(liteplayer_handle_t handle)
@@ -463,8 +452,8 @@ static int main_pipeline_init(liteplayer_handle_t handle)
                     .close = handle->http_ops.close,
                 },
                 .content_pos = handle->codec_info.content_pos + handle->seek_offset,
+                .threshold_size = media_source_get_threshold(handle, handle->threshold_ms),
             };
-            media_source_set_threshold(handle, DEFAULT_SOURCE_HTTP_THRESHOLD_TIME);
             handle->media_source = media_source_start(&info, handle->source_rb, media_source_state_callback, handle);
             AUDIO_MEM_CHECK(TAG, handle->media_source, goto pipeline_fail);
         }
@@ -480,8 +469,8 @@ static int main_pipeline_init(liteplayer_handle_t handle)
                     .close = handle->file_ops.close,
                 },
                 .content_pos = handle->codec_info.content_pos + handle->seek_offset,
+                .threshold_size = media_source_get_threshold(handle, handle->threshold_ms),
             };
-            media_source_set_threshold(handle, DEFAULT_SOURCE_FILE_THRESHOLD_TIME);
             handle->media_source = media_source_start(&info, handle->source_rb, media_source_state_callback, handle);
             AUDIO_MEM_CHECK(TAG, handle->media_source, goto pipeline_fail);
         }
@@ -561,7 +550,7 @@ int liteplayer_register_state_listener(liteplayer_handle_t handle, liteplayer_st
     return ESP_OK;
 }
 
-int liteplayer_set_data_source(liteplayer_handle_t handle, const char *url)
+int liteplayer_set_data_source(liteplayer_handle_t handle, const char *url, int threshold_ms)
 {
     if (handle == NULL || url == NULL)
         return ESP_FAIL;
@@ -577,6 +566,7 @@ int liteplayer_set_data_source(liteplayer_handle_t handle, const char *url)
     }
 
     handle->url = audio_strdup(url);
+    handle->threshold_ms = threshold_ms;
     handle->state_error = false;
 
     if (strncmp(url, DEFAULT_STREAM_FIXED_URL, 11) == 0)
@@ -963,6 +953,7 @@ int liteplayer_seek(liteplayer_handle_t handle, int msec)
                     .close = handle->http_ops.close,
                 },
                 .content_pos = handle->codec_info.content_pos + handle->seek_offset,
+                .threshold_size = 0,
             };
             handle->media_source = media_source_start(&info, handle->source_rb, media_source_state_callback, handle);
             AUDIO_MEM_CHECK(TAG, handle->media_source, goto seek_out);
@@ -979,6 +970,7 @@ int liteplayer_seek(liteplayer_handle_t handle, int msec)
                     .close = handle->file_ops.close,
                 },
                 .content_pos = handle->codec_info.content_pos + handle->seek_offset,
+                .threshold_size = 0,
             };
             handle->media_source = media_source_start(&info, handle->source_rb, media_source_state_callback, handle);
             AUDIO_MEM_CHECK(TAG, handle->media_source, goto seek_out);

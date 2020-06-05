@@ -37,7 +37,7 @@ int liteplayer_mngr_register_sink_wrapper(liteplayer_mngr_handle_t mngr, struct 
 
 int liteplayer_mngr_register_state_listener(liteplayer_mngr_handle_t mngr, liteplayer_state_cb listener, void *listener_priv);
 
-int liteplayer_mngr_set_data_source(liteplayer_mngr_handle_t mngr, const char *url);
+int liteplayer_mngr_set_data_source(liteplayer_mngr_handle_t mngr, const char *url, int threshold_ms);
 
 int liteplayer_mngr_prepare_async(liteplayer_mngr_handle_t mngr);
 

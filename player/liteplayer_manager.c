@@ -34,7 +34,7 @@ struct liteplayer_mngr {
     liteplayer_handle_t  player;
     mlooper_t            looper;
     os_mutex_t           lock;
-
+    int                  threshold_ms;
     enum liteplayer_state state;
     liteplayer_state_cb  listener;
     void                *listener_priv;
@@ -301,7 +301,7 @@ static void manager_looper_handle(struct message *msg)
         url = audio_strdup(mngr->url_list[mngr->url_index]);
         OS_THREAD_MUTEX_UNLOCK(mngr->lock);
         if (url != NULL) {
-            liteplayer_set_data_source(mngr->player, url);
+            liteplayer_set_data_source(mngr->player, url, mngr->threshold_ms);
             audio_free(url);
         }
         break;
@@ -445,7 +445,7 @@ int liteplayer_mngr_register_state_listener(liteplayer_mngr_handle_t mngr, litep
     return 0;
 }
 
-int liteplayer_mngr_set_data_source(liteplayer_mngr_handle_t mngr, const char *url)
+int liteplayer_mngr_set_data_source(liteplayer_mngr_handle_t mngr, const char *url, int threshold_ms)
 {
     if (mngr == NULL || url == NULL)
         return -1;
@@ -474,6 +474,7 @@ int liteplayer_mngr_set_data_source(liteplayer_mngr_handle_t mngr, const char *u
         }
     }
 
+    mngr->threshold_ms = threshold_ms;
     liteplayer_register_state_listener(mngr->player, manager_state_callback, (void *)mngr);
     struct message *msg = message_obtain(PLAYER_DO_SET_SOURCE, 0, 0, mngr);
     if (msg != NULL) {
