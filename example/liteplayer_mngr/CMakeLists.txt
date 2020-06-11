@@ -4,36 +4,20 @@ cmake_minimum_required(VERSION 2.8)
 #set (ENABLE_TINYALSA "YES")
 
 set(TOP_DIR "${CMAKE_SOURCE_DIR}/../..")
+set(LIB_DIR "${TOP_DIR}/build/out/lib")
 
 # include files
 include_directories(${TOP_DIR}/thirdparty/msgutils/include)
 include_directories(${TOP_DIR}/thirdparty/httpclient)
 include_directories(${TOP_DIR}/thirdparty/mbedtls/include)
-include_directories(${TOP_DIR}/thirdparty/codec)
 include_directories(${TOP_DIR}/thirdparty/speexdsp)
-include_directories(${TOP_DIR}/library/core/include)
-include_directories(${TOP_DIR}/library/components/include)
-include_directories(${TOP_DIR}/player)
+include_directories(${TOP_DIR}/library/include)
 include_directories(${TOP_DIR}/adapter)
 
 # source files
 set (THIRDPARTY_SRC
-    # msgutils src
-    ${TOP_DIR}/thirdparty/msgutils/source/memory_detect.c
-    ${TOP_DIR}/thirdparty/msgutils/source/msglooper.c
-    ${TOP_DIR}/thirdparty/msgutils/source/msgqueue.c
-    ${TOP_DIR}/thirdparty/msgutils/source/ringbuf.c
-    ${TOP_DIR}/thirdparty/msgutils/source/smartptr.c
-    ${TOP_DIR}/thirdparty/msgutils/source/sw_timer.c
-    ${TOP_DIR}/thirdparty/msgutils/source/sw_watchdog.c
-    ${TOP_DIR}/thirdparty/msgutils/port/os_logger.c
-    ${TOP_DIR}/thirdparty/msgutils/port/os_thread.c
-    ${TOP_DIR}/thirdparty/msgutils/port/os_time.c
-    ${TOP_DIR}/thirdparty/msgutils/port/os_timer.c
-
     # httpclient src
     ${TOP_DIR}/thirdparty/httpclient/httpclient.c
-
     # mbedtls src
     ${TOP_DIR}/thirdparty/mbedtls/library/aes.c
     ${TOP_DIR}/thirdparty/mbedtls/library/aesni.c
@@ -107,48 +91,6 @@ set (THIRDPARTY_SRC
     ${TOP_DIR}/thirdparty/mbedtls/library/ssl_srv.c
     ${TOP_DIR}/thirdparty/mbedtls/library/ssl_ticket.c
     ${TOP_DIR}/thirdparty/mbedtls/library/ssl_tls.c
-
-    # codec src
-    ${TOP_DIR}/thirdparty/codec/mp3-mad/bit.c
-    ${TOP_DIR}/thirdparty/codec/mp3-mad/decoder.c
-    ${TOP_DIR}/thirdparty/codec/mp3-mad/fixed.c
-    ${TOP_DIR}/thirdparty/codec/mp3-mad/frame.c
-    ${TOP_DIR}/thirdparty/codec/mp3-mad/huffman.c
-    ${TOP_DIR}/thirdparty/codec/mp3-mad/layer12.c
-    ${TOP_DIR}/thirdparty/codec/mp3-mad/layer3.c
-    ${TOP_DIR}/thirdparty/codec/mp3-mad/stream.c
-    ${TOP_DIR}/thirdparty/codec/mp3-mad/synth.c
-    ${TOP_DIR}/thirdparty/codec/mp3-mad/timer.c
-    ${TOP_DIR}/thirdparty/codec/mp3-mad/version.c
-    ${TOP_DIR}/thirdparty/codec/aac-helix/aacdec.c
-    ${TOP_DIR}/thirdparty/codec/aac-helix/aactabs.c
-    ${TOP_DIR}/thirdparty/codec/aac-helix/bitstream.c
-    ${TOP_DIR}/thirdparty/codec/aac-helix/buffers.c
-    ${TOP_DIR}/thirdparty/codec/aac-helix/dct4.c
-    ${TOP_DIR}/thirdparty/codec/aac-helix/decelmnt.c
-    ${TOP_DIR}/thirdparty/codec/aac-helix/dequant.c
-    ${TOP_DIR}/thirdparty/codec/aac-helix/fft.c
-    ${TOP_DIR}/thirdparty/codec/aac-helix/filefmt.c
-    ${TOP_DIR}/thirdparty/codec/aac-helix/huffman.c
-    ${TOP_DIR}/thirdparty/codec/aac-helix/hufftabs.c
-    ${TOP_DIR}/thirdparty/codec/aac-helix/imdct.c
-    ${TOP_DIR}/thirdparty/codec/aac-helix/noiseless.c
-    ${TOP_DIR}/thirdparty/codec/aac-helix/pns.c
-    ${TOP_DIR}/thirdparty/codec/aac-helix/sbr.c
-    ${TOP_DIR}/thirdparty/codec/aac-helix/sbrfft.c
-    ${TOP_DIR}/thirdparty/codec/aac-helix/sbrfreq.c
-    ${TOP_DIR}/thirdparty/codec/aac-helix/sbrhfadj.c
-    ${TOP_DIR}/thirdparty/codec/aac-helix/sbrhfgen.c
-    ${TOP_DIR}/thirdparty/codec/aac-helix/sbrhuff.c
-    ${TOP_DIR}/thirdparty/codec/aac-helix/sbrimdct.c
-    ${TOP_DIR}/thirdparty/codec/aac-helix/sbrmath.c
-    ${TOP_DIR}/thirdparty/codec/aac-helix/sbrqmf.c
-    ${TOP_DIR}/thirdparty/codec/aac-helix/sbrside.c
-    ${TOP_DIR}/thirdparty/codec/aac-helix/sbrtabs.c
-    ${TOP_DIR}/thirdparty/codec/aac-helix/stproc.c
-    ${TOP_DIR}/thirdparty/codec/aac-helix/tns.c
-    ${TOP_DIR}/thirdparty/codec/aac-helix/trigtabs.c
-    ${TOP_DIR}/thirdparty/speexdsp/resample.c
 )
 
 # source files
@@ -161,11 +103,6 @@ set (ADAPTER_SRC
 if (ENABLE_TINYALSA)
     # Force SRC to 48KHz/Stereo for tinyalsa device
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_TINYALSA")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_SRC")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCONFIG_SRC_QUALITY=8")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCONFIG_SRC_OUT_RATE=48000")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCONFIG_SRC_OUT_CHANNELS=2")
-
     include_directories(${TOP_DIR}/thirdparty/tinyalsa/include)
     list(APPEND THIRDPARTY_SRC
         ${TOP_DIR}/thirdparty/tinyalsa/pcm.c
@@ -176,61 +113,15 @@ if (ENABLE_TINYALSA)
     )
 endif()
 
-# source files
-set (LITEPLAYER_SRC
-    ${TOP_DIR}/library/core/audio_element.c
-    ${TOP_DIR}/library/core/audio_event_iface.c
-    ${TOP_DIR}/library/core/audio_pipeline.c
-    ${TOP_DIR}/library/components/audio_decoder/mp3_mad_wrapper.c
-    ${TOP_DIR}/library/components/audio_decoder/mp3_decoder.c
-    ${TOP_DIR}/library/components/audio_decoder/aac_helix_wrapper.c
-    ${TOP_DIR}/library/components/audio_decoder/aac_decoder.c
-    ${TOP_DIR}/library/components/audio_decoder/m4a_decoder.c
-    ${TOP_DIR}/library/components/audio_decoder/wav_decoder.c
-    ${TOP_DIR}/library/components/audio_extractor/mp3_extractor.c
-    ${TOP_DIR}/library/components/audio_extractor/aac_extractor.c
-    ${TOP_DIR}/library/components/audio_extractor/m4a_extractor.c
-    ${TOP_DIR}/library/components/audio_extractor/wav_extractor.c
-    ${TOP_DIR}/library/components/audio_resampler/audio_resampler.c
-    ${TOP_DIR}/library/components/audio_stream/file_stream.c
-    ${TOP_DIR}/library/components/audio_stream/sink_stream.c
-    ${TOP_DIR}/library/components/audio_stream/http_stream.c
-    ${TOP_DIR}/player/liteplayer_source.c
-    ${TOP_DIR}/player/liteplayer_parser.c
-    ${TOP_DIR}/player/liteplayer_debug.c
-    ${TOP_DIR}/player/liteplayer_main.c
-    ${TOP_DIR}/player/liteplayer_manager.c
-)
-
-# cflags: OS_LINUX, OS_ANDROID, OS_MACOSX, OS_IOS, OS_FREERTOS
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DOS_MACOSX")
-
-# ENABLE_MEMORY_LEAK_DETECT
-#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_MEMORY_LEAK_DETECT")
-
-# ENABLE_MEMORY_OVERFLOW_DETECT
-#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_MEMORY_OVERFLOW_DETECT")
-
-# cflag: libmad: FPM_64BIT/FPM_INTEL/FPM_ARM/FPM_MIPS/FPM_DEFAULT
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DFPM_64BIT")
-
-# cflag: helix: __arm__/__amd64__, __GNUC__
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D__amd64__ -DUSE_DEFAULT_STDLIB")
-
-# cflag: if enable aac sbr
-#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DAAC_ENABLE_SBR")
-
-# cflag: libspeexdsp: FIXED_POINT/FLOATING_POINT, USE_NEON/USE_SSE
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DFLOATING_POINT -DUSE_SSE")
-
 # cflags: compile paramters
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -g -Wall -Werror")
 
 # ldflags
 set(CMAKE_LDFLAGS "${CMAKE_LDFLAGS} -Wl,-O1 -Wl,--hash-style=gnu -Wl,--as-needed")
 
-#message("CMAKE_C_FLAGS: ${CMAKE_C_FLAGS}")
+
+LINK_DIRECTORIES(${LIB_DIR}/libliteplayer)
 
 # liteplayer_mngr
-add_executable(liteplayer_mngr liteplayer_mngr.c ${ADAPTER_SRC} ${THIRDPARTY_SRC} ${LITEPLAYER_SRC})
-target_link_libraries(liteplayer_mngr pthread m)
+add_executable(liteplayer_mngr liteplayer_mngr.c ${ADAPTER_SRC} ${THIRDPARTY_SRC})
+target_link_libraries(liteplayer_mngr libliteplayer_s.a pthread m)

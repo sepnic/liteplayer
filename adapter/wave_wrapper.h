@@ -18,7 +18,7 @@
 #ifndef _WAVE_WRAPPER_H_
 #define _WAVE_WRAPPER_H_
 
-#include "audio_stream/sink_stream.h"
+#include "liteplayer_adapter.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -18,19 +18,18 @@
 #ifndef _LITEPLAYER_ADAPTER_H_
 #define _LITEPLAYER_ADAPTER_H_
 
-#include "audio_stream/http_stream.h"
-#include "audio_stream/file_stream.h"
-#include "audio_stream/sink_stream.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+typedef void *file_handle_t;
+typedef void *http_handle_t;
+typedef void *sink_handle_t;
+
 struct file_wrapper {
     void            *file_priv;
-    file_handle_t  (*open)(const char *url, enum file_mode mode, long long content_pos, void *file_priv);
+    file_handle_t  (*open)(const char *url, long long content_pos, void *file_priv);
     int            (*read)(file_handle_t handle, char *buffer, int size);
-    int            (*write)(file_handle_t handle, char *buffer, int size);
     long long      (*filesize)(file_handle_t handle);
     int            (*seek)(file_handle_t handle, long offset);
     void           (*close)(file_handle_t handle);

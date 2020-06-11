@@ -18,9 +18,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "msgutils/os_thread.h"
+#include "msgutils/os_memory.h"
 #include "msgutils/os_logger.h"
-#include "esp_adf/audio_common.h"
-#include "audio_stream/http_stream.h"
 #include "httpclient.h"
 #include "httpclient_wrapper.h"
 
@@ -94,16 +94,16 @@ static int httpclient_wrapper_parse_content_length(char *header_buf, long long *
 
 http_handle_t httpclient_wrapper_open(const char *url, long long content_pos, void *http_priv)
 {
-    struct httpclient_priv *priv = audio_calloc(1, sizeof(struct httpclient_priv));
+    struct httpclient_priv *priv = OS_CALLOC(1, sizeof(struct httpclient_priv));
     if (priv == NULL)
         return NULL;
 
-    priv->url = audio_strdup(url);
+    priv->url = OS_STRDUP(url);
     priv->content_pos = content_pos;
     OS_LOGD(TAG, "Connecting url:%s, content_pos:%d", url, (int)content_pos);
     if (httpclient_wrapper_connect(priv) != HTTPCLIENT_OK) {
-        audio_free(priv->url);
-        audio_free(priv);
+        OS_FREE(priv->url);
+        OS_FREE(priv);
         return NULL;
     }
     return priv;
@@ -222,7 +222,7 @@ void httpclient_wrapper_close(http_handle_t handle)
 
     OS_LOGD(TAG, "Closing http client");
     httpclient_close(&priv->client);
-    audio_free(priv->url);
-    audio_free(priv);
+    OS_FREE(priv->url);
+    OS_FREE(priv);
     OS_LOGV(TAG, "Closed http client");
 }

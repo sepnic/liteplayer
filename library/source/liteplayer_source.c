@@ -557,7 +557,6 @@ static void *media_source_thread(void *arg)
     }
     else if (priv->info.source_type == MEDIA_SOURCE_FILE) {
         file = priv->info.file_ops.open(priv->info.url,
-                                        FILE_READ,
                                         priv->info.content_pos,
                                         priv->info.file_ops.file_priv);
         if (file == NULL) {

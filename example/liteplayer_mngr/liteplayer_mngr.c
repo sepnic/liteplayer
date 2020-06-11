@@ -23,10 +23,9 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#include "msgutils/os_thread.h"
 #include "msgutils/os_memory.h"
 #include "msgutils/os_logger.h"
-#include "esp_adf/audio_common.h"
-#include "liteplayer_main.h"
 #include "liteplayer_manager.h"
 #include "httpclient_wrapper.h"
 #include "fatfs_wrapper.h"
@@ -173,7 +172,6 @@ static void *liteplayer_demo_thread(void *arg)
         .file_priv = NULL,
         .open = fatfs_wrapper_open,
         .read = fatfs_wrapper_read,
-        .write = fatfs_wrapper_write,
         .filesize = fatfs_wrapper_filesize,
         .seek = fatfs_wrapper_seek,
         .close = fatfs_wrapper_close,
@@ -190,35 +188,31 @@ static void *liteplayer_demo_thread(void *arg)
     };
     liteplayer_mngr_register_http_wrapper(demo->mngr, &http_ops);
 
-    if (liteplayer_mngr_set_data_source(demo->mngr, demo->url, LITEPLYAER_DEMO_THRESHOLD_MS) != ESP_OK) {
+    if (liteplayer_mngr_set_data_source(demo->mngr, demo->url, LITEPLYAER_DEMO_THRESHOLD_MS) != 0) {
         OS_LOGE(TAG, "Failed to set data source");
         goto thread_exit;
     }
 
-    if (liteplayer_mngr_prepare_async(demo->mngr) != ESP_OK) {
+    if (liteplayer_mngr_prepare_async(demo->mngr) != 0) {
         OS_LOGE(TAG, "Failed to prepare player");
         goto thread_exit;
     }
-
     while (demo->state != LITEPLAYER_PREPARED && demo->state != LITEPLAYER_ERROR) {
         OS_THREAD_SLEEP_MSEC(100);
     }
-
     if (demo->state == LITEPLAYER_ERROR) {
         OS_LOGE(TAG, "Failed to prepare player");
         goto thread_exit;
     }
 
-    if (liteplayer_mngr_start(demo->mngr) != ESP_OK) {
+    if (liteplayer_mngr_start(demo->mngr) != 0) {
         OS_LOGE(TAG, "Failed to start player");
         goto thread_exit;
     }
-
     OS_MEMORY_DUMP();
-
     while (demo->state != LITEPLAYER_COMPLETED && demo->state != LITEPLAYER_ERROR) {
         if (demo->state == LITEPLAYER_SEEKCOMPLETED) {
-            if (liteplayer_mngr_start(demo->mngr) != ESP_OK) {
+            if (liteplayer_mngr_start(demo->mngr) != 0) {
                 OS_LOGE(TAG, "Failed to start player");
                 goto thread_exit;
             }
@@ -229,11 +223,10 @@ static void *liteplayer_demo_thread(void *arg)
         OS_THREAD_SLEEP_MSEC(100);
     }
 
-    if (liteplayer_mngr_stop(demo->mngr) != ESP_OK) {
+    if (liteplayer_mngr_stop(demo->mngr) != 0) {
         OS_LOGE(TAG, "Failed to stop player");
         goto thread_exit;
     }
-
     while (demo->state != LITEPLAYER_STOPPED) {
         OS_THREAD_SLEEP_MSEC(100);
     }
@@ -242,6 +235,9 @@ thread_exit:
     demo->exit = true;
 
     liteplayer_mngr_reset(demo->mngr);
+    while (demo->state != LITEPLAYER_IDLE) {
+        OS_THREAD_SLEEP_MSEC(100);
+    }
     liteplayer_mngr_destroy(demo->mngr);
     demo->mngr = NULL;
 
@@ -266,7 +262,7 @@ int main(int argc, char *argv[])
         .joinable = true,
     };
 
-    const char *filename = audio_strdup(argv[1]);
+    const char *filename = OS_STRDUP(argv[1]);
     const char *url = filename;
     if (strstr(filename, "http") == NULL) {
         struct stat statbuf;
@@ -355,7 +351,7 @@ int main(int argc, char *argv[])
     OS_THREAD_JOIN(tid, NULL);
 
 demo_out:
-    audio_free(filename);
+    OS_FREE(filename);
     OS_MEMORY_DUMP();
     OS_LOGD(TAG, "liteplayer main thread leave");
     return 0;

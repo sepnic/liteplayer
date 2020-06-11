@@ -139,7 +139,7 @@ static int playlist_resolve(liteplayer_mngr_handle_t mngr, const char *filename)
         goto resolve_done;
     }
 
-    file = mngr->file_ops.open(filename, FILE_READ, 0, mngr->file_ops.file_priv);
+    file = mngr->file_ops.open(filename, 0, mngr->file_ops.file_priv);
     if (file == NULL) {
         OS_LOGE(TAG, "Failed to open playlist");
         goto resolve_done;

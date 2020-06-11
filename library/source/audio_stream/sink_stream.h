@@ -21,12 +21,13 @@
 #include "msgutils/os_thread.h"
 #include "esp_adf/audio_element.h"
 #include "esp_adf/audio_common.h"
+#include "liteplayer_adapter.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef void *sink_handle_t;
+//typedef void *sink_handle_t;
 
 /**
  * @brief      Sink stream configurations

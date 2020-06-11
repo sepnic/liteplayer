@@ -29,8 +29,6 @@
 #include "audio_decoder/aac_decoder.h"
 #include "audio_decoder/m4a_decoder.h"
 #include "audio_decoder/wav_decoder.h"
-#include "audio_stream/http_stream.h"
-#include "audio_stream/file_stream.h"
 #include "audio_stream/sink_stream.h"
 
 #include "liteplayer_adapter.h"
@@ -367,16 +365,8 @@ static int main_pipeline_init(liteplayer_handle_t handle)
         sink_cfg.buf_sz                   = DEFAULT_SINK_BUFFER_SIZE;
         sink_cfg.in_channels              = handle->codec_info.codec_channels;
         sink_cfg.in_samplerate            = handle->codec_info.codec_samplerate;
-    #if defined(CONFIG_SRC_OUT_RATE)
-        sink_cfg.out_samplerate           = CONFIG_SRC_OUT_RATE;
-    #else
         sink_cfg.out_samplerate           = DEFAULT_SINK_OUT_RATE;
-    #endif
-    #if defined(CONFIG_SRC_OUT_CHANNELS)
-        sink_cfg.out_channels             = CONFIG_SRC_OUT_CHANNELS;
-    #else
         sink_cfg.out_channels             = DEFAULT_SINK_OUT_CHANNELS;
-    #endif
         sink_cfg.sink_priv                = handle->sink_ops.sink_priv;
         sink_cfg.sink_open                = handle->sink_ops.open;
         sink_cfg.sink_write               = handle->sink_ops.write;
@@ -431,11 +421,11 @@ static int main_pipeline_init(liteplayer_handle_t handle)
     {
         OS_LOGD(TAG, "[2.2] Create source element");
         if (handle->source_type == MEDIA_SOURCE_STREAM)
-            handle->source_rb = rb_create(DEFAULT_SOURCE_STREAM_RINGBUF_SIZE);
+            handle->source_rb = rb_create(DEFAULT_MEDIA_SOURCE_STREAM_RINGBUF_SIZE);
         else if (handle->source_type == MEDIA_SOURCE_HTTP)
-            handle->source_rb = rb_create(DEFAULT_SOURCE_HTTP_RINGBUF_SIZE);
+            handle->source_rb = rb_create(DEFAULT_MEDIA_SOURCE_HTTP_RINGBUF_SIZE);
         else if (handle->source_type == MEDIA_SOURCE_FILE)
-            handle->source_rb = rb_create(DEFAULT_SOURCE_FILE_RINGBUF_SIZE);
+            handle->source_rb = rb_create(DEFAULT_MEDIA_SOURCE_FILE_RINGBUF_SIZE);
         AUDIO_MEM_CHECK(TAG, handle->source_rb, goto pipeline_fail);
 
         audio_element_set_input_ringbuf(handle->el_decoder, handle->source_rb);
@@ -931,11 +921,11 @@ int liteplayer_seek(liteplayer_handle_t handle, int msec)
         }
 
         if (handle->source_type == MEDIA_SOURCE_STREAM)
-            handle->source_rb = rb_create(DEFAULT_SOURCE_STREAM_RINGBUF_SIZE);
+            handle->source_rb = rb_create(DEFAULT_MEDIA_SOURCE_STREAM_RINGBUF_SIZE);
         else if (handle->source_type == MEDIA_SOURCE_HTTP)
-            handle->source_rb = rb_create(DEFAULT_SOURCE_HTTP_RINGBUF_SIZE);
+            handle->source_rb = rb_create(DEFAULT_MEDIA_SOURCE_HTTP_RINGBUF_SIZE);
         else if (handle->source_type == MEDIA_SOURCE_FILE)
-            handle->source_rb = rb_create(DEFAULT_SOURCE_FILE_RINGBUF_SIZE);
+            handle->source_rb = rb_create(DEFAULT_MEDIA_SOURCE_FILE_RINGBUF_SIZE);
         AUDIO_MEM_CHECK(TAG, handle->source_rb, goto seek_out);
 
         audio_element_set_input_ringbuf(handle->el_decoder, handle->source_rb);

@@ -20,9 +20,6 @@
 
 #include "msgutils/os_logger.h"
 #include "esp_adf/audio_common.h"
-#include "audio_stream/http_stream.h"
-#include "audio_stream/file_stream.h"
-#include "audio_stream/sink_stream.h"
 #include "audio_extractor/mp3_extractor.h"
 #include "audio_extractor/aac_extractor.h"
 #include "audio_extractor/m4a_extractor.h"
@@ -93,7 +90,6 @@ static int m4a_header_parse(struct media_source_info *source_info, struct media_
 
     if (source_info->source_type == MEDIA_SOURCE_FILE) {
         m4a_priv.file_handle = source_info->file_ops.open(source_info->url,
-                                                          FILE_READ,
                                                           0,
                                                           source_info->file_ops.file_priv);
         if (m4a_priv.file_handle == NULL)
@@ -179,7 +175,6 @@ static int media_header_parse(struct media_source_info *source_info, struct medi
     }
     else if (source_info->source_type == MEDIA_SOURCE_FILE) {
         file = source_info->file_ops.open(source_info->url,
-                                          FILE_READ,
                                           0,
                                           source_info->file_ops.file_priv);
         if (file == NULL) {

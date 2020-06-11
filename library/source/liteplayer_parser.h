@@ -18,7 +18,6 @@
 #ifndef _LITEPLAYER_MEDIAPARSER_H_
 #define _LITEPLAYER_MEDIAPARSER_H_
 
-#include "esp_adf/audio_common.h"
 #include "audio_extractor/mp3_extractor.h"
 #include "audio_extractor/aac_extractor.h"
 #include "audio_extractor/m4a_extractor.h"

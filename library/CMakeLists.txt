@@ -7,9 +7,8 @@ set(THIRDPARTY_DIR "${TOP_DIR}/thirdparty")
 include_directories(${THIRDPARTY_DIR}/msgutils/include)
 include_directories(${THIRDPARTY_DIR}/codec)
 include_directories(${THIRDPARTY_DIR}/speexdsp)
-include_directories(${TOP_DIR}/library/core/include)
-include_directories(${TOP_DIR}/library/components/include)
-include_directories(${TOP_DIR}/player)
+include_directories(${TOP_DIR}/library/include)
+include_directories(${TOP_DIR}/library/source)
 
 # source files
 set (THIRDPARTY_SRC
@@ -68,32 +67,30 @@ set (THIRDPARTY_SRC
 
 # source files
 set (LITEPLAYER_SRC
-    ${TOP_DIR}/library/core/audio_element.c
-    ${TOP_DIR}/library/core/audio_event_iface.c
-    ${TOP_DIR}/library/core/audio_pipeline.c
-    ${TOP_DIR}/library/components/audio_decoder/mp3_mad_wrapper.c
-    ${TOP_DIR}/library/components/audio_decoder/mp3_decoder.c
-    ${TOP_DIR}/library/components/audio_decoder/aac_helix_wrapper.c
-    ${TOP_DIR}/library/components/audio_decoder/aac_decoder.c
-    ${TOP_DIR}/library/components/audio_decoder/m4a_decoder.c
-    ${TOP_DIR}/library/components/audio_decoder/wav_decoder.c
-    ${TOP_DIR}/library/components/audio_extractor/mp3_extractor.c
-    ${TOP_DIR}/library/components/audio_extractor/aac_extractor.c
-    ${TOP_DIR}/library/components/audio_extractor/m4a_extractor.c
-    ${TOP_DIR}/library/components/audio_extractor/wav_extractor.c
-    ${TOP_DIR}/library/components/audio_resampler/audio_resampler.c
-    ${TOP_DIR}/library/components/audio_stream/file_stream.c
-    ${TOP_DIR}/library/components/audio_stream/sink_stream.c
-    ${TOP_DIR}/library/components/audio_stream/http_stream.c
-    ${TOP_DIR}/player/liteplayer_source.c
-    ${TOP_DIR}/player/liteplayer_parser.c
-    ${TOP_DIR}/player/liteplayer_debug.c
-    ${TOP_DIR}/player/liteplayer_main.c
-    ${TOP_DIR}/player/liteplayer_manager.c
+    ${TOP_DIR}/library/source/esp_adf/audio_element.c
+    ${TOP_DIR}/library/source/esp_adf/audio_event_iface.c
+    ${TOP_DIR}/library/source/esp_adf/audio_pipeline.c
+    ${TOP_DIR}/library/source/audio_decoder/mp3_mad_wrapper.c
+    ${TOP_DIR}/library/source/audio_decoder/mp3_decoder.c
+    ${TOP_DIR}/library/source/audio_decoder/aac_helix_wrapper.c
+    ${TOP_DIR}/library/source/audio_decoder/aac_decoder.c
+    ${TOP_DIR}/library/source/audio_decoder/m4a_decoder.c
+    ${TOP_DIR}/library/source/audio_decoder/wav_decoder.c
+    ${TOP_DIR}/library/source/audio_extractor/mp3_extractor.c
+    ${TOP_DIR}/library/source/audio_extractor/aac_extractor.c
+    ${TOP_DIR}/library/source/audio_extractor/m4a_extractor.c
+    ${TOP_DIR}/library/source/audio_extractor/wav_extractor.c
+    ${TOP_DIR}/library/source/audio_resampler/audio_resampler.c
+    ${TOP_DIR}/library/source/audio_stream/sink_stream.c
+    ${TOP_DIR}/library/source/liteplayer_source.c
+    ${TOP_DIR}/library/source/liteplayer_parser.c
+    ${TOP_DIR}/library/source/liteplayer_debug.c
+    ${TOP_DIR}/library/source/liteplayer_main.c
+    ${TOP_DIR}/library/source/liteplayer_manager.c
 )
 
 # cflags: OS_LINUX, OS_ANDROID, OS_MACOSX, OS_IOS, OS_FREERTOS
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DOS_MACOSX")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DOS_LINUX")
 
 # cflag: libmad: FPM_64BIT/FPM_INTEL/FPM_ARM/FPM_MIPS/FPM_DEFAULT
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DFPM_64BIT")
@@ -101,14 +98,17 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DFPM_64BIT")
 # cflag: helix: __arm__/__amd64__, __GNUC__
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D__amd64__ -DUSE_DEFAULT_STDLIB")
 
+# cflag: if enable aac sbr
+#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DAAC_ENABLE_SBR")
+
 # cflag: libspeexdsp: FIXED_POINT/FLOATING_POINT, USE_NEON/USE_SSE
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DFIXED_POINT")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DFLOATING_POINT -DUSE_SSE")
 
 # cflag: resampler: ENABLE_SRC, CONFIG_SRC_QUALITY
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_SRC -DCONFIG_SRC_QUALITY=8")
 
 # cflags: compile paramters
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -g -Wall -Werror -Wno-error=pointer-to-int-cast -Wno-error=int-to-pointer-cast")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -g -Wall -Werror")
 
 # ldflags
 set(CMAKE_LDFLAGS "${CMAKE_LDFLAGS} -Wl,-O1 -Wl,--hash-style=gnu -Wl,--as-needed")

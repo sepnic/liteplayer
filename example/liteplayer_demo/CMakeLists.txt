@@ -11,11 +11,8 @@ include_directories(${TOP_DIR}/thirdparty/httpclient)
 include_directories(${TOP_DIR}/thirdparty/mbedtls/include)
 include_directories(${TOP_DIR}/thirdparty/codec)
 include_directories(${TOP_DIR}/thirdparty/speexdsp)
-
-# include files
-include_directories(${TOP_DIR}/library/core/include)
-include_directories(${TOP_DIR}/library/components/include)
-include_directories(${TOP_DIR}/player)
+include_directories(${TOP_DIR}/library/include)
+include_directories(${TOP_DIR}/library/source)
 include_directories(${TOP_DIR}/adapter)
 
 # include files
@@ -47,8 +44,6 @@ file(GLOB THIRDPARTY_SRC src
     ${TOP_DIR}/thirdparty/codec/aac-fdk/libArithCoding/src/*.cpp
     ${TOP_DIR}/thirdparty/codec/aac-fdk/libDRCdec/src/*.cpp
     ${TOP_DIR}/thirdparty/codec/aac-fdk/libSACdec/src/*.cpp
-)
-list(APPEND THIRDPARTY_SRC
     ${TOP_DIR}/thirdparty/speexdsp/resample.c
 )
 set (ADAPTER_SRC
@@ -62,9 +57,6 @@ if (ENABLE_TINYALSA)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_TINYALSA")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_SRC")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCONFIG_SRC_QUALITY=8")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCONFIG_SRC_OUT_RATE=48000")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCONFIG_SRC_OUT_CHANNELS=2")
-
     include_directories(${TOP_DIR}/thirdparty/tinyalsa/include)
     list(APPEND THIRDPARTY_SRC
         ${TOP_DIR}/thirdparty/tinyalsa/pcm.c
@@ -77,28 +69,26 @@ endif()
 
 # source files
 set (LITEPLAYER_SRC
-    ${TOP_DIR}/library/core/audio_element.c
-    ${TOP_DIR}/library/core/audio_event_iface.c
-    ${TOP_DIR}/library/core/audio_pipeline.c
-    ${TOP_DIR}/library/components/audio_decoder/mp3_pvmp3_wrapper.c
-    ${TOP_DIR}/library/components/audio_decoder/mp3_decoder.c
-    ${TOP_DIR}/library/components/audio_decoder/aac_fdk_wrapper.c
-    ${TOP_DIR}/library/components/audio_decoder/aac_decoder.c
-    ${TOP_DIR}/library/components/audio_decoder/m4a_decoder.c
-    ${TOP_DIR}/library/components/audio_decoder/wav_decoder.c
-    ${TOP_DIR}/library/components/audio_extractor/mp3_extractor.c
-    ${TOP_DIR}/library/components/audio_extractor/aac_extractor.c
-    ${TOP_DIR}/library/components/audio_extractor/m4a_extractor.c
-    ${TOP_DIR}/library/components/audio_extractor/wav_extractor.c
-    ${TOP_DIR}/library/components/audio_resampler/audio_resampler.c
-    ${TOP_DIR}/library/components/audio_stream/file_stream.c
-    ${TOP_DIR}/library/components/audio_stream/sink_stream.c
-    ${TOP_DIR}/library/components/audio_stream/http_stream.c
-    ${TOP_DIR}/player/liteplayer_source.c
-    ${TOP_DIR}/player/liteplayer_parser.c
-    ${TOP_DIR}/player/liteplayer_debug.c
-    ${TOP_DIR}/player/liteplayer_main.c
-    ${TOP_DIR}/player/liteplayer_manager.c
+    ${TOP_DIR}/library/source/esp_adf/audio_element.c
+    ${TOP_DIR}/library/source/esp_adf/audio_event_iface.c
+    ${TOP_DIR}/library/source/esp_adf/audio_pipeline.c
+    ${TOP_DIR}/library/source/audio_decoder/mp3_pvmp3_wrapper.c
+    ${TOP_DIR}/library/source/audio_decoder/mp3_decoder.c
+    ${TOP_DIR}/library/source/audio_decoder/aac_fdk_wrapper.c
+    ${TOP_DIR}/library/source/audio_decoder/aac_decoder.c
+    ${TOP_DIR}/library/source/audio_decoder/m4a_decoder.c
+    ${TOP_DIR}/library/source/audio_decoder/wav_decoder.c
+    ${TOP_DIR}/library/source/audio_extractor/mp3_extractor.c
+    ${TOP_DIR}/library/source/audio_extractor/aac_extractor.c
+    ${TOP_DIR}/library/source/audio_extractor/m4a_extractor.c
+    ${TOP_DIR}/library/source/audio_extractor/wav_extractor.c
+    ${TOP_DIR}/library/source/audio_resampler/audio_resampler.c
+    ${TOP_DIR}/library/source/audio_stream/sink_stream.c
+    ${TOP_DIR}/library/source/liteplayer_source.c
+    ${TOP_DIR}/library/source/liteplayer_parser.c
+    ${TOP_DIR}/library/source/liteplayer_debug.c
+    ${TOP_DIR}/library/source/liteplayer_main.c
+    ${TOP_DIR}/library/source/liteplayer_manager.c
 )
 
 # cflags: OS_LINUX, OS_ANDROID, OS_MACOSX, OS_IOS, OS_FREERTOS

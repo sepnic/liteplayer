@@ -18,9 +18,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "msgutils/os_time.h"
 #include "msgutils/os_logger.h"
-#include "esp_adf/audio_common.h"
 #include "tinyalsa/asoundlib.h"
 #include "tinyalsa_wrapper.h"
 

@@ -19,9 +19,9 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include "msgutils/os_thread.h"
 #include "msgutils/os_memory.h"
 #include "msgutils/os_logger.h"
-#include "esp_adf/audio_common.h"
 #include "liteplayer_main.h"
 #include "httpclient_wrapper.h"
 #include "fatfs_wrapper.h"
@@ -115,7 +115,6 @@ static int liteplayer_demo(const char *url)
         .file_priv = NULL,
         .open = fatfs_wrapper_open,
         .read = fatfs_wrapper_read,
-        .write = fatfs_wrapper_write,
         .filesize = fatfs_wrapper_filesize,
         .seek = fatfs_wrapper_seek,
         .close = fatfs_wrapper_close,
@@ -132,41 +131,36 @@ static int liteplayer_demo(const char *url)
     };
     liteplayer_register_http_wrapper(player, &http_ops);
 
-    if (liteplayer_set_data_source(player, url, LITEPLYAER_DEMO_THRESHOLD_MS) != ESP_OK) {
+    if (liteplayer_set_data_source(player, url, LITEPLYAER_DEMO_THRESHOLD_MS) != 0) {
         OS_LOGE(TAG, "Failed to set data source");
         goto test_done;
     }
 
-    if (liteplayer_prepare_async(player) != ESP_OK) {
+    if (liteplayer_prepare_async(player) != 0) {
         OS_LOGE(TAG, "Failed to prepare player");
         goto test_done;
     }
-
     while (player_state != LITEPLAYER_PREPARED && player_state != LITEPLAYER_ERROR) {
         OS_THREAD_SLEEP_MSEC(100);
     }
-
     if (player_state == LITEPLAYER_ERROR) {
         OS_LOGE(TAG, "Failed to prepare player");
         goto test_done;
     }
 
-    if (liteplayer_start(player) != ESP_OK) {
+    if (liteplayer_start(player) != 0) {
         OS_LOGE(TAG, "Failed to start player");
         goto test_done;
     }
-
     OS_MEMORY_DUMP();
-
     while (player_state != LITEPLAYER_COMPLETED && player_state != LITEPLAYER_ERROR) {
         OS_THREAD_SLEEP_MSEC(100);
     }
 
-    if (liteplayer_stop(player) != ESP_OK) {
+    if (liteplayer_stop(player) != 0) {
         OS_LOGE(TAG, "Failed to stop player");
         goto test_done;
     }
-
     while (player_state != LITEPLAYER_STOPPED) {
         OS_THREAD_SLEEP_MSEC(100);
     }
@@ -175,6 +169,10 @@ static int liteplayer_demo(const char *url)
 
 test_done:
     liteplayer_reset(player);
+    while (player_state != LITEPLAYER_IDLE) {
+        OS_THREAD_SLEEP_MSEC(100);
+    }
+
     liteplayer_destroy(player);
 
     OS_THREAD_SLEEP_MSEC(100);

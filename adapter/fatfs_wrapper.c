@@ -18,24 +18,22 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "msgutils/os_memory.h"
 #include "msgutils/os_logger.h"
-#include "esp_adf/audio_common.h"
-#include "audio_stream/file_stream.h"
 #include "fatfs_wrapper.h"
 
 #define TAG "[liteplayer]fatfs"
 
 struct fatfs_priv {
     const char *url;
-    enum file_mode mode;
     FILE *file;
     long content_pos;
     long content_len;
 };
 
-file_handle_t fatfs_wrapper_open(const char *url, enum file_mode mode, long long content_pos, void *file_priv)
+file_handle_t fatfs_wrapper_open(const char *url, long long content_pos, void *file_priv)
 {
-    struct fatfs_priv *priv = audio_calloc(1, sizeof(struct fatfs_priv));
+    struct fatfs_priv *priv = OS_CALLOC(1, sizeof(struct fatfs_priv));
     FILE *file = NULL;
 
     if (priv == NULL)
@@ -43,19 +41,14 @@ file_handle_t fatfs_wrapper_open(const char *url, enum file_mode mode, long long
 
     OS_LOGD(TAG, "Opening file:%s, content_pos:%d", url, (int)content_pos);
 
-    if (mode == FILE_READ)
-        file = fopen(url, "rb");
-    else
-        file = fopen(url, "wb+");
-
+    file = fopen(url, "rb");
     if (file == NULL) {
         OS_LOGE(TAG, "Failed to open file:%s", url);
-        audio_free(priv);
+        OS_FREE(priv);
         return NULL;
     }
 
     priv->url = url;
-    priv->mode = mode;
     priv->file = file;
     priv->content_pos = (long)content_pos;
 
@@ -78,18 +71,6 @@ int fatfs_wrapper_read(file_handle_t handle, char *buffer, int size)
         if (bytes_read > 0)
             priv->content_pos += bytes_read;
         return bytes_read;
-    }
-    return -1;
-}
-
-int fatfs_wrapper_write(file_handle_t handle, char *buffer, int size)
-{
-    struct fatfs_priv *priv = (struct fatfs_priv *)handle;
-    if (priv->file) {
-        size_t bytes_written = fwrite(buffer, 1, size, priv->file);
-        if (bytes_written > 0)
-            priv->content_pos += bytes_written;
-        return bytes_written;
     }
     return -1;
 }
@@ -118,10 +99,8 @@ void fatfs_wrapper_close(file_handle_t handle)
 {
     struct fatfs_priv *priv = (struct fatfs_priv *)handle;
     if (priv->file) {
-        if (priv->mode == FILE_WRITE)
-            fflush(priv->file);
         fclose(priv->file);
         priv->file = NULL;
     }
-    audio_free(priv);
+    OS_FREE(priv);
 }

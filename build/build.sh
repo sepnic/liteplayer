@@ -11,7 +11,7 @@ OUTPUT_BIN_DIR=${OUTPUT_DIR}/bin
 echo "Building libliteplayer"
 mkdir -p ${OUTPUT_LIB_DIR}/libliteplayer
 cd ${OUTPUT_LIB_DIR}/libliteplayer
-cmake ${TOP_DIR}/player
+cmake ${TOP_DIR}/library
 make
 
 # build liteplayer_demo bin
