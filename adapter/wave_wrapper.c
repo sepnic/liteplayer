@@ -86,19 +86,12 @@ enum wav_format {
     WAV_FMT_DVI_ADPCM = 0x0011,
 };
 
-#define BSWAP_16(x) \
-    (uint_16)( \
-              (((uint_16)(x) & 0x00ff) << 8) | \
-              (((uint_16)(x) & 0xff00) >> 8)   \
-             )
+#define BSWAP_16(x) (uint_16)( (((uint_16)(x) & 0x00ff) << 8) | (((uint_16)(x) & 0xff00) >> 8) )
 
-#define BSWAP_32(x) \
-    (uint_32)( \
-              (((uint_32)(x) & 0xff000000) >> 24) | \
-              (((uint_32)(x) & 0x00ff0000) >> 8)  | \
-              (((uint_32)(x) & 0x0000ff00) << 8)  | \
-              (((uint_32)(x) & 0x000000ff) << 24)   \
-             )
+#define BSWAP_32(x) (uint_32)( (((uint_32)(x) & 0xff000000) >> 24) | \
+                               (((uint_32)(x) & 0x00ff0000) >> 8)  | \
+                               (((uint_32)(x) & 0x0000ff00) << 8)  | \
+                               (((uint_32)(x) & 0x000000ff) << 24) )
 
 #if !defined(BYTE_ORDER_BIG_ENDIAN)
 #define COMPOSE_INT(a,b,c,d) ((a) | ((b)<<8) | ((c)<<16) | ((d)<<24))
