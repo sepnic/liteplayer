@@ -44,8 +44,7 @@ extern "C" {
     #define SMARTPTR_DUMP() do {} while (0)
 
 #else
-    void *smartptr_new_debug(size_t size, void (*free_cb)(void *ptr),
-                              const char *file, const char *func, int line);
+    void *smartptr_new_debug(size_t size, void (*free_cb)(void *ptr), const char *file, const char *func, int line);
     void smartptr_get_debug(void *ptr, const char *file, const char *func, int line);
     void smartptr_put_debug(void *ptr, const char *file, const char *func, int line);
     void smartptr_dump_debug();

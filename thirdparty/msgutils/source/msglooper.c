@@ -74,9 +74,6 @@ static void mlooper_free_msgnode(mlooper_t looper, struct message_node *node)
     else if (looper->msg_free != NULL)
         looper->msg_free(msg);
 
-    if (msg->notify_cb != NULL)
-        msg->notify_cb(msg, MESSAGE_DESTROY);
-
     OS_FREE(msg);
 }
 
@@ -141,31 +138,25 @@ static void *mlooper_thread_entry(void *arg)
         }
 
         if (msg != NULL) {
+            if (looper->watchdog_enable)
+                swwatchdog_start(looper->watchdog_node);
+
             if (node->timeout > 0 && node->timeout < now) {
                 OS_LOGE(LOG_TAG, "[%s]: Timeout, discard message: what=[%d]", looper->thread_name, msg->what);
-                if (msg->notify_cb != NULL)
-                    msg->notify_cb(msg, MESSAGE_TIMEOUT);
+                if (msg->timeout_cb != NULL)
+                    msg->timeout_cb(msg);
             }
             else {
-                if (looper->watchdog_enable)
-                    swwatchdog_start(looper->watchdog_node);
-
-                if (msg->notify_cb != NULL)
-                    msg->notify_cb(msg, MESSAGE_RUNNING);
-
                 if (msg->handle_cb != NULL)
                     msg->handle_cb(msg);
                 else if (looper->msg_handle != NULL)
                     looper->msg_handle(msg);
                 else
                     OS_LOGW(LOG_TAG, "[%s]: No message handler: what=[%d]", looper->thread_name, msg->what);
-
-                if (msg->notify_cb != NULL)
-                    msg->notify_cb(msg, MESSAGE_COMPLETED);
-
-                if (looper->watchdog_enable)
-                    swwatchdog_stop(looper->watchdog_node);
             }
+
+            if (looper->watchdog_enable)
+                swwatchdog_stop(looper->watchdog_node);
 
             mlooper_free_msgnode(looper, node);
         }
@@ -271,9 +262,6 @@ int mlooper_post_message_front(mlooper_t looper, struct message *msg)
     if (msg->timeout_ms > 0)
         node->timeout = now + msg->timeout_ms * 1000;
 
-    if (msg->notify_cb != NULL)
-        msg->notify_cb(msg, MESSAGE_PENDING);
-
     {
         OS_THREAD_MUTEX_LOCK(looper->msg_mutex);
 
@@ -310,9 +298,6 @@ int mlooper_post_message_delay(mlooper_t looper, struct message *msg, unsigned l
             node->timeout = now + msg->timeout_ms * 1000;
         }
     }
-
-    if (msg->notify_cb != NULL)
-        msg->notify_cb(msg, MESSAGE_PENDING);
 
     {
         OS_THREAD_MUTEX_LOCK(looper->msg_mutex);
@@ -489,7 +474,7 @@ struct message *message_obtain(int what, int arg1, int arg2, void *data)
 }
 
 struct message *message_obtain2(int what, int arg1, int arg2, void *data, unsigned long timeout_ms,
-                                message_handle_cb handle_cb, message_free_cb free_cb, message_notify_cb notify_cb)
+                                message_handle_cb handle_cb, message_timeout_cb timeout_cb, message_free_cb free_cb)
 {
     struct message *msg = OS_CALLOC(1, sizeof(struct message_node));
     if (msg == NULL) {
@@ -504,6 +489,6 @@ struct message *message_obtain2(int what, int arg1, int arg2, void *data, unsign
     msg->timeout_ms = timeout_ms;
     msg->handle_cb = handle_cb;
     msg->free_cb = free_cb;
-    msg->notify_cb = notify_cb;
+    msg->timeout_cb = timeout_cb;
     return msg;
 }

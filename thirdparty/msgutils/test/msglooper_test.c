@@ -28,10 +28,9 @@ static void msg_free(struct message *msg)
     OS_FREE(msg->data);
 }
 
-static void msg_notify(struct message *msg, enum message_status status)
+static void msg_timeout(struct message *msg)
 {
-    if (status == MESSAGE_TIMEOUT)
-        OS_LOGE(LOG_TAG, "--> Notify message: what=[%d] timeout", msg->what);
+    OS_LOGE(LOG_TAG, "--> Timeout message: what=[%d]", msg->what);
 }
 
 int main()
@@ -54,7 +53,7 @@ int main()
         priv = OS_MALLOC(sizeof(struct  priv_data));
         priv->str = OS_STRDUP("mlooper_post_message_delay");
         // timeout 2s
-        msg = message_obtain2(1000, 0, 0, priv, 2000, NULL, NULL, msg_notify);
+        msg = message_obtain2(1000, 0, 0, priv, 2000, NULL, msg_timeout, NULL);
         mlooper_post_message_delay(looper, msg, 2000); // delay 2s
     }
 
