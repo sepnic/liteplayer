@@ -12,7 +12,7 @@ include_directories(${TOP_DIR}/library/source)
 
 # source files
 set (THIRDPARTY_SRC
-    ${THIRDPARTY_DIR}/msgutils/source/memory_detect.c
+    ${THIRDPARTY_DIR}/msgutils/source/memory_debug.c
     ${THIRDPARTY_DIR}/msgutils/source/msglooper.c
     ${THIRDPARTY_DIR}/msgutils/source/msgqueue.c
     ${THIRDPARTY_DIR}/msgutils/source/ringbuf.c

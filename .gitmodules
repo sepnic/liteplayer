@@ -1,0 +1,3 @@
+[submodule "thirdparty/msgutils"]
+	path = thirdparty/msgutils
+	url = https://github.com/sepnic/msgutils
