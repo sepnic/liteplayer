@@ -17,6 +17,7 @@
 
 #include <stdio.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include "msgutils/os_thread.h"
 #include "msgutils/ringbuf.h"
@@ -62,7 +63,7 @@ static int socket_connect(const char *addr, int port)
     sockaddr_in.sin_family = AF_INET;
     sockaddr_in.sin_port = htons(port);
     sockaddr_in.sin_addr.s_addr = inet_addr(addr);
-    bzero(&(sockaddr_in.sin_zero), sizeof(sockaddr_in.sin_zero));
+    memset(&(sockaddr_in.sin_zero), 0x0, sizeof(sockaddr_in.sin_zero));
 
     if (connect(fd, (struct sockaddr *)(&sockaddr_in), sizeof(sockaddr_in)) < 0) {
         OS_LOGE(TAG, "Cannot connect to server\n");

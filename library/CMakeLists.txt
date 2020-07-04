@@ -110,6 +110,8 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DFIXED_POINT")
 
 # cflags: compile paramters
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -g -Wall -Werror")
+# cflags: if socketlen_t defined
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_SOCKLEN_T")
 
 # ldflags
 set(CMAKE_LDFLAGS "${CMAKE_LDFLAGS} -Wl,-O1 -Wl,--hash-style=gnu -Wl,--as-needed")

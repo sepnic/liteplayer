@@ -118,6 +118,8 @@ amm-info@iis.fraunhofer.de
   \sa lppTransposer(), main_audio.cpp, sbr_scale.h, \ref documentationOverview
 */
 
+#undef __ANDROID__
+
 #ifdef __ANDROID__
 #include "log/log.h"
 #endif
