@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
+project(liteplayer)
 
 set(TOP_DIR "${CMAKE_SOURCE_DIR}/..")
 set(THIRDPARTY_DIR "${TOP_DIR}/thirdparty")
@@ -19,10 +20,10 @@ set (THIRDPARTY_SRC
     ${THIRDPARTY_DIR}/msgutils/source/smartptr.c
     ${THIRDPARTY_DIR}/msgutils/source/sw_timer.c
     ${THIRDPARTY_DIR}/msgutils/source/sw_watchdog.c
-    ${THIRDPARTY_DIR}/msgutils/port/os_logger.c
-    ${THIRDPARTY_DIR}/msgutils/port/os_thread.c
-    ${THIRDPARTY_DIR}/msgutils/port/os_time.c
-    ${THIRDPARTY_DIR}/msgutils/port/os_timer.c
+    ${THIRDPARTY_DIR}/msgutils/osal/os_logger.c
+    ${THIRDPARTY_DIR}/msgutils/osal/os_thread.c
+    ${THIRDPARTY_DIR}/msgutils/osal/os_time.c
+    ${THIRDPARTY_DIR}/msgutils/osal/os_timer.c
     ${THIRDPARTY_DIR}/codec/mp3-mad/bit.c
     ${THIRDPARTY_DIR}/codec/mp3-mad/decoder.c
     ${THIRDPARTY_DIR}/codec/mp3-mad/fixed.c

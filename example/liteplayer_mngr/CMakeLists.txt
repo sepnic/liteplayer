@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
+project(liteplayer_demo)
 
 # Support tinalsa?
 #set (ENABLE_TINYALSA "YES")
