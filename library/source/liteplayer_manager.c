@@ -51,6 +51,7 @@ struct liteplayer_mngr {
     bool                 is_paused;
     bool                 is_completed;
     bool                 is_looping;
+    bool                 has_started;
 };
 
 enum {
@@ -207,11 +208,12 @@ static int manager_state_callback(enum liteplayer_state state, int errcode, void
         break;
 
     case LITEPLAYER_STARTED:
-        if (mngr->is_completed) {
+        if (mngr->has_started) {
             state_sync = mngr->is_paused;
         }
         mngr->is_completed = false;
         mngr->is_paused = false;
+        mngr->has_started = true;
         break;
 
     case LITEPLAYER_PAUSED:
@@ -219,7 +221,12 @@ static int manager_state_callback(enum liteplayer_state state, int errcode, void
         break;
 
     case LITEPLAYER_SEEKCOMPLETED:
-        state_sync = true;
+        state_sync = false;
+        if (!mngr->is_paused) {
+            struct message *msg = message_obtain(PLAYER_DO_START, 0, 0, mngr);
+            if (msg != NULL)
+                mlooper_post_message(mngr->looper, msg);
+        }
         break;
 
     case LITEPLAYER_CACHECOMPLETED:
@@ -459,6 +466,7 @@ int liteplayer_mngr_set_data_source(liteplayer_mngr_handle_t mngr, const char *u
     mngr->is_list = false;
     mngr->is_completed = false;
     mngr->is_paused = false;
+    mngr->has_started = false;
     OS_THREAD_MUTEX_UNLOCK(mngr->lock);
 
     if (strstr(url, DEFAULT_PLAYLIST_FILE_SUFFIX) != NULL) {

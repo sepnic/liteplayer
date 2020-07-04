@@ -59,7 +59,7 @@ static int generate_playlist(const char *path)
     }
     else {
         struct dirent *entry;
-        char buffer[256];
+        char buffer[512];
         FILE *file = fopen(PLAYLIST_FILE, "wb+");
         if (file == NULL) {
             OS_LOGE(TAG, "Failed to open playlist file");
@@ -211,13 +211,7 @@ static void *liteplayer_demo_thread(void *arg)
     }
     OS_MEMORY_DUMP();
     while (demo->state != LITEPLAYER_COMPLETED && demo->state != LITEPLAYER_ERROR) {
-        if (demo->state == LITEPLAYER_SEEKCOMPLETED) {
-            if (liteplayer_mngr_start(demo->mngr) != 0) {
-                OS_LOGE(TAG, "Failed to start player");
-                goto thread_exit;
-            }
-        }
-        else if (demo->state == LITEPLAYER_STOPPED || demo->state == LITEPLAYER_IDLE) {
+        if (demo->state == LITEPLAYER_STOPPED || demo->state == LITEPLAYER_IDLE) {
             goto thread_exit;
         }
         OS_THREAD_SLEEP_MSEC(100);
