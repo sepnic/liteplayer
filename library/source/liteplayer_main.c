@@ -1132,6 +1132,9 @@ void liteplayer_destroy(liteplayer_handle_t handle)
     if (handle == NULL)
         return;
 
+    if (handle->state != LITEPLAYER_IDLE)
+        liteplayer_reset(handle);
+
     OS_THREAD_MUTEX_DESTROY(handle->state_lock);
     OS_THREAD_MUTEX_DESTROY(handle->io_lock);
     audio_free(handle);
