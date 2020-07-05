@@ -307,7 +307,7 @@ static esp_err_t audio_element_on_cmd(audio_event_iface_msg_t *msg, void *contex
             audio_element_set_state_event(el, RESUMED_BIT);
             break;
         case AEL_MSG_CMD_SEEK:
-            OS_LOGV(TAG, "[%s] AEL_MSG_CMD_SEEK, state:%d, offset:%d", el->tag, el->state, el->offset);
+            OS_LOGV(TAG, "[%s] AEL_MSG_CMD_SEEK, state:%d, offset:%lld", el->tag, el->state, el->offset);
             if (el->state == AEL_STATE_INIT || el->state == AEL_STATE_RUNNING || el->state == AEL_STATE_PAUSED) {
                 if (el->offset >= 0 && audio_element_process_seek(el, el->offset) == ESP_OK)
                     el->offset = SEEK_COMPLETED;

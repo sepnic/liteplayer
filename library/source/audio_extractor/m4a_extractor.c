@@ -443,7 +443,7 @@ static AAC_ERR_T stszin(atom_parser_handle_t handle, uint32_t atom_size)
     * to store stsz header. And return fail if bigger than default buffer.
     */
     if (m4a_info->stsz_samplesize_entries*sizeof(int16_t) > STSZ_MAX_BUFFER) {
-        OS_LOGE(TAG, "Large STSZ(%u), out of memory", m4a_info->stsz_samplesize_entries*sizeof(int16_t));
+        OS_LOGE(TAG, "Large STSZ(%u), out of memory", (uint32_t)(m4a_info->stsz_samplesize_entries*sizeof(int16_t)));
         return AAC_ERR_NOMEM;
     }
     m4a_info->stsz_samplesize = (uint16_t *)audio_calloc(m4a_info->stsz_samplesize_entries, sizeof(uint16_t));

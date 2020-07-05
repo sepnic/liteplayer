@@ -91,7 +91,7 @@ static size_t drwav_on_read(void *pUserData, void *pBufferOut, size_t bytesToRea
 {
     wav_decoder_handle_t decoder = (wav_decoder_handle_t)pUserData;
     if (bytesToRead > decoder->buf_in.bytes_read) {
-        OS_LOGW(TAG, "Insufficient data: %d/%d", bytesToRead, decoder->buf_in.bytes_read);
+        OS_LOGW(TAG, "Insufficient data: %d/%d", (int)bytesToRead, decoder->buf_in.bytes_read);
         bytesToRead = decoder->buf_in.bytes_read;
     }
     if (bytesToRead > 0) {

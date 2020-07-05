@@ -421,7 +421,7 @@ int media_info_parse(struct media_source_info *source_info, struct media_codec_i
     }
 
 parse_succeed:
-    OS_LOGI(TAG, "MediaInfo: codec_type[%d], samplerate[%d], channels[%d], bits[%d], offset[%d], length[%d]",
+    OS_LOGI(TAG, "MediaInfo: codec_type[%d], samplerate[%d], channels[%d], bits[%d], offset[%ld], length[%ld]",
              source_info->source_type,
              codec_info->codec_samplerate, codec_info->codec_channels, codec_info->codec_bits,
              codec_info->content_pos, codec_info->content_len);

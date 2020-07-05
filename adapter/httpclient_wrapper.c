@@ -209,7 +209,7 @@ int httpclient_wrapper_seek(http_handle_t handle, long offset)
 {
     struct httpclient_priv *priv = (struct httpclient_priv *)handle;
 
-    OS_LOGD(TAG, "Seeking http client, content_pos=%d", offset);
+    OS_LOGD(TAG, "Seeking http client, content_pos=%ld", offset);
     priv->content_pos = offset;
     httpclient_wrapper_disconnect(priv);
     OS_THREAD_SLEEP_MSEC(50);

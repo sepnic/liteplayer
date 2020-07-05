@@ -134,7 +134,7 @@ static int httpclient_parse_url(const char *url, char *scheme, size_t max_scheme
     }
     else {
         if (max_scheme_len < host_ptr - scheme_ptr + 1) { /* including NULL-terminating char */
-            WARN("Scheme str is too long (%d < %d)", max_scheme_len, host_ptr - scheme_ptr + 1);
+            WARN("Scheme str is too long (%d < %d)", (int)max_scheme_len, (int)(host_ptr - scheme_ptr + 1));
             return HTTPCLIENT_ERROR_PARSE;
         }
         memcpy(scheme, scheme_ptr, host_ptr - scheme_ptr);
@@ -167,7 +167,7 @@ static int httpclient_parse_url(const char *url, char *scheme, size_t max_scheme
     }
 
     if (maxhost_len < host_len + 1) { /* including NULL-terminating char */
-        WARN("Host str is too small (%d >= %d)", maxhost_len, host_len + 1);
+        WARN("Host str is too small (%d >= %d)", (int)maxhost_len, (int)(host_len + 1));
         return HTTPCLIENT_ERROR_PARSE;
     }
     memcpy(host, host_ptr, host_len);
@@ -188,7 +188,7 @@ static int httpclient_parse_url(const char *url, char *scheme, size_t max_scheme
     }
 
     if (max_path_len < path_len + 1) { /* including NULL-terminating char */
-        WARN("Path str is too small (%d >= %d)", max_path_len, path_len + 1);
+        WARN("Path str is too small (%d >= %d)", (int)max_path_len, (int)(path_len + 1));
         return HTTPCLIENT_ERROR_PARSE;
     }
     memcpy(path, path_ptr, path_len);
