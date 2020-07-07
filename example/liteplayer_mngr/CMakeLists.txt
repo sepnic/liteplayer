@@ -123,8 +123,8 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_SOCKLEN_T")
 set(CMAKE_LDFLAGS "${CMAKE_LDFLAGS} -Wl,-O1 -Wl,--hash-style=gnu -Wl,--as-needed")
 
 
-LINK_DIRECTORIES(${LIB_DIR}/libliteplayer)
+LINK_DIRECTORIES(${LIB_DIR}/liteplayercore)
 
 # liteplayer_mngr
 add_executable(liteplayer_mngr liteplayer_mngr.c ${ADAPTER_SRC} ${THIRDPARTY_SRC})
-target_link_libraries(liteplayer_mngr libliteplayer_s.a pthread m)
+target_link_libraries(liteplayer_mngr liteplayercore_s.a pthread m)

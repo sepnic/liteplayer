@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
-project(liteplayer)
+project(liteplayercore)
 
 set(TOP_DIR "${CMAKE_SOURCE_DIR}/..")
 set(THIRDPARTY_DIR "${TOP_DIR}/thirdparty")
@@ -118,6 +118,6 @@ set(CMAKE_LDFLAGS "${CMAKE_LDFLAGS} -Wl,-O1 -Wl,--hash-style=gnu -Wl,--as-needed
 
 #message("CMAKE_C_FLAGS: ${CMAKE_C_FLAGS}")
 
-# liteplayer lib
-add_library(liteplayer   SHARED ${THIRDPARTY_SRC} ${LITEPLAYER_SRC})
-add_library(liteplayer_s STATIC ${THIRDPARTY_SRC} ${LITEPLAYER_SRC})
+# liteplayercore lib
+add_library(liteplayercore   SHARED ${THIRDPARTY_SRC} ${LITEPLAYER_SRC})
+add_library(liteplayercore_s STATIC ${THIRDPARTY_SRC} ${LITEPLAYER_SRC})

@@ -163,7 +163,7 @@ static const UCHAR mapWg4Cfg4[]  = {3, 0, 1, 2};
 static const UCHAR mapWg4Cfg5[]  = {4, 0, 1, 2, 3};
 static const UCHAR mapWg4Cfg6[]  = {4, 0, 1, 2, 3, 5};
 static const UCHAR mapWg4Cfg7[]  = {6, 0, 1, 2, 3, 4, 5, 7};
-static const UCHAR mapWg4Cfg14[] = {6, 0, 1, 2, 3, 4, 5, 7};
+//static const UCHAR mapWg4Cfg14[] = {6, 0, 1, 2, 3, 4, 5, 7};
 
 const CHANNEL_MAP_INFO FDK_mapInfoTabWg4[] =
     {/* chCfg,  map,         numCh */

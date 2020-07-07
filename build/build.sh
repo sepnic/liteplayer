@@ -7,10 +7,10 @@ OUTPUT_DIR=${PWD}/out
 OUTPUT_LIB_DIR=${OUTPUT_DIR}/lib
 OUTPUT_BIN_DIR=${OUTPUT_DIR}/bin
 
-# build libliteplayer lib
-echo "Building libliteplayer"
-mkdir -p ${OUTPUT_LIB_DIR}/libliteplayer
-cd ${OUTPUT_LIB_DIR}/libliteplayer
+# build liteplayercore lib
+echo "Building liteplayercore"
+mkdir -p ${OUTPUT_LIB_DIR}/liteplayercore
+cd ${OUTPUT_LIB_DIR}/liteplayercore
 cmake ${TOP_DIR}/library
 make
 
