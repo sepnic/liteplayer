@@ -43,7 +43,7 @@ LOCAL_SRC_FILES := \
     ${TOP_DIR}/library/source/liteplayer_manager.c \
     ${TOP_DIR}/adapter/httpclient_wrapper.c \
     ${TOP_DIR}/adapter/fatfs_wrapper.c \
-    ${TOP_DIR}/adapter/wave_wrapper.c
+    ${TOP_DIR}/adapter/opensles_wrapper.c
 
 LOCAL_C_INCLUDES += \
     ${TOP_DIR}/library/include \
