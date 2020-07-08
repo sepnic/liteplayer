@@ -48,7 +48,7 @@ sink_handle_t opensles_wrapper_open(int samplerate, int channels, void *sink_pri
 
 int opensles_wrapper_write(sink_handle_t handle, char *buffer, int size)
 {
-    OS_LOGD(TAG, "Writing OpenSLES: buffer=%d, size=%d", buffer, size);
+    OS_LOGD(TAG, "Writing OpenSLES: buffer=%p, size=%d", buffer, size);
     // todo
     return size;
 }

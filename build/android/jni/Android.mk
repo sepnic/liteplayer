@@ -66,9 +66,11 @@ LOCAL_C_INCLUDES += \
     ${TOP_DIR}/thirdparty/codec/aac-fdk/libDRCdec/include \
     ${TOP_DIR}/thirdparty/codec/aac-fdk/libSACdec/include
 
+LOCAL_CFLAGS += -DOS_ANDROID
 LOCAL_CFLAGS += -Wall -Werror -Wno-error=unused-function -Wno-error=unused-variable -Wno-error=inline-asm
 LOCAL_CFLAGS += -DAAC_ENABLE_SBR -DFIXED_POINT -D_SOCKLEN_T
 
+LOCAL_LDLIBS := -llog
 LOCAL_SHARED_LIBRARIES += msgutils
 
 LOCAL_MODULE := libliteplayer
