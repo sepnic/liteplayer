@@ -55,7 +55,7 @@ int opensles_wrapper_write(sink_handle_t handle, char *buffer, int size)
 
 void opensles_wrapper_close(sink_handle_t handle)
 {
-    struct wave_priv *priv = (struct wave_priv *)handle;
+    struct opensles_priv *priv = (struct opensles_priv *)handle;
     OS_LOGD(TAG, "closing OpenSLES");
     // todo
     OS_FREE(priv);
