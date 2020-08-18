@@ -96,7 +96,7 @@ LOCAL_SRC_FILES := \
     ${THIRDPARTY_FILES} \
     ${TOP_DIR}/adapter/httpclient_wrapper.c \
     ${TOP_DIR}/adapter/fatfs_wrapper.c \
-    ${TOP_DIR}/adapter/opensles_wrapper.c
+    ${TOP_DIR}/adapter/opensles_wrapper.cpp
 LOCAL_C_INCLUDES += \
     ${TOP_DIR}/library/include \
     ${TOP_DIR}/adapter \
@@ -105,7 +105,7 @@ LOCAL_C_INCLUDES += \
     ${TOP_DIR}/thirdparty/mbedtls/include
 LOCAL_CFLAGS += -DOS_ANDROID -D_SOCKLEN_T -Wno-error=inline-asm
 LOCAL_CFLAGS += -Wall -Werror
-LOCAL_LDLIBS := -llog
+LOCAL_LDLIBS := -llog -lOpenSLES
 LOCAL_SHARED_LIBRARIES += msgutils
 LOCAL_MODULE := liteplayeradapter
 include $(BUILD_SHARED_LIBRARY)
