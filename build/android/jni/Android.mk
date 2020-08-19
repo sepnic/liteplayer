@@ -83,7 +83,7 @@ LOCAL_CFLAGS += -DOS_ANDROID -DAAC_ENABLE_SBR -DFIXED_POINT
 LOCAL_CFLAGS += -Wall -Werror -Wno-error=unused-function -Wno-error=unused-variable
 LOCAL_LDLIBS := -llog
 LOCAL_SHARED_LIBRARIES += msgutils
-LOCAL_MODULE := libliteplayercore
+LOCAL_MODULE := libliteplayer_core
 include $(BUILD_SHARED_LIBRARY)
 
 ## liteplayeradapter
@@ -107,5 +107,5 @@ LOCAL_CFLAGS += -DOS_ANDROID -D_SOCKLEN_T -Wno-error=inline-asm
 LOCAL_CFLAGS += -Wall -Werror
 LOCAL_LDLIBS := -llog -lOpenSLES
 LOCAL_SHARED_LIBRARIES += msgutils
-LOCAL_MODULE := liteplayeradapter
+LOCAL_MODULE := liteplayer_adapter
 include $(BUILD_SHARED_LIBRARY)

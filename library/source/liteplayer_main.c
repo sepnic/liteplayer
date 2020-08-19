@@ -1104,7 +1104,7 @@ int liteplayer_get_position(liteplayer_handle_t handle, int *msec)
     long long position = handle->sink_position;
     int seek_time = handle->seek_time;
 
-    if (samplerate == 0 || channels == 0 || bits == 0 || position == 0) {
+    if (samplerate == 0 || channels == 0 || bits == 0) {
         *msec = 0;
         return ESP_OK;
     }
