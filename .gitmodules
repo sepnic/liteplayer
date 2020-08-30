@@ -1,3 +1,6 @@
 [submodule "thirdparty/msgutils"]
 	path = thirdparty/msgutils
 	url = https://github.com/sepnic/msgutils
+[submodule "example/liteplayer_android"]
+	path = example/liteplayer_android
+	url = https://github.com/sepnic/liteplayer_android.git
