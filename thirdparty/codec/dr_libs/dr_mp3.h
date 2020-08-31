@@ -1,6 +1,6 @@
 /*
 MP3 audio decoder. Choice of public domain or MIT-0. See license statements at the end of this file.
-dr_mp3 - v0.6.9 - 2020-04-30
+dr_mp3 - v0.6.16 - 2020-08-02
 
 David Reid - mackron@gmail.com
 
@@ -90,42 +90,49 @@ Build Options
 extern "C" {
 #endif
 
+#define DRMP3_STRINGIFY(x)      #x
+#define DRMP3_XSTRINGIFY(x)     DRMP3_STRINGIFY(x)
+
+#define DRMP3_VERSION_MAJOR     0
+#define DRMP3_VERSION_MINOR     6
+#define DRMP3_VERSION_REVISION  16
+#define DRMP3_VERSION_STRING    DRMP3_XSTRINGIFY(DRMP3_VERSION_MAJOR) "." DRMP3_XSTRINGIFY(DRMP3_VERSION_MINOR) "." DRMP3_XSTRINGIFY(DRMP3_VERSION_REVISION)
+
 #include <stddef.h> /* For size_t. */
 
-/* Sized types. Prefer built-in types. Fall back to stdint. */
-#ifdef _MSC_VER
-    #if defined(__clang__)
+/* Sized types. */
+typedef   signed char           drmp3_int8;
+typedef unsigned char           drmp3_uint8;
+typedef   signed short          drmp3_int16;
+typedef unsigned short          drmp3_uint16;
+typedef   signed int            drmp3_int32;
+typedef unsigned int            drmp3_uint32;
+#if defined(_MSC_VER)
+    typedef   signed __int64    drmp3_int64;
+    typedef unsigned __int64    drmp3_uint64;
+#else
+    #if defined(__GNUC__)
         #pragma GCC diagnostic push
-        #pragma GCC diagnostic ignored "-Wlanguage-extension-token"
-        #pragma GCC diagnostic ignored "-Wlong-long"        
-        #pragma GCC diagnostic ignored "-Wc++11-long-long"
+        #pragma GCC diagnostic ignored "-Wlong-long"
+        #if defined(__clang__)
+            #pragma GCC diagnostic ignored "-Wc++11-long-long"
+        #endif
     #endif
-    typedef   signed __int8  drmp3_int8;
-    typedef unsigned __int8  drmp3_uint8;
-    typedef   signed __int16 drmp3_int16;
-    typedef unsigned __int16 drmp3_uint16;
-    typedef   signed __int32 drmp3_int32;
-    typedef unsigned __int32 drmp3_uint32;
-    typedef   signed __int64 drmp3_int64;
-    typedef unsigned __int64 drmp3_uint64;
-    #if defined(__clang__)
+    typedef   signed long long  drmp3_int64;
+    typedef unsigned long long  drmp3_uint64;
+    #if defined(__GNUC__)
         #pragma GCC diagnostic pop
     #endif
-#else
-    #include <stdint.h>
-    typedef int8_t           drmp3_int8;
-    typedef uint8_t          drmp3_uint8;
-    typedef int16_t          drmp3_int16;
-    typedef uint16_t         drmp3_uint16;
-    typedef int32_t          drmp3_int32;
-    typedef uint32_t         drmp3_uint32;
-    typedef int64_t          drmp3_int64;
-    typedef uint64_t         drmp3_uint64;
 #endif
-typedef drmp3_uint8          drmp3_bool8;
-typedef drmp3_uint32         drmp3_bool32;
-#define DRMP3_TRUE           1
-#define DRMP3_FALSE          0
+#if defined(__LP64__) || defined(_WIN64) || (defined(__x86_64__) && !defined(__ILP32__)) || defined(_M_X64) || defined(__ia64) || defined (_M_IA64) || defined(__aarch64__) || defined(__powerpc64__)
+    typedef drmp3_uint64        drmp3_uintptr;
+#else
+    typedef drmp3_uint32        drmp3_uintptr;
+#endif
+typedef drmp3_uint8             drmp3_bool8;
+typedef drmp3_uint32            drmp3_bool32;
+#define DRMP3_TRUE              1
+#define DRMP3_FALSE             0
 
 #if !defined(DRMP3_API)
     #if defined(DRMP3_DLL)
@@ -235,6 +242,11 @@ typedef drmp3_int32 drmp3_result;
 #else
     #define DRMP3_INLINE
 #endif
+
+
+DRMP3_API void drmp3_version(drmp3_uint32* pMajor, drmp3_uint32* pMinor, drmp3_uint32* pRevision);
+DRMP3_API const char* drmp3_version_string(void);
+
 
 /*
 Low Level Push API
@@ -510,9 +522,32 @@ DRMP3_API void drmp3_free(void* p, const drmp3_allocation_callbacks* pAllocation
  ************************************************************************************************************************************************************
  ************************************************************************************************************************************************************/
 #if defined(DR_MP3_IMPLEMENTATION) || defined(DRMP3_IMPLEMENTATION)
+#ifndef dr_mp3_c
+#define dr_mp3_c
+
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h> /* For INT_MAX */
+
+DRMP3_API void drmp3_version(drmp3_uint32* pMajor, drmp3_uint32* pMinor, drmp3_uint32* pRevision)
+{
+    if (pMajor) {
+        *pMajor = DRMP3_VERSION_MAJOR;
+    }
+
+    if (pMinor) {
+        *pMinor = DRMP3_VERSION_MINOR;
+    }
+
+    if (pRevision) {
+        *pRevision = DRMP3_VERSION_REVISION;
+    }
+}
+
+DRMP3_API const char* drmp3_version_string(void)
+{
+    return DRMP3_VERSION_STRING;
+}
 
 /* Disable SIMD when compiling with TCC for now. */
 #if defined(__TINYC__)
@@ -2617,7 +2652,10 @@ static drmp3_uint32 drmp3_decode_next_frame_ex__callbacks(drmp3* pMP3, drmp3d_sa
             size_t bytesRead;
 
             /* First we need to move the data down. */
-            memmove(pMP3->pData, pMP3->pData + pMP3->dataConsumed, pMP3->dataSize);
+            if (pMP3->pData != NULL) {
+                memmove(pMP3->pData, pMP3->pData + pMP3->dataConsumed, pMP3->dataSize);
+            }
+
             pMP3->dataConsumed = 0;
 
             if (pMP3->dataCapacity < DRMP3_DATA_CHUNK_SIZE) {
@@ -2718,11 +2756,12 @@ static drmp3_uint32 drmp3_decode_next_frame_ex__memory(drmp3* pMP3, drmp3d_sampl
     }
 
     pcmFramesRead = drmp3dec_decode_frame(&pMP3->decoder, pMP3->memory.pData + pMP3->memory.currentReadPos, (int)(pMP3->memory.dataSize - pMP3->memory.currentReadPos), pPCMFrames, &info);
-
-    pMP3->pcmFramesConsumedInMP3Frame  = 0;
-    pMP3->pcmFramesRemainingInMP3Frame = pcmFramesRead;
-    pMP3->mp3FrameChannels             = info.channels;
-    pMP3->mp3FrameSampleRate           = info.hz;
+    if (pcmFramesRead > 0) {
+        pMP3->pcmFramesConsumedInMP3Frame  = 0;
+        pMP3->pcmFramesRemainingInMP3Frame = pcmFramesRead;
+        pMP3->mp3FrameChannels             = info.channels;
+        pMP3->mp3FrameSampleRate           = info.hz;
+    }
 
     /* Consume the data. */
     pMP3->memory.currentReadPos += (size_t)info.frame_bytes;
@@ -3608,7 +3647,7 @@ DRMP3_API drmp3_uint64 drmp3_read_pcm_frames_f32(drmp3* pMP3, drmp3_uint64 frame
                 break;
             }
 
-            drmp3_s16_to_f32((float*)DRMP3_OFFSET_PTR(pBufferOut, sizeof(drmp3_int16) * totalPCMFramesRead * pMP3->channels), pTempS16, framesJustRead * pMP3->channels);
+            drmp3_s16_to_f32((float*)DRMP3_OFFSET_PTR(pBufferOut, sizeof(float) * totalPCMFramesRead * pMP3->channels), pTempS16, framesJustRead * pMP3->channels);
             totalPCMFramesRead += framesJustRead;
         }
 
@@ -4305,7 +4344,8 @@ DRMP3_API void drmp3_free(void* p, const drmp3_allocation_callbacks* pAllocation
     }
 }
 
-#endif /*DR_MP3_IMPLEMENTATION*/
+#endif  /* dr_mp3_c */
+#endif  /*DR_MP3_IMPLEMENTATION*/
 
 /*
 DIFFERENCES BETWEEN minimp3 AND dr_mp3
@@ -4390,6 +4430,33 @@ counts rather than sample counts.
 /*
 REVISION HISTORY
 ================
+v0.6.16 - 2020-08-02
+  - Simplify sized types.
+
+v0.6.15 - 2020-07-25
+  - Fix a compilation warning.
+
+v0.6.14 - 2020-07-23
+  - Fix undefined behaviour with memmove().
+
+v0.6.13 - 2020-07-06
+  - Fix a bug when converting from s16 to f32 in drmp3_read_pcm_frames_f32().
+
+v0.6.12 - 2020-06-23
+  - Add include guard for the implementation section.
+
+v0.6.11 - 2020-05-26
+  - Fix use of uninitialized variable error.
+
+v0.6.10 - 2020-05-16
+  - Add compile-time and run-time version querying.
+    - DRMP3_VERSION_MINOR
+    - DRMP3_VERSION_MAJOR
+    - DRMP3_VERSION_REVISION
+    - DRMP3_VERSION_STRING
+    - drmp3_version()
+    - drmp3_version_string()
+
 v0.6.9 - 2020-04-30
   - Change the `pcm` parameter of drmp3dec_decode_frame() to a `const drmp3_uint8*` for consistency with internal APIs.
 
