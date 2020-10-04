@@ -20,7 +20,7 @@
 #include <string.h>
 
 #include "mp3-pvmp3/include/pvmp3decoder_api.h"
-#include "msgutils/os_logger.h"
+#include "cutils/os_logger.h"
 #include "esp_adf/audio_common.h"
 #include "esp_adf/audio_element.h"
 #include "audio_extractor/mp3_extractor.h"

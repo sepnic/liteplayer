@@ -30,8 +30,8 @@
 #include <string.h>
 #include <stdarg.h>
 
-#include "msgutils/ringbuf.h"
-#include "msgutils/os_logger.h"
+#include "cutils/ringbuf.h"
+#include "cutils/os_logger.h"
 #include "esp_adf/audio_element.h"
 #include "esp_adf/queue.h"
 #include "esp_adf/audio_pipeline.h"

@@ -18,7 +18,7 @@
 #ifndef _LITEPLAYER_CONFIG_H_
 #define _LITEPLAYER_CONFIG_H_
 
-#include "msgutils/os_thread.h"
+#include "cutils/os_thread.h"
 
 #ifdef __cplusplus
 extern "C" {

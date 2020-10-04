@@ -18,7 +18,7 @@
 #ifndef _LITEPLAYER_MEDIASOURCE_H_
 #define _LITEPLAYER_MEDIASOURCE_H_
 
-#include "msgutils/ringbuf.h"
+#include "cutils/ringbuf.h"
 #include "liteplayer_adapter.h"
 
 #ifdef __cplusplus

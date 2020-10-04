@@ -4,22 +4,32 @@ LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 TOP_DIR := ${LOCAL_PATH}/../../..
 LOCAL_SRC_FILES := \
-    ${TOP_DIR}/thirdparty/msgutils/source/memory_debug.c \
-    ${TOP_DIR}/thirdparty/msgutils/source/msglooper.c \
-    ${TOP_DIR}/thirdparty/msgutils/source/msgqueue.c \
-    ${TOP_DIR}/thirdparty/msgutils/source/ringbuf.c \
-    ${TOP_DIR}/thirdparty/msgutils/source/smartptr.c \
-    ${TOP_DIR}/thirdparty/msgutils/source/sw_timer.c \
-    ${TOP_DIR}/thirdparty/msgutils/source/sw_watchdog.c \
+    ${TOP_DIR}/thirdparty/msgutils/source/cutils/memory_debug.c \
+    ${TOP_DIR}/thirdparty/msgutils/source/cutils/msglooper.c \
+    ${TOP_DIR}/thirdparty/msgutils/source/cutils/msgqueue.c \
+    ${TOP_DIR}/thirdparty/msgutils/source/cutils/ringbuf.c \
+    ${TOP_DIR}/thirdparty/msgutils/source/cutils/sw_timer.c \
+    ${TOP_DIR}/thirdparty/msgutils/source/cutils/sw_watchdog.c \
     ${TOP_DIR}/thirdparty/msgutils/osal/os_logger.c \
     ${TOP_DIR}/thirdparty/msgutils/osal/os_thread.c \
     ${TOP_DIR}/thirdparty/msgutils/osal/os_time.c \
     ${TOP_DIR}/thirdparty/msgutils/osal/os_timer.c \
-    ${TOP_DIR}/thirdparty/msgutils/source/class_debug.cpp \
-    ${TOP_DIR}/thirdparty/msgutils/source/Looper.cpp \
-    ${TOP_DIR}/thirdparty/msgutils/source/Thread.cpp
+    ${TOP_DIR}/thirdparty/msgutils/source/utils/Looper.cpp \
+    ${TOP_DIR}/thirdparty/msgutils/source/utils/Thread.cpp \
+    ${TOP_DIR}/thirdparty/msgutils/source/utils/cJSON.cpp \
+    ${TOP_DIR}/thirdparty/msgutils/source/utils/JsonWrapper.cpp \
+    ${TOP_DIR}/thirdparty/msgutils/source/utils/RefBase.cpp \
+    ${TOP_DIR}/thirdparty/msgutils/source/utils/SharedBuffer.cpp \
+    ${TOP_DIR}/thirdparty/msgutils/source/utils/safe_iop.c \
+    ${TOP_DIR}/thirdparty/msgutils/source/utils/VectorImpl.cpp \
+    ${TOP_DIR}/thirdparty/msgutils/source/utils/Unicode.cpp \
+    ${TOP_DIR}/thirdparty/msgutils/source/utils/Static.cpp \
+    ${TOP_DIR}/thirdparty/msgutils/source/utils/String8.cpp \
+    ${TOP_DIR}/thirdparty/msgutils/source/utils/String16.cpp \
+    ${TOP_DIR}/thirdparty/msgutils/source/utils/StringUtils.cpp
 LOCAL_C_INCLUDES += ${TOP_DIR}/thirdparty/msgutils/include
 LOCAL_CFLAGS += -Wall -Werror -DOS_ANDROID
+LOCAL_CPPFLAGS += -Wall -Werror -DOS_ANDROID -std=gnu++11
 LOCAL_LDLIBS := -llog
 LOCAL_MODULE := libmsgutils
 include $(BUILD_SHARED_LIBRARY)

@@ -17,10 +17,10 @@
 
 #include <stdio.h>
 
-#include "msgutils/os_thread.h"
-#include "msgutils/os_logger.h"
-#include "msgutils/ringbuf.h"
-#include "msgutils/common_list.h"
+#include "cutils/os_thread.h"
+#include "cutils/os_logger.h"
+#include "cutils/ringbuf.h"
+#include "cutils/common_list.h"
 #include "esp_adf/audio_common.h"
 
 #include "liteplayer_config.h"

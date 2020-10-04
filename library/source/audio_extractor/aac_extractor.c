@@ -19,7 +19,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "msgutils/os_logger.h"
+#include "cutils/os_logger.h"
 #include "esp_adf/audio_common.h"
 #include "audio_extractor/aac_extractor.h"
 

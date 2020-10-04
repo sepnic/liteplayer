@@ -20,7 +20,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "msgutils/ringbuf.h"
+#include "cutils/ringbuf.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 2.8)
-project(liteplayercore)
+cmake_minimum_required(VERSION 3.4.1)
+project(liteplayer_core)
 
 set(TOP_DIR "${CMAKE_SOURCE_DIR}/..")
 set(THIRDPARTY_DIR "${TOP_DIR}/thirdparty")
@@ -13,13 +13,12 @@ include_directories(${TOP_DIR}/library/source)
 
 # source files
 set (THIRDPARTY_SRC
-    ${THIRDPARTY_DIR}/msgutils/source/memory_debug.c
-    ${THIRDPARTY_DIR}/msgutils/source/msglooper.c
-    ${THIRDPARTY_DIR}/msgutils/source/msgqueue.c
-    ${THIRDPARTY_DIR}/msgutils/source/ringbuf.c
-    ${THIRDPARTY_DIR}/msgutils/source/smartptr.c
-    ${THIRDPARTY_DIR}/msgutils/source/sw_timer.c
-    ${THIRDPARTY_DIR}/msgutils/source/sw_watchdog.c
+    ${THIRDPARTY_DIR}/msgutils/source/cutils/memory_debug.c
+    ${THIRDPARTY_DIR}/msgutils/source/cutils/msglooper.c
+    ${THIRDPARTY_DIR}/msgutils/source/cutils/msgqueue.c
+    ${THIRDPARTY_DIR}/msgutils/source/cutils/ringbuf.c
+    ${THIRDPARTY_DIR}/msgutils/source/cutils/sw_timer.c
+    ${THIRDPARTY_DIR}/msgutils/source/cutils/sw_watchdog.c
     ${THIRDPARTY_DIR}/msgutils/osal/os_logger.c
     ${THIRDPARTY_DIR}/msgutils/osal/os_thread.c
     ${THIRDPARTY_DIR}/msgutils/osal/os_time.c
@@ -109,15 +108,12 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DFIXED_POINT")
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_SRC -DCONFIG_SRC_QUALITY=8")
 
 # cflags: compile paramters
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -g -Wall -Werror")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -Wall -Werror")
 # cflags: if socketlen_t defined
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_SOCKLEN_T")
 
-# ldflags
-set(CMAKE_LDFLAGS "${CMAKE_LDFLAGS} -Wl,-O1 -Wl,--hash-style=gnu -Wl,--as-needed")
-
 #message("CMAKE_C_FLAGS: ${CMAKE_C_FLAGS}")
 
-# liteplayercore lib
-add_library(liteplayercore   SHARED ${THIRDPARTY_SRC} ${LITEPLAYER_SRC})
-add_library(liteplayercore_s STATIC ${THIRDPARTY_SRC} ${LITEPLAYER_SRC})
+# liteplayer_core lib
+add_library(liteplayer_core   SHARED ${THIRDPARTY_SRC} ${LITEPLAYER_SRC})
+add_library(liteplayer_core_s STATIC ${THIRDPARTY_SRC} ${LITEPLAYER_SRC})

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.4.1)
 project(liteplayer_demo)
 
 # Support tinalsa?
@@ -31,7 +31,7 @@ include_directories(${TOP_DIR}/thirdparty/codec/aac-fdk/libSACdec/include)
 
 # source files
 file(GLOB THIRDPARTY_SRC src
-    ${TOP_DIR}/thirdparty/msgutils/source/*.c
+    ${TOP_DIR}/thirdparty/msgutils/source/cutils/*.c
     ${TOP_DIR}/thirdparty/msgutils/osal/*.c
     ${TOP_DIR}/thirdparty/mbedtls/library/*.c
     ${TOP_DIR}/thirdparty/httpclient/*.c
@@ -110,12 +110,9 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DFLOATING_POINT -DUSE_SSE")
 # cflag: resampler: ENABLE_SRC, CONFIG_SRC_QUALITY
 
 # cflags: compile paramters
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -g -Wall -Werror -Wno-error=unused-function")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -Wall -Werror -Wno-error=unused-function")
 # cflags: if socketlen_t defined
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_SOCKLEN_T")
-
-# ldflags
-set(CMAKE_LDFLAGS "${CMAKE_LDFLAGS} -Wl,-O1 -Wl,--hash-style=gnu -Wl,--as-needed")
 
 #message("CMAKE_C_FLAGS: ${CMAKE_C_FLAGS}")
 

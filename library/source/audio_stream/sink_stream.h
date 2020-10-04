@@ -18,7 +18,7 @@
 #ifndef _SINK_STREAM_H_
 #define _SINK_STREAM_H_
 
-#include "msgutils/os_thread.h"
+#include "cutils/os_thread.h"
 #include "esp_adf/audio_element.h"
 #include "esp_adf/audio_common.h"
 #include "liteplayer_adapter.h"

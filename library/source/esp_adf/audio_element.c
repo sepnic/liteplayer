@@ -30,7 +30,7 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "msgutils/os_logger.h"
+#include "cutils/os_logger.h"
 #include "esp_adf/queue.h"
 #include "esp_adf/audio_event_iface.h"
 #include "esp_adf/audio_element.h"

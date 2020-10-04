@@ -20,7 +20,7 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "msgutils/os_logger.h"
+#include "cutils/os_logger.h"
 #include "esp_adf/audio_common.h"
 #include "speex/speex_resampler.h"
 #include "audio_resampler/audio_resampler.h"

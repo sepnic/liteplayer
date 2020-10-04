@@ -24,11 +24,11 @@
 #include <SLES/OpenSLES.h>
 #include <SLES/OpenSLES_Android.h>
 
-#include "msgutils/os_memory.h"
-#include "msgutils/os_thread.h"
-#include "msgutils/os_time.h"
-#include "msgutils/os_logger.h"
-#include "msgutils/Mutex.hpp"
+#include "cutils/os_memory.h"
+#include "cutils/os_thread.h"
+#include "cutils/os_time.h"
+#include "cutils/os_logger.h"
+#include "utils/Mutex.h"
 #include "opensles_wrapper.h"
 
 #define TAG "[liteplayer]opensles"

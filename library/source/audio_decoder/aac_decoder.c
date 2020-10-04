@@ -20,7 +20,7 @@
 #include <string.h>
 #include <stdint.h>
 
-#include "msgutils/os_logger.h"
+#include "cutils/os_logger.h"
 #include "esp_adf/audio_common.h"
 #include "esp_adf/audio_element.h"
 #include "audio_decoder/aac_decoder.h"

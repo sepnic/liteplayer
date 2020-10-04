@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "msgutils/os_logger.h"
+#include "cutils/os_logger.h"
 #include "tinyalsa/asoundlib.h"
 #include "tinyalsa_wrapper.h"
 

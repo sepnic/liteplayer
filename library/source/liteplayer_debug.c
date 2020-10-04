@@ -19,9 +19,9 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "msgutils/os_thread.h"
-#include "msgutils/ringbuf.h"
-#include "msgutils/os_logger.h"
+#include "cutils/os_thread.h"
+#include "cutils/ringbuf.h"
+#include "cutils/os_logger.h"
 #include "esp_adf/audio_common.h"
 #include "liteplayer_config.h"
 #include "liteplayer_debug.h"

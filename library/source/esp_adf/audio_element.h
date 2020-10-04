@@ -29,8 +29,8 @@
 #ifndef _AUDIO_ELEMENT_H_
 #define _AUDIO_ELEMENT_H_
 
-#include "msgutils/os_thread.h"
-#include "msgutils/ringbuf.h"
+#include "cutils/os_thread.h"
+#include "cutils/ringbuf.h"
 
 #include "esp_adf/queue.h"
 #include "esp_adf/audio_event_iface.h"

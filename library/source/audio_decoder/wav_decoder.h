@@ -18,7 +18,7 @@
 #ifndef _WAV_DECODER_H_
 #define _WAV_DECODER_H_
 
-#include "msgutils/os_thread.h"
+#include "cutils/os_thread.h"
 #include "esp_adf/audio_element.h"
 #include "audio_extractor/wav_extractor.h"
 

@@ -23,9 +23,9 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include "msgutils/os_thread.h"
-#include "msgutils/os_memory.h"
-#include "msgutils/os_logger.h"
+#include "cutils/os_thread.h"
+#include "cutils/os_memory.h"
+#include "cutils/os_logger.h"
 #include "liteplayer_manager.h"
 #include "httpclient_wrapper.h"
 #include "fatfs_wrapper.h"

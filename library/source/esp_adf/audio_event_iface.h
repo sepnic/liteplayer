@@ -32,7 +32,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-#include "msgutils/msgqueue.h"
+#include "cutils/msgqueue.h"
 #include "esp_adf/queue.h"
 #include "esp_adf/audio_common.h"
 

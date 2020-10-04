@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.4.1)
 project(liteplayer_demo)
 
 # Support tinalsa?
@@ -115,16 +115,13 @@ if (ENABLE_TINYALSA)
 endif()
 
 # cflags: compile paramters
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -g -Wall -Werror")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -Wall -Werror")
 # cflags: if socketlen_t defined
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_SOCKLEN_T")
-
-# ldflags
-set(CMAKE_LDFLAGS "${CMAKE_LDFLAGS} -Wl,-O1 -Wl,--hash-style=gnu -Wl,--as-needed")
 
 
 LINK_DIRECTORIES(${LIB_DIR}/liteplayercore)
 
 # liteplayer_mngr
 add_executable(liteplayer_mngr liteplayer_mngr.c ${ADAPTER_SRC} ${THIRDPARTY_SRC})
-target_link_libraries(liteplayer_mngr liteplayercore_s.a pthread m)
+target_link_libraries(liteplayer_mngr liteplayer_core_s.a pthread m)

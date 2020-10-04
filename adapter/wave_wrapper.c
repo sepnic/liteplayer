@@ -19,9 +19,9 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "msgutils/os_memory.h"
-#include "msgutils/os_time.h"
-#include "msgutils/os_logger.h"
+#include "cutils/os_memory.h"
+#include "cutils/os_time.h"
+#include "cutils/os_logger.h"
 #include "wave_wrapper.h"
 
 #define TAG "[liteplayer]wave"

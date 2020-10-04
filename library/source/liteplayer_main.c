@@ -19,8 +19,8 @@
 #include <string.h>
 #include <stdint.h>
 
-#include "msgutils/ringbuf.h"
-#include "msgutils/os_logger.h"
+#include "cutils/ringbuf.h"
+#include "cutils/os_logger.h"
 #include "esp_adf/audio_element.h"
 #include "esp_adf/audio_pipeline.h"
 #include "esp_adf/audio_event_iface.h"

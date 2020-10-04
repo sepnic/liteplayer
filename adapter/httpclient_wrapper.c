@@ -18,9 +18,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "msgutils/os_thread.h"
-#include "msgutils/os_memory.h"
-#include "msgutils/os_logger.h"
+#include "cutils/os_thread.h"
+#include "cutils/os_memory.h"
+#include "cutils/os_logger.h"
 #include "httpclient.h"
 #include "httpclient_wrapper.h"
 
