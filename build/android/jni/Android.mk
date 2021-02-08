@@ -1,37 +1,37 @@
 LOCAL_PATH := $(call my-dir)
 
-## msgutils
+## sysutils
 include $(CLEAR_VARS)
 TOP_DIR := ${LOCAL_PATH}/../../..
 LOCAL_SRC_FILES := \
-    ${TOP_DIR}/thirdparty/msgutils/source/cutils/memory_debug.c \
-    ${TOP_DIR}/thirdparty/msgutils/source/cutils/msglooper.c \
-    ${TOP_DIR}/thirdparty/msgutils/source/cutils/msgqueue.c \
-    ${TOP_DIR}/thirdparty/msgutils/source/cutils/ringbuf.c \
-    ${TOP_DIR}/thirdparty/msgutils/source/cutils/sw_timer.c \
-    ${TOP_DIR}/thirdparty/msgutils/source/cutils/sw_watchdog.c \
-    ${TOP_DIR}/thirdparty/msgutils/osal/os_logger.c \
-    ${TOP_DIR}/thirdparty/msgutils/osal/os_thread.c \
-    ${TOP_DIR}/thirdparty/msgutils/osal/os_time.c \
-    ${TOP_DIR}/thirdparty/msgutils/osal/os_timer.c \
-    ${TOP_DIR}/thirdparty/msgutils/source/utils/Looper.cpp \
-    ${TOP_DIR}/thirdparty/msgutils/source/utils/Thread.cpp \
-    ${TOP_DIR}/thirdparty/msgutils/source/utils/cJSON.cpp \
-    ${TOP_DIR}/thirdparty/msgutils/source/utils/JsonWrapper.cpp \
-    ${TOP_DIR}/thirdparty/msgutils/source/utils/RefBase.cpp \
-    ${TOP_DIR}/thirdparty/msgutils/source/utils/SharedBuffer.cpp \
-    ${TOP_DIR}/thirdparty/msgutils/source/utils/safe_iop.c \
-    ${TOP_DIR}/thirdparty/msgutils/source/utils/VectorImpl.cpp \
-    ${TOP_DIR}/thirdparty/msgutils/source/utils/Unicode.cpp \
-    ${TOP_DIR}/thirdparty/msgutils/source/utils/Static.cpp \
-    ${TOP_DIR}/thirdparty/msgutils/source/utils/String8.cpp \
-    ${TOP_DIR}/thirdparty/msgutils/source/utils/String16.cpp \
-    ${TOP_DIR}/thirdparty/msgutils/source/utils/StringUtils.cpp
-LOCAL_C_INCLUDES += ${TOP_DIR}/thirdparty/msgutils/include
+    ${TOP_DIR}/thirdparty/sysutils/source/cutils/memory_debug.c \
+    ${TOP_DIR}/thirdparty/sysutils/source/cutils/msglooper.c \
+    ${TOP_DIR}/thirdparty/sysutils/source/cutils/msgqueue.c \
+    ${TOP_DIR}/thirdparty/sysutils/source/cutils/ringbuf.c \
+    ${TOP_DIR}/thirdparty/sysutils/source/cutils/sw_timer.c \
+    ${TOP_DIR}/thirdparty/sysutils/source/cutils/sw_watchdog.c \
+    ${TOP_DIR}/thirdparty/sysutils/osal/os_logger.c \
+    ${TOP_DIR}/thirdparty/sysutils/osal/os_thread.c \
+    ${TOP_DIR}/thirdparty/sysutils/osal/os_time.c \
+    ${TOP_DIR}/thirdparty/sysutils/osal/os_timer.c \
+    ${TOP_DIR}/thirdparty/sysutils/source/utils/Looper.cpp \
+    ${TOP_DIR}/thirdparty/sysutils/source/utils/Thread.cpp \
+    ${TOP_DIR}/thirdparty/sysutils/source/utils/cJSON.cpp \
+    ${TOP_DIR}/thirdparty/sysutils/source/utils/JsonWrapper.cpp \
+    ${TOP_DIR}/thirdparty/sysutils/source/utils/RefBase.cpp \
+    ${TOP_DIR}/thirdparty/sysutils/source/utils/SharedBuffer.cpp \
+    ${TOP_DIR}/thirdparty/sysutils/source/utils/safe_iop.c \
+    ${TOP_DIR}/thirdparty/sysutils/source/utils/VectorImpl.cpp \
+    ${TOP_DIR}/thirdparty/sysutils/source/utils/Unicode.cpp \
+    ${TOP_DIR}/thirdparty/sysutils/source/utils/Static.cpp \
+    ${TOP_DIR}/thirdparty/sysutils/source/utils/String8.cpp \
+    ${TOP_DIR}/thirdparty/sysutils/source/utils/String16.cpp \
+    ${TOP_DIR}/thirdparty/sysutils/source/utils/StringUtils.cpp
+LOCAL_C_INCLUDES += ${TOP_DIR}/thirdparty/sysutils/include
 LOCAL_CFLAGS += -Wall -Werror -DOS_ANDROID
 LOCAL_CPPFLAGS += -Wall -Werror -DOS_ANDROID -std=gnu++11
 LOCAL_LDLIBS := -llog
-LOCAL_MODULE := libmsgutils
+LOCAL_MODULE := libsysutils
 include $(BUILD_SHARED_LIBRARY)
 
 ## liteplayercore
@@ -75,7 +75,7 @@ LOCAL_SRC_FILES := \
 LOCAL_C_INCLUDES += \
     ${TOP_DIR}/library/include \
     ${TOP_DIR}/library/source \
-    ${TOP_DIR}/thirdparty/msgutils/include \
+    ${TOP_DIR}/thirdparty/sysutils/include \
     ${TOP_DIR}/thirdparty/codec \
     ${TOP_DIR}/thirdparty/speexdsp \
     ${TOP_DIR}/thirdparty/codec/mp3-pvmp3/include \
@@ -92,7 +92,7 @@ LOCAL_C_INCLUDES += \
 LOCAL_CFLAGS += -DOS_ANDROID -DAAC_ENABLE_SBR -DFIXED_POINT
 LOCAL_CFLAGS += -Wall -Werror -Wno-error=unused-function -Wno-error=unused-variable
 LOCAL_LDLIBS := -llog
-LOCAL_SHARED_LIBRARIES += msgutils
+LOCAL_SHARED_LIBRARIES += sysutils
 LOCAL_MODULE := libliteplayer_core
 include $(BUILD_SHARED_LIBRARY)
 
@@ -110,12 +110,12 @@ LOCAL_SRC_FILES := \
 LOCAL_C_INCLUDES += \
     ${TOP_DIR}/library/include \
     ${TOP_DIR}/adapter \
-    ${TOP_DIR}/thirdparty/msgutils/include \
+    ${TOP_DIR}/thirdparty/sysutils/include \
     ${TOP_DIR}/thirdparty/httpclient \
     ${TOP_DIR}/thirdparty/mbedtls/include
 LOCAL_CFLAGS += -DOS_ANDROID -D_SOCKLEN_T -Wno-error=inline-asm
 LOCAL_CFLAGS += -Wall -Werror
 LOCAL_LDLIBS := -llog -lOpenSLES
-LOCAL_SHARED_LIBRARIES += msgutils
+LOCAL_SHARED_LIBRARIES += sysutils
 LOCAL_MODULE := liteplayer_adapter
 include $(BUILD_SHARED_LIBRARY)

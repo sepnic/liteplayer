@@ -61,7 +61,7 @@ struct opensles_priv {
 
     SLuint32 queueSize;
     std::list<OutBuffer *> *bufferList;
-    msgutils::Mutex *bufferLock;
+    sysutils::Mutex *bufferLock;
     bool hasStarted;
 };
 
@@ -69,7 +69,7 @@ struct opensles_priv {
 static void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context)
 {
     struct opensles_priv *priv = (struct opensles_priv *)context;
-    msgutils::Mutex::Autolock _l(priv->bufferLock);
+    sysutils::Mutex::Autolock _l(priv->bufferLock);
 
     // free the buffer that finishes playing
     if (!priv->bufferList->empty()) {
@@ -146,7 +146,7 @@ sink_handle_t opensles_wrapper_open(int samplerate, int channels, void *sink_pri
         if (SL_RESULT_SUCCESS != result) break;
 
         priv->bufferList = new std::list<OutBuffer *>();
-        priv->bufferLock = new msgutils::Mutex();
+        priv->bufferLock = new sysutils::Mutex();
     } while (0);
 
     if (SL_RESULT_SUCCESS == result) {
@@ -164,7 +164,7 @@ int opensles_wrapper_write(sink_handle_t handle, char *buffer, int size)
     struct opensles_priv *priv = (struct opensles_priv *)handle;
     OutBuffer *outbuf = new OutBuffer(buffer, size);
 
-    msgutils::Mutex::Autolock _l(priv->bufferLock);
+    sysutils::Mutex::Autolock _l(priv->bufferLock);
 
     // waiting the list is available
     while (priv->bufferList->size() >= priv->queueSize)
@@ -195,7 +195,7 @@ void opensles_wrapper_close(sink_handle_t handle)
 
     // waiting all buffers in the list finished playing
     {
-        msgutils::Mutex::Autolock _l(priv->bufferLock);
+        sysutils::Mutex::Autolock _l(priv->bufferLock);
         while (!priv->bufferList->empty())
             priv->bufferLock->condWait();
     }

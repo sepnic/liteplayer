@@ -7,7 +7,7 @@ project(liteplayer_demo)
 set(TOP_DIR "${CMAKE_SOURCE_DIR}/../..")
 
 # include files
-include_directories(${TOP_DIR}/thirdparty/msgutils/include)
+include_directories(${TOP_DIR}/thirdparty/sysutils/include)
 include_directories(${TOP_DIR}/thirdparty/httpclient)
 include_directories(${TOP_DIR}/thirdparty/mbedtls/include)
 include_directories(${TOP_DIR}/thirdparty/codec)
@@ -31,8 +31,8 @@ include_directories(${TOP_DIR}/thirdparty/codec/aac-fdk/libSACdec/include)
 
 # source files
 file(GLOB THIRDPARTY_SRC src
-    ${TOP_DIR}/thirdparty/msgutils/source/cutils/*.c
-    ${TOP_DIR}/thirdparty/msgutils/osal/*.c
+    ${TOP_DIR}/thirdparty/sysutils/source/cutils/*.c
+    ${TOP_DIR}/thirdparty/sysutils/osal/*.c
     ${TOP_DIR}/thirdparty/mbedtls/library/*.c
     ${TOP_DIR}/thirdparty/httpclient/*.c
     ${TOP_DIR}/thirdparty/codec/mp3-pvmp3/src/*.cpp

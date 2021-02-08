@@ -8,7 +8,7 @@ set(TOP_DIR "${CMAKE_SOURCE_DIR}/../..")
 set(LIB_DIR "${TOP_DIR}/build/out/lib")
 
 # include files
-include_directories(${TOP_DIR}/thirdparty/msgutils/include)
+include_directories(${TOP_DIR}/thirdparty/sysutils/include)
 include_directories(${TOP_DIR}/thirdparty/httpclient)
 include_directories(${TOP_DIR}/thirdparty/mbedtls/include)
 include_directories(${TOP_DIR}/thirdparty/speexdsp)

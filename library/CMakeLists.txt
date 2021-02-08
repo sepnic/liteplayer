@@ -5,7 +5,7 @@ set(TOP_DIR "${CMAKE_SOURCE_DIR}/..")
 set(THIRDPARTY_DIR "${TOP_DIR}/thirdparty")
 
 # include files
-include_directories(${THIRDPARTY_DIR}/msgutils/include)
+include_directories(${THIRDPARTY_DIR}/sysutils/include)
 include_directories(${THIRDPARTY_DIR}/codec)
 include_directories(${THIRDPARTY_DIR}/speexdsp)
 include_directories(${TOP_DIR}/library/include)
@@ -13,16 +13,16 @@ include_directories(${TOP_DIR}/library/source)
 
 # source files
 set (THIRDPARTY_SRC
-    ${THIRDPARTY_DIR}/msgutils/source/cutils/memory_debug.c
-    ${THIRDPARTY_DIR}/msgutils/source/cutils/msglooper.c
-    ${THIRDPARTY_DIR}/msgutils/source/cutils/msgqueue.c
-    ${THIRDPARTY_DIR}/msgutils/source/cutils/ringbuf.c
-    ${THIRDPARTY_DIR}/msgutils/source/cutils/sw_timer.c
-    ${THIRDPARTY_DIR}/msgutils/source/cutils/sw_watchdog.c
-    ${THIRDPARTY_DIR}/msgutils/osal/os_logger.c
-    ${THIRDPARTY_DIR}/msgutils/osal/os_thread.c
-    ${THIRDPARTY_DIR}/msgutils/osal/os_time.c
-    ${THIRDPARTY_DIR}/msgutils/osal/os_timer.c
+    ${THIRDPARTY_DIR}/sysutils/source/cutils/memory_debug.c
+    ${THIRDPARTY_DIR}/sysutils/source/cutils/msglooper.c
+    ${THIRDPARTY_DIR}/sysutils/source/cutils/msgqueue.c
+    ${THIRDPARTY_DIR}/sysutils/source/cutils/ringbuf.c
+    ${THIRDPARTY_DIR}/sysutils/source/cutils/sw_timer.c
+    ${THIRDPARTY_DIR}/sysutils/source/cutils/sw_watchdog.c
+    ${THIRDPARTY_DIR}/sysutils/osal/os_logger.c
+    ${THIRDPARTY_DIR}/sysutils/osal/os_thread.c
+    ${THIRDPARTY_DIR}/sysutils/osal/os_time.c
+    ${THIRDPARTY_DIR}/sysutils/osal/os_timer.c
     ${THIRDPARTY_DIR}/codec/mp3-mad/bit.c
     ${THIRDPARTY_DIR}/codec/mp3-mad/decoder.c
     ${THIRDPARTY_DIR}/codec/mp3-mad/fixed.c

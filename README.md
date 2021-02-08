@@ -22,6 +22,6 @@ Liteplayer 具有如下特点：
 
 **OSAL 适配层**：
 - Thread、Memory、Time 等操作系统相关的抽象接口，如果系统已支持 POSIX 接口规范，则不用修改直接使用即可
-- [https://github.com/sepnic/msgutils](https://github.com/sepnic/msgutils)
+- [https://github.com/sepnic/sysutils](https://github.com/sepnic/sysutils)
 
 ![LiteplayerArchitecture](https://github.com/sepnic/liteplayer_priv/blob/master/Liteplayer.png)
