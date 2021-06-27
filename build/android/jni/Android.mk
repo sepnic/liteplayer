@@ -38,16 +38,16 @@ include $(BUILD_SHARED_LIBRARY)
 include $(CLEAR_VARS)
 TOP_DIR := ${LOCAL_PATH}/../../..
 THIRDPARTY_FILES := $(wildcard  \
-    ${TOP_DIR}/thirdparty/codec/mp3-pvmp3/src/*.cpp \
-    ${TOP_DIR}/thirdparty/codec/aac-fdk/libAACdec/src/*.cpp \
-    ${TOP_DIR}/thirdparty/codec/aac-fdk/libPCMutils/src/*.cpp \
-    ${TOP_DIR}/thirdparty/codec/aac-fdk/libFDK/src/*.cpp \
-    ${TOP_DIR}/thirdparty/codec/aac-fdk/libSYS/src/*.cpp \
-    ${TOP_DIR}/thirdparty/codec/aac-fdk/libMpegTPDec/src/*.cpp \
-    ${TOP_DIR}/thirdparty/codec/aac-fdk/libSBRdec/src/*.cpp \
-    ${TOP_DIR}/thirdparty/codec/aac-fdk/libArithCoding/src/*.cpp \
-    ${TOP_DIR}/thirdparty/codec/aac-fdk/libDRCdec/src/*.cpp \
-    ${TOP_DIR}/thirdparty/codec/aac-fdk/libSACdec/src/*.cpp \
+    ${TOP_DIR}/thirdparty/codecs/mp3-pvmp3/src/*.cpp \
+    ${TOP_DIR}/thirdparty/codecs/aac-fdk/libAACdec/src/*.cpp \
+    ${TOP_DIR}/thirdparty/codecs/aac-fdk/libPCMutils/src/*.cpp \
+    ${TOP_DIR}/thirdparty/codecs/aac-fdk/libFDK/src/*.cpp \
+    ${TOP_DIR}/thirdparty/codecs/aac-fdk/libSYS/src/*.cpp \
+    ${TOP_DIR}/thirdparty/codecs/aac-fdk/libMpegTPDec/src/*.cpp \
+    ${TOP_DIR}/thirdparty/codecs/aac-fdk/libSBRdec/src/*.cpp \
+    ${TOP_DIR}/thirdparty/codecs/aac-fdk/libArithCoding/src/*.cpp \
+    ${TOP_DIR}/thirdparty/codecs/aac-fdk/libDRCdec/src/*.cpp \
+    ${TOP_DIR}/thirdparty/codecs/aac-fdk/libSACdec/src/*.cpp \
     ${TOP_DIR}/thirdparty/speexdsp/resample.c)
 THIRDPARTY_FILES := $(THIRDPARTY_FILES:$(LOCAL_PATH)/%=%)
 LOCAL_SRC_FILES := \
@@ -76,19 +76,19 @@ LOCAL_C_INCLUDES += \
     ${TOP_DIR}/library/include \
     ${TOP_DIR}/library/source \
     ${TOP_DIR}/thirdparty/sysutils/include \
-    ${TOP_DIR}/thirdparty/codec \
+    ${TOP_DIR}/thirdparty/codecs \
     ${TOP_DIR}/thirdparty/speexdsp \
-    ${TOP_DIR}/thirdparty/codec/mp3-pvmp3/include \
-    ${TOP_DIR}/thirdparty/codec/mp3-pvmp3/src \
-    ${TOP_DIR}/thirdparty/codec/aac-fdk/libAACdec/include \
-    ${TOP_DIR}/thirdparty/codec/aac-fdk/libPCMutils/include \
-    ${TOP_DIR}/thirdparty/codec/aac-fdk/libFDK/include \
-    ${TOP_DIR}/thirdparty/codec/aac-fdk/libSYS/include \
-    ${TOP_DIR}/thirdparty/codec/aac-fdk/libMpegTPDec/include \
-    ${TOP_DIR}/thirdparty/codec/aac-fdk/libSBRdec/include \
-    ${TOP_DIR}/thirdparty/codec/aac-fdk/libArithCoding/include \
-    ${TOP_DIR}/thirdparty/codec/aac-fdk/libDRCdec/include \
-    ${TOP_DIR}/thirdparty/codec/aac-fdk/libSACdec/include
+    ${TOP_DIR}/thirdparty/codecs/mp3-pvmp3/include \
+    ${TOP_DIR}/thirdparty/codecs/mp3-pvmp3/src \
+    ${TOP_DIR}/thirdparty/codecs/aac-fdk/libAACdec/include \
+    ${TOP_DIR}/thirdparty/codecs/aac-fdk/libPCMutils/include \
+    ${TOP_DIR}/thirdparty/codecs/aac-fdk/libFDK/include \
+    ${TOP_DIR}/thirdparty/codecs/aac-fdk/libSYS/include \
+    ${TOP_DIR}/thirdparty/codecs/aac-fdk/libMpegTPDec/include \
+    ${TOP_DIR}/thirdparty/codecs/aac-fdk/libSBRdec/include \
+    ${TOP_DIR}/thirdparty/codecs/aac-fdk/libArithCoding/include \
+    ${TOP_DIR}/thirdparty/codecs/aac-fdk/libDRCdec/include \
+    ${TOP_DIR}/thirdparty/codecs/aac-fdk/libSACdec/include
 LOCAL_CFLAGS += -DOS_ANDROID -DAAC_ENABLE_SBR -DFIXED_POINT
 LOCAL_CFLAGS += -Wall -Werror -Wno-error=unused-function -Wno-error=unused-variable
 LOCAL_LDLIBS := -llog
@@ -99,8 +99,8 @@ include $(BUILD_SHARED_LIBRARY)
 ## liteplayeradapter
 include $(CLEAR_VARS)
 TOP_DIR := ${LOCAL_PATH}/../../..
-THIRDPARTY_FILES := $(wildcard  ${TOP_DIR}/thirdparty/mbedtls/library/*.c \
-                                ${TOP_DIR}/thirdparty/httpclient/*.c)
+THIRDPARTY_FILES := $(wildcard  ${TOP_DIR}/adapter/external/mbedtls/library/*.c \
+                                ${TOP_DIR}/adapter/external/httpclient/*.c)
 THIRDPARTY_FILES := $(THIRDPARTY_FILES:$(LOCAL_PATH)/%=%)
 LOCAL_SRC_FILES := \
     ${THIRDPARTY_FILES} \
@@ -111,8 +111,8 @@ LOCAL_C_INCLUDES += \
     ${TOP_DIR}/library/include \
     ${TOP_DIR}/adapter \
     ${TOP_DIR}/thirdparty/sysutils/include \
-    ${TOP_DIR}/thirdparty/httpclient \
-    ${TOP_DIR}/thirdparty/mbedtls/include
+    ${TOP_DIR}/adapter/external/httpclient \
+    ${TOP_DIR}/adapter/external/mbedtls/include
 LOCAL_CFLAGS += -DOS_ANDROID -D_SOCKLEN_T -Wno-error=inline-asm
 LOCAL_CFLAGS += -Wall -Werror
 LOCAL_LDLIBS := -llog -lOpenSLES

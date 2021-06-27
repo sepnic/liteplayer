@@ -6,7 +6,7 @@ set(THIRDPARTY_DIR "${TOP_DIR}/thirdparty")
 
 # include files
 include_directories(${THIRDPARTY_DIR}/sysutils/include)
-include_directories(${THIRDPARTY_DIR}/codec)
+include_directories(${THIRDPARTY_DIR}/codecs)
 include_directories(${THIRDPARTY_DIR}/speexdsp)
 include_directories(${TOP_DIR}/library/include)
 include_directories(${TOP_DIR}/library/source)
@@ -23,45 +23,45 @@ set (THIRDPARTY_SRC
     ${THIRDPARTY_DIR}/sysutils/osal/os_thread.c
     ${THIRDPARTY_DIR}/sysutils/osal/os_time.c
     ${THIRDPARTY_DIR}/sysutils/osal/os_timer.c
-    ${THIRDPARTY_DIR}/codec/mp3-mad/bit.c
-    ${THIRDPARTY_DIR}/codec/mp3-mad/decoder.c
-    ${THIRDPARTY_DIR}/codec/mp3-mad/fixed.c
-    ${THIRDPARTY_DIR}/codec/mp3-mad/frame.c
-    ${THIRDPARTY_DIR}/codec/mp3-mad/huffman.c
-    ${THIRDPARTY_DIR}/codec/mp3-mad/layer12.c
-    ${THIRDPARTY_DIR}/codec/mp3-mad/layer3.c
-    ${THIRDPARTY_DIR}/codec/mp3-mad/stream.c
-    ${THIRDPARTY_DIR}/codec/mp3-mad/synth.c
-    ${THIRDPARTY_DIR}/codec/mp3-mad/timer.c
-    ${THIRDPARTY_DIR}/codec/mp3-mad/version.c
-    ${THIRDPARTY_DIR}/codec/aac-helix/aacdec.c
-    ${THIRDPARTY_DIR}/codec/aac-helix/aactabs.c
-    ${THIRDPARTY_DIR}/codec/aac-helix/bitstream.c
-    ${THIRDPARTY_DIR}/codec/aac-helix/buffers.c
-    ${THIRDPARTY_DIR}/codec/aac-helix/dct4.c
-    ${THIRDPARTY_DIR}/codec/aac-helix/decelmnt.c
-    ${THIRDPARTY_DIR}/codec/aac-helix/dequant.c
-    ${THIRDPARTY_DIR}/codec/aac-helix/fft.c
-    ${THIRDPARTY_DIR}/codec/aac-helix/filefmt.c
-    ${THIRDPARTY_DIR}/codec/aac-helix/huffman.c
-    ${THIRDPARTY_DIR}/codec/aac-helix/hufftabs.c
-    ${THIRDPARTY_DIR}/codec/aac-helix/imdct.c
-    ${THIRDPARTY_DIR}/codec/aac-helix/noiseless.c
-    ${THIRDPARTY_DIR}/codec/aac-helix/pns.c
-    ${THIRDPARTY_DIR}/codec/aac-helix/sbr.c
-    ${THIRDPARTY_DIR}/codec/aac-helix/sbrfft.c
-    ${THIRDPARTY_DIR}/codec/aac-helix/sbrfreq.c
-    ${THIRDPARTY_DIR}/codec/aac-helix/sbrhfadj.c
-    ${THIRDPARTY_DIR}/codec/aac-helix/sbrhfgen.c
-    ${THIRDPARTY_DIR}/codec/aac-helix/sbrhuff.c
-    ${THIRDPARTY_DIR}/codec/aac-helix/sbrimdct.c
-    ${THIRDPARTY_DIR}/codec/aac-helix/sbrmath.c
-    ${THIRDPARTY_DIR}/codec/aac-helix/sbrqmf.c
-    ${THIRDPARTY_DIR}/codec/aac-helix/sbrside.c
-    ${THIRDPARTY_DIR}/codec/aac-helix/sbrtabs.c
-    ${THIRDPARTY_DIR}/codec/aac-helix/stproc.c
-    ${THIRDPARTY_DIR}/codec/aac-helix/tns.c
-    ${THIRDPARTY_DIR}/codec/aac-helix/trigtabs.c
+    ${THIRDPARTY_DIR}/codecs/mp3-mad/bit.c
+    ${THIRDPARTY_DIR}/codecs/mp3-mad/decoder.c
+    ${THIRDPARTY_DIR}/codecs/mp3-mad/fixed.c
+    ${THIRDPARTY_DIR}/codecs/mp3-mad/frame.c
+    ${THIRDPARTY_DIR}/codecs/mp3-mad/huffman.c
+    ${THIRDPARTY_DIR}/codecs/mp3-mad/layer12.c
+    ${THIRDPARTY_DIR}/codecs/mp3-mad/layer3.c
+    ${THIRDPARTY_DIR}/codecs/mp3-mad/stream.c
+    ${THIRDPARTY_DIR}/codecs/mp3-mad/synth.c
+    ${THIRDPARTY_DIR}/codecs/mp3-mad/timer.c
+    ${THIRDPARTY_DIR}/codecs/mp3-mad/version.c
+    ${THIRDPARTY_DIR}/codecs/aac-helix/aacdec.c
+    ${THIRDPARTY_DIR}/codecs/aac-helix/aactabs.c
+    ${THIRDPARTY_DIR}/codecs/aac-helix/bitstream.c
+    ${THIRDPARTY_DIR}/codecs/aac-helix/buffers.c
+    ${THIRDPARTY_DIR}/codecs/aac-helix/dct4.c
+    ${THIRDPARTY_DIR}/codecs/aac-helix/decelmnt.c
+    ${THIRDPARTY_DIR}/codecs/aac-helix/dequant.c
+    ${THIRDPARTY_DIR}/codecs/aac-helix/fft.c
+    ${THIRDPARTY_DIR}/codecs/aac-helix/filefmt.c
+    ${THIRDPARTY_DIR}/codecs/aac-helix/huffman.c
+    ${THIRDPARTY_DIR}/codecs/aac-helix/hufftabs.c
+    ${THIRDPARTY_DIR}/codecs/aac-helix/imdct.c
+    ${THIRDPARTY_DIR}/codecs/aac-helix/noiseless.c
+    ${THIRDPARTY_DIR}/codecs/aac-helix/pns.c
+    ${THIRDPARTY_DIR}/codecs/aac-helix/sbr.c
+    ${THIRDPARTY_DIR}/codecs/aac-helix/sbrfft.c
+    ${THIRDPARTY_DIR}/codecs/aac-helix/sbrfreq.c
+    ${THIRDPARTY_DIR}/codecs/aac-helix/sbrhfadj.c
+    ${THIRDPARTY_DIR}/codecs/aac-helix/sbrhfgen.c
+    ${THIRDPARTY_DIR}/codecs/aac-helix/sbrhuff.c
+    ${THIRDPARTY_DIR}/codecs/aac-helix/sbrimdct.c
+    ${THIRDPARTY_DIR}/codecs/aac-helix/sbrmath.c
+    ${THIRDPARTY_DIR}/codecs/aac-helix/sbrqmf.c
+    ${THIRDPARTY_DIR}/codecs/aac-helix/sbrside.c
+    ${THIRDPARTY_DIR}/codecs/aac-helix/sbrtabs.c
+    ${THIRDPARTY_DIR}/codecs/aac-helix/stproc.c
+    ${THIRDPARTY_DIR}/codecs/aac-helix/tns.c
+    ${THIRDPARTY_DIR}/codecs/aac-helix/trigtabs.c
     ${THIRDPARTY_DIR}/speexdsp/resample.c
 )
 
