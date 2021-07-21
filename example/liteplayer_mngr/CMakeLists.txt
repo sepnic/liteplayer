@@ -9,7 +9,6 @@ set(LIB_DIR "${TOP_DIR}/build/out/lib")
 
 # include files
 include_directories(${TOP_DIR}/thirdparty/sysutils/include)
-include_directories(${TOP_DIR}/thirdparty/speexdsp)
 include_directories(${TOP_DIR}/library/include)
 include_directories(${TOP_DIR}/adapter/external/httpclient)
 include_directories(${TOP_DIR}/adapter/external/mbedtls/include)

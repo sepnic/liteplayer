@@ -22,7 +22,7 @@
 
 #include "cutils/os_logger.h"
 #include "esp_adf/audio_common.h"
-#include "speex/speex_resampler.h"
+#include "speexdsp/speex/speex_resampler.h"
 #include "audio_resampler/audio_resampler.h"
 
 #define TAG "[liteplayer]RESAMPLER"

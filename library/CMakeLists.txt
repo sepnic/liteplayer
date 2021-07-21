@@ -7,7 +7,6 @@ set(THIRDPARTY_DIR "${TOP_DIR}/thirdparty")
 # include files
 include_directories(${THIRDPARTY_DIR}/sysutils/include)
 include_directories(${THIRDPARTY_DIR}/codecs)
-include_directories(${THIRDPARTY_DIR}/speexdsp)
 include_directories(${TOP_DIR}/library/include)
 include_directories(${TOP_DIR}/library/source)
 
@@ -62,7 +61,6 @@ set (THIRDPARTY_SRC
     ${THIRDPARTY_DIR}/codecs/aac-helix/stproc.c
     ${THIRDPARTY_DIR}/codecs/aac-helix/tns.c
     ${THIRDPARTY_DIR}/codecs/aac-helix/trigtabs.c
-    ${THIRDPARTY_DIR}/speexdsp/resample.c
 )
 
 # source files
@@ -81,6 +79,7 @@ set (LITEPLAYER_SRC
     ${TOP_DIR}/library/source/audio_extractor/m4a_extractor.c
     ${TOP_DIR}/library/source/audio_extractor/wav_extractor.c
     ${TOP_DIR}/library/source/audio_resampler/audio_resampler.c
+    ${TOP_DIR}/library/source/audio_resampler/speexdsp/resample.c
     ${TOP_DIR}/library/source/audio_stream/sink_stream.c
     ${TOP_DIR}/library/source/liteplayer_source.c
     ${TOP_DIR}/library/source/liteplayer_parser.c

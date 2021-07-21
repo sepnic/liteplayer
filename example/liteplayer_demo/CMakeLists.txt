@@ -9,7 +9,6 @@ set(TOP_DIR "${CMAKE_SOURCE_DIR}/../..")
 # include files
 include_directories(${TOP_DIR}/thirdparty/sysutils/include)
 include_directories(${TOP_DIR}/thirdparty/codecs)
-include_directories(${TOP_DIR}/thirdparty/speexdsp)
 include_directories(${TOP_DIR}/library/include)
 include_directories(${TOP_DIR}/library/source)
 include_directories(${TOP_DIR}/adapter/external/httpclient)
@@ -43,7 +42,6 @@ file(GLOB THIRDPARTY_SRC src
     ${TOP_DIR}/thirdparty/codecs/aac-fdk/libArithCoding/src/*.cpp
     ${TOP_DIR}/thirdparty/codecs/aac-fdk/libDRCdec/src/*.cpp
     ${TOP_DIR}/thirdparty/codecs/aac-fdk/libSACdec/src/*.cpp
-    ${TOP_DIR}/thirdparty/speexdsp/resample.c
 )
 set (ADAPTER_SRC
     ${TOP_DIR}/adapter/external/httpclient/httpclient.c
@@ -153,6 +151,7 @@ set (LITEPLAYER_SRC
     ${TOP_DIR}/library/source/audio_extractor/m4a_extractor.c
     ${TOP_DIR}/library/source/audio_extractor/wav_extractor.c
     ${TOP_DIR}/library/source/audio_resampler/audio_resampler.c
+    ${TOP_DIR}/library/source/audio_resampler/speexdsp/resample.c
     ${TOP_DIR}/library/source/audio_stream/sink_stream.c
     ${TOP_DIR}/library/source/liteplayer_source.c
     ${TOP_DIR}/library/source/liteplayer_parser.c

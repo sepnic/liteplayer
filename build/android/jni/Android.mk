@@ -26,7 +26,11 @@ LOCAL_SRC_FILES := \
     ${TOP_DIR}/thirdparty/sysutils/source/utils/Static.cpp \
     ${TOP_DIR}/thirdparty/sysutils/source/utils/String8.cpp \
     ${TOP_DIR}/thirdparty/sysutils/source/utils/String16.cpp \
-    ${TOP_DIR}/thirdparty/sysutils/source/utils/StringUtils.cpp
+    ${TOP_DIR}/thirdparty/sysutils/source/utils/StringUtils.cpp \
+    ${TOP_DIR}/thirdparty/sysutils/source/cipher/sha2.c \
+    ${TOP_DIR}/thirdparty/sysutils/source/cipher/hmac_sha2.c \
+    ${TOP_DIR}/thirdparty/sysutils/source/cipher/md5.c \
+    ${TOP_DIR}/thirdparty/sysutils/source/cipher/base64.cpp
 LOCAL_C_INCLUDES += ${TOP_DIR}/thirdparty/sysutils/include
 LOCAL_CFLAGS += -Wall -Werror -DOS_ANDROID
 LOCAL_CPPFLAGS += -Wall -Werror -DOS_ANDROID -std=gnu++11
@@ -47,8 +51,7 @@ THIRDPARTY_FILES := $(wildcard  \
     ${TOP_DIR}/thirdparty/codecs/aac-fdk/libSBRdec/src/*.cpp \
     ${TOP_DIR}/thirdparty/codecs/aac-fdk/libArithCoding/src/*.cpp \
     ${TOP_DIR}/thirdparty/codecs/aac-fdk/libDRCdec/src/*.cpp \
-    ${TOP_DIR}/thirdparty/codecs/aac-fdk/libSACdec/src/*.cpp \
-    ${TOP_DIR}/thirdparty/speexdsp/resample.c)
+    ${TOP_DIR}/thirdparty/codecs/aac-fdk/libSACdec/src/*.cpp)
 THIRDPARTY_FILES := $(THIRDPARTY_FILES:$(LOCAL_PATH)/%=%)
 LOCAL_SRC_FILES := \
     ${THIRDPARTY_FILES} \
@@ -66,6 +69,7 @@ LOCAL_SRC_FILES := \
     ${TOP_DIR}/library/source/audio_extractor/m4a_extractor.c \
     ${TOP_DIR}/library/source/audio_extractor/wav_extractor.c \
     ${TOP_DIR}/library/source/audio_resampler/audio_resampler.c \
+    ${TOP_DIR}/library/source/audio_resampler/speexdsp/resample.c \
     ${TOP_DIR}/library/source/audio_stream/sink_stream.c \
     ${TOP_DIR}/library/source/liteplayer_source.c \
     ${TOP_DIR}/library/source/liteplayer_parser.c \
