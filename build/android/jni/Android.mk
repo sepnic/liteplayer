@@ -20,7 +20,7 @@ LOCAL_SRC_FILES := \
     ${TOP_DIR}/thirdparty/sysutils/source/utils/JsonWrapper.cpp \
     ${TOP_DIR}/thirdparty/sysutils/source/utils/RefBase.cpp \
     ${TOP_DIR}/thirdparty/sysutils/source/utils/SharedBuffer.cpp \
-    ${TOP_DIR}/thirdparty/sysutils/source/utils/safe_iop.c \
+    ${TOP_DIR}/thirdparty/sysutils/source/utils/SafeIop.cpp \
     ${TOP_DIR}/thirdparty/sysutils/source/utils/VectorImpl.cpp \
     ${TOP_DIR}/thirdparty/sysutils/source/utils/Unicode.cpp \
     ${TOP_DIR}/thirdparty/sysutils/source/utils/Static.cpp \
@@ -33,7 +33,7 @@ LOCAL_SRC_FILES := \
     ${TOP_DIR}/thirdparty/sysutils/source/cipher/base64.cpp
 LOCAL_C_INCLUDES += ${TOP_DIR}/thirdparty/sysutils/include
 LOCAL_CFLAGS += -Wall -Werror -DOS_ANDROID
-LOCAL_CPPFLAGS += -Wall -Werror -DOS_ANDROID -std=gnu++11
+LOCAL_CPPFLAGS += -Wall -Werror -DOS_ANDROID -std=c++11
 LOCAL_LDLIBS := -llog
 LOCAL_MODULE := libsysutils
 include $(BUILD_SHARED_LIBRARY)
