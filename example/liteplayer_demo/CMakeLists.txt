@@ -178,7 +178,7 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DFLOATING_POINT -DUSE_SSE")
 # cflag: resampler: ENABLE_SRC, CONFIG_SRC_QUALITY
 
 # cflags: compile paramters
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -Wall -Werror -Wno-error=unused-function")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -Wall -Werror -Wno-error=unused-function")
 # cflags: if socketlen_t defined
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_SOCKLEN_T")
 
