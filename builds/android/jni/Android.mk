@@ -16,7 +16,7 @@ LOCAL_SRC_FILES := \
     ${TOP_DIR}/thirdparty/sysutils/source/cutils/swtimer.c
 LOCAL_C_INCLUDES += ${TOP_DIR}/thirdparty/sysutils/include
 LOCAL_CFLAGS += -Wall -Werror -DOS_ANDROID
-LOCAL_CPPFLAGS += -Wall -Werror -DOS_ANDROID -std=gnu++11
+LOCAL_CPPFLAGS += -Wall -Werror -DOS_ANDROID -std=c++11
 LOCAL_LDLIBS := -llog
 LOCAL_MODULE := libsysutils
 include $(BUILD_SHARED_LIBRARY)
