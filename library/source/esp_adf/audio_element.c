@@ -30,7 +30,7 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "cutils/os_logger.h"
+#include "cutils/log_helper.h"
 #include "esp_adf/queue.h"
 #include "esp_adf/audio_event_iface.h"
 #include "esp_adf/audio_element.h"
@@ -57,7 +57,7 @@ typedef struct audio_callback {
 } audio_callback_t;
 
 typedef struct audio_multi_rb {
-    ringbuf_handle_t            *rb;
+    ringbuf_handle              *rb;
     int                         max_rb_num;
 } audio_multi_rb_t;
 
@@ -80,12 +80,12 @@ struct audio_element {
     io_func                     destroy;
     io_type_t                   read_type;
     union {
-        ringbuf_handle_t        input_rb;
+        ringbuf_handle          input_rb;
         io_callback_t           read_cb;
     } in;
     io_type_t                   write_type;
     union {
-        ringbuf_handle_t        output_rb;
+        ringbuf_handle          output_rb;
         io_callback_t           write_cb;
     } out;
 
@@ -106,14 +106,14 @@ struct audio_element {
     char                        *tag;
     int                         task_stack;
     int                         task_prio;
-    os_mutex_t                  info_lock;
+    os_mutex                    info_lock;
     audio_element_info_t        info;
     audio_element_info_t        *report_info;
 
     /* PrivateData */
     void                        *data;
-    os_cond_t                   state_cond;
-    os_mutex_t                  state_lock;
+    os_cond                     state_cond;
+    os_mutex                    state_lock;
     int                         state_event;
     bool                        buffer_reach_level;
     int                         input_timeout_ms;
@@ -138,21 +138,21 @@ const static int TASK_DESTROYED_BIT     = (1 << 7);
 
 static void audio_element_set_state_event(audio_element_handle_t el, int state_bit)
 {
-    OS_THREAD_MUTEX_LOCK(el->state_lock);
+    os_mutex_lock(el->state_lock);
     el->state_event |= state_bit;
     if (state_bit == BUFFER_REACH_LEVEL_BIT)
         el->buffer_reach_level = true;
-    OS_THREAD_COND_SIGNAL(el->state_cond);
-    OS_THREAD_MUTEX_UNLOCK(el->state_lock);
+    os_cond_signal(el->state_cond);
+    os_mutex_unlock(el->state_lock);
 }
 
 static void audio_element_clear_state_event(audio_element_handle_t el, int state_bit)
 {
-    OS_THREAD_MUTEX_LOCK(el->state_lock);
+    os_mutex_lock(el->state_lock);
     el->state_event &= ~state_bit;
     if (state_bit == BUFFER_REACH_LEVEL_BIT)
         el->buffer_reach_level = false;
-    OS_THREAD_MUTEX_UNLOCK(el->state_lock);
+    os_mutex_unlock(el->state_lock);
 }
 
 static esp_err_t audio_element_force_set_state(audio_element_handle_t el, audio_element_state_t new_state)
@@ -595,7 +595,7 @@ void *audio_element_task(void *pv)
         OS_LOGD(TAG, "[%s] el closed", el->tag);
     }
     audio_free(el->buf);
-    OS_LOGV(TAG, "[%s] el task deleted,%p", el->tag, OS_THREAD_SELF());
+    OS_LOGV(TAG, "[%s] el task deleted,%p", el->tag, os_thread_self());
     el->task_run = false;
     audio_element_set_state_event(el, TASK_DESTROYED_BIT);
     return NULL;
@@ -611,7 +611,7 @@ audio_element_state_t audio_element_get_state(audio_element_handle_t el)
     return el->state;
 }
 
-mqueue_t audio_element_get_event_queue(audio_element_handle_t el)
+mq_handle audio_element_get_event_queue(audio_element_handle_t el)
 {
     if (!el) {
         return NULL;
@@ -694,9 +694,9 @@ esp_err_t audio_element_setinfo(audio_element_handle_t el, audio_element_info_t 
 {
     if (info && el) {
         //FIXME: We will got reset if lock mutex here
-        OS_THREAD_MUTEX_LOCK(el->info_lock);
+        os_mutex_lock(el->info_lock);
         memcpy(&el->info, info, sizeof(audio_element_info_t));
-        OS_THREAD_MUTEX_UNLOCK(el->info_lock);
+        os_mutex_unlock(el->info_lock);
         return ESP_OK;
     }
     return ESP_FAIL;
@@ -705,9 +705,9 @@ esp_err_t audio_element_setinfo(audio_element_handle_t el, audio_element_info_t 
 esp_err_t audio_element_getinfo(audio_element_handle_t el, audio_element_info_t *info)
 {
     if (info && el) {
-        OS_THREAD_MUTEX_LOCK(el->info_lock);
+        os_mutex_lock(el->info_lock);
         memcpy(info, &el->info, sizeof(audio_element_info_t));
-        OS_THREAD_MUTEX_UNLOCK(el->info_lock);
+        os_mutex_unlock(el->info_lock);
         return ESP_OK;
     }
     return ESP_FAIL;
@@ -849,7 +849,7 @@ esp_err_t audio_element_set_ringbuf_done(audio_element_handle_t el)
     return ESP_OK;
 }
 
-esp_err_t audio_element_set_input_ringbuf(audio_element_handle_t el, ringbuf_handle_t rb)
+esp_err_t audio_element_set_input_ringbuf(audio_element_handle_t el, ringbuf_handle rb)
 {
     if (rb) {
         el->in.input_rb = rb;
@@ -860,7 +860,7 @@ esp_err_t audio_element_set_input_ringbuf(audio_element_handle_t el, ringbuf_han
     return ESP_OK;
 }
 
-ringbuf_handle_t audio_element_get_input_ringbuf(audio_element_handle_t el)
+ringbuf_handle audio_element_get_input_ringbuf(audio_element_handle_t el)
 {
     if (el->read_type == IO_TYPE_RB) {
         return el->in.input_rb;
@@ -869,7 +869,7 @@ ringbuf_handle_t audio_element_get_input_ringbuf(audio_element_handle_t el)
     }
 }
 
-esp_err_t audio_element_set_output_ringbuf(audio_element_handle_t el, ringbuf_handle_t rb)
+esp_err_t audio_element_set_output_ringbuf(audio_element_handle_t el, ringbuf_handle rb)
 {
     if (rb) {
         el->out.output_rb = rb;
@@ -880,7 +880,7 @@ esp_err_t audio_element_set_output_ringbuf(audio_element_handle_t el, ringbuf_ha
     return ESP_OK;
 }
 
-ringbuf_handle_t audio_element_get_output_ringbuf(audio_element_handle_t el)
+ringbuf_handle audio_element_get_output_ringbuf(audio_element_handle_t el)
 {
     if (el->write_type == IO_TYPE_RB) {
         return el->out.output_rb;
@@ -954,14 +954,14 @@ esp_err_t audio_element_wait_for_stop(audio_element_handle_t el)
         return ESP_OK;
     }
     esp_err_t ret = ESP_FAIL;
-    OS_THREAD_MUTEX_LOCK(el->state_lock);
+    os_mutex_lock(el->state_lock);
     while ((el->state_event & STOPPED_BIT) == 0) {
-        if (OS_THREAD_COND_TIMEDWAIT(el->state_cond, el->state_lock, DEFAULT_WAIT_TIMEOUT_MS*1000) != 0)
+        if (os_cond_timedwait(el->state_cond, el->state_lock, DEFAULT_WAIT_TIMEOUT_MS*1000) != 0)
             break;
     }
     if ((el->state_event & STOPPED_BIT) != 0)
         ret = ESP_OK;
-    OS_THREAD_MUTEX_UNLOCK(el->state_lock);
+    os_mutex_unlock(el->state_lock);
     return ret;
 }
 
@@ -971,14 +971,14 @@ esp_err_t audio_element_wait_for_buffer(audio_element_handle_t el, int size_expe
     el->out_buf_size_expect = size_expect;
     if (el->write_type == IO_TYPE_RB && el->out.output_rb) {
         audio_element_clear_state_event(el, BUFFER_REACH_LEVEL_BIT);
-        OS_THREAD_MUTEX_LOCK(el->state_lock);
+        os_mutex_lock(el->state_lock);
         while ((el->state_event & BUFFER_REACH_LEVEL_BIT) == 0) {
-            if (OS_THREAD_COND_TIMEDWAIT(el->state_cond, el->state_lock, timeout_ms*1000) != 0)
+            if (os_cond_timedwait(el->state_cond, el->state_lock, timeout_ms*1000) != 0)
                 break;
         }
         if ((el->state_event & BUFFER_REACH_LEVEL_BIT) != 0)
             ret = ESP_OK;
-        OS_THREAD_MUTEX_UNLOCK(el->state_lock);
+        os_mutex_unlock(el->state_lock);
     }
     return ret;
 }
@@ -998,10 +998,10 @@ audio_element_handle_t audio_element_init(audio_element_cfg_t *config)
     bool _success =
         (
             ((config->tag ? audio_element_set_tag(el, config->tag) : audio_element_set_tag(el, "unknown")) == ESP_OK) &&
-            (el->info_lock      = OS_THREAD_MUTEX_CREATE())         &&
+            (el->info_lock      = os_mutex_create())                &&
             (el->iface_event    = audio_event_iface_init(&evt_cfg)) &&
-            (el->state_cond     = OS_THREAD_COND_CREATE())          &&
-            (el->state_lock     = OS_THREAD_MUTEX_CREATE())
+            (el->state_cond     = os_cond_create())                 &&
+            (el->state_lock     = os_mutex_create())
         );
 
     AUDIO_MEM_CHECK(TAG, _success, goto _element_init_failed);
@@ -1016,11 +1016,11 @@ audio_element_handle_t audio_element_init(audio_element_cfg_t *config)
     el->multi_in.max_rb_num = config->multi_in_rb_num;
     el->multi_out.max_rb_num = config->multi_out_rb_num;
     if (el->multi_in.max_rb_num > 0) {
-        el->multi_in.rb = (ringbuf_handle_t *)audio_calloc(el->multi_in.max_rb_num, sizeof(ringbuf_handle_t));
+        el->multi_in.rb = (ringbuf_handle *)audio_calloc(el->multi_in.max_rb_num, sizeof(ringbuf_handle));
         AUDIO_MEM_CHECK(TAG, el->multi_in.rb, goto _element_init_failed);
     }
     if (el->multi_out.max_rb_num > 0) {
-        el->multi_out.rb = (ringbuf_handle_t *)audio_calloc(el->multi_out.max_rb_num, sizeof(ringbuf_handle_t));
+        el->multi_out.rb = (ringbuf_handle *)audio_calloc(el->multi_out.max_rb_num, sizeof(ringbuf_handle));
         AUDIO_MEM_CHECK(TAG, el->multi_out.rb, goto _element_init_failed);
     }
 
@@ -1065,13 +1065,13 @@ audio_element_handle_t audio_element_init(audio_element_cfg_t *config)
     return el;
 _element_init_failed:
     if (el->info_lock) {
-        OS_THREAD_MUTEX_DESTROY(el->info_lock);
+        os_mutex_destroy(el->info_lock);
     }
     if (el->state_cond) {
-        OS_THREAD_COND_DESTROY(el->state_cond);
+        os_cond_destroy(el->state_cond);
     }
     if (el->state_lock) {
-        OS_THREAD_MUTEX_DESTROY(el->state_lock);
+        os_mutex_destroy(el->state_lock);
     }
     if (el->iface_event) {
         audio_event_iface_destroy(el->iface_event);
@@ -1097,9 +1097,9 @@ esp_err_t audio_element_deinit(audio_element_handle_t el)
     audio_element_stop(el);
     audio_element_wait_for_stop(el);
     audio_element_terminate(el);
-    OS_THREAD_MUTEX_DESTROY(el->state_lock);
-    OS_THREAD_COND_DESTROY(el->state_cond);
-    OS_THREAD_MUTEX_DESTROY(el->info_lock);
+    os_mutex_destroy(el->state_lock);
+    os_cond_destroy(el->state_cond);
+    os_mutex_destroy(el->info_lock);
     audio_event_iface_destroy(el->iface_event);
     if (el->destroy) {
         el->destroy(el);
@@ -1124,7 +1124,7 @@ esp_err_t audio_element_deinit(audio_element_handle_t el)
 esp_err_t audio_element_run(audio_element_handle_t el)
 {
     char task_name[32];
-    struct os_threadattr threadattr;
+    struct os_thread_attr threadattr;
     esp_err_t ret = ESP_FAIL;
     if (el->task_run) {
         OS_LOGV(TAG, "[%s] Element already created", el->tag);
@@ -1138,18 +1138,18 @@ esp_err_t audio_element_run(audio_element_handle_t el)
     threadattr.joinable = false;
     audio_event_iface_discard(el->iface_event);
     audio_element_clear_state_event(el, TASK_CREATED_BIT);
-    if (OS_THREAD_CREATE(&threadattr, audio_element_task, (void *)el) == NULL) {
+    if (os_thread_create(&threadattr, audio_element_task, (void *)el) == NULL) {
         OS_LOGE(TAG, "[%s] Error create element task", el->tag);
         return ESP_FAIL;
     }
-    OS_THREAD_MUTEX_LOCK(el->state_lock);
+    os_mutex_lock(el->state_lock);
     while ((el->state_event & TASK_CREATED_BIT) == 0) {
-        if (OS_THREAD_COND_TIMEDWAIT(el->state_cond, el->state_lock, DEFAULT_WAIT_TIMEOUT_MS*1000) != 0)
+        if (os_cond_timedwait(el->state_cond, el->state_lock, DEFAULT_WAIT_TIMEOUT_MS*1000) != 0)
             break;
     }
     if ((el->state_event & TASK_CREATED_BIT) != 0)
         ret = ESP_OK;
-    OS_THREAD_MUTEX_UNLOCK(el->state_lock);
+    os_mutex_unlock(el->state_lock);
     OS_LOGV(TAG, "[%s] Element task created", el->tag);
     return ret;
 }
@@ -1166,14 +1166,14 @@ esp_err_t audio_element_terminate(audio_element_handle_t el)
         return ESP_FAIL;
     }
     esp_err_t ret = ESP_FAIL;
-    OS_THREAD_MUTEX_LOCK(el->state_lock);
+    os_mutex_lock(el->state_lock);
     while ((el->state_event & TASK_DESTROYED_BIT) == 0) {
-        if (OS_THREAD_COND_TIMEDWAIT(el->state_cond, el->state_lock, DEFAULT_WAIT_TIMEOUT_MS*1000) != 0)
+        if (os_cond_timedwait(el->state_cond, el->state_lock, DEFAULT_WAIT_TIMEOUT_MS*1000) != 0)
             break;
     }
     if ((el->state_event & TASK_DESTROYED_BIT) != 0)
         ret = ESP_OK;
-    OS_THREAD_MUTEX_UNLOCK(el->state_lock);
+    os_mutex_unlock(el->state_lock);
     OS_LOGV(TAG, "[%s] Element task destroyed", el->tag);
     return ret;
 }
@@ -1196,9 +1196,9 @@ esp_err_t audio_element_pause(audio_element_handle_t el)
         return ESP_FAIL;
     }
     esp_err_t ret = ESP_FAIL;
-    OS_THREAD_MUTEX_LOCK(el->state_lock);
+    os_mutex_lock(el->state_lock);
     while ((el->state_event & PAUSED_BIT) == 0) {
-        if (OS_THREAD_COND_TIMEDWAIT(el->state_cond, el->state_lock, DEFAULT_WAIT_TIMEOUT_MS*1000) != 0)
+        if (os_cond_timedwait(el->state_cond, el->state_lock, DEFAULT_WAIT_TIMEOUT_MS*1000) != 0)
             break;
     }
     if ((el->state_event & PAUSED_BIT) != 0) {
@@ -1208,7 +1208,7 @@ esp_err_t audio_element_pause(audio_element_handle_t el)
     else {
         OS_LOGE(TAG, "[%s] Element failed when AUDIO_ELEMENT_PAUSE", el->tag);
     }
-    OS_THREAD_MUTEX_UNLOCK(el->state_lock);
+    os_mutex_unlock(el->state_lock);
     return ret;
 }
 
@@ -1240,9 +1240,9 @@ esp_err_t audio_element_resume(audio_element_handle_t el, float wait_for_rb_thre
     int ret =  ESP_FAIL;
     audio_element_clear_state_event(el, RESUMED_BIT);
     audio_element_cmd_send(el, AEL_MSG_CMD_RESUME);
-    OS_THREAD_MUTEX_LOCK(el->state_lock);
+    os_mutex_lock(el->state_lock);
     while ((el->state_event & RESUMED_BIT) == 0) {
-        if (OS_THREAD_COND_TIMEDWAIT(el->state_cond, el->state_lock, DEFAULT_WAIT_TIMEOUT_MS*1000) != 0)
+        if (os_cond_timedwait(el->state_cond, el->state_lock, DEFAULT_WAIT_TIMEOUT_MS*1000) != 0)
             break;
     }
     if ((el->state_event & RESUMED_BIT) != 0 && (el->is_running || el->state == AEL_STATE_FINISHED)) {
@@ -1252,7 +1252,7 @@ esp_err_t audio_element_resume(audio_element_handle_t el, float wait_for_rb_thre
     else {
         OS_LOGE(TAG, "[%s] Element failed when AUDIO_ELEMENT_RESUME", el->tag);
     }
-    OS_THREAD_MUTEX_UNLOCK(el->state_lock);
+    os_mutex_unlock(el->state_lock);
 
     if (ret == ESP_OK && el->write_type == IO_TYPE_RB && el->out.output_rb && el->is_running) {
         int size_threshold = rb_get_size(el->out.output_rb) * wait_for_rb_threshold;
@@ -1277,9 +1277,9 @@ esp_err_t audio_element_seek(audio_element_handle_t el, long long offset)
     el->offset = offset;
     audio_element_clear_state_event(el, SEEKED_BIT);
     audio_element_cmd_send(el, AEL_MSG_CMD_SEEK);
-    OS_THREAD_MUTEX_LOCK(el->state_lock);
+    os_mutex_lock(el->state_lock);
     while ((el->state_event & SEEKED_BIT) == 0) {
-        if (OS_THREAD_COND_TIMEDWAIT(el->state_cond, el->state_lock, DEFAULT_WAIT_TIMEOUT_MS*1000) != 0)
+        if (os_cond_timedwait(el->state_cond, el->state_lock, DEFAULT_WAIT_TIMEOUT_MS*1000) != 0)
             break;
     }
     if ((el->state_event & SEEKED_BIT) != 0 && el->offset == SEEK_COMPLETED) {
@@ -1289,7 +1289,7 @@ esp_err_t audio_element_seek(audio_element_handle_t el, long long offset)
     else {
         OS_LOGE(TAG, "[%s] Element failed when AEL_MSG_CMD_SEEK", el->tag);
     }
-    OS_THREAD_MUTEX_UNLOCK(el->state_lock);
+    os_mutex_unlock(el->state_lock);
     return ret;
 }
 
@@ -1336,12 +1336,12 @@ esp_err_t audio_element_wait_for_stop_ms(audio_element_handle_t el, int timeout_
         return ESP_OK;
     }
     esp_err_t ret = ESP_FAIL;
-    OS_THREAD_MUTEX_LOCK(el->state_lock);
+    os_mutex_lock(el->state_lock);
     while ((el->state_event & STOPPED_BIT) == 0) {
         if (timeout_ms > 0)
-            ret = OS_THREAD_COND_TIMEDWAIT(el->state_cond, el->state_lock, timeout_ms*1000);
+            ret = os_cond_timedwait(el->state_cond, el->state_lock, timeout_ms*1000);
         else
-            ret = OS_THREAD_COND_WAIT(el->state_lock, el->state_lock);
+            ret = os_cond_wait(el->state_lock, el->state_lock);
         if (ret != 0)
             break;
     }
@@ -1349,7 +1349,7 @@ esp_err_t audio_element_wait_for_stop_ms(audio_element_handle_t el, int timeout_
         ret = ESP_OK;
     else
         ret = ESP_FAIL;
-    OS_THREAD_MUTEX_UNLOCK(el->state_lock);
+    os_mutex_unlock(el->state_lock);
     return ret;
 }
 
@@ -1377,7 +1377,7 @@ esp_err_t audio_element_multi_output(audio_element_handle_t el, char *buffer, in
     return ret;
 }
 
-esp_err_t audio_element_set_multi_input_ringbuf(audio_element_handle_t el, ringbuf_handle_t rb, int index)
+esp_err_t audio_element_set_multi_input_ringbuf(audio_element_handle_t el, ringbuf_handle rb, int index)
 {
     if ((index < el->multi_in.max_rb_num) && rb) {
         el->multi_in.rb[index] = rb;
@@ -1386,7 +1386,7 @@ esp_err_t audio_element_set_multi_input_ringbuf(audio_element_handle_t el, ringb
     return ESP_ERR_INVALID_ARG;
 }
 
-esp_err_t audio_element_set_multi_output_ringbuf(audio_element_handle_t el, ringbuf_handle_t rb, int index)
+esp_err_t audio_element_set_multi_output_ringbuf(audio_element_handle_t el, ringbuf_handle rb, int index)
 {
     if ((index < el->multi_out.max_rb_num) && rb) {
         el->multi_out.rb[index] = rb;
@@ -1395,7 +1395,7 @@ esp_err_t audio_element_set_multi_output_ringbuf(audio_element_handle_t el, ring
     return ESP_ERR_INVALID_ARG;
 }
 
-ringbuf_handle_t audio_element_get_multi_input_ringbuf(audio_element_handle_t el, int index)
+ringbuf_handle audio_element_get_multi_input_ringbuf(audio_element_handle_t el, int index)
 {
     if (index < el->multi_in.max_rb_num) {
         return el->multi_in.rb[index];
@@ -1403,7 +1403,7 @@ ringbuf_handle_t audio_element_get_multi_input_ringbuf(audio_element_handle_t el
     return NULL;
 }
 
-ringbuf_handle_t audio_element_get_multi_output_ringbuf(audio_element_handle_t el, int index)
+ringbuf_handle audio_element_get_multi_output_ringbuf(audio_element_handle_t el, int index)
 {
     if (index < el->multi_out.max_rb_num) {
         return el->multi_out.rb[index];

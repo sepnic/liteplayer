@@ -53,6 +53,7 @@ dkms.conf
 
 *.patch
 *.diff
+*.bak
 *.DS_Store
 out/
 libs/

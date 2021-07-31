@@ -89,7 +89,7 @@ struct m4a_info {
     uint32_t    mdat_offset;
 };
 
-int m4a_parse_header(ringbuf_handle_t rb, struct m4a_info *info);
+int m4a_parse_header(ringbuf_handle rb, struct m4a_info *info);
 
 int m4a_get_seek_offset(int seek_ms, struct m4a_info *info, uint32_t *sample_index, uint32_t *sample_offset);
 

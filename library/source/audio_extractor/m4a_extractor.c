@@ -17,10 +17,10 @@
 
 #include <stdio.h>
 #include <stdbool.h>
-#include <stdint.h>
+#include <string.h>
 
-#include "cutils/os_thread.h"
-#include "cutils/os_logger.h"
+#include "osal/os_thread.h"
+#include "cutils/log_helper.h"
 #include "esp_adf/audio_common.h"
 #include "audio_extractor/aac_extractor.h"
 #include "audio_extractor/m4a_extractor.h"
@@ -62,7 +62,7 @@ struct atom_box {
 };
 
 struct atom_parser {
-    ringbuf_handle_t    rb;
+    ringbuf_handle      rb;
     uint8_t             data[STREAM_BUFFER_SIZE];
     uint32_t            offset;
     struct atom_box    *atom;
@@ -778,7 +778,7 @@ next_atom:
     return AAC_ERR_FAIL;
 }
 
-int m4a_parse_header(ringbuf_handle_t rb, struct m4a_info *info)
+int m4a_parse_header(ringbuf_handle rb, struct m4a_info *info)
 {
     static struct atom_box moov[] = {
         {ATOM_NAME, "moov"},
@@ -828,7 +828,7 @@ finish:
 
 struct m4a_reader_priv {
     struct m4a_info *info;
-    ringbuf_handle_t rb;
+    ringbuf_handle rb;
     int ret;
 };
 
@@ -841,8 +841,8 @@ static void *m4a_reader_parse_thread(void *arg)
 
 int m4a_extractor(m4a_fetch_cb fetch_cb, void *fetch_priv, struct m4a_info *info)
 {
-    ringbuf_handle_t rb_atom = NULL;
-    os_thread_t tid = NULL;
+    ringbuf_handle rb_atom = NULL;
+    os_thread tid = NULL;
     char buffer[STREAM_BUFFER_SIZE];
     int bytes_writen, bytes_read, offset = 0;
     bool double_check = false;
@@ -857,7 +857,7 @@ int m4a_extractor(m4a_fetch_cb fetch_cb, void *fetch_priv, struct m4a_info *info
         .ret = AAC_ERR_FAIL,
     };
 
-    struct os_threadattr tattr = {
+    struct os_thread_attr tattr = {
         .name = "ael-m4aparser",
         .priority = M4A_PARSER_TASK_PRIO,
         .stacksize = M4A_PARSER_TASK_STACK,
@@ -865,7 +865,7 @@ int m4a_extractor(m4a_fetch_cb fetch_cb, void *fetch_priv, struct m4a_info *info
     };
 
 m4a_parse:
-    tid = OS_THREAD_CREATE(&tattr, m4a_reader_parse_thread, &priv);
+    tid = os_thread_create(&tattr, m4a_reader_parse_thread, &priv);
     if (tid == NULL) {
         OS_LOGE(TAG, "Failed to create task to parse m4a");
         goto m4a_finish;
@@ -901,7 +901,7 @@ m4a_parse:
 
 m4a_writen:
     rb_done_write(rb_atom);
-    OS_THREAD_JOIN(tid, NULL);
+    os_thread_join(tid, NULL);
 
     if (!double_check) {
         double_check = true;

@@ -20,7 +20,7 @@
 
 #include <stdbool.h>
 
-#include "cutils/os_thread.h"
+#include "osal/os_thread.h"
 #include "esp_adf/audio_element.h"
 
 #ifdef __cplusplus

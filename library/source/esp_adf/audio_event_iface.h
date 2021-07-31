@@ -32,7 +32,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-#include "cutils/msgqueue.h"
+#include "cutils/mqueue.h"
 #include "esp_adf/queue.h"
 #include "esp_adf/audio_common.h"
 
@@ -204,9 +204,9 @@ esp_err_t audio_event_iface_listen(audio_event_iface_handle_t evt, audio_event_i
  *
  * @param[in]  evt   The external queue
  *
- * @return     External mqueue_t
+ * @return     External mq_handle
  */
-mqueue_t audio_event_iface_get_queue_handle(audio_event_iface_handle_t evt);
+mq_handle audio_event_iface_get_queue_handle(audio_event_iface_handle_t evt);
 
 /**
  * @brief      Read the event from all the registered event emitters in the queue set of the interface
@@ -226,9 +226,9 @@ esp_err_t audio_event_iface_read(audio_event_iface_handle_t evt, audio_event_ifa
  *
  * @param[in]  evt   The Internal queue
  *
- * @return     Internal mqueue_t
+ * @return     Internal mq_handle
  */
-mqueue_t audio_event_iface_get_msg_queue_handle(audio_event_iface_handle_t evt);
+mq_handle audio_event_iface_get_msg_queue_handle(audio_event_iface_handle_t evt);
 
 /**
  * @brief      Add audio internal event `evt` to the listener, then we can listen `evt` event from `listen`

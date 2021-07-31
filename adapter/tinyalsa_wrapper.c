@@ -16,9 +16,10 @@
  */
 
 #include <stdio.h>
+#include <stdbool.h>
 #include <string.h>
 
-#include "cutils/os_logger.h"
+#include "cutils/log_helper.h"
 #include "tinyalsa/asoundlib.h"
 #include "tinyalsa_wrapper.h"
 

@@ -297,7 +297,7 @@ audio_event_iface_handle_t audio_pipeline_get_event_iface(audio_pipeline_handle_
  *     - ESP_FAIL
  */
 esp_err_t audio_pipeline_link_insert(audio_pipeline_handle_t pipeline, bool first, audio_element_handle_t prev,
-                                     ringbuf_handle_t conect_rb, audio_element_handle_t next);
+                                     ringbuf_handle conect_rb, audio_element_handle_t next);
 
 /**
  * @brief      Register a NULL-terminated list of elements to audio_pipeline.

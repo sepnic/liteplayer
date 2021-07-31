@@ -6,6 +6,16 @@ project(liteplayer_demo)
 
 set(TOP_DIR "${CMAKE_SOURCE_DIR}/../..")
 
+# cflags: OS_LINUX, OS_ANDROID, OS_APPLE, OS_RTOS
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DOS_APPLE")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -Wall -Werror -Wno-error=unused-function")
+# cflag: if enable aac sbr
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DAAC_ENABLE_SBR")
+# cflag: libspeexdsp: FIXED_POINT/FLOATING_POINT, USE_NEON/USE_SSE
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DFLOATING_POINT -DUSE_SSE")
+# cflags: if socketlen_t defined
+#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_SOCKLEN_T")
+
 # include files
 include_directories(${TOP_DIR}/thirdparty/sysutils/include)
 include_directories(${TOP_DIR}/thirdparty/codecs)
@@ -31,7 +41,7 @@ include_directories(${TOP_DIR}/thirdparty/codecs/aac-fdk/libSACdec/include)
 # source files
 file(GLOB THIRDPARTY_SRC src
     ${TOP_DIR}/thirdparty/sysutils/source/cutils/*.c
-    ${TOP_DIR}/thirdparty/sysutils/osal/*.c
+    ${TOP_DIR}/thirdparty/sysutils/osal/unix/*.c
     ${TOP_DIR}/thirdparty/codecs/mp3-pvmp3/src/*.cpp
     ${TOP_DIR}/thirdparty/codecs/aac-fdk/libAACdec/src/*.cpp
     ${TOP_DIR}/thirdparty/codecs/aac-fdk/libPCMutils/src/*.cpp
@@ -159,30 +169,6 @@ set (LITEPLAYER_SRC
     ${TOP_DIR}/library/source/liteplayer_main.c
     ${TOP_DIR}/library/source/liteplayer_manager.c
 )
-
-# cflags: OS_LINUX, OS_ANDROID, OS_MACOSX, OS_IOS, OS_FREERTOS
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DOS_MACOSX")
-
-# ENABLE_MEMORY_LEAK_DETECT
-#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_MEMORY_LEAK_DETECT")
-
-# ENABLE_MEMORY_OVERFLOW_DETECT
-#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_MEMORY_OVERFLOW_DETECT")
-
-# cflag: if enable aac sbr
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DAAC_ENABLE_SBR")
-
-# cflag: libspeexdsp: FIXED_POINT/FLOATING_POINT, USE_NEON/USE_SSE
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DFLOATING_POINT -DUSE_SSE")
-
-# cflag: resampler: ENABLE_SRC, CONFIG_SRC_QUALITY
-
-# cflags: compile paramters
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -Wall -Werror -Wno-error=unused-function")
-# cflags: if socketlen_t defined
-#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_SOCKLEN_T")
-
-#message("CMAKE_C_FLAGS: ${CMAKE_C_FLAGS}")
 
 # liteplayer_demo
 add_executable(liteplayer_demo liteplayer_demo.c ${THIRDPARTY_SRC} ${LITEPLAYER_SRC} ${ADAPTER_SRC})

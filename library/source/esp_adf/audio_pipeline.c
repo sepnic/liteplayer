@@ -31,7 +31,7 @@
 #include <stdarg.h>
 
 #include "cutils/ringbuf.h"
-#include "cutils/os_logger.h"
+#include "cutils/log_helper.h"
 #include "esp_adf/audio_element.h"
 #include "esp_adf/queue.h"
 #include "esp_adf/audio_pipeline.h"
@@ -44,7 +44,7 @@
 
 typedef struct ringbuf_item {
     STAILQ_ENTRY(ringbuf_item)  next;
-    ringbuf_handle_t            rb;
+    ringbuf_handle              rb;
     audio_element_handle_t      host_el;
     bool                        linked;
     bool                        kept_ctx;
@@ -66,7 +66,7 @@ struct audio_pipeline {
     audio_element_list_t        el_list;
     ringbuf_list_t              rb_list;
     audio_element_state_t       state;
-    os_mutex_t                  lock;
+    os_mutex                    lock;
     bool                        linked;
     audio_event_iface_handle_t  listener;
 };
@@ -124,7 +124,7 @@ static void audio_pipeline_unregister_element(audio_pipeline_handle_t pipeline, 
     }
 }
 
-static void add_rb_to_audio_pipeline(audio_pipeline_handle_t pipeline, ringbuf_handle_t rb, audio_element_handle_t host_el)
+static void add_rb_to_audio_pipeline(audio_pipeline_handle_t pipeline, ringbuf_handle rb, audio_element_handle_t host_el)
 {
     ringbuf_item_t *rb_item = (ringbuf_item_t *)audio_calloc(1, sizeof(ringbuf_item_t));
     AUDIO_MEM_CHECK(TAG, rb_item, return);
@@ -249,7 +249,7 @@ audio_pipeline_handle_t audio_pipeline_init(audio_pipeline_cfg_t *config)
     bool _success =
         (
             (pipeline       = audio_calloc(1, sizeof(struct audio_pipeline))) &&
-            (pipeline->lock = OS_THREAD_MUTEX_CREATE())
+            (pipeline->lock = os_mutex_create())
         );
 
     AUDIO_MEM_CHECK(TAG, _success, return NULL);
@@ -270,7 +270,7 @@ esp_err_t audio_pipeline_deinit(audio_pipeline_handle_t pipeline)
         audio_element_deinit(el_item->el);
         audio_pipeline_unregister(pipeline, el_item->el);
     }
-    OS_THREAD_MUTEX_DESTROY(pipeline->lock);
+    os_mutex_destroy(pipeline->lock);
     audio_free(pipeline);
     return ESP_OK;
 }
@@ -471,7 +471,7 @@ esp_err_t audio_pipeline_wait_for_stop(audio_pipeline_handle_t pipeline)
 
 static esp_err_t _pipeline_rb_linked(audio_pipeline_handle_t pipeline, audio_element_handle_t el, bool first, bool last)
 {
-    static ringbuf_handle_t rb;
+    static ringbuf_handle rb;
     ringbuf_item_t *rb_item;
     if (last) {
         audio_element_set_input_ringbuf(el, rb);
@@ -620,7 +620,7 @@ esp_err_t audio_pipeline_link_more(audio_pipeline_handle_t pipeline, audio_eleme
     return ESP_OK;
 }
 
-esp_err_t audio_pipeline_link_insert(audio_pipeline_handle_t pipeline, bool first, audio_element_handle_t prev, ringbuf_handle_t conect_rb, audio_element_handle_t next)
+esp_err_t audio_pipeline_link_insert(audio_pipeline_handle_t pipeline, bool first, audio_element_handle_t prev, ringbuf_handle conect_rb, audio_element_handle_t next)
 {
     if (first) {
         audio_pipeline_register_element(pipeline, prev);
@@ -641,7 +641,7 @@ esp_err_t audio_pipeline_listen_more(audio_pipeline_handle_t pipeline, audio_ele
     while (element_1) {
         audio_element_handle_t el = element_1;
         element_1 = va_arg(args, audio_element_handle_t);
-        mqueue_t que = audio_element_get_event_queue(el);
+        mq_handle que = audio_element_get_event_queue(el);
         audio_event_iface_msg_t dummy = {0};
         while (1) {
             if (mqueue_receive(que, (char *)&dummy, 0) == 0) {
@@ -759,7 +759,7 @@ esp_err_t audio_pipeline_reset_kept_state(audio_pipeline_handle_t pipeline, audi
             break;
         }
     }
-    ringbuf_handle_t rb = audio_element_get_output_ringbuf(el);
+    ringbuf_handle rb = audio_element_get_output_ringbuf(el);
     audio_element_set_output_ringbuf(el, NULL);
     ringbuf_item_t *rb_item, *tmp;
     STAILQ_FOREACH_SAFE(rb_item, &pipeline->rb_list, next, tmp) {
@@ -855,7 +855,7 @@ static esp_err_t audio_pipeline_el_item_link(audio_pipeline_handle_t pipeline,
 {
     ringbuf_item_t *cur_rb_item = NULL;
     ringbuf_item_t *rb_item, *rb_tmp;
-    static ringbuf_handle_t rb;
+    static ringbuf_handle rb;
     // Found the kept ringbuffer if exist
     if (src_el_item->kept_ctx) {
         STAILQ_FOREACH_SAFE(rb_item, &pipeline->rb_list, next, rb_tmp) {
@@ -890,7 +890,7 @@ static esp_err_t audio_pipeline_el_item_link(audio_pipeline_handle_t pipeline,
         }
     }
     if ((last == false) && (cur_rb_item == NULL)) {
-        ringbuf_handle_t tmp_rb = NULL;
+        ringbuf_handle tmp_rb = NULL;
         bool _success = (
                             (cur_rb_item = audio_calloc(1, sizeof(ringbuf_item_t))) &&
                             (tmp_rb = rb_create(audio_element_get_output_ringbuf_size(el)))

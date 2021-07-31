@@ -4,24 +4,65 @@ project(liteplayer_core)
 set(TOP_DIR "${CMAKE_SOURCE_DIR}/..")
 set(THIRDPARTY_DIR "${TOP_DIR}/thirdparty")
 
+# cflags: OS_LINUX, OS_ANDROID, OS_APPLE, OS_RTOS
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -Wall -Werror -DOS_APPLE")
+# cflag: libmad: FPM_64BIT/FPM_INTEL/FPM_ARM/FPM_MIPS/FPM_DEFAULT
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DFPM_64BIT")
+# cflag: helix: __arm__/__amd64__, __GNUC__
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D__amd64__ -DUSE_DEFAULT_STDLIB")
+# cflag: if enable aac sbr
+#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DAAC_ENABLE_SBR")
+# cflag: libspeexdsp: FIXED_POINT/FLOATING_POINT, USE_NEON/USE_SSE
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DFIXED_POINT")
+# cflag: resampler: ENABLE_SRC, CONFIG_SRC_QUALITY
+#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_SRC -DCONFIG_SRC_QUALITY=8")
+# cflags: if socketlen_t defined
+#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_SOCKLEN_T")
+
 # include files
 include_directories(${THIRDPARTY_DIR}/sysutils/include)
 include_directories(${THIRDPARTY_DIR}/codecs)
 include_directories(${TOP_DIR}/library/include)
 include_directories(${TOP_DIR}/library/source)
-
-# source files
-set (THIRDPARTY_SRC
-    ${THIRDPARTY_DIR}/sysutils/source/cutils/memory_debug.c
-    ${THIRDPARTY_DIR}/sysutils/source/cutils/msglooper.c
-    ${THIRDPARTY_DIR}/sysutils/source/cutils/msgqueue.c
+# liteplayer files
+set (LITEPLAYER_SRC
+    ${TOP_DIR}/library/source/esp_adf/audio_element.c
+    ${TOP_DIR}/library/source/esp_adf/audio_event_iface.c
+    ${TOP_DIR}/library/source/esp_adf/audio_pipeline.c
+    ${TOP_DIR}/library/source/audio_decoder/mp3_mad_wrapper.c
+    ${TOP_DIR}/library/source/audio_decoder/mp3_decoder.c
+    ${TOP_DIR}/library/source/audio_decoder/aac_helix_wrapper.c
+    ${TOP_DIR}/library/source/audio_decoder/aac_decoder.c
+    ${TOP_DIR}/library/source/audio_decoder/m4a_decoder.c
+    ${TOP_DIR}/library/source/audio_decoder/wav_decoder.c
+    ${TOP_DIR}/library/source/audio_extractor/mp3_extractor.c
+    ${TOP_DIR}/library/source/audio_extractor/aac_extractor.c
+    ${TOP_DIR}/library/source/audio_extractor/m4a_extractor.c
+    ${TOP_DIR}/library/source/audio_extractor/wav_extractor.c
+    ${TOP_DIR}/library/source/audio_resampler/audio_resampler.c
+    ${TOP_DIR}/library/source/audio_resampler/speexdsp/resample.c
+    ${TOP_DIR}/library/source/audio_stream/sink_stream.c
+    ${TOP_DIR}/library/source/liteplayer_source.c
+    ${TOP_DIR}/library/source/liteplayer_parser.c
+    ${TOP_DIR}/library/source/liteplayer_debug.c
+    ${TOP_DIR}/library/source/liteplayer_main.c
+    ${TOP_DIR}/library/source/liteplayer_manager.c
+)
+# sysutils files
+set (SYSUTILS_SRC
+    ${THIRDPARTY_DIR}/sysutils/osal/unix/os_log.c
+    ${THIRDPARTY_DIR}/sysutils/osal/unix/os_memory.c
+    ${THIRDPARTY_DIR}/sysutils/osal/unix/os_thread.c
+    ${THIRDPARTY_DIR}/sysutils/osal/unix/os_time.c
+    ${THIRDPARTY_DIR}/sysutils/osal/unix/os_timer.c
+    ${THIRDPARTY_DIR}/sysutils/source/cutils/memdbg.c
+    ${THIRDPARTY_DIR}/sysutils/source/cutils/mlooper.c
+    ${THIRDPARTY_DIR}/sysutils/source/cutils/mqueue.c
     ${THIRDPARTY_DIR}/sysutils/source/cutils/ringbuf.c
-    ${THIRDPARTY_DIR}/sysutils/source/cutils/sw_timer.c
-    ${THIRDPARTY_DIR}/sysutils/source/cutils/sw_watchdog.c
-    ${THIRDPARTY_DIR}/sysutils/osal/os_logger.c
-    ${THIRDPARTY_DIR}/sysutils/osal/os_thread.c
-    ${THIRDPARTY_DIR}/sysutils/osal/os_time.c
-    ${THIRDPARTY_DIR}/sysutils/osal/os_timer.c
+    ${THIRDPARTY_DIR}/sysutils/source/cutils/swtimer.c
+)
+# codecs files
+set (CODECS_SRC
     ${THIRDPARTY_DIR}/codecs/mp3-mad/bit.c
     ${THIRDPARTY_DIR}/codecs/mp3-mad/decoder.c
     ${THIRDPARTY_DIR}/codecs/mp3-mad/fixed.c
@@ -63,56 +104,6 @@ set (THIRDPARTY_SRC
     ${THIRDPARTY_DIR}/codecs/aac-helix/trigtabs.c
 )
 
-# source files
-set (LITEPLAYER_SRC
-    ${TOP_DIR}/library/source/esp_adf/audio_element.c
-    ${TOP_DIR}/library/source/esp_adf/audio_event_iface.c
-    ${TOP_DIR}/library/source/esp_adf/audio_pipeline.c
-    ${TOP_DIR}/library/source/audio_decoder/mp3_mad_wrapper.c
-    ${TOP_DIR}/library/source/audio_decoder/mp3_decoder.c
-    ${TOP_DIR}/library/source/audio_decoder/aac_helix_wrapper.c
-    ${TOP_DIR}/library/source/audio_decoder/aac_decoder.c
-    ${TOP_DIR}/library/source/audio_decoder/m4a_decoder.c
-    ${TOP_DIR}/library/source/audio_decoder/wav_decoder.c
-    ${TOP_DIR}/library/source/audio_extractor/mp3_extractor.c
-    ${TOP_DIR}/library/source/audio_extractor/aac_extractor.c
-    ${TOP_DIR}/library/source/audio_extractor/m4a_extractor.c
-    ${TOP_DIR}/library/source/audio_extractor/wav_extractor.c
-    ${TOP_DIR}/library/source/audio_resampler/audio_resampler.c
-    ${TOP_DIR}/library/source/audio_resampler/speexdsp/resample.c
-    ${TOP_DIR}/library/source/audio_stream/sink_stream.c
-    ${TOP_DIR}/library/source/liteplayer_source.c
-    ${TOP_DIR}/library/source/liteplayer_parser.c
-    ${TOP_DIR}/library/source/liteplayer_debug.c
-    ${TOP_DIR}/library/source/liteplayer_main.c
-    ${TOP_DIR}/library/source/liteplayer_manager.c
-)
-
-# cflags: OS_LINUX, OS_ANDROID, OS_MACOSX, OS_IOS, OS_FREERTOS
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DOS_MACOSX")
-
-# cflag: libmad: FPM_64BIT/FPM_INTEL/FPM_ARM/FPM_MIPS/FPM_DEFAULT
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DFPM_64BIT")
-
-# cflag: helix: __arm__/__amd64__, __GNUC__
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D__amd64__ -DUSE_DEFAULT_STDLIB")
-
-# cflag: if enable aac sbr
-#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DAAC_ENABLE_SBR")
-
-# cflag: libspeexdsp: FIXED_POINT/FLOATING_POINT, USE_NEON/USE_SSE
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DFIXED_POINT")
-
-# cflag: resampler: ENABLE_SRC, CONFIG_SRC_QUALITY
-#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_SRC -DCONFIG_SRC_QUALITY=8")
-
-# cflags: compile paramters
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -Wall -Werror")
-# cflags: if socketlen_t defined
-#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_SOCKLEN_T")
-
-#message("CMAKE_C_FLAGS: ${CMAKE_C_FLAGS}")
-
 # liteplayer_core lib
-add_library(liteplayer_core   SHARED ${THIRDPARTY_SRC} ${LITEPLAYER_SRC})
-add_library(liteplayer_core_s STATIC ${THIRDPARTY_SRC} ${LITEPLAYER_SRC})
+add_library(liteplayer_core   SHARED ${SYSUTILS_SRC} ${CODECS_SRC} ${LITEPLAYER_SRC})
+add_library(liteplayer_core_s STATIC ${SYSUTILS_SRC} ${CODECS_SRC} ${LITEPLAYER_SRC})

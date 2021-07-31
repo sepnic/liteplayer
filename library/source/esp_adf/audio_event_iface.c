@@ -26,7 +26,7 @@
  * Copyright (c) 2019-2020 LUOYUN <sysu.zqlong@gmail.com>
  */
 
-#include "cutils/os_logger.h"
+#include "cutils/log_helper.h"
 #include "esp_adf/audio_event_iface.h"
 #include "esp_adf/audio_common.h"
 
@@ -35,7 +35,7 @@
 
 typedef struct audio_event_iface_item {
     STAILQ_ENTRY(audio_event_iface_item)    next;
-    mqueue_t                                queue;
+    mq_handle                                queue;
     int                                     queue_size;
     int                                     mark_to_remove;
 } audio_event_iface_item_t;
@@ -46,9 +46,9 @@ typedef STAILQ_HEAD(audio_event_iface_list, audio_event_iface_item) audio_event_
  * Audio event structure
  */
 struct audio_event_iface {
-    mqueue_t                    internal_queue;
-    mqueue_t                    external_queue;
-    mqueueset_t                 queue_set;
+    mq_handle                   internal_queue;
+    mq_handle                   external_queue;
+    mqset_handle                queue_set;
     int                         internal_queue_size;
     int                         external_queue_size;
     int                         queue_set_size;
@@ -138,7 +138,7 @@ static esp_err_t audio_event_iface_update_listener(audio_event_iface_handle_t li
 esp_err_t audio_event_iface_read(audio_event_iface_handle_t evt, audio_event_iface_msg_t *msg, unsigned int timeout_ms)
 {
     if (evt->queue_set) {
-        mqueue_t active_queue;
+        mq_handle active_queue;
         active_queue = mqueueset_select_queue(evt->queue_set, timeout_ms);
         if (active_queue) {
             if (mqueue_receive(active_queue, (char *)msg, 0) == 0) {
@@ -290,7 +290,7 @@ esp_err_t audio_event_iface_listen(audio_event_iface_handle_t evt, audio_event_i
     return ESP_OK;
 }
 
-mqueue_t audio_event_iface_get_queue_handle(audio_event_iface_handle_t evt)
+mq_handle audio_event_iface_get_queue_handle(audio_event_iface_handle_t evt)
 {
     if (!evt) {
         return NULL;
@@ -298,7 +298,7 @@ mqueue_t audio_event_iface_get_queue_handle(audio_event_iface_handle_t evt)
     return evt->external_queue;
 }
 
-mqueue_t audio_event_iface_get_msg_queue_handle(audio_event_iface_handle_t evt)
+mq_handle audio_event_iface_get_msg_queue_handle(audio_event_iface_handle_t evt)
 {
     if (!evt) {
         return NULL;

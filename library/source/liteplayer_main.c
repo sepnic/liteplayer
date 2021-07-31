@@ -20,7 +20,7 @@
 #include <stdint.h>
 
 #include "cutils/ringbuf.h"
-#include "cutils/os_logger.h"
+#include "cutils/log_helper.h"
 #include "esp_adf/audio_element.h"
 #include "esp_adf/audio_pipeline.h"
 #include "esp_adf/audio_event_iface.h"
@@ -44,12 +44,12 @@ struct liteplayer {
                                  // HTTP  : http://..., https://...
                                  // FILE  : others
     enum liteplayer_state   state;
-    os_mutex_t              state_lock;
+    os_mutex                state_lock;
     liteplayer_state_cb     state_listener;
     void                   *state_userdata;
     bool                    state_error;
 
-    os_mutex_t              io_lock;
+    os_mutex                io_lock;
 
     struct file_wrapper     file_ops;
     struct http_wrapper     http_ops;
@@ -59,7 +59,7 @@ struct liteplayer {
     audio_element_handle_t  el_source;
     audio_element_handle_t  el_decoder;
     audio_element_handle_t  el_sink;
-    ringbuf_handle_t        source_rb;
+    ringbuf_handle          source_rb;
 
     enum media_source_type  source_type;
     media_source_handle_t   media_source;
@@ -112,7 +112,7 @@ static int audio_element_state_callback(audio_element_handle_t el, audio_event_i
 {
     liteplayer_handle_t handle = (liteplayer_handle_t)ctx;
 
-    OS_THREAD_MUTEX_LOCK(handle->state_lock);
+    os_mutex_lock(handle->state_lock);
 
     if (msg->source_type == AUDIO_ELEMENT_TYPE_ELEMENT) {
         audio_element_status_t el_status = (audio_element_status_t)msg->data;
@@ -231,7 +231,7 @@ static int audio_element_state_callback(audio_element_handle_t el, audio_event_i
         }
     }
 
-    OS_THREAD_MUTEX_UNLOCK(handle->state_lock);
+    os_mutex_unlock(handle->state_lock);
     return ESP_OK;
 }
 
@@ -239,7 +239,7 @@ static void media_source_state_callback(enum media_source_state state, void *pri
 {
     liteplayer_handle_t handle = (liteplayer_handle_t)priv;
 
-    OS_THREAD_MUTEX_LOCK(handle->state_lock);
+    os_mutex_lock(handle->state_lock);
 
     switch (state) {
     case MEDIA_SOURCE_READ_FAILED:
@@ -263,14 +263,14 @@ static void media_source_state_callback(enum media_source_state state, void *pri
         break;
     }
 
-    OS_THREAD_MUTEX_UNLOCK(handle->state_lock);
+    os_mutex_unlock(handle->state_lock);
 }
 
 static void media_parser_state_callback(enum media_parser_state state, struct media_codec_info *codec_info, void *priv)
 {
     liteplayer_handle_t handle = (liteplayer_handle_t)priv;
 
-    OS_THREAD_MUTEX_LOCK(handle->state_lock);
+    os_mutex_lock(handle->state_lock);
 
     switch (state) {
     case MEDIA_PARSER_FAILED:
@@ -288,7 +288,7 @@ static void media_parser_state_callback(enum media_parser_state state, struct me
         break;
     }
 
-    OS_THREAD_MUTEX_UNLOCK(handle->state_lock);
+    os_mutex_unlock(handle->state_lock);
 }
 
 static int media_source_get_threshold(liteplayer_handle_t handle, int threshold_ms)
@@ -497,8 +497,8 @@ liteplayer_handle_t liteplayer_create()
     liteplayer_handle_t handle = (liteplayer_handle_t)audio_calloc(1, sizeof(struct liteplayer));
     if (handle != NULL) {
         handle->state = LITEPLAYER_IDLE;
-        handle->io_lock = OS_THREAD_MUTEX_CREATE();
-        handle->state_lock = OS_THREAD_MUTEX_CREATE();
+        handle->io_lock = os_mutex_create();
+        handle->state_lock = os_mutex_create();
         if (handle->io_lock == NULL || handle->state_lock == NULL) {
             audio_free(handle);
             return NULL;
@@ -547,11 +547,11 @@ int liteplayer_set_data_source(liteplayer_handle_t handle, const char *url, int 
 
     OS_LOGI(TAG, "Set player[%s] source:%s", media_source_tag(handle->source_type), url);
 
-    OS_THREAD_MUTEX_LOCK(handle->io_lock);
+    os_mutex_lock(handle->io_lock);
 
     if (handle->state != LITEPLAYER_IDLE) {
         OS_LOGE(TAG, "Can't set source in state=[%d]", handle->state);
-        OS_THREAD_MUTEX_UNLOCK(handle->io_lock);
+        os_mutex_unlock(handle->io_lock);
         return ESP_FAIL;
     }
 
@@ -567,13 +567,13 @@ int liteplayer_set_data_source(liteplayer_handle_t handle, const char *url, int 
         handle->source_type = MEDIA_SOURCE_FILE;
 
     {
-        OS_THREAD_MUTEX_LOCK(handle->state_lock);
+        os_mutex_lock(handle->state_lock);
         handle->state = LITEPLAYER_INITED;
         media_player_state_callback(handle, LITEPLAYER_INITED, 0);
-        OS_THREAD_MUTEX_UNLOCK(handle->state_lock);
+        os_mutex_unlock(handle->state_lock);
     }
 
-    OS_THREAD_MUTEX_UNLOCK(handle->io_lock);
+    os_mutex_unlock(handle->io_lock);
     return ESP_OK;
 }
 
@@ -584,11 +584,11 @@ int liteplayer_prepare(liteplayer_handle_t handle)
 
     OS_LOGI(TAG, "Preparing player[%s]", media_source_tag(handle->source_type));
 
-    OS_THREAD_MUTEX_LOCK(handle->io_lock);
+    os_mutex_lock(handle->io_lock);
 
     if (handle->state != LITEPLAYER_INITED) {
         OS_LOGE(TAG, "Can't prepare in state=[%d]", handle->state);
-        OS_THREAD_MUTEX_UNLOCK(handle->io_lock);
+        os_mutex_unlock(handle->io_lock);
         return ESP_FAIL;
     }
 
@@ -619,13 +619,13 @@ int liteplayer_prepare(liteplayer_handle_t handle)
         ret = main_pipeline_init(handle);
 
     {
-        OS_THREAD_MUTEX_LOCK(handle->state_lock);
+        os_mutex_lock(handle->state_lock);
         handle->state = (ret == ESP_OK) ? LITEPLAYER_PREPARED : LITEPLAYER_ERROR;
         media_player_state_callback(handle, handle->state, ret);
-        OS_THREAD_MUTEX_UNLOCK(handle->state_lock);
+        os_mutex_unlock(handle->state_lock);
     }
 
-    OS_THREAD_MUTEX_UNLOCK(handle->io_lock);
+    os_mutex_unlock(handle->io_lock);
     return ret;
 }
 
@@ -636,11 +636,11 @@ int liteplayer_prepare_async(liteplayer_handle_t handle)
 
     OS_LOGI(TAG, "Async preparing player[%s]", media_source_tag(handle->source_type));
 
-    OS_THREAD_MUTEX_LOCK(handle->io_lock);
+    os_mutex_lock(handle->io_lock);
 
     if (handle->state != LITEPLAYER_INITED) {
         OS_LOGE(TAG, "Can't prepare in state=[%d]", handle->state);
-        OS_THREAD_MUTEX_UNLOCK(handle->io_lock);
+        os_mutex_unlock(handle->io_lock);
         return ESP_FAIL;
     }
 
@@ -660,10 +660,10 @@ int liteplayer_prepare_async(liteplayer_handle_t handle)
         handle->media_parser = media_parser_start_async(&source_info, media_parser_state_callback, handle);
         if (handle->media_parser == NULL) {
             ret = ESP_FAIL;
-            OS_THREAD_MUTEX_LOCK(handle->state_lock);
+            os_mutex_lock(handle->state_lock);
             handle->state = LITEPLAYER_ERROR;
             media_player_state_callback(handle, LITEPLAYER_ERROR, ret);
-            OS_THREAD_MUTEX_UNLOCK(handle->state_lock);
+            os_mutex_unlock(handle->state_lock);
         }
     }
     else {
@@ -678,13 +678,13 @@ int liteplayer_prepare_async(liteplayer_handle_t handle)
         if (ret == ESP_OK)
             ret = main_pipeline_init(handle);
 
-        OS_THREAD_MUTEX_LOCK(handle->state_lock);
+        os_mutex_lock(handle->state_lock);
         handle->state = (ret == ESP_OK) ? LITEPLAYER_PREPARED : LITEPLAYER_ERROR;
         media_player_state_callback(handle, handle->state, ret);
-        OS_THREAD_MUTEX_UNLOCK(handle->state_lock);
+        os_mutex_unlock(handle->state_lock);
     }
 
-    OS_THREAD_MUTEX_UNLOCK(handle->io_lock);
+    os_mutex_unlock(handle->io_lock);
     return ret;
 }
 
@@ -695,16 +695,16 @@ int liteplayer_write(liteplayer_handle_t handle, char *data, int size, bool fina
 
     OS_LOGV(TAG, "Writing player[%s], size=%d, final=%d", media_source_tag(handle->source_type), size, final);
 
-    ringbuf_handle_t source_rb = audio_element_get_input_ringbuf(handle->el_decoder);
+    ringbuf_handle source_rb = audio_element_get_input_ringbuf(handle->el_decoder);
     if (source_rb == NULL || handle->source_type != MEDIA_SOURCE_STREAM) {
         OS_LOGE(TAG, "Invalid source_rb or source_type");
         return ESP_FAIL;
     }
 
-    OS_THREAD_MUTEX_LOCK(handle->io_lock);
+    os_mutex_lock(handle->io_lock);
 
     if (handle->state < LITEPLAYER_PREPARED || handle->state > LITEPLAYER_NEARLYCOMPLETED) {
-        OS_THREAD_MUTEX_UNLOCK(handle->io_lock);
+        os_mutex_unlock(handle->io_lock);
         OS_LOGE(TAG, "Can't write data in state=[%d]", handle->state);
         return ESP_FAIL;
     }
@@ -731,7 +731,7 @@ write_done:
         ret = ESP_OK;
     }
 
-    OS_THREAD_MUTEX_UNLOCK(handle->io_lock);
+    os_mutex_unlock(handle->io_lock);
     return ret;
 }
 
@@ -742,13 +742,13 @@ int liteplayer_start(liteplayer_handle_t handle)
 
     OS_LOGI(TAG, "Starting player[%s]", media_source_tag(handle->source_type));
 
-    OS_THREAD_MUTEX_LOCK(handle->io_lock);
+    os_mutex_lock(handle->io_lock);
 
     if (handle->state != LITEPLAYER_PREPARED &&
         handle->state != LITEPLAYER_PAUSED &&
         handle->state != LITEPLAYER_SEEKCOMPLETED) {
         OS_LOGE(TAG, "Can't start in state=[%d]", handle->state);
-        OS_THREAD_MUTEX_UNLOCK(handle->io_lock);
+        os_mutex_unlock(handle->io_lock);
         return ESP_FAIL;
     }
 
@@ -771,13 +771,13 @@ int liteplayer_start(liteplayer_handle_t handle)
         ret = audio_pipeline_resume(handle->pipeline, 0, 0);
 
     {
-        OS_THREAD_MUTEX_LOCK(handle->state_lock);
+        os_mutex_lock(handle->state_lock);
         handle->state = (ret == ESP_OK) ? LITEPLAYER_STARTED : LITEPLAYER_ERROR;
         media_player_state_callback(handle, handle->state, ret);
-        OS_THREAD_MUTEX_UNLOCK(handle->state_lock);
+        os_mutex_unlock(handle->state_lock);
     }
 
-    OS_THREAD_MUTEX_UNLOCK(handle->io_lock);
+    os_mutex_unlock(handle->io_lock);
     return ret;
 }
 
@@ -788,24 +788,24 @@ int liteplayer_pause(liteplayer_handle_t handle)
 
     OS_LOGI(TAG, "Pausing player[%s]", media_source_tag(handle->source_type));
 
-    OS_THREAD_MUTEX_LOCK(handle->io_lock);
+    os_mutex_lock(handle->io_lock);
 
     if (handle->state != LITEPLAYER_STARTED) {
         OS_LOGE(TAG, "Can't pause in state=[%d]", handle->state);
-        OS_THREAD_MUTEX_UNLOCK(handle->io_lock);
+        os_mutex_unlock(handle->io_lock);
         return ESP_FAIL;
     }
 
     int ret = audio_pipeline_pause(handle->pipeline);
 
     {
-        OS_THREAD_MUTEX_LOCK(handle->state_lock);
+        os_mutex_lock(handle->state_lock);
         handle->state = (ret == ESP_OK) ? LITEPLAYER_PAUSED : LITEPLAYER_ERROR;
         media_player_state_callback(handle, handle->state, ret);
-        OS_THREAD_MUTEX_UNLOCK(handle->state_lock);
+        os_mutex_unlock(handle->state_lock);
     }
 
-    OS_THREAD_MUTEX_UNLOCK(handle->io_lock);
+    os_mutex_unlock(handle->io_lock);
     return ret;
 }
 
@@ -816,24 +816,24 @@ int liteplayer_resume(liteplayer_handle_t handle)
 
     OS_LOGI(TAG, "Resuming player[%s]", media_source_tag(handle->source_type));
 
-    OS_THREAD_MUTEX_LOCK(handle->io_lock);
+    os_mutex_lock(handle->io_lock);
 
     if (handle->state != LITEPLAYER_PAUSED && handle->state != LITEPLAYER_SEEKCOMPLETED) {
         OS_LOGE(TAG, "Can't resume in state=[%d]", handle->state);
-        OS_THREAD_MUTEX_UNLOCK(handle->io_lock);
+        os_mutex_unlock(handle->io_lock);
         return ESP_FAIL;
     }
 
     int ret = audio_pipeline_resume(handle->pipeline, 0, 0);
 
     {
-        OS_THREAD_MUTEX_LOCK(handle->state_lock);
+        os_mutex_lock(handle->state_lock);
         handle->state = (ret == ESP_OK) ? LITEPLAYER_STARTED : LITEPLAYER_ERROR;
         media_player_state_callback(handle, handle->state, ret);
-        OS_THREAD_MUTEX_UNLOCK(handle->state_lock);
+        os_mutex_unlock(handle->state_lock);
     }
 
-    OS_THREAD_MUTEX_UNLOCK(handle->io_lock);
+    os_mutex_unlock(handle->io_lock);
     return ret;
 }
 
@@ -847,7 +847,7 @@ int liteplayer_seek(liteplayer_handle_t handle, int msec)
     int ret = ESP_FAIL;
     bool state_sync = false;
 
-    OS_THREAD_MUTEX_LOCK(handle->io_lock);
+    os_mutex_lock(handle->io_lock);
 
     if (handle->state < LITEPLAYER_PREPARED || handle->state > LITEPLAYER_NEARLYCOMPLETED) {
         OS_LOGE(TAG, "Can't seek in state=[%d]", handle->state);
@@ -973,13 +973,13 @@ int liteplayer_seek(liteplayer_handle_t handle, int msec)
 
 seek_out:
     if (state_sync) {
-        OS_THREAD_MUTEX_LOCK(handle->state_lock);
+        os_mutex_lock(handle->state_lock);
         handle->state = (ret == ESP_OK) ? LITEPLAYER_SEEKCOMPLETED : LITEPLAYER_ERROR;
         media_player_state_callback(handle, handle->state, ret);
-        OS_THREAD_MUTEX_UNLOCK(handle->state_lock);
+        os_mutex_unlock(handle->state_lock);
     }
 
-    OS_THREAD_MUTEX_UNLOCK(handle->io_lock);
+    os_mutex_unlock(handle->io_lock);
     return ret;
 }
 
@@ -992,14 +992,14 @@ int liteplayer_stop(liteplayer_handle_t handle)
 
     OS_LOGI(TAG, "Stopping player[%s]", media_source_tag(handle->source_type));
 
-    OS_THREAD_MUTEX_LOCK(handle->io_lock);
+    os_mutex_lock(handle->io_lock);
 
     if (handle->state == LITEPLAYER_ERROR)
         goto stop_out;
 
     if (handle->state < LITEPLAYER_PREPARED || handle->state > LITEPLAYER_COMPLETED) {
         OS_LOGE(TAG, "Can't stop in state=[%d]", handle->state);
-        OS_THREAD_MUTEX_UNLOCK(handle->io_lock);
+        os_mutex_unlock(handle->io_lock);
         return ESP_FAIL;
     }
 
@@ -1012,13 +1012,13 @@ int liteplayer_stop(liteplayer_handle_t handle)
 
 stop_out:
     {
-        OS_THREAD_MUTEX_LOCK(handle->state_lock);
+        os_mutex_lock(handle->state_lock);
         handle->state = LITEPLAYER_STOPPED;
         media_player_state_callback(handle, handle->state, ret);
-        OS_THREAD_MUTEX_UNLOCK(handle->state_lock);
+        os_mutex_unlock(handle->state_lock);
     }
 
-    OS_THREAD_MUTEX_UNLOCK(handle->io_lock);
+    os_mutex_unlock(handle->io_lock);
     return ret;
 }
 
@@ -1029,7 +1029,7 @@ int liteplayer_reset(liteplayer_handle_t handle)
 
     OS_LOGI(TAG, "Resetting player[%s]", media_source_tag(handle->source_type));
 
-    OS_THREAD_MUTEX_LOCK(handle->io_lock);
+    os_mutex_lock(handle->io_lock);
 
     main_pipeline_deinit(handle);
 
@@ -1064,7 +1064,7 @@ int liteplayer_reset(liteplayer_handle_t handle)
     memset(&handle->codec_info, 0x0, sizeof(handle->codec_info));
 
     {
-        OS_THREAD_MUTEX_LOCK(handle->state_lock);
+        os_mutex_lock(handle->state_lock);
 
         if (handle->state != LITEPLAYER_STOPPED) {
             handle->state = LITEPLAYER_STOPPED;
@@ -1074,10 +1074,10 @@ int liteplayer_reset(liteplayer_handle_t handle)
         handle->state = LITEPLAYER_IDLE;
         media_player_state_callback(handle, LITEPLAYER_IDLE, 0);
 
-        OS_THREAD_MUTEX_UNLOCK(handle->state_lock);
+        os_mutex_unlock(handle->state_lock);
     }
 
-    OS_THREAD_MUTEX_UNLOCK(handle->io_lock);
+    os_mutex_unlock(handle->io_lock);
     return ESP_OK;
 }
 
@@ -1086,7 +1086,7 @@ int liteplayer_get_available_size(liteplayer_handle_t handle)
     if (handle == NULL || handle->el_decoder == NULL)
         return 0;
 
-    ringbuf_handle_t source_rb = audio_element_get_input_ringbuf(handle->el_decoder);
+    ringbuf_handle source_rb = audio_element_get_input_ringbuf(handle->el_decoder);
     if (source_rb != NULL)
         return rb_bytes_available(source_rb);
     else
@@ -1135,7 +1135,7 @@ void liteplayer_destroy(liteplayer_handle_t handle)
     if (handle->state != LITEPLAYER_IDLE)
         liteplayer_reset(handle);
 
-    OS_THREAD_MUTEX_DESTROY(handle->state_lock);
-    OS_THREAD_MUTEX_DESTROY(handle->io_lock);
+    os_mutex_destroy(handle->state_lock);
+    os_mutex_destroy(handle->io_lock);
     audio_free(handle);
 }

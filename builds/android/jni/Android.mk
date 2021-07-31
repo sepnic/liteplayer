@@ -4,33 +4,16 @@ LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 TOP_DIR := ${LOCAL_PATH}/../../..
 LOCAL_SRC_FILES := \
-    ${TOP_DIR}/thirdparty/sysutils/source/cutils/memory_debug.c \
-    ${TOP_DIR}/thirdparty/sysutils/source/cutils/msglooper.c \
-    ${TOP_DIR}/thirdparty/sysutils/source/cutils/msgqueue.c \
+    ${TOP_DIR}/thirdparty/sysutils/osal/unix/os_log.c \
+    ${TOP_DIR}/thirdparty/sysutils/osal/unix/os_memory.c \
+    ${TOP_DIR}/thirdparty/sysutils/osal/unix/os_thread.c \
+    ${TOP_DIR}/thirdparty/sysutils/osal/unix/os_time.c \
+    ${TOP_DIR}/thirdparty/sysutils/osal/unix/os_timer.c \
+    ${TOP_DIR}/thirdparty/sysutils/source/cutils/memdbg.c \
+    ${TOP_DIR}/thirdparty/sysutils/source/cutils/mlooper.c \
+    ${TOP_DIR}/thirdparty/sysutils/source/cutils/mqueue.c \
     ${TOP_DIR}/thirdparty/sysutils/source/cutils/ringbuf.c \
-    ${TOP_DIR}/thirdparty/sysutils/source/cutils/sw_timer.c \
-    ${TOP_DIR}/thirdparty/sysutils/source/cutils/sw_watchdog.c \
-    ${TOP_DIR}/thirdparty/sysutils/osal/os_logger.c \
-    ${TOP_DIR}/thirdparty/sysutils/osal/os_thread.c \
-    ${TOP_DIR}/thirdparty/sysutils/osal/os_time.c \
-    ${TOP_DIR}/thirdparty/sysutils/osal/os_timer.c \
-    ${TOP_DIR}/thirdparty/sysutils/source/utils/Looper.cpp \
-    ${TOP_DIR}/thirdparty/sysutils/source/utils/Thread.cpp \
-    ${TOP_DIR}/thirdparty/sysutils/source/utils/cJSON.cpp \
-    ${TOP_DIR}/thirdparty/sysutils/source/utils/JsonWrapper.cpp \
-    ${TOP_DIR}/thirdparty/sysutils/source/utils/RefBase.cpp \
-    ${TOP_DIR}/thirdparty/sysutils/source/utils/SharedBuffer.cpp \
-    ${TOP_DIR}/thirdparty/sysutils/source/utils/safe_iop.c \
-    ${TOP_DIR}/thirdparty/sysutils/source/utils/VectorImpl.cpp \
-    ${TOP_DIR}/thirdparty/sysutils/source/utils/Unicode.cpp \
-    ${TOP_DIR}/thirdparty/sysutils/source/utils/Static.cpp \
-    ${TOP_DIR}/thirdparty/sysutils/source/utils/String8.cpp \
-    ${TOP_DIR}/thirdparty/sysutils/source/utils/String16.cpp \
-    ${TOP_DIR}/thirdparty/sysutils/source/utils/StringUtils.cpp \
-    ${TOP_DIR}/thirdparty/sysutils/source/cipher/sha2.c \
-    ${TOP_DIR}/thirdparty/sysutils/source/cipher/hmac_sha2.c \
-    ${TOP_DIR}/thirdparty/sysutils/source/cipher/md5.c \
-    ${TOP_DIR}/thirdparty/sysutils/source/cipher/base64.cpp
+    ${TOP_DIR}/thirdparty/sysutils/source/cutils/swtimer.c
 LOCAL_C_INCLUDES += ${TOP_DIR}/thirdparty/sysutils/include
 LOCAL_CFLAGS += -Wall -Werror -DOS_ANDROID
 LOCAL_CPPFLAGS += -Wall -Werror -DOS_ANDROID -std=gnu++11

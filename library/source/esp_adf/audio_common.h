@@ -32,9 +32,9 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#include "cutils/os_thread.h"
-#include "cutils/os_memory.h"
-#include "cutils/os_logger.h"
+#include "osal/os_thread.h"
+#include "cutils/memory_helper.h"
+#include "cutils/log_helper.h"
 
 #ifdef __cplusplus
 extern "C" {

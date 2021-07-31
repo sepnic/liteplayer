@@ -18,7 +18,7 @@
 #ifndef _MP3_DECODER_H_
 #define _MP3_DECODER_H_
 
-#include "cutils/os_thread.h"
+#include "osal/os_thread.h"
 #include "esp_adf/audio_element.h"
 #include "audio_extractor/mp3_extractor.h"
 

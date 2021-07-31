@@ -23,9 +23,9 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include "cutils/os_thread.h"
-#include "cutils/os_memory.h"
-#include "cutils/os_logger.h"
+#include "osal/os_thread.h"
+#include "cutils/memory_helper.h"
+#include "cutils/log_helper.h"
 #include "liteplayer_manager.h"
 #include "httpclient_wrapper.h"
 #include "fatfs_wrapper.h"
@@ -198,7 +198,7 @@ static void *liteplayer_demo_thread(void *arg)
         goto thread_exit;
     }
     while (demo->state != LITEPLAYER_PREPARED && demo->state != LITEPLAYER_ERROR) {
-        OS_THREAD_SLEEP_MSEC(100);
+        os_thread_sleep_msec(100);
     }
     if (demo->state == LITEPLAYER_ERROR) {
         OS_LOGE(TAG, "Failed to prepare player");
@@ -214,7 +214,7 @@ static void *liteplayer_demo_thread(void *arg)
         if (demo->state == LITEPLAYER_STOPPED || demo->state == LITEPLAYER_IDLE) {
             goto thread_exit;
         }
-        OS_THREAD_SLEEP_MSEC(100);
+        os_thread_sleep_msec(100);
     }
 
     if (liteplayer_mngr_stop(demo->mngr) != 0) {
@@ -222,7 +222,7 @@ static void *liteplayer_demo_thread(void *arg)
         goto thread_exit;
     }
     while (demo->state != LITEPLAYER_STOPPED) {
-        OS_THREAD_SLEEP_MSEC(100);
+        os_thread_sleep_msec(100);
     }
 
 thread_exit:
@@ -230,12 +230,12 @@ thread_exit:
 
     liteplayer_mngr_reset(demo->mngr);
     while (demo->state != LITEPLAYER_IDLE) {
-        OS_THREAD_SLEEP_MSEC(100);
+        os_thread_sleep_msec(100);
     }
     liteplayer_mngr_destroy(demo->mngr);
     demo->mngr = NULL;
 
-    OS_THREAD_SLEEP_MSEC(100);
+    os_thread_sleep_msec(100);
     OS_MEMORY_DUMP();
 
     OS_LOGD(TAG, "liteplayer demo thread leave");
@@ -249,7 +249,7 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    struct os_threadattr attr = {
+    struct os_thread_attr attr = {
         .name = "liteplayer_mngr_demo",
         .priority = LITEPLYAER_DEMO_TASK_PRIO,
         .stacksize = LITEPLYAER_DEMO_TASK_STACK,
@@ -273,7 +273,7 @@ int main(int argc, char *argv[])
     struct liteplayer_demo_priv demo;
     memset(&demo, 0x0, sizeof(demo));
     demo.url = url;
-    os_thread_t tid = OS_THREAD_CREATE(&attr, liteplayer_demo_thread, (void *)&demo);
+    os_thread tid = os_thread_create(&attr, liteplayer_demo_thread, (void *)&demo);
     if (tid == NULL)
         goto demo_out;
 
@@ -342,7 +342,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    OS_THREAD_JOIN(tid, NULL);
+    os_thread_join(tid, NULL);
 
 demo_out:
     OS_FREE(filename);

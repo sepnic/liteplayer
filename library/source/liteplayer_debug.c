@@ -19,9 +19,9 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "cutils/os_thread.h"
+#include "osal/os_thread.h"
 #include "cutils/ringbuf.h"
-#include "cutils/os_logger.h"
+#include "cutils/log_helper.h"
 #include "esp_adf/audio_common.h"
 #include "liteplayer_config.h"
 #include "liteplayer_debug.h"
@@ -44,8 +44,8 @@ struct socket_upload_priv {
     int fd;
     const char *addr;
     int port;
-    ringbuf_handle_t rb;
-    os_thread_t tid;
+    ringbuf_handle rb;
+    os_thread tid;
     char buffer[2048];
     bool stop;
 };
@@ -170,13 +170,13 @@ socket_upload_handle_t socket_upload_start(const char *server_addr, int server_p
     if (priv->rb == NULL)
         goto start_failed;
 
-    struct os_threadattr attr = {
+    struct os_thread_attr attr = {
         .name = "ael-debug",
         .priority = DEFAULT_SOCKET_UPLOAD_TASK_PRIO,
         .stacksize = DEFAULT_SOCKET_UPLOAD_TASK_STACKSIZE,
         .joinable = true,
     };
-    priv->tid = OS_THREAD_CREATE(&attr, socket_upload_thread, priv);
+    priv->tid = os_thread_create(&attr, socket_upload_thread, priv);
     if (priv->tid == NULL)
         goto start_failed;
 
@@ -215,6 +215,6 @@ void socket_upload_stop(socket_upload_handle_t handle)
 
     rb_done_write(priv->rb);
     priv->stop = true;
-    OS_THREAD_JOIN(priv->tid, NULL);
+    os_thread_join(priv->tid, NULL);
     socket_upload_cleanup(priv);
 }

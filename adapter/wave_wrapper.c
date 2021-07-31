@@ -19,9 +19,9 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "cutils/os_memory.h"
-#include "cutils/os_time.h"
-#include "cutils/os_logger.h"
+#include "osal/os_time.h"
+#include "cutils/memory_helper.h"
+#include "cutils/log_helper.h"
 #include "wave_wrapper.h"
 
 #define TAG "[liteplayer]wave"
@@ -148,8 +148,8 @@ sink_handle_t wave_wrapper_open(int samplerate, int channels, void *sink_priv)
         return NULL;
 
     char filename[64];
-    struct os_realtime ts;
-    OS_TIMESTAMP_TO_LOCAL(&ts);
+    struct os_wall_time ts;
+    os_realtime_to_walltime(&ts);
     memset(filename, 0x0, sizeof(filename));
     snprintf(filename, sizeof(filename),
              "pcm_out-%04d%02d%02d-%02d%02d%02d.wav",

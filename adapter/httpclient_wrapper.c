@@ -18,9 +18,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "cutils/os_thread.h"
-#include "cutils/os_memory.h"
-#include "cutils/os_logger.h"
+#include "osal/os_thread.h"
+#include "cutils/memory_helper.h"
+#include "cutils/log_helper.h"
 #include "httpclient.h"
 #include "httpclient_wrapper.h"
 
@@ -62,7 +62,7 @@ reconnect:
     if (ret != HTTPCLIENT_OK) {
         OS_LOGE(TAG, "httpclient_connect failed, ret=%d, retry=%d", ret, priv->retrycount);
         if (priv->retrycount++ < HTTPCLIENT_RETRY_COUNT) {
-            OS_THREAD_SLEEP_MSEC(HTTPCLIENT_RETRY_INTERVAL);
+            os_thread_sleep_msec(HTTPCLIENT_RETRY_INTERVAL);
             goto reconnect;
         }
         httpclient_close(&priv->client);
@@ -137,7 +137,7 @@ contiune_read:
             OS_LOGE(TAG, "httpclient_send_request failed, ret=%d, retry=%d", ret, priv->retrycount);
             if (priv->retrycount++ >= HTTPCLIENT_RETRY_COUNT)
                 return -1;
-            OS_THREAD_SLEEP_MSEC(HTTPCLIENT_RETRY_INTERVAL);
+            os_thread_sleep_msec(HTTPCLIENT_RETRY_INTERVAL);
             goto reconnect;
         }
         priv->first_request = true;
@@ -212,7 +212,7 @@ int httpclient_wrapper_seek(http_handle_t handle, long offset)
     OS_LOGD(TAG, "Seeking http client, content_pos=%ld", offset);
     priv->content_pos = offset;
     httpclient_wrapper_disconnect(priv);
-    OS_THREAD_SLEEP_MSEC(50);
+    os_thread_sleep_msec(50);
     return httpclient_wrapper_connect(priv);
 }
 

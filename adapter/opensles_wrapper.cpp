@@ -24,11 +24,9 @@
 #include <SLES/OpenSLES.h>
 #include <SLES/OpenSLES_Android.h>
 
-#include "cutils/os_memory.h"
-#include "cutils/os_thread.h"
-#include "cutils/os_time.h"
-#include "cutils/os_logger.h"
-#include "utils/Mutex.h"
+#include "osal/os_thread.h"
+#include "cutils/memory_helper.h"
+#include "cutils/log_helper.h"
 #include "opensles_wrapper.h"
 
 #define TAG "[liteplayer]opensles"
@@ -61,7 +59,8 @@ struct opensles_priv {
 
     SLuint32 queueSize;
     std::list<OutBuffer *> *bufferList;
-    sysutils::Mutex *bufferLock;
+    os_mutex bufferLock;
+    os_cond bufferCond;
     bool hasStarted;
 };
 
@@ -69,15 +68,15 @@ struct opensles_priv {
 static void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context)
 {
     struct opensles_priv *priv = (struct opensles_priv *)context;
-    sysutils::Mutex::Autolock _l(priv->bufferLock);
-
+    os_mutex_lock(priv->bufferLock);
     // free the buffer that finishes playing
     if (!priv->bufferList->empty()) {
         delete priv->bufferList->front();
         priv->bufferList->pop_front();
         // notify writing-thread that the list has space to store new buffer
-        priv->bufferLock->condSignal();
+        os_cond_signal(priv->bufferCond);
     }
+    os_mutex_unlock(priv->bufferLock);
 }
 
 sink_handle_t opensles_wrapper_open(int samplerate, int channels, void *sink_priv)
@@ -146,7 +145,8 @@ sink_handle_t opensles_wrapper_open(int samplerate, int channels, void *sink_pri
         if (SL_RESULT_SUCCESS != result) break;
 
         priv->bufferList = new std::list<OutBuffer *>();
-        priv->bufferLock = new sysutils::Mutex();
+        priv->bufferLock = os_mutex_create();
+        priv->bufferCond = os_cond_create();
     } while (0);
 
     if (SL_RESULT_SUCCESS == result) {
@@ -164,27 +164,32 @@ int opensles_wrapper_write(sink_handle_t handle, char *buffer, int size)
     struct opensles_priv *priv = (struct opensles_priv *)handle;
     OutBuffer *outbuf = new OutBuffer(buffer, size);
 
-    sysutils::Mutex::Autolock _l(priv->bufferLock);
+    os_mutex_lock(priv->bufferLock);
 
     // waiting the list is available
     while (priv->bufferList->size() >= priv->queueSize)
-        priv->bufferLock->condWait();
+        os_cond_wait(priv->bufferCond, priv->bufferLock);
     priv->bufferList->push_back(outbuf);
 
     SLresult result = (*priv->playerBufferQueue)->Enqueue(priv->playerBufferQueue, outbuf->data, outbuf->size);
-    if (SL_RESULT_SUCCESS != result)
+    if (SL_RESULT_SUCCESS != result) {
+        os_mutex_unlock(priv->bufferLock);
         return -1;
+    }
 
     if (!priv->hasStarted) {
         if (priv->bufferList->size() >= priv->queueSize) {
             priv->hasStarted = true;
             // set the player's state to playing
             result = (*priv->playerItf)->SetPlayState(priv->playerItf, SL_PLAYSTATE_PLAYING);
-            if (SL_RESULT_SUCCESS != result)
+            if (SL_RESULT_SUCCESS != result) {
+                os_mutex_unlock(priv->bufferLock);
                 return -1;
+            }
         }
     }
 
+    os_mutex_unlock(priv->bufferLock);
     return size;
 }
 
@@ -195,9 +200,10 @@ void opensles_wrapper_close(sink_handle_t handle)
 
     // waiting all buffers in the list finished playing
     {
-        sysutils::Mutex::Autolock _l(priv->bufferLock);
+        os_mutex_lock(priv->bufferLock);
         while (!priv->bufferList->empty())
-            priv->bufferLock->condWait();
+            os_cond_wait(priv->bufferCond, priv->bufferLock);
+        os_mutex_unlock(priv->bufferLock);
     }
 
     if (priv->bufferList != NULL) {
@@ -207,8 +213,10 @@ void opensles_wrapper_close(sink_handle_t handle)
         delete priv->bufferList;
     }
 
+    if (priv->bufferCond != NULL)
+        os_cond_destroy(priv->bufferCond);
     if (priv->bufferLock != NULL)
-        delete priv->bufferLock;
+        os_mutex_destroy(priv->bufferLock);
 
     if (priv->playerObj != NULL)
         (*priv->playerObj)->Destroy(priv->playerObj);

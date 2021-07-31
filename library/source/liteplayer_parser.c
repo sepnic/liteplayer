@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "cutils/os_logger.h"
+#include "cutils/log_helper.h"
 #include "esp_adf/audio_common.h"
 #include "audio_extractor/mp3_extractor.h"
 #include "audio_extractor/aac_extractor.h"
@@ -42,8 +42,8 @@ struct media_parser_priv {
     void *listener_priv;
 
     bool stop;
-    os_mutex_t lock; // lock for listener
-    os_cond_t cond;  // wait stop to exit mediaparser thread
+    os_mutex lock; // lock for listener
+    os_cond cond;  // wait stop to exit mediaparser thread
 };
 
 static int media_parser_fetch(char *buf, int wanted_size, long offset, void *priv)
@@ -349,9 +349,9 @@ parse_done:
 static void media_parser_cleanup(struct media_parser_priv *priv)
 {
     if (priv->lock != NULL)
-        OS_THREAD_MUTEX_DESTROY(priv->lock);
+        os_mutex_destroy(priv->lock);
     if (priv->cond != NULL)
-        OS_THREAD_COND_DESTROY(priv->cond);
+        os_cond_destroy(priv->cond);
     if (priv->source_info.url != NULL)
         audio_free(priv->source_info.url);
     audio_free(priv);
@@ -363,7 +363,7 @@ static void *media_parser_thread(void *arg)
     int ret = media_info_parse(&priv->source_info, &priv->codec_info);
 
     {
-        OS_THREAD_MUTEX_LOCK(priv->lock);
+        os_mutex_lock(priv->lock);
 
         if (!priv->stop && priv->listener) {
             if (ret == ESP_OK)
@@ -374,9 +374,9 @@ static void *media_parser_thread(void *arg)
 
         OS_LOGV(TAG, "Waiting stop command");
         while (!priv->stop)
-            OS_THREAD_COND_WAIT(priv->cond, priv->lock);
+            os_cond_wait(priv->cond, priv->lock);
 
-        OS_THREAD_MUTEX_UNLOCK(priv->lock);
+        os_mutex_unlock(priv->lock);
     }
 
     media_parser_cleanup(priv);
@@ -439,19 +439,19 @@ media_parser_handle_t media_parser_start_async(struct media_source_info *source_
     memcpy(&priv->source_info, source_info, sizeof(struct media_source_info));
     priv->listener = listener;
     priv->listener_priv = listener_priv;
-    priv->lock = OS_THREAD_MUTEX_CREATE();
-    priv->cond = OS_THREAD_COND_CREATE();
+    priv->lock = os_mutex_create();
+    priv->cond = os_cond_create();
     priv->source_info.url = audio_strdup(source_info->url);
     if (priv->lock == NULL || priv->cond == NULL || priv->source_info.url == NULL)
         goto start_failed;
 
-    struct os_threadattr attr = {
+    struct os_thread_attr attr = {
         .name = "ael-parser",
         .priority = DEFAULT_MEDIA_PARSER_TASK_PRIO,
         .stacksize = DEFAULT_MEDIA_PARSER_TASK_STACKSIZE,
         .joinable = false,
     };
-    os_thread_t id = OS_THREAD_CREATE(&attr, media_parser_thread, priv);
+    os_thread id = os_thread_create(&attr, media_parser_thread, priv);
     if (id == NULL)
         goto start_failed;
 
@@ -470,11 +470,11 @@ void media_parser_stop(media_parser_handle_t handle)
         return;
 
     {
-        OS_THREAD_MUTEX_LOCK(priv->lock);
+        os_mutex_lock(priv->lock);
 
         priv->stop = true;
-        OS_THREAD_COND_SIGNAL(priv->cond);
+        os_cond_signal(priv->cond);
 
-        OS_THREAD_MUTEX_UNLOCK(priv->lock);
+        os_mutex_unlock(priv->lock);
     }
 }

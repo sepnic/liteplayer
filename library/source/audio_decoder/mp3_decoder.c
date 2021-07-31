@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "cutils/os_logger.h"
+#include "cutils/log_helper.h"
 #include "esp_adf/audio_element.h"
 #include "esp_adf/audio_common.h"
 #include "audio_decoder/mp3_decoder.h"

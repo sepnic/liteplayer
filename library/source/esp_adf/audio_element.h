@@ -29,7 +29,7 @@
 #ifndef _AUDIO_ELEMENT_H_
 #define _AUDIO_ELEMENT_H_
 
-#include "cutils/os_thread.h"
+#include "osal/os_thread.h"
 #include "cutils/ringbuf.h"
 
 #include "esp_adf/queue.h"
@@ -449,16 +449,16 @@ esp_err_t audio_element_msg_remove_listener(audio_element_handle_t el, audio_eve
  *     - ESP_OK
  *     - ESP_FAIL
  */
-esp_err_t audio_element_set_input_ringbuf(audio_element_handle_t el, ringbuf_handle_t rb);
+esp_err_t audio_element_set_input_ringbuf(audio_element_handle_t el, ringbuf_handle rb);
 
 /**
  * @brief      Get Element input ringbuffer.
  *
  * @param[in]  el    The audio element handle
  *
- * @return     ringbuf_handle_t
+ * @return     ringbuf_handle
  */
-ringbuf_handle_t audio_element_get_input_ringbuf(audio_element_handle_t el);
+ringbuf_handle audio_element_get_input_ringbuf(audio_element_handle_t el);
 
 /**
  * @brief      Set Element output ringbuffer.
@@ -470,16 +470,16 @@ ringbuf_handle_t audio_element_get_input_ringbuf(audio_element_handle_t el);
  *     - ESP_OK
  *     - ESP_FAIL
  */
-esp_err_t audio_element_set_output_ringbuf(audio_element_handle_t el, ringbuf_handle_t rb);
+esp_err_t audio_element_set_output_ringbuf(audio_element_handle_t el, ringbuf_handle rb);
 
 /**
  * @brief      Get Element output ringbuffer.
  *
  * @param[in]  el    The audio element handle
  *
- * @return     ringbuf_handle_t
+ * @return     ringbuf_handle
  */
-ringbuf_handle_t audio_element_get_output_ringbuf(audio_element_handle_t el);
+ringbuf_handle audio_element_get_output_ringbuf(audio_element_handle_t el);
 
 /**
  * @brief      Get current Element state.
@@ -723,13 +723,13 @@ esp_err_t audio_element_set_write_cb(audio_element_handle_t el, stream_func fn, 
 
 /**
  * @brief      Get External queue of Emitter.
- *             We can read any event that has been send out of Element from this `mqueue_t`.
+ *             We can read any event that has been send out of Element from this `mq_handle`.
  *
  * @param[in]  el    The audio element handle
  *
- * @return     mqueue_t
+ * @return     mq_handle
  */
-mqueue_t audio_element_get_event_queue(audio_element_handle_t el);
+mq_handle audio_element_get_event_queue(audio_element_handle_t el);
 
 /**
  * @brief      Set inputbuffer and outputbuffer have finished.
@@ -816,7 +816,7 @@ esp_err_t audio_element_multi_output(audio_element_handle_t el, char *buffer, in
  *     - ESP_OK
  *     - ESP_FAIL
  */
-esp_err_t audio_element_set_multi_input_ringbuf(audio_element_handle_t el, ringbuf_handle_t rb, int index);
+esp_err_t audio_element_set_multi_input_ringbuf(audio_element_handle_t el, ringbuf_handle rb, int index);
 
 /**
  * @brief      Set multi output ringbuffer Element.
@@ -829,7 +829,7 @@ esp_err_t audio_element_set_multi_input_ringbuf(audio_element_handle_t el, ringb
  *     - ESP_OK
  *     - ESP_ERR_INVALID_ARG
  */
-esp_err_t audio_element_set_multi_output_ringbuf(audio_element_handle_t el, ringbuf_handle_t rb, int index);
+esp_err_t audio_element_set_multi_output_ringbuf(audio_element_handle_t el, ringbuf_handle rb, int index);
 
 /**
  * @brief      Get handle of multi input ringbuffer Element by index.
@@ -839,9 +839,9 @@ esp_err_t audio_element_set_multi_output_ringbuf(audio_element_handle_t el, ring
  *
  * @return
  *     - NULL   Error
- *     - Others ringbuf_handle_t
+ *     - Others ringbuf_handle
  */
-ringbuf_handle_t audio_element_get_multi_input_ringbuf(audio_element_handle_t el, int index);
+ringbuf_handle audio_element_get_multi_input_ringbuf(audio_element_handle_t el, int index);
 
 /**
  * @brief      Get handle of multi output ringbuffer Element by index.
@@ -851,9 +851,9 @@ ringbuf_handle_t audio_element_get_multi_input_ringbuf(audio_element_handle_t el
  *
  * @return
  *     - NULL   Error
- *     - Others ringbuf_handle_t
+ *     - Others ringbuf_handle
  */
-ringbuf_handle_t audio_element_get_multi_output_ringbuf(audio_element_handle_t el, int index);
+ringbuf_handle audio_element_get_multi_output_ringbuf(audio_element_handle_t el, int index);
 
 #ifdef __cplusplus
 }

@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "cutils/os_logger.h"
+#include "cutils/log_helper.h"
 #include "esp_adf/audio_common.h"
 #include "esp_adf/audio_element.h"
 #include "audio_decoder/aac_decoder.h"

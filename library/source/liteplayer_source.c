@@ -16,11 +16,12 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 
-#include "cutils/os_thread.h"
-#include "cutils/os_logger.h"
+#include "osal/os_thread.h"
+#include "cutils/log_helper.h"
 #include "cutils/ringbuf.h"
-#include "cutils/common_list.h"
+#include "cutils/list.h"
 #include "esp_adf/audio_common.h"
 
 #include "liteplayer_config.h"
@@ -33,7 +34,7 @@
 
 struct media_source_priv {
     struct media_source_info info;
-    ringbuf_handle_t rb;
+    ringbuf_handle rb;
     struct listnode m3u_list;
 
     media_source_state_cb listener;
@@ -41,8 +42,8 @@ struct media_source_priv {
 
     bool stop;
     bool reach_threshold;
-    os_mutex_t lock; // lock for rb/listener
-    os_cond_t cond;  // wait stop to exit mediasource thread
+    os_mutex lock; // lock for rb/listener
+    os_cond cond;  // wait stop to exit mediasource thread
 };
 
 struct m3u_node {
@@ -56,7 +57,7 @@ static void m3u_list_clear(struct listnode *list)
 {
     struct listnode *item, *tmp;
     list_for_each_safe(item, tmp, list) {
-        struct m3u_node *node = node_to_item(item, struct m3u_node, listnode);
+        struct m3u_node *node = listnode_to_item(item, struct m3u_node, listnode);
         list_remove(item);
         audio_free(node->url);
         audio_free(node);
@@ -227,7 +228,7 @@ static int m3u_parser_resolve(struct media_source_priv *priv)
     struct listnode *item;
     int i = 0;
     list_for_each(item, &priv->m3u_list) {
-        struct m3u_node *node = node_to_item(item, struct m3u_node, listnode);
+        struct m3u_node *node = listnode_to_item(item, struct m3u_node, listnode);
         OS_LOGD(TAG, "-->url[%d]=[%s]", i++, node->url);
     }
 #endif
@@ -256,7 +257,7 @@ static void *m3u_source_thread(void *arg)
     }
 
     if (priv->info.threshold_size > 0) {
-        OS_THREAD_MUTEX_LOCK(priv->lock);
+        os_mutex_lock(priv->lock);
         if (!priv->stop) {
             int total_size = rb_get_size(priv->rb);
             if (priv->info.threshold_size > total_size)
@@ -264,7 +265,7 @@ static void *m3u_source_thread(void *arg)
             OS_LOGD(TAG, "Media source set threshold: %d/%d", priv->info.threshold_size, total_size);
             rb_set_threshold(priv->rb, priv->info.threshold_size);
         }
-        OS_THREAD_MUTEX_UNLOCK(priv->lock);
+        os_mutex_unlock(priv->lock);
     }
 
 resolve_m3u:
@@ -280,16 +281,16 @@ dequeue_url:
     if (list_empty(&priv->m3u_list)) {
         int fill_size = 0;
         while (!priv->stop) {
-            OS_THREAD_MUTEX_LOCK(priv->lock);
+            os_mutex_lock(priv->lock);
             if (!priv->stop)
                 fill_size = rb_bytes_filled(priv->rb);
             else
                 fill_size = 0;
-            OS_THREAD_MUTEX_UNLOCK(priv->lock);
+            os_mutex_unlock(priv->lock);
 
             // waiting decoder to consume the old data in the ringbuf
             if (fill_size > DEFAULT_M3U_FILL_THRESHOLD)
-                OS_THREAD_SLEEP_MSEC(100);
+                os_thread_sleep_msec(100);
             else
                 break;
         }
@@ -303,7 +304,7 @@ dequeue_url:
     }
 
     struct listnode *front = list_head(&priv->m3u_list);
-    struct m3u_node *node = node_to_item(front, struct m3u_node, listnode);
+    struct m3u_node *node = listnode_to_item(front, struct m3u_node, listnode);
     http = priv->info.http_ops.open(node->url, pos, priv->info.http_ops.http_priv);
 
     list_remove(front);
@@ -334,10 +335,10 @@ dequeue_url:
         bytes_written = 0;
 
         do {
-            OS_THREAD_MUTEX_LOCK(priv->lock);
+            os_mutex_lock(priv->lock);
             if (!priv->stop)
                 ret = rb_write(priv->rb, &buffer[bytes_written], bytes_read, AUDIO_MAX_DELAY);
-            OS_THREAD_MUTEX_UNLOCK(priv->lock);
+            os_mutex_unlock(priv->lock);
 
             if (ret > 0) {
                 bytes_read -= ret;
@@ -357,11 +358,11 @@ dequeue_url:
         } while (!priv->stop && bytes_read > 0);
 
         if (!priv->reach_threshold) {
-            OS_THREAD_MUTEX_LOCK(priv->lock);
+            os_mutex_lock(priv->lock);
             priv->reach_threshold = rb_reach_threshold(priv->rb);
             if (priv->reach_threshold && priv->listener)
                 priv->listener(MEDIA_SOURCE_REACH_THRESHOLD, priv->listener_priv);
-            OS_THREAD_MUTEX_UNLOCK(priv->lock);
+            os_mutex_unlock(priv->lock);
         }
     }
 
@@ -372,7 +373,7 @@ thread_exit:
         audio_free(buffer);
 
     {
-        OS_THREAD_MUTEX_LOCK(priv->lock);
+        os_mutex_lock(priv->lock);
 
         if (!priv->stop) {
             if (state == MEDIA_SOURCE_READ_DONE || state == MEDIA_SOURCE_WRITE_DONE)
@@ -385,9 +386,9 @@ thread_exit:
 
         OS_LOGV(TAG, "Waiting stop command");
         while (!priv->stop)
-            OS_THREAD_COND_WAIT(priv->cond, priv->lock);
+            os_cond_wait(priv->cond, priv->lock);
 
-        OS_THREAD_MUTEX_UNLOCK(priv->lock);
+        os_mutex_unlock(priv->lock);
     }
 
     media_source_cleanup(priv);
@@ -523,9 +524,9 @@ resolve_done:
 static void media_source_cleanup(struct media_source_priv *priv)
 {
     if (priv->lock != NULL)
-        OS_THREAD_MUTEX_DESTROY(priv->lock);
+        os_mutex_destroy(priv->lock);
     if (priv->cond != NULL)
-        OS_THREAD_COND_DESTROY(priv->cond);
+        os_cond_destroy(priv->cond);
     if (priv->info.url != NULL)
         audio_free(priv->info.url);
     m3u_list_clear(&priv->m3u_list);
@@ -570,7 +571,7 @@ static void *media_source_thread(void *arg)
     }
 
     if (priv->info.threshold_size > 0) {
-        OS_THREAD_MUTEX_LOCK(priv->lock);
+        os_mutex_lock(priv->lock);
         if (!priv->stop) {
             int total_size = rb_get_size(priv->rb);
             if (priv->info.threshold_size > total_size)
@@ -578,7 +579,7 @@ static void *media_source_thread(void *arg)
             OS_LOGD(TAG, "Media source set threshold: %d/%d", priv->info.threshold_size, total_size);
             rb_set_threshold(priv->rb, priv->info.threshold_size);
         }
-        OS_THREAD_MUTEX_UNLOCK(priv->lock);
+        os_mutex_unlock(priv->lock);
     }
 
     int bytes_read = 0, bytes_written = 0;
@@ -603,10 +604,10 @@ static void *media_source_thread(void *arg)
         bytes_written = 0;
 
         do {
-            OS_THREAD_MUTEX_LOCK(priv->lock);
+            os_mutex_lock(priv->lock);
             if (!priv->stop)
                 ret = rb_write(priv->rb, &buffer[bytes_written], bytes_read, AUDIO_MAX_DELAY);
-            OS_THREAD_MUTEX_UNLOCK(priv->lock);
+            os_mutex_unlock(priv->lock);
 
             if (ret > 0) {
                 bytes_read -= ret;
@@ -626,11 +627,11 @@ static void *media_source_thread(void *arg)
         } while (!priv->stop && bytes_read > 0);
 
         if (!priv->reach_threshold) {
-            OS_THREAD_MUTEX_LOCK(priv->lock);
+            os_mutex_lock(priv->lock);
             priv->reach_threshold = rb_reach_threshold(priv->rb);
             if (priv->reach_threshold && priv->listener)
                 priv->listener(MEDIA_SOURCE_REACH_THRESHOLD, priv->listener_priv);
-            OS_THREAD_MUTEX_UNLOCK(priv->lock);
+            os_mutex_unlock(priv->lock);
         }
     }
 
@@ -643,7 +644,7 @@ thread_exit:
         audio_free(buffer);
 
     {
-        OS_THREAD_MUTEX_LOCK(priv->lock);
+        os_mutex_lock(priv->lock);
 
         if (!priv->stop) {
             if (state == MEDIA_SOURCE_READ_DONE || state == MEDIA_SOURCE_WRITE_DONE)
@@ -656,9 +657,9 @@ thread_exit:
 
         OS_LOGV(TAG, "Waiting stop command");
         while (!priv->stop)
-            OS_THREAD_COND_WAIT(priv->cond, priv->lock);
+            os_cond_wait(priv->cond, priv->lock);
 
-        OS_THREAD_MUTEX_UNLOCK(priv->lock);
+        os_mutex_unlock(priv->lock);
     }
 
     media_source_cleanup(priv);
@@ -667,7 +668,7 @@ thread_exit:
 }
 
 media_source_handle_t media_source_start(struct media_source_info *info,
-                                         ringbuf_handle_t rb,
+                                         ringbuf_handle rb,
                                          media_source_state_cb listener,
                                          void *listener_priv)
 {
@@ -682,25 +683,25 @@ media_source_handle_t media_source_start(struct media_source_info *info,
     priv->rb = rb;
     priv->listener = listener;
     priv->listener_priv = listener_priv;
-    priv->lock = OS_THREAD_MUTEX_CREATE();
-    priv->cond = OS_THREAD_COND_CREATE();
+    priv->lock = os_mutex_create();
+    priv->cond = os_cond_create();
     priv->info.url = audio_strdup(info->url);
     list_init(&priv->m3u_list);
     if (priv->lock == NULL || priv->cond == NULL || priv->info.url == NULL)
         goto start_failed;
 
-    struct os_threadattr attr = {
+    struct os_thread_attr attr = {
         .name = "ael-source",
         .priority = DEFAULT_MEDIA_SOURCE_TASK_PRIO,
         .stacksize = DEFAULT_MEDIA_SOURCE_TASK_STACKSIZE,
         .joinable = false,
     };
-    os_thread_t id = NULL;
+    os_thread id = NULL;
 
     if (strstr(info->url, ".m3u") != NULL)
-        id = OS_THREAD_CREATE(&attr, m3u_source_thread, priv);
+        id = os_thread_create(&attr, m3u_source_thread, priv);
     else
-        id = OS_THREAD_CREATE(&attr, media_source_thread, priv);
+        id = os_thread_create(&attr, media_source_thread, priv);
     if (id == NULL)
         goto start_failed;
 
@@ -721,9 +722,9 @@ void media_source_stop(media_source_handle_t handle)
     rb_done_write(priv->rb);
 
     {
-        OS_THREAD_MUTEX_LOCK(priv->lock);
+        os_mutex_lock(priv->lock);
         priv->stop = true;
-        OS_THREAD_COND_SIGNAL(priv->cond);
-        OS_THREAD_MUTEX_UNLOCK(priv->lock);
+        os_cond_signal(priv->cond);
+        os_mutex_unlock(priv->lock);
     }
 }

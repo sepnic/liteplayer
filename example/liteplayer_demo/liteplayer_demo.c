@@ -19,9 +19,9 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "cutils/os_thread.h"
-#include "cutils/os_memory.h"
-#include "cutils/os_logger.h"
+#include "osal/os_thread.h"
+#include "cutils/memory_helper.h"
+#include "cutils/log_helper.h"
 #include "liteplayer_main.h"
 #include "httpclient_wrapper.h"
 #include "fatfs_wrapper.h"
@@ -141,7 +141,7 @@ static int liteplayer_demo(const char *url)
         goto test_done;
     }
     while (player_state != LITEPLAYER_PREPARED && player_state != LITEPLAYER_ERROR) {
-        OS_THREAD_SLEEP_MSEC(100);
+        os_thread_sleep_msec(100);
     }
     if (player_state == LITEPLAYER_ERROR) {
         OS_LOGE(TAG, "Failed to prepare player");
@@ -154,7 +154,7 @@ static int liteplayer_demo(const char *url)
     }
     OS_MEMORY_DUMP();
     while (player_state != LITEPLAYER_COMPLETED && player_state != LITEPLAYER_ERROR) {
-        OS_THREAD_SLEEP_MSEC(100);
+        os_thread_sleep_msec(100);
     }
 
     if (liteplayer_stop(player) != 0) {
@@ -162,7 +162,7 @@ static int liteplayer_demo(const char *url)
         goto test_done;
     }
     while (player_state != LITEPLAYER_STOPPED) {
-        OS_THREAD_SLEEP_MSEC(100);
+        os_thread_sleep_msec(100);
     }
 
     ret = 0;
@@ -170,12 +170,12 @@ static int liteplayer_demo(const char *url)
 test_done:
     liteplayer_reset(player);
     while (player_state != LITEPLAYER_IDLE) {
-        OS_THREAD_SLEEP_MSEC(100);
+        os_thread_sleep_msec(100);
     }
 
     liteplayer_destroy(player);
 
-    OS_THREAD_SLEEP_MSEC(100);
+    os_thread_sleep_msec(100);
     OS_MEMORY_DUMP();
     return ret;
 }

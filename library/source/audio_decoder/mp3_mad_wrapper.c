@@ -21,7 +21,7 @@
 
 #include "mp3-mad/mad.h"
 #include "mp3-mad/global.h"
-#include "cutils/os_logger.h"
+#include "cutils/log_helper.h"
 #include "esp_adf/audio_common.h"
 #include "esp_adf/audio_element.h"
 #include "audio_extractor/mp3_extractor.h"

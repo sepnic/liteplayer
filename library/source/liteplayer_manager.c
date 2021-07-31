@@ -19,9 +19,9 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "cutils/os_thread.h"
-#include "cutils/os_logger.h"
-#include "cutils/msglooper.h"
+#include "osal/os_thread.h"
+#include "cutils/log_helper.h"
+#include "cutils/mlooper.h"
 #include "esp_adf/audio_common.h"
 #include "liteplayer_adapter.h"
 #include "liteplayer_config.h"
@@ -32,8 +32,8 @@
 
 struct liteplayer_mngr {
     liteplayer_handle_t  player;
-    mlooper_t            looper;
-    os_mutex_t           lock;
+    mlooper_handle       looper;
+    os_mutex             lock;
     int                  threshold_ms;
     enum liteplayer_state state;
     liteplayer_state_cb  listener;
@@ -69,7 +69,7 @@ enum {
 
 static void playlist_clear(liteplayer_mngr_handle_t mngr)
 {
-    OS_THREAD_MUTEX_LOCK(mngr->lock);
+    os_mutex_lock(mngr->lock);
 
     for (int i = 0; i < mngr->url_count; i++) {
         audio_free(mngr->url_list[i]);
@@ -78,28 +78,28 @@ static void playlist_clear(liteplayer_mngr_handle_t mngr)
     mngr->url_count = 0;
     mngr->is_list = false;
 
-    OS_THREAD_MUTEX_UNLOCK(mngr->lock);
+    os_mutex_unlock(mngr->lock);
 }
 
 static int playlist_insert(liteplayer_mngr_handle_t mngr, const char *url)
 {
-    OS_THREAD_MUTEX_LOCK(mngr->lock);
+    os_mutex_lock(mngr->lock);
 
     if (mngr->url_count >= DEFAULT_PLAYLIST_URL_MAX) {
         OS_LOGE(TAG, "Reach max url count: %d", mngr->url_count);
-        OS_THREAD_MUTEX_UNLOCK(mngr->lock);
+        os_mutex_unlock(mngr->lock);
         return -1;
     }
 
     char *insert = audio_strdup(url);
     if (insert == NULL) {
-        OS_THREAD_MUTEX_UNLOCK(mngr->lock);
+        os_mutex_unlock(mngr->lock);
         return -1;
     }
     mngr->url_list[mngr->url_count] = insert;
     mngr->url_count++;
 
-    OS_THREAD_MUTEX_UNLOCK(mngr->lock);
+    os_mutex_unlock(mngr->lock);
     return 0;
 }
 
@@ -159,7 +159,7 @@ static int playlist_resolve(liteplayer_mngr_handle_t mngr, const char *filename)
         playlist_insert(mngr, line);
     }
 
-    OS_THREAD_MUTEX_LOCK(mngr->lock);
+    os_mutex_lock(mngr->lock);
     if (mngr->url_count > 0) {
         mngr->is_list = true;
         ret = 0;
@@ -169,7 +169,7 @@ static int playlist_resolve(liteplayer_mngr_handle_t mngr, const char *filename)
         OS_LOGV(TAG, "-->url[%d]=[%s]", i, mngr->url_list[i]);
     }
 #endif
-    OS_THREAD_MUTEX_UNLOCK(mngr->lock);
+    os_mutex_unlock(mngr->lock);
 
 resolve_done:
     if (file != NULL)
@@ -184,7 +184,7 @@ static int manager_state_callback(enum liteplayer_state state, int errcode, void
     liteplayer_mngr_handle_t mngr = (liteplayer_mngr_handle_t)priv;
     bool state_sync = true;
 
-    OS_THREAD_MUTEX_LOCK(mngr->lock);
+    os_mutex_lock(mngr->lock);
 
     switch (state) {
     case LITEPLAYER_INITED:
@@ -290,7 +290,7 @@ static int manager_state_callback(enum liteplayer_state state, int errcode, void
 
     mngr->state = state;
 
-    OS_THREAD_MUTEX_UNLOCK(mngr->lock);
+    os_mutex_unlock(mngr->lock);
 
     if (state_sync && mngr->listener)
         mngr->listener(state, errcode, mngr->listener_priv);
@@ -304,9 +304,9 @@ static void manager_looper_handle(struct message *msg)
     switch (msg->what) {
     case PLAYER_DO_SET_SOURCE: {
         const char *url = NULL;
-        OS_THREAD_MUTEX_LOCK(mngr->lock);
+        os_mutex_lock(mngr->lock);
         url = audio_strdup(mngr->url_list[mngr->url_index]);
-        OS_THREAD_MUTEX_UNLOCK(mngr->lock);
+        os_mutex_unlock(mngr->lock);
         if (url != NULL) {
             liteplayer_set_data_source(mngr->player, url, mngr->threshold_ms);
             audio_free(url);
@@ -335,7 +335,7 @@ static void manager_looper_handle(struct message *msg)
         break;
 
     case PLAYER_DO_NEXT: {
-        OS_THREAD_MUTEX_LOCK(mngr->lock);
+        os_mutex_lock(mngr->lock);
         if (mngr->is_list) {
             if (mngr->is_looping) {
                 mngr->url_index++;
@@ -344,14 +344,14 @@ static void manager_looper_handle(struct message *msg)
             }
             mngr->is_completed = true;
         }
-        OS_THREAD_MUTEX_UNLOCK(mngr->lock);
+        os_mutex_unlock(mngr->lock);
         if (mngr->is_list)
             liteplayer_stop(mngr->player);
         break;
     }
 
     case PLAYER_DO_PREV: {
-        OS_THREAD_MUTEX_LOCK(mngr->lock);
+        os_mutex_lock(mngr->lock);
         if (mngr->is_list) {
             mngr->url_index--;
             if (mngr->url_index < 0)
@@ -363,7 +363,7 @@ static void manager_looper_handle(struct message *msg)
             }
             mngr->is_completed = true;
         }
-        OS_THREAD_MUTEX_UNLOCK(mngr->lock);
+        os_mutex_unlock(mngr->lock);
         if (mngr->is_list)
             liteplayer_stop(mngr->player);
         break;
@@ -391,7 +391,7 @@ liteplayer_mngr_handle_t liteplayer_mngr_create()
 {
     liteplayer_mngr_handle_t mngr = (liteplayer_mngr_handle_t)audio_calloc(1, sizeof(struct liteplayer_mngr));
     if (mngr != NULL) {
-        mngr->lock = OS_THREAD_MUTEX_CREATE();
+        mngr->lock = os_mutex_create();
         if (mngr->lock == NULL)
             goto failed;
 
@@ -399,7 +399,7 @@ liteplayer_mngr_handle_t liteplayer_mngr_create()
         if (mngr->player == NULL)
             goto failed;
 
-        struct os_threadattr attr = {
+        struct os_thread_attr attr = {
             .name = "ael-manager",
             .priority = DEFAULT_MANAGER_TASK_PRIO,
             .stacksize = DEFAULT_MANAGER_TASK_STACKSIZE,
@@ -457,17 +457,17 @@ int liteplayer_mngr_set_data_source(liteplayer_mngr_handle_t mngr, const char *u
     if (mngr == NULL || url == NULL)
         return -1;
 
-    OS_THREAD_MUTEX_LOCK(mngr->lock);
+    os_mutex_lock(mngr->lock);
     if (mngr->url_count > 0) {
         OS_LOGE(TAG, "Failed to set source, playlist isn't empty");
-        OS_THREAD_MUTEX_UNLOCK(mngr->lock);
+        os_mutex_unlock(mngr->lock);
         return -1;
     }
     mngr->is_list = false;
     mngr->is_completed = false;
     mngr->is_paused = false;
     mngr->has_started = false;
-    OS_THREAD_MUTEX_UNLOCK(mngr->lock);
+    os_mutex_unlock(mngr->lock);
 
     if (strstr(url, DEFAULT_PLAYLIST_FILE_SUFFIX) != NULL) {
         if (playlist_resolve(mngr, url) != 0) {
@@ -564,13 +564,13 @@ int liteplayer_mngr_next(liteplayer_mngr_handle_t mngr)
     if (mngr == NULL)
         return -1;
 
-    OS_THREAD_MUTEX_LOCK(mngr->lock);
+    os_mutex_lock(mngr->lock);
     if (!mngr->is_list) {
         OS_LOGE(TAG, "Failed to switch next without playlist");
-        OS_THREAD_MUTEX_UNLOCK(mngr->lock);
+        os_mutex_unlock(mngr->lock);
         return -1;
     }
-    OS_THREAD_MUTEX_UNLOCK(mngr->lock);
+    os_mutex_unlock(mngr->lock);
 
     struct message *msg = message_obtain(PLAYER_DO_NEXT, 0, 0, mngr);
     if (msg != NULL) {
@@ -585,13 +585,13 @@ int liteplayer_mngr_prev(liteplayer_mngr_handle_t mngr)
     if (mngr == NULL)
         return -1;
 
-    OS_THREAD_MUTEX_LOCK(mngr->lock);
+    os_mutex_lock(mngr->lock);
     if (!mngr->is_list) {
         OS_LOGE(TAG, "Failed to switch prev without playlist");
-        OS_THREAD_MUTEX_UNLOCK(mngr->lock);
+        os_mutex_unlock(mngr->lock);
         return -1;
     }
-    OS_THREAD_MUTEX_UNLOCK(mngr->lock);
+    os_mutex_unlock(mngr->lock);
 
     struct message *msg = message_obtain(PLAYER_DO_PREV, 0, 0, mngr);
     if (msg != NULL) {
@@ -606,20 +606,20 @@ int liteplayer_mngr_set_single_looping(liteplayer_mngr_handle_t mngr, bool enabl
     if (mngr == NULL)
         return -1;
 
-    OS_THREAD_MUTEX_LOCK(mngr->lock);
+    os_mutex_lock(mngr->lock);
 
     if (mngr->is_looping != enable) {
         if (mngr->state == LITEPLAYER_INITED || mngr->state == LITEPLAYER_PREPARED ||
             mngr->state == LITEPLAYER_COMPLETED || mngr->state == LITEPLAYER_STOPPED ||
             mngr->state == LITEPLAYER_ERROR) {
             OS_LOGE(TAG, "Failed to set looping in critical state");
-            OS_THREAD_MUTEX_UNLOCK(mngr->lock);
+            os_mutex_unlock(mngr->lock);
             return -1;
         }
         mngr->is_looping = enable;
     }
 
-    OS_THREAD_MUTEX_UNLOCK(mngr->lock);
+    os_mutex_unlock(mngr->lock);
     return 0;
 }
 
@@ -683,6 +683,6 @@ void liteplayer_mngr_destroy(liteplayer_mngr_handle_t mngr)
     if (mngr->player != NULL)
         liteplayer_destroy(mngr->player);
     if (mngr->lock != NULL)
-        OS_THREAD_MUTEX_DESTROY(mngr->lock);
+        os_mutex_destroy(mngr->lock);
     audio_free(mngr);
 }

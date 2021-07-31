@@ -18,7 +18,7 @@
 #ifndef _SINK_STREAM_H_
 #define _SINK_STREAM_H_
 
-#include "cutils/os_thread.h"
+#include "osal/os_thread.h"
 #include "esp_adf/audio_element.h"
 #include "esp_adf/audio_common.h"
 #include "liteplayer_adapter.h"
@@ -49,7 +49,7 @@ struct sink_stream_cfg {
     void          (*sink_close)(sink_handle_t handle);
 };
 
-#define SINK_STREAM_TASK_PRIO            (OS_THREAD_PRIO_HARD_REALTIME)
+#define SINK_STREAM_TASK_PRIO            (OS_THREAD_PRIO_REALTIME)
 #define SINK_STREAM_TASK_STACK           (4 * 1024)
 #define SINK_STREAM_RINGBUFFER_SIZE      (8 * 1024)
 #define SINK_STREAM_BUF_SIZE             (4 * 1024)

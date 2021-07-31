@@ -56,7 +56,7 @@ struct media_source_info {
 typedef void *media_source_handle_t;
 
 media_source_handle_t media_source_start(struct media_source_info *info,
-                                         ringbuf_handle_t rb,
+                                         ringbuf_handle rb,
                                          media_source_state_cb listener,
                                          void *listener_priv);
 

@@ -5,7 +5,12 @@ project(liteplayer_demo)
 #set (ENABLE_TINYALSA "YES")
 
 set(TOP_DIR "${CMAKE_SOURCE_DIR}/../..")
-set(LIB_DIR "${TOP_DIR}/build/out/lib")
+set(LIB_DIR "${TOP_DIR}/builds/out/libliteplayercore")
+
+# cflags: compile paramters
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -Wall -Werror")
+# cflags: if socketlen_t defined
+#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_SOCKLEN_T")
 
 # include files
 include_directories(${TOP_DIR}/thirdparty/sysutils/include)
@@ -105,13 +110,7 @@ if (ENABLE_TINYALSA)
     )
 endif()
 
-# cflags: compile paramters
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -Wall -Werror")
-# cflags: if socketlen_t defined
-#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_SOCKLEN_T")
-
-
-LINK_DIRECTORIES(${LIB_DIR}/liteplayercore)
+LINK_DIRECTORIES(${LIB_DIR})
 
 # liteplayer_mngr
 add_executable(liteplayer_mngr liteplayer_mngr.c ${ADAPTER_SRC})

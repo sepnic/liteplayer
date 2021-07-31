@@ -16,9 +16,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "cutils/os_thread.h"
-#include "cutils/os_memory.h"
-#include "cutils/os_logger.h"
+#include <string.h>
+#include "osal/os_thread.h"
+#include "cutils/memory_helper.h"
+#include "cutils/log_helper.h"
 #include "httpclient.h"
 
 #define TAG "HTTPClient"

@@ -18,7 +18,7 @@
 #ifndef _LITEPLAYER_CONFIG_H_
 #define _LITEPLAYER_CONFIG_H_
 
-#include "cutils/os_thread.h"
+#include "osal/os_thread.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,7 +44,7 @@ extern "C" {
 #define DEFAULT_DECODER_BUFFER_SIZE              ( 512 )
 
 // sink element definations
-#define DEFAULT_SINK_TASK_PRIO                   ( OS_THREAD_PRIO_HARD_REALTIME )
+#define DEFAULT_SINK_TASK_PRIO                   ( OS_THREAD_PRIO_REALTIME )
 #define DEFAULT_SINK_TASK_STACKSIZE              ( 1024*16 )
 #define DEFAULT_SINK_RINGBUF_SIZE                ( 1024*8 )
 #define DEFAULT_SINK_BUFFER_SIZE                 ( 1024*2 )

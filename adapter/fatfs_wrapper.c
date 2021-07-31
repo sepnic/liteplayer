@@ -18,8 +18,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "cutils/os_memory.h"
-#include "cutils/os_logger.h"
+#include "cutils/memory_helper.h"
+#include "cutils/log_helper.h"
 #include "fatfs_wrapper.h"
 
 #define TAG "[liteplayer]fatfs"
