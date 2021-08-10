@@ -22,9 +22,7 @@
  *
  */
 
-/*
- * Copyright (c) 2019-2020 LUOYUN <sysu.zqlong@gmail.com>
- */
+/** Copyright (c) 2019-2021 Qinglong <sysu.zqlong@gmail.com> */
 
 #include <stdbool.h>
 #include <string.h>

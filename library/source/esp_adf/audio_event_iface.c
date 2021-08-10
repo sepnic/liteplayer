@@ -22,9 +22,7 @@
  *
  */
 
-/*
- * Copyright (c) 2019-2020 LUOYUN <sysu.zqlong@gmail.com>
- */
+/** Copyright (c) 2019-2021 Qinglong <sysu.zqlong@gmail.com> */
 
 #include "cutils/log_helper.h"
 #include "esp_adf/audio_event_iface.h"

@@ -1,9 +1,12 @@
 /*
- * Copyright 2019-2020 LUOYUN <sysu.zqlong@gmail.com>
+ * Copyright (c) 2019-2021 Qinglong <sysu.zqlong@gmail.com>
+ *
+ * This file is part of Liteplayer
+ * (see https://github.com/sepnic/liteplayer_priv).
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation; either version 3 of the License, or
+ * by the Free Software Foundation, either version 2.1 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,

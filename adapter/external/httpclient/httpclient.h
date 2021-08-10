@@ -23,7 +23,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#if defined(OS_FREERTOS)
+#if defined(OS_RTOS)
 #include "lwip/sockets.h"
 #include "lwip/netdb.h"
 #include "lwip/tcp.h"
