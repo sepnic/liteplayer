@@ -54,12 +54,10 @@ set (SYSUTILS_SRC
     ${THIRDPARTY_DIR}/sysutils/osal/unix/os_memory.c
     ${THIRDPARTY_DIR}/sysutils/osal/unix/os_thread.c
     ${THIRDPARTY_DIR}/sysutils/osal/unix/os_time.c
-    ${THIRDPARTY_DIR}/sysutils/osal/unix/os_timer.c
     ${THIRDPARTY_DIR}/sysutils/source/cutils/memdbg.c
     ${THIRDPARTY_DIR}/sysutils/source/cutils/mlooper.c
     ${THIRDPARTY_DIR}/sysutils/source/cutils/mqueue.c
     ${THIRDPARTY_DIR}/sysutils/source/cutils/ringbuf.c
-    ${THIRDPARTY_DIR}/sysutils/source/cutils/swtimer.c
 )
 # codecs files
 set (CODECS_SRC
