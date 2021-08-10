@@ -1,10 +1,10 @@
-cmake_minimum_required(VERSION 3.4.1)
+cmake_minimum_required(VERSION 2.8)
 project(liteplayer_demo)
 
 MESSAGE(STATUS "Platform: ${CMAKE_SYSTEM_NAME}")
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
-    # Support tinalsa?
-    set (ENABLE_TINYALSA "YES")
+    # Support alsa?
+    set (ENABLE_LINUX_ALSA "YES")
 endif()
 
 set(TOP_DIR "${CMAKE_SOURCE_DIR}/../..")
@@ -109,14 +109,10 @@ set (ADAPTER_SRC
     ${TOP_DIR}/adapter/wave_wrapper.c
 )
 
-if (ENABLE_TINYALSA)
-    # Force SRC to 48KHz/Stereo for tinyalsa device
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_TINYALSA")
-    include_directories(${TOP_DIR}/adapter/external/tinyalsa/include)
+if (ENABLE_LINUX_ALSA)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_LINUX_ALSA")
     list(APPEND ADAPTER_SRC
-        ${TOP_DIR}/adapter/external/tinyalsa/pcm.c
-        ${TOP_DIR}/adapter/external/tinyalsa/mixer.c
-        ${TOP_DIR}/adapter/tinyalsa_wrapper.c
+        ${TOP_DIR}/adapter/alsa_wrapper.c
     )
 endif()
 
@@ -124,4 +120,7 @@ LINK_DIRECTORIES(${LIB_DIR})
 
 # liteplayer_mngr
 add_executable(liteplayer_mngr liteplayer_mngr.c ${ADAPTER_SRC})
-target_link_libraries(liteplayer_mngr liteplayer_core_s.a pthread m)
+target_link_libraries(liteplayer_mngr liteplayer_core_s.a pthread)
+if (ENABLE_LINUX_ALSA)
+target_link_libraries(liteplayer_mngr asound)
+endif()

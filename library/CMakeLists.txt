@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.4.1)
+cmake_minimum_required(VERSION 2.8)
 project(liteplayer_core)
 
 set(TOP_DIR "${CMAKE_SOURCE_DIR}/..")

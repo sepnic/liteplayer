@@ -32,8 +32,8 @@
 #include "liteplayer_manager.h"
 #include "httpclient_wrapper.h"
 #include "fatfs_wrapper.h"
-#if defined(ENABLE_TINYALSA)
-#include "tinyalsa_wrapper.h"
+#if defined(ENABLE_LINUX_ALSA)
+#include "alsa_wrapper.h"
 #else
 #include "wave_wrapper.h"
 #endif
@@ -154,12 +154,12 @@ static void *liteplayer_demo_thread(void *arg)
 
     liteplayer_mngr_register_state_listener(demo->mngr, liteplayer_demo_state_callback, (void *)demo);
 
-#if defined(ENABLE_TINYALSA)
+#if defined(ENABLE_LINUX_ALSA)
     struct sink_wrapper sink_ops = {
         .sink_priv = NULL,
-        .open = tinyalsa_wrapper_open,
-        .write = tinyalsa_wrapper_write,
-        .close = tinyalsa_wrapper_close,
+        .open = alsa_wrapper_open,
+        .write = alsa_wrapper_write,
+        .close = alsa_wrapper_close,
     };
 #else
     struct sink_wrapper sink_ops = {

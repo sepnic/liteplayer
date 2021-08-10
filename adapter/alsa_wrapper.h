@@ -18,8 +18,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef _TINYALSA_WRAPPER_H_
-#define _TINYALSA_WRAPPER_H_
+#ifndef _ALSA_WRAPPER_H_
+#define _ALSA_WRAPPER_H_
 
 #include "liteplayer_adapter.h"
 
@@ -27,11 +27,11 @@
 extern "C" {
 #endif
 
-sink_handle_t tinyalsa_wrapper_open(int samplerate, int channels, void *sink_priv);
+sink_handle_t alsa_wrapper_open(int samplerate, int channels, void *sink_priv);
 
-int tinyalsa_wrapper_write(sink_handle_t handle, char *buffer, int size);
+int alsa_wrapper_write(sink_handle_t handle, char *buffer, int size);
 
-void tinyalsa_wrapper_close(sink_handle_t handle);
+void alsa_wrapper_close(sink_handle_t handle);
 
 #ifdef __cplusplus
 }
