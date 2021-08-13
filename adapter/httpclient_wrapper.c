@@ -24,7 +24,7 @@
 #include "osal/os_thread.h"
 #include "cutils/memory_helper.h"
 #include "cutils/log_helper.h"
-#include "httpclient.h"
+#include "httpclient/httpclient.h"
 #include "httpclient_wrapper.h"
 
 #define TAG "[liteplayer]httpclient"

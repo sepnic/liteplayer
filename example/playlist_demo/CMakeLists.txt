@@ -18,13 +18,12 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -Wall -Werror")
 # include files
 include_directories(${TOP_DIR}/thirdparty/sysutils/include)
 include_directories(${TOP_DIR}/library/include)
-include_directories(${TOP_DIR}/adapter/external/httpclient)
 include_directories(${TOP_DIR}/adapter/external/mbedtls/include)
 include_directories(${TOP_DIR}/adapter)
 
 # source files
 set (ADAPTER_SRC
-    ${TOP_DIR}/adapter/external/httpclient/httpclient.c
+    ${TOP_DIR}/thirdparty/sysutils/source/httpclient/httpclient.c
     ${TOP_DIR}/adapter/external/mbedtls/library/aes.c
     ${TOP_DIR}/adapter/external/mbedtls/library/aesni.c
     ${TOP_DIR}/adapter/external/mbedtls/library/arc4.c

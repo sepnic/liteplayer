@@ -24,7 +24,6 @@ include_directories(${TOP_DIR}/thirdparty/sysutils/include)
 include_directories(${TOP_DIR}/thirdparty/codecs)
 include_directories(${TOP_DIR}/library/include)
 include_directories(${TOP_DIR}/library/source)
-include_directories(${TOP_DIR}/adapter/external/httpclient)
 include_directories(${TOP_DIR}/adapter/external/mbedtls/include)
 include_directories(${TOP_DIR}/adapter)
 
@@ -43,8 +42,9 @@ include_directories(${TOP_DIR}/thirdparty/codecs/aac-fdk/libSACdec/include)
 
 # source files
 file(GLOB THIRDPARTY_SRC src
-    ${TOP_DIR}/thirdparty/sysutils/source/cutils/*.c
     ${TOP_DIR}/thirdparty/sysutils/osal/unix/*.c
+    ${TOP_DIR}/thirdparty/sysutils/source/cutils/*.c
+    ${TOP_DIR}/thirdparty/sysutils/source/httpclient/*.c
     ${TOP_DIR}/thirdparty/codecs/mp3-pvmp3/src/*.cpp
     ${TOP_DIR}/thirdparty/codecs/aac-fdk/libAACdec/src/*.cpp
     ${TOP_DIR}/thirdparty/codecs/aac-fdk/libPCMutils/src/*.cpp
@@ -57,7 +57,6 @@ file(GLOB THIRDPARTY_SRC src
     ${TOP_DIR}/thirdparty/codecs/aac-fdk/libSACdec/src/*.cpp
 )
 set (ADAPTER_SRC
-    ${TOP_DIR}/adapter/external/httpclient/httpclient.c
     ${TOP_DIR}/adapter/external/mbedtls/library/aes.c
     ${TOP_DIR}/adapter/external/mbedtls/library/aesni.c
     ${TOP_DIR}/adapter/external/mbedtls/library/arc4.c

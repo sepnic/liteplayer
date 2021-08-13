@@ -85,7 +85,7 @@ include $(BUILD_SHARED_LIBRARY)
 include $(CLEAR_VARS)
 TOP_DIR := ${LOCAL_PATH}/../../..
 THIRDPARTY_FILES := $(wildcard  ${TOP_DIR}/adapter/external/mbedtls/library/*.c \
-                                ${TOP_DIR}/adapter/external/httpclient/*.c)
+                                ${TOP_DIR}/thirdparty/sysutils/source/httpclient/*.c)
 THIRDPARTY_FILES := $(THIRDPARTY_FILES:$(LOCAL_PATH)/%=%)
 LOCAL_SRC_FILES := \
     ${THIRDPARTY_FILES} \
@@ -96,7 +96,6 @@ LOCAL_C_INCLUDES += \
     ${TOP_DIR}/library/include \
     ${TOP_DIR}/adapter \
     ${TOP_DIR}/thirdparty/sysutils/include \
-    ${TOP_DIR}/adapter/external/httpclient \
     ${TOP_DIR}/adapter/external/mbedtls/include
 LOCAL_CFLAGS += -DOS_ANDROID -D_SOCKLEN_T -Wno-error=inline-asm
 LOCAL_CFLAGS += -Wall -Werror
