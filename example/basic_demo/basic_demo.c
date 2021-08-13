@@ -34,11 +34,11 @@
 #include "wave_wrapper.h"
 #endif
 
-#define TAG "[liteplayer]DEMO"
+#define TAG "basic_demo"
 
-#define LITEPLYAER_DEMO_THRESHOLD_MS (5000)
+#define BASIC_DEMO_THRESHOLD_MS (5000)
 
-static int liteplayer_demo_state_listener(enum liteplayer_state state, int errcode, void *priv)
+static int basic_demo_state_listener(enum liteplayer_state state, int errcode, void *priv)
 {
     enum liteplayer_state *player_state = (enum liteplayer_state *)priv;
     bool state_sync = true;
@@ -87,7 +87,7 @@ static int liteplayer_demo_state_listener(enum liteplayer_state state, int errco
     return 0;
 }
 
-static int liteplayer_demo(const char *url)
+static int basic_demo(const char *url)
 {
     int ret = -1;
     liteplayer_handle_t player = liteplayer_create();
@@ -95,7 +95,7 @@ static int liteplayer_demo(const char *url)
         return ret;
 
     enum liteplayer_state player_state = LITEPLAYER_IDLE;
-    liteplayer_register_state_listener(player, liteplayer_demo_state_listener, (void *)&player_state);
+    liteplayer_register_state_listener(player, basic_demo_state_listener, (void *)&player_state);
 
 #if defined(ENABLE_LINUX_ALSA)
     struct sink_wrapper sink_ops = {
@@ -134,7 +134,7 @@ static int liteplayer_demo(const char *url)
     };
     liteplayer_register_http_wrapper(player, &http_ops);
 
-    if (liteplayer_set_data_source(player, url, LITEPLYAER_DEMO_THRESHOLD_MS) != 0) {
+    if (liteplayer_set_data_source(player, url, BASIC_DEMO_THRESHOLD_MS) != 0) {
         OS_LOGE(TAG, "Failed to set data source");
         goto test_done;
     }
@@ -190,6 +190,6 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    liteplayer_demo(argv[1]);
+    basic_demo(argv[1]);
     return 0;
 }

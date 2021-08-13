@@ -55,6 +55,7 @@ dkms.conf
 *.diff
 *.bak
 *.DS_Store
+*.playlist
 out/
 libs/
 obj/

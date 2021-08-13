@@ -38,15 +38,15 @@
 #include "wave_wrapper.h"
 #endif
 
-#define TAG "[liteplayer]DEMO"
+#define TAG "playlist_demo"
 
 #define PLAYLIST_FILE "liteplayermngr_demo.playlist"
 
-#define LITEPLYAER_DEMO_TASK_PRIO    (OS_THREAD_PRIO_NORMAL)
-#define LITEPLYAER_DEMO_TASK_STACK   (8192)
-#define LITEPLYAER_DEMO_THRESHOLD_MS (5000)
+#define PLAYLIST_DEMO_TASK_PRIO    (OS_THREAD_PRIO_NORMAL)
+#define PLAYLIST_DEMO_TASK_STACK   (8192)
+#define PLAYLIST_DEMO_THRESHOLD_MS (5000)
 
-struct liteplayer_demo_priv {
+struct playlist_demo_priv {
     const char *url;
     liteplayer_mngr_handle_t mngr;
     enum liteplayer_state state;
@@ -92,9 +92,9 @@ static int generate_playlist(const char *path)
     return -1;
 }
 
-static int liteplayer_demo_state_callback(enum liteplayer_state state, int errcode, void *priv)
+static int playlist_demo_state_callback(enum liteplayer_state state, int errcode, void *priv)
 {
-    struct liteplayer_demo_priv *demo = (struct liteplayer_demo_priv *)priv;
+    struct playlist_demo_priv *demo = (struct playlist_demo_priv *)priv;
     bool state_sync = true;
 
     switch (state) {
@@ -144,15 +144,15 @@ static int liteplayer_demo_state_callback(enum liteplayer_state state, int errco
     return 0;
 }
 
-static void *liteplayer_demo_thread(void *arg)
+static void *playlist_demo_thread(void *arg)
 {
-    struct liteplayer_demo_priv *demo = (struct liteplayer_demo_priv *)arg;
+    struct playlist_demo_priv *demo = (struct playlist_demo_priv *)arg;
 
     demo->mngr = liteplayer_mngr_create();
     if (demo->mngr == NULL)
         return NULL;
 
-    liteplayer_mngr_register_state_listener(demo->mngr, liteplayer_demo_state_callback, (void *)demo);
+    liteplayer_mngr_register_state_listener(demo->mngr, playlist_demo_state_callback, (void *)demo);
 
 #if defined(ENABLE_LINUX_ALSA)
     struct sink_wrapper sink_ops = {
@@ -191,7 +191,7 @@ static void *liteplayer_demo_thread(void *arg)
     };
     liteplayer_mngr_register_http_wrapper(demo->mngr, &http_ops);
 
-    if (liteplayer_mngr_set_data_source(demo->mngr, demo->url, LITEPLYAER_DEMO_THRESHOLD_MS) != 0) {
+    if (liteplayer_mngr_set_data_source(demo->mngr, demo->url, PLAYLIST_DEMO_THRESHOLD_MS) != 0) {
         OS_LOGE(TAG, "Failed to set data source");
         goto thread_exit;
     }
@@ -241,7 +241,7 @@ thread_exit:
     os_thread_sleep_msec(100);
     OS_MEMORY_DUMP();
 
-    OS_LOGD(TAG, "liteplayer demo thread leave");
+    OS_LOGD(TAG, "playlist demo thread leave");
     return NULL;
 }
 
@@ -254,8 +254,8 @@ int main(int argc, char *argv[])
 
     struct os_thread_attr attr = {
         .name = "liteplayer_mngr_demo",
-        .priority = LITEPLYAER_DEMO_TASK_PRIO,
-        .stacksize = LITEPLYAER_DEMO_TASK_STACK,
+        .priority = PLAYLIST_DEMO_TASK_PRIO,
+        .stacksize = PLAYLIST_DEMO_TASK_STACK,
         .joinable = true,
     };
 
@@ -273,10 +273,10 @@ int main(int argc, char *argv[])
         }
     }
 
-    struct liteplayer_demo_priv demo;
+    struct playlist_demo_priv demo;
     memset(&demo, 0x0, sizeof(demo));
     demo.url = url;
-    os_thread tid = os_thread_create(&attr, liteplayer_demo_thread, (void *)&demo);
+    os_thread tid = os_thread_create(&attr, playlist_demo_thread, (void *)&demo);
     if (tid == NULL)
         goto demo_out;
 
