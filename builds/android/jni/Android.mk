@@ -97,8 +97,8 @@ LOCAL_C_INCLUDES += \
     ${TOP_DIR}/adapter \
     ${TOP_DIR}/thirdparty/sysutils/include \
     ${TOP_DIR}/adapter/external/mbedtls/include
-LOCAL_CFLAGS += -DOS_ANDROID -D_SOCKLEN_T -Wno-error=inline-asm
-LOCAL_CFLAGS += -Wall -Werror
+LOCAL_CFLAGS += -DOS_ANDROID -D_SOCKLEN_T -DENABLE_HTTPCLIENT_MBEDTLS
+LOCAL_CFLAGS += -Wall -Werror -Wno-error=inline-asm
 LOCAL_LDLIBS := -llog -lOpenSLES
 LOCAL_SHARED_LIBRARIES += sysutils
 LOCAL_MODULE := liteplayer_adapter

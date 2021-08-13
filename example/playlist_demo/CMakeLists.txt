@@ -14,6 +14,7 @@ set(LIB_DIR "${TOP_DIR}/builds/out/libliteplayercore")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -Wall -Werror")
 # cflags: if socketlen_t defined
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_SOCKLEN_T")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_HTTPCLIENT_MBEDTLS")
 
 # include files
 include_directories(${TOP_DIR}/thirdparty/sysutils/include)
