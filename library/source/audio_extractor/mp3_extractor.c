@@ -212,14 +212,12 @@ find_syncword:
         if (ret == 0) {
             found = true;
             goto finish;
-        }
-        else {
+        } else {
             OS_LOGV(TAG, "Retry to find sync word");
             last_position++;
             goto find_syncword;
         }
-    }
-    else {
+    } else {
         OS_LOGE(TAG, "Can't find mp3 sync word");
         goto finish;
     }

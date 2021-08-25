@@ -135,14 +135,12 @@ find_syncword:
             temp.sample_rate == info->sample_rate && temp.channels == info->channels) {
             found = true;
             goto finish;
-        }
-        else {
+        } else {
             OS_LOGD(TAG, "Retry to find sync word");
             last_position++;
             goto find_syncword;
         }
-    }
-    else {
+    } else {
         OS_LOGE(TAG, "Can't find mp3 sync word");
         goto finish;
     }
@@ -169,16 +167,13 @@ static int mp3_data_read(mp3_decoder_handle_t decoder)
         ret = audio_element_input_chunk(decoder->el, mad->seek_buffer, mad->bytes_seek);
         if (ret == mad->bytes_seek) {
             OS_LOGV(TAG, "SEEK_MODE: Read chunk succeed: %d/%d", ret, mad->bytes_seek);
-        }
-        else if (ret == AEL_IO_OK || ret == AEL_IO_DONE || ret == AEL_IO_ABORT) {
+        } else if (ret == AEL_IO_OK || ret == AEL_IO_DONE || ret == AEL_IO_ABORT) {
             in->eof = true;
             return AEL_IO_DONE;
-        }
-        else if (ret < 0) {
+        } else if (ret < 0) {
             OS_LOGW(TAG, "SEEK_MODE: Read chunk error: %d/%d", ret, mad->bytes_seek);
             return ret;
-        }
-        else {
+        } else {
             OS_LOGW(TAG, "SEEK_MODE: Read chunk insufficient: %d/%d", ret, mad->bytes_seek);
             in->eof = true;
             return AEL_IO_DONE;
@@ -214,16 +209,13 @@ static int mp3_data_read(mp3_decoder_handle_t decoder)
             if (ret == remain) {
                 OS_LOGV(TAG, "SEEK_MODE: Read chunk succeed: %d/%d", ret, remain);
                 mad->bytes_seek = mad->frame_size;
-            }
-            else if (ret == AEL_IO_OK || ret == AEL_IO_DONE || ret == AEL_IO_ABORT) {
+            } else if (ret == AEL_IO_OK || ret == AEL_IO_DONE || ret == AEL_IO_ABORT) {
                 in->eof = true;
                 return AEL_IO_DONE;
-            }
-            else if (ret < 0) {
+            } else if (ret < 0) {
                 OS_LOGW(TAG, "SEEK_MODE: Read chunk error: %d/%d", ret, remain);
                 return ret;
-            }
-            else {
+            } else {
                 OS_LOGW(TAG, "SEEK_MODE: Read chunk insufficient: %d/%d", ret, remain);
                 in->eof = true;
                 return AEL_IO_DONE;
@@ -262,8 +254,7 @@ static int mp3_data_read(mp3_decoder_handle_t decoder)
         if (mad->new_frame) {
             OS_LOGD(TAG, "Remain %d/4 bytes header needed to read", in->bytes_want);
             goto fill_header;
-        }
-        else {
+        } else {
             OS_LOGD(TAG, "Remain %d/%d bytes frame needed to read", in->bytes_want, mad->frame_size);
             goto fill_frame;
         }
@@ -279,15 +270,12 @@ fill_header:
             in->bytes_read += ret;
             in->bytes_want -= ret;
             return AEL_IO_TIMEOUT;
-        }
-        else if (ret == AEL_IO_TIMEOUT) {
+        } else if (ret == AEL_IO_TIMEOUT) {
             return AEL_IO_TIMEOUT;
-        }
-        else if (ret == AEL_IO_OK || ret == AEL_IO_DONE || ret == AEL_IO_ABORT) {
+        } else if (ret == AEL_IO_OK || ret == AEL_IO_DONE || ret == AEL_IO_ABORT) {
             in->eof = true;
             return AEL_IO_DONE;
-        }
-        else {
+        } else {
             return AEL_IO_FAIL;
         }
     }
@@ -309,15 +297,12 @@ fill_frame:
             in->bytes_read += ret;
             in->bytes_want -= ret;
             return AEL_IO_TIMEOUT;
-        }
-        else if (ret == AEL_IO_TIMEOUT) {
+        } else if (ret == AEL_IO_TIMEOUT) {
             return AEL_IO_TIMEOUT;
-        }
-        else if (ret == AEL_IO_OK || ret == AEL_IO_DONE || ret == AEL_IO_ABORT) {
+        } else if (ret == AEL_IO_OK || ret == AEL_IO_DONE || ret == AEL_IO_ABORT) {
             in->eof = true;
             return AEL_IO_DONE;
-        }
-        else {
+        } else {
             return AEL_IO_FAIL;
         }
     }
@@ -392,12 +377,10 @@ decode_data:
         if (stream->error == MAD_ERROR_BUFLEN) {
             OS_LOGV(TAG, "Input buffer too small (or EOF)");
             goto fill_data;
-        }
-        else if (MAD_RECOVERABLE(stream->error)) {
+        } else if (MAD_RECOVERABLE(stream->error)) {
             OS_LOGW(TAG, "Recoverable error: %s", mad_stream_errorstr(stream));
             goto fill_data;
-        }
-        else {
+        } else {
             OS_LOGE(TAG, "Unrecoverable error: %s", mad_stream_errorstr(stream));
             return AEL_PROCESS_FAIL;
         }
@@ -415,8 +398,7 @@ decode_data:
             out[k*2+0] = scale(*left++);
             out[k*2+1] = scale(*right++);
         }
-    }
-    else if (synth->pcm.channels == 1) {
+    } else if (synth->pcm.channels == 1) {
         for (k = 0; k < synth->pcm.length; k++)
             out[k] = scale(*left++);
     }

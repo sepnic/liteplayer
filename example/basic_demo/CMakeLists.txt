@@ -137,16 +137,16 @@ set (ADAPTER_SRC
     ${TOP_DIR}/adapter/external/mbedtls/library/x509write_crt.c
     ${TOP_DIR}/adapter/external/mbedtls/library/x509write_csr.c
     ${TOP_DIR}/adapter/external/mbedtls/library/xtea.c
-    ${TOP_DIR}/adapter/httpclient_wrapper.c
-    ${TOP_DIR}/adapter/fatfs_wrapper.c
-    ${TOP_DIR}/adapter/wave_wrapper.c
+    ${TOP_DIR}/adapter/source_httpclient_wrapper.c
+    ${TOP_DIR}/adapter/source_fatfs_wrapper.c
+    ${TOP_DIR}/adapter/sink_wave_wrapper.c
 )
 
 if (ENABLE_LINUX_ALSA)
     # Force SRC to 48KHz/Stereo for tinyalsa device
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_LINUX_ALSA")
     list(APPEND ADAPTER_SRC
-        ${TOP_DIR}/adapter/alsa_wrapper.c
+        ${TOP_DIR}/adapter/sink_alsa_wrapper.c
     )
 endif()
 

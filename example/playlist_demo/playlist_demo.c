@@ -30,12 +30,12 @@
 #include "cutils/memory_helper.h"
 #include "cutils/log_helper.h"
 #include "liteplayer_manager.h"
-#include "httpclient_wrapper.h"
-#include "fatfs_wrapper.h"
+#include "source_httpclient_wrapper.h"
+#include "source_fatfs_wrapper.h"
 #if defined(ENABLE_LINUX_ALSA)
-#include "alsa_wrapper.h"
+#include "sink_alsa_wrapper.h"
 #else
-#include "wave_wrapper.h"
+#include "sink_wave_wrapper.h"
 #endif
 
 #define TAG "playlist_demo"
@@ -48,7 +48,7 @@
 
 struct playlist_demo_priv {
     const char *url;
-    liteplayer_mngr_handle_t mngr;
+    liteplayermanager_handle_t mngr;
     enum liteplayer_state state;
     bool exit;
 };
@@ -59,8 +59,7 @@ static int generate_playlist(const char *path)
     if ((dir = opendir(path)) == NULL) {
         OS_LOGE(TAG, "Failed to open dir[%s]", path);
         return -1;
-    }
-    else {
+    } else {
         struct dirent *entry;
         char buffer[512];
         FILE *file = fopen(PLAYLIST_FILE, "wb+");
@@ -148,11 +147,11 @@ static void *playlist_demo_thread(void *arg)
 {
     struct playlist_demo_priv *demo = (struct playlist_demo_priv *)arg;
 
-    demo->mngr = liteplayer_mngr_create();
+    demo->mngr = liteplayermanager_create();
     if (demo->mngr == NULL)
         return NULL;
 
-    liteplayer_mngr_register_state_listener(demo->mngr, playlist_demo_state_callback, (void *)demo);
+    liteplayermanager_register_state_listener(demo->mngr, playlist_demo_state_callback, (void *)demo);
 
 #if defined(ENABLE_LINUX_ALSA)
     struct sink_wrapper sink_ops = {
@@ -169,7 +168,7 @@ static void *playlist_demo_thread(void *arg)
         .close = wave_wrapper_close,
     };
 #endif
-    liteplayer_mngr_register_sink_wrapper(demo->mngr, &sink_ops);
+    liteplayermanager_register_sink_wrapper(demo->mngr, &sink_ops);
 
     struct file_wrapper file_ops = {
         .file_priv = NULL,
@@ -179,7 +178,7 @@ static void *playlist_demo_thread(void *arg)
         .seek = fatfs_wrapper_seek,
         .close = fatfs_wrapper_close,
     };
-    liteplayer_mngr_register_file_wrapper(demo->mngr, &file_ops);
+    liteplayermanager_register_file_wrapper(demo->mngr, &file_ops);
 
     struct http_wrapper http_ops = {
         .http_priv = NULL,
@@ -189,14 +188,14 @@ static void *playlist_demo_thread(void *arg)
         .seek = httpclient_wrapper_seek,
         .close = httpclient_wrapper_close,
     };
-    liteplayer_mngr_register_http_wrapper(demo->mngr, &http_ops);
+    liteplayermanager_register_http_wrapper(demo->mngr, &http_ops);
 
-    if (liteplayer_mngr_set_data_source(demo->mngr, demo->url, PLAYLIST_DEMO_THRESHOLD_MS) != 0) {
+    if (liteplayermanager_set_data_source(demo->mngr, demo->url, PLAYLIST_DEMO_THRESHOLD_MS) != 0) {
         OS_LOGE(TAG, "Failed to set data source");
         goto thread_exit;
     }
 
-    if (liteplayer_mngr_prepare_async(demo->mngr) != 0) {
+    if (liteplayermanager_prepare_async(demo->mngr) != 0) {
         OS_LOGE(TAG, "Failed to prepare player");
         goto thread_exit;
     }
@@ -208,7 +207,7 @@ static void *playlist_demo_thread(void *arg)
         goto thread_exit;
     }
 
-    if (liteplayer_mngr_start(demo->mngr) != 0) {
+    if (liteplayermanager_start(demo->mngr) != 0) {
         OS_LOGE(TAG, "Failed to start player");
         goto thread_exit;
     }
@@ -220,7 +219,7 @@ static void *playlist_demo_thread(void *arg)
         os_thread_sleep_msec(100);
     }
 
-    if (liteplayer_mngr_stop(demo->mngr) != 0) {
+    if (liteplayermanager_stop(demo->mngr) != 0) {
         OS_LOGE(TAG, "Failed to stop player");
         goto thread_exit;
     }
@@ -231,11 +230,11 @@ static void *playlist_demo_thread(void *arg)
 thread_exit:
     demo->exit = true;
 
-    liteplayer_mngr_reset(demo->mngr);
+    liteplayermanager_reset(demo->mngr);
     while (demo->state != LITEPLAYER_IDLE) {
         os_thread_sleep_msec(100);
     }
-    liteplayer_mngr_destroy(demo->mngr);
+    liteplayermanager_destroy(demo->mngr);
     demo->mngr = NULL;
 
     os_thread_sleep_msec(100);
@@ -253,7 +252,7 @@ int main(int argc, char *argv[])
     }
 
     struct os_thread_attr attr = {
-        .name = "liteplayer_mngr_demo",
+        .name = "liteplayermanager_demo",
         .priority = PLAYLIST_DEMO_TASK_PRIO,
         .stacksize = PLAYLIST_DEMO_TASK_STACK,
         .joinable = true,
@@ -298,48 +297,40 @@ int main(int argc, char *argv[])
         if (input == 'Q' || input == 'q') {
            OS_LOGI(TAG, "Quit");
             if (demo.mngr)
-                liteplayer_mngr_reset(demo.mngr);
+                liteplayermanager_reset(demo.mngr);
             break;
-        }
-        else if (input == 'P' || input == 'p') {
+        } else if (input == 'P' || input == 'p') {
            OS_LOGI(TAG, "Pause");
             if (demo.mngr)
-                liteplayer_mngr_pause(demo.mngr);
-        }
-        else if (input == 'R' || input == 'r') {
+                liteplayermanager_pause(demo.mngr);
+        } else if (input == 'R' || input == 'r') {
            OS_LOGI(TAG, "Resume");
             if (demo.mngr)
-                liteplayer_mngr_resume(demo.mngr);
-        }
-        else if (input == 'S' || input == 's') {
+                liteplayermanager_resume(demo.mngr);
+        } else if (input == 'S' || input == 's') {
            OS_LOGI(TAG, "Seek 10s");
             if (demo.mngr) {
                 int position = 0;
-                if (liteplayer_mngr_get_position(demo.mngr, &position) == 0)
-                    liteplayer_mngr_seek(demo.mngr, position+10000);
+                if (liteplayermanager_get_position(demo.mngr, &position) == 0)
+                    liteplayermanager_seek(demo.mngr, position+10000);
             }
-        }
-        else if (input == 'N' || input == 'n') {
+        } else if (input == 'N' || input == 'n') {
            OS_LOGI(TAG, "Next");
             if (demo.mngr)
-                liteplayer_mngr_next(demo.mngr);
-        }
-        else if (input == 'V' || input == 'v') {
+                liteplayermanager_next(demo.mngr);
+        } else if (input == 'V' || input == 'v') {
            OS_LOGI(TAG, "Prev");
             if (demo.mngr)
-                liteplayer_mngr_prev(demo.mngr);
-        }
-        else if (input == 'O') {
+                liteplayermanager_prev(demo.mngr);
+        } else if (input == 'O') {
            OS_LOGI(TAG, "Enable looping");
             if (demo.mngr)
-                liteplayer_mngr_set_single_looping(demo.mngr, true);
-        }
-        else if (input == 'o') {
+                liteplayermanager_set_single_looping(demo.mngr, true);
+        } else if (input == 'o') {
            OS_LOGI(TAG, "Disable looping");
             if (demo.mngr)
-                liteplayer_mngr_set_single_looping(demo.mngr, false);
-        }
-        else {
+                liteplayermanager_set_single_looping(demo.mngr, false);
+        } else {
             if (input != '\n')
                 OS_LOGW(TAG, "Unknown command: %c", input);
         }

@@ -25,7 +25,7 @@
 #include "osal/os_time.h"
 #include "cutils/memory_helper.h"
 #include "cutils/log_helper.h"
-#include "wave_wrapper.h"
+#include "sink_wave_wrapper.h"
 
 #define TAG "[liteplayer]wave"
 

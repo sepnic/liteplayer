@@ -99,8 +99,7 @@ static int m4a_decoder_process(audio_element_handle_t self, char *in_buffer, int
         if (ret < 0) {
             if (ret == AEL_IO_TIMEOUT) {
                 OS_LOGW(TAG, "m4a_wrapper_run AEL_IO_TIMEOUT");
-            }
-            else if (ret != AEL_IO_DONE) {
+            } else if (ret != AEL_IO_DONE) {
                 OS_LOGE(TAG, "m4a_wrapper_run failed:%d", ret);
             }
             return ret;

@@ -28,49 +28,49 @@
 extern "C" {
 #endif
 
-typedef struct liteplayer_mngr *liteplayer_mngr_handle_t;
+typedef struct liteplayer_manager *liteplayermanager_handle_t;
 
-liteplayer_mngr_handle_t liteplayer_mngr_create();
+liteplayermanager_handle_t liteplayermanager_create();
 
-int liteplayer_mngr_register_file_wrapper(liteplayer_mngr_handle_t mngr, struct file_wrapper *file_ops);
+int liteplayermanager_register_file_wrapper(liteplayermanager_handle_t mngr, struct file_wrapper *file_ops);
 
-int liteplayer_mngr_register_http_wrapper(liteplayer_mngr_handle_t mngr, struct http_wrapper *http_ops);
+int liteplayermanager_register_http_wrapper(liteplayermanager_handle_t mngr, struct http_wrapper *http_ops);
 
-int liteplayer_mngr_register_sink_wrapper(liteplayer_mngr_handle_t mngr, struct sink_wrapper *sink_ops);
+int liteplayermanager_register_sink_wrapper(liteplayermanager_handle_t mngr, struct sink_wrapper *sink_ops);
 
-int liteplayer_mngr_register_state_listener(liteplayer_mngr_handle_t mngr, liteplayer_state_cb listener, void *listener_priv);
+int liteplayermanager_register_state_listener(liteplayermanager_handle_t mngr, liteplayer_state_cb listener, void *listener_priv);
 
-int liteplayer_mngr_set_data_source(liteplayer_mngr_handle_t mngr, const char *url, int threshold_ms);
+int liteplayermanager_set_data_source(liteplayermanager_handle_t mngr, const char *url, int threshold_ms);
 
-int liteplayer_mngr_prepare_async(liteplayer_mngr_handle_t mngr);
+int liteplayermanager_prepare_async(liteplayermanager_handle_t mngr);
 
-int liteplayer_mngr_write(liteplayer_mngr_handle_t mngr, char *data, int size, bool final);
+int liteplayermanager_write(liteplayermanager_handle_t mngr, char *data, int size, bool final);
 
-int liteplayer_mngr_start(liteplayer_mngr_handle_t mngr);
+int liteplayermanager_start(liteplayermanager_handle_t mngr);
 
-int liteplayer_mngr_pause(liteplayer_mngr_handle_t mngr);
+int liteplayermanager_pause(liteplayermanager_handle_t mngr);
 
-int liteplayer_mngr_resume(liteplayer_mngr_handle_t mngr);
+int liteplayermanager_resume(liteplayermanager_handle_t mngr);
 
-int liteplayer_mngr_seek(liteplayer_mngr_handle_t mngr, int msec);
+int liteplayermanager_seek(liteplayermanager_handle_t mngr, int msec);
 
-int liteplayer_mngr_next(liteplayer_mngr_handle_t mngr);
+int liteplayermanager_next(liteplayermanager_handle_t mngr);
 
-int liteplayer_mngr_prev(liteplayer_mngr_handle_t mngr);
+int liteplayermanager_prev(liteplayermanager_handle_t mngr);
 
-int liteplayer_mngr_set_single_looping(liteplayer_mngr_handle_t mngr, bool enable);
+int liteplayermanager_set_single_looping(liteplayermanager_handle_t mngr, bool enable);
 
-int liteplayer_mngr_stop(liteplayer_mngr_handle_t mngr);
+int liteplayermanager_stop(liteplayermanager_handle_t mngr);
 
-int liteplayer_mngr_reset(liteplayer_mngr_handle_t mngr);
+int liteplayermanager_reset(liteplayermanager_handle_t mngr);
 
-int liteplayer_mngr_get_available_size(liteplayer_mngr_handle_t mngr);
+int liteplayermanager_get_available_size(liteplayermanager_handle_t mngr);
 
-int liteplayer_mngr_get_position(liteplayer_mngr_handle_t mngr, int *msec);
+int liteplayermanager_get_position(liteplayermanager_handle_t mngr, int *msec);
 
-int liteplayer_mngr_get_duration(liteplayer_mngr_handle_t mngr, int *msec);
+int liteplayermanager_get_duration(liteplayermanager_handle_t mngr, int *msec);
 
-void liteplayer_mngr_destroy(liteplayer_mngr_handle_t mngr);
+void liteplayermanager_destroy(liteplayermanager_handle_t mngr);
 
 #ifdef __cplusplus
 }

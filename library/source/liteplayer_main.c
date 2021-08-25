@@ -102,8 +102,7 @@ static void media_player_state_callback(liteplayer_handle_t handle, enum litepla
             if (handle->state_listener)
                 handle->state_listener(LITEPLAYER_ERROR, errcode, handle->state_userdata);
         }
-    }
-    else {
+    } else {
         if (!handle->state_error || state == LITEPLAYER_IDLE || state == LITEPLAYER_STOPPED) {
             if (handle->state_listener)
                 handle->state_listener(state, 0, handle->state_userdata);
@@ -192,8 +191,7 @@ static int audio_element_state_callback(audio_element_handle_t el, audio_event_i
             default:
                 break;
             }
-        }
-        else if (msg->cmd == AEL_MSG_CMD_REPORT_MUSIC_INFO) {
+        } else if (msg->cmd == AEL_MSG_CMD_REPORT_MUSIC_INFO) {
             if (msg->source == (void *)handle->el_decoder) {
                 audio_element_info_t decoder_info = {0};
                 audio_element_getinfo(handle->el_decoder, &decoder_info);
@@ -212,8 +210,7 @@ static int audio_element_state_callback(audio_element_handle_t el, audio_event_i
                     sink_info.in_samplerate = decoder_info.out_samplerate;
                     audio_element_setinfo(handle->el_sink, &sink_info);
                 }
-            }
-            else if (msg->source == (void *)handle->el_sink) {
+            } else if (msg->source == (void *)handle->el_sink) {
                 audio_element_info_t sink_info = {0};
                 audio_element_getinfo(handle->el_sink, &sink_info);
                 OS_LOGD(TAG, "[ %s-%s ] Receive sink info: samplerate=%d, ch=%d, bits=%d",
@@ -223,8 +220,7 @@ static int audio_element_state_callback(audio_element_handle_t el, audio_event_i
                 handle->sink_channels = sink_info.out_channels;
                 handle->sink_bits = sink_info.bits;
             }
-        }
-        else if (msg->cmd == AEL_MSG_CMD_REPORT_POSITION) {
+        } else if (msg->cmd == AEL_MSG_CMD_REPORT_POSITION) {
             if (msg->source == (void *) handle->el_sink) {
                 handle->sink_position = (long long)msg->data;
                 //OS_LOGV(TAG, "[ %s-%s ] Receive postion info: pos=%ld",
@@ -387,36 +383,63 @@ static int main_pipeline_init(liteplayer_handle_t handle)
 
     {
         OS_LOGD(TAG, "[2.1] Create decoder element");
-        if (handle->codec_info.codec_type == AUDIO_CODEC_MP3) {
+        switch (handle->codec_info.codec_type) {
+        case AUDIO_CODEC_MP3: {
             struct mp3_decoder_cfg mp3_cfg = DEFAULT_MP3_DECODER_CONFIG();
             mp3_cfg.task_prio            = DEFAULT_DECODER_TASK_PRIO;
             mp3_cfg.task_stack           = DEFAULT_DECODER_TASK_STACKSIZE;
             mp3_cfg.out_rb_size          = DEFAULT_DECODER_RINGBUF_SIZE;
             mp3_cfg.mp3_info             = &(handle->codec_info.detail.mp3_info);
             handle->el_decoder = mp3_decoder_init(&mp3_cfg);
+            break;
         }
-        else if (handle->codec_info.codec_type == AUDIO_CODEC_AAC) {
+        case AUDIO_CODEC_AAC: {
             struct aac_decoder_cfg aac_cfg = DEFAULT_AAC_DECODER_CONFIG();
             aac_cfg.task_prio            = DEFAULT_DECODER_TASK_PRIO;
             aac_cfg.task_stack           = DEFAULT_DECODER_TASK_STACKSIZE;
             aac_cfg.out_rb_size          = DEFAULT_DECODER_RINGBUF_SIZE;
+            aac_cfg.aac_info             = &(handle->codec_info.detail.aac_info);
             handle->el_decoder = aac_decoder_init(&aac_cfg);
+            break;
         }
-        else if (handle->codec_info.codec_type == AUDIO_CODEC_M4A) {
+        case AUDIO_CODEC_M4A: {
             struct m4a_decoder_cfg m4a_cfg = DEFAULT_M4A_DECODER_CONFIG();
             m4a_cfg.task_prio            = DEFAULT_DECODER_TASK_PRIO;
             m4a_cfg.task_stack           = DEFAULT_DECODER_TASK_STACKSIZE;
             m4a_cfg.out_rb_size          = DEFAULT_DECODER_RINGBUF_SIZE;
             m4a_cfg.m4a_info             = &(handle->codec_info.detail.m4a_info);
             handle->el_decoder = m4a_decoder_init(&m4a_cfg);
+            break;
         }
-        else if (handle->codec_info.codec_type == AUDIO_CODEC_WAV) {
+        case AUDIO_CODEC_WAV: {
             struct wav_decoder_cfg wav_cfg = DEFAULT_WAV_DECODER_CONFIG();
             wav_cfg.task_prio            = DEFAULT_DECODER_TASK_PRIO;
             wav_cfg.task_stack           = DEFAULT_DECODER_TASK_STACKSIZE;
             wav_cfg.out_rb_size          = DEFAULT_DECODER_RINGBUF_SIZE;
             wav_cfg.wav_info             = &(handle->codec_info.detail.wav_info);
             handle->el_decoder = wav_decoder_init(&wav_cfg);
+            break;
+        }
+        case AUDIO_CODEC_OPUS: {
+            //struct opus_decoder_cfg opus_cfg = DEFAULT_OPUS_DECODER_CONFIG();
+            //opus_cfg.task_prio            = DEFAULT_DECODER_TASK_PRIO;
+            //opus_cfg.task_stack           = DEFAULT_DECODER_TASK_STACKSIZE;
+            //opus_cfg.out_rb_size          = DEFAULT_DECODER_RINGBUF_SIZE;
+            //opus_cfg.opus_info            = &(handle->codec_info.detail.opus_info);
+            //handle->el_decoder = opus_decoder_init(&opus_cfg);
+            break;
+        }
+        case AUDIO_CODEC_FLAC: {
+            //struct flac_decoder_cfg flac_cfg = DEFAULT_FLAC_DECODER_CONFIG();
+            //flac_cfg.task_prio            = DEFAULT_DECODER_TASK_PRIO;
+            //flac_cfg.task_stack           = DEFAULT_DECODER_TASK_STACKSIZE;
+            //flac_cfg.out_rb_size          = DEFAULT_DECODER_RINGBUF_SIZE;
+            //flac_cfg.flac_info            = &(handle->codec_info.detail.flac_info);
+            //handle->el_decoder = flac_decoder_init(&flac_cfg);
+            break;
+        }
+        default:
+            break;
         }
         AUDIO_MEM_CHECK(TAG, handle->el_decoder, goto pipeline_fail);
     }
@@ -449,8 +472,7 @@ static int main_pipeline_init(liteplayer_handle_t handle)
             };
             handle->media_source = media_source_start(&info, handle->source_rb, media_source_state_callback, handle);
             AUDIO_MEM_CHECK(TAG, handle->media_source, goto pipeline_fail);
-        }
-        else if (handle->source_type == MEDIA_SOURCE_FILE) {
+        } else if (handle->source_type == MEDIA_SOURCE_FILE) {
             struct media_source_info info = {
                 .url = handle->url,
                 .source_type = MEDIA_SOURCE_FILE,
@@ -602,15 +624,13 @@ int liteplayer_prepare(liteplayer_handle_t handle)
         handle->codec_info.codec_type = DEFAULT_STREAM_FIXED_CODEC;
         handle->codec_info.codec_samplerate = DEFAULT_STREAM_FIXED_SAMPLERATE;
         handle->codec_info.codec_channels = DEFAULT_STREAM_FIXED_CHANNELS;
-    }
-    else if (handle->source_type == MEDIA_SOURCE_HTTP) {
+    } else if (handle->source_type == MEDIA_SOURCE_HTTP) {
         struct media_source_info source_info = {0};
         source_info.url = handle->url;
         source_info.source_type = MEDIA_SOURCE_HTTP;
         memcpy(&source_info.http_ops, &handle->http_ops, sizeof(struct http_wrapper));
         ret = media_info_parse(&source_info, &handle->codec_info);
-    }
-    else {
+    } else {
         struct media_source_info source_info = {0};
         source_info.url = handle->url;
         source_info.source_type = MEDIA_SOURCE_FILE;
@@ -654,8 +674,7 @@ int liteplayer_prepare_async(liteplayer_handle_t handle)
         handle->codec_info.codec_type = DEFAULT_STREAM_FIXED_CODEC;
         handle->codec_info.codec_samplerate = DEFAULT_STREAM_FIXED_SAMPLERATE;
         handle->codec_info.codec_channels = DEFAULT_STREAM_FIXED_CHANNELS;
-    }
-    else if (handle->source_type == MEDIA_SOURCE_HTTP) {
+    } else if (handle->source_type == MEDIA_SOURCE_HTTP) {
         struct media_source_info source_info = {0};
         source_info.url = handle->url;
         source_info.source_type = MEDIA_SOURCE_HTTP;
@@ -668,8 +687,7 @@ int liteplayer_prepare_async(liteplayer_handle_t handle)
             media_player_state_callback(handle, LITEPLAYER_ERROR, ret);
             os_mutex_unlock(handle->state_lock);
         }
-    }
-    else {
+    } else {
         struct media_source_info source_info = {0};
         source_info.url = handle->url;
         source_info.source_type = MEDIA_SOURCE_FILE;
@@ -722,8 +740,7 @@ int liteplayer_write(liteplayer_handle_t handle, char *data, int size, bool fina
                 OS_LOGE(TAG, "Wrong write to RB with error[%d]", byte_write);
             }
             goto write_done;
-        }
-        else {
+        } else {
             byte_total += byte_write;
         }
     }
@@ -765,8 +782,7 @@ int liteplayer_start(liteplayer_handle_t handle)
     if (handle->state == LITEPLAYER_PREPARED) {
         if (handle->pipeline == NULL)
             ret = main_pipeline_init(handle);
-    }
-    else {
+    } else {
         if (handle->pipeline == NULL)
             ret = ESP_FAIL;
     }
@@ -908,8 +924,7 @@ int liteplayer_seek(liteplayer_handle_t handle, int msec)
         ret = main_pipeline_init(handle);
         if (ret != ESP_OK)
             goto seek_out;
-    }
-    else {
+    } else {
         ret = audio_pipeline_pause(handle->pipeline);
         if (ret != ESP_OK)
             goto seek_out;
@@ -950,8 +965,7 @@ int liteplayer_seek(liteplayer_handle_t handle, int msec)
             };
             handle->media_source = media_source_start(&info, handle->source_rb, media_source_state_callback, handle);
             AUDIO_MEM_CHECK(TAG, handle->media_source, goto seek_out);
-        }
-        else if (handle->source_type == MEDIA_SOURCE_FILE) {
+        } else if (handle->source_type == MEDIA_SOURCE_FILE) {
             struct media_source_info info = {
                 .url = handle->url,
                 .source_type = MEDIA_SOURCE_FILE,
@@ -1050,8 +1064,7 @@ int liteplayer_reset(liteplayer_handle_t handle)
             audio_free(handle->codec_info.detail.m4a_info.stsc_sample2chunk);
         if (handle->codec_info.detail.m4a_info.stco_chunk2offset != NULL)
             audio_free(handle->codec_info.detail.m4a_info.stco_chunk2offset);
-    }
-    else if (handle->codec_info.codec_type == AUDIO_CODEC_WAV) {
+    } else if (handle->codec_info.codec_type == AUDIO_CODEC_WAV) {
         if (handle->codec_info.detail.wav_info.header_buff != NULL)
             audio_free(handle->codec_info.detail.wav_info.header_buff);
     }

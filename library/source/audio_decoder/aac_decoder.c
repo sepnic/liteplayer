@@ -100,8 +100,7 @@ static int aac_decoder_process(audio_element_handle_t self, char *in_buffer, int
         if (ret < 0) {
             if (ret == AEL_IO_TIMEOUT) {
                 OS_LOGW(TAG, "aac_wrapper_run AEL_IO_TIMEOUT");
-            }
-            else if (ret != AEL_IO_DONE) {
+            } else if (ret != AEL_IO_DONE) {
                 OS_LOGE(TAG, "aac_wrapper_run failed:%d", ret);
             }
             return ret;
@@ -166,6 +165,7 @@ audio_element_handle_t aac_decoder_init(struct aac_decoder_cfg *config)
 
     audio_element_handle_t el = audio_element_init(&cfg);
     AUDIO_MEM_CHECK(TAG, el, goto aac_init_error);
+    decoder->aac_info = config->aac_info;
     decoder->el = el;
     audio_element_setdata(el, decoder);
 

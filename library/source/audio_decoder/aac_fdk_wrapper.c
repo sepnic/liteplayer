@@ -44,15 +44,12 @@ static int aac_adts_read(aac_decoder_handle_t decoder)
     if (ret >= 0) {
         decoder->buf_in.bytes_read += ret;
         return AEL_IO_OK;
-    }
-    else if (ret == AEL_IO_TIMEOUT) {
+    } else if (ret == AEL_IO_TIMEOUT) {
         return AEL_IO_TIMEOUT;
-    }
-    else if (ret == AEL_IO_OK || ret == AEL_IO_DONE || ret == AEL_IO_ABORT) {
+    } else if (ret == AEL_IO_OK || ret == AEL_IO_DONE || ret == AEL_IO_ABORT) {
         decoder->buf_in.eof = true;
         return AEL_IO_DONE;
-    }
-    else {
+    } else {
         OS_LOGE(TAG, "AAC read fail, ret=%d", ret);
         return AEL_IO_FAIL;
     }
@@ -152,16 +149,13 @@ static int m4a_mdat_read(m4a_decoder_handle_t decoder)
     if (ret == in->bytes_want) {
         in->bytes_read += ret;
         goto read_done;
-    }
-    else if (ret == AEL_IO_OK || ret == AEL_IO_DONE || ret == AEL_IO_ABORT) {
+    } else if (ret == AEL_IO_OK || ret == AEL_IO_DONE || ret == AEL_IO_ABORT) {
         in->eof = true;
         return AEL_IO_DONE;
-    }
-    else if (ret < 0) {
+    } else if (ret < 0) {
         OS_LOGW(TAG, "Read chunk error: %d/%d", ret, in->bytes_want);
         return ret;
-    }
-    else {
+    } else {
         OS_LOGW(TAG, "Read chunk insufficient: %d/%d, AEL_IO_DONE", ret, in->bytes_want);
         in->eof = true;
         return AEL_IO_DONE;

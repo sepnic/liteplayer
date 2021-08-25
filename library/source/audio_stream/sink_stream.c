@@ -70,8 +70,7 @@ static esp_err_t sink_stream_open(audio_element_handle_t self)
             cfg.quality = CONFIG_SRC_QUALITY;
             if (sink->resampler && sink->resampler->open(sink->resampler, &cfg) == 0) {
                 sink->resample_opened = true;
-            }
-            else {
+            } else {
                 OS_LOGE(TAG, "Failed to open resampler");
                 return AEL_IO_FAIL;
             }
@@ -166,8 +165,7 @@ static int sink_stream_write(audio_element_handle_t self, char *buffer, int len,
             OS_LOGE(TAG, "Failed to write pcm, ret:%d", status);
             bytes_written = ESP_FAIL;
             break;
-        }
-        else {
+        } else {
             bytes_written += status;
             buffer += status;
         }
@@ -195,8 +193,7 @@ static int sink_stream_process(audio_element_handle_t self, char *in_buffer, int
             if (ret == 0) {
                 in_buffer = (char *)sink->resampler->out_buf;
                 r_size = sink->resampler->out_bytes;
-            }
-            else {
+            } else {
                 OS_LOGE(TAG, "Failed to process resampler");
                 return AEL_IO_FAIL;
             }

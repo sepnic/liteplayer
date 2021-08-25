@@ -30,7 +30,7 @@
 #include "osal/os_thread.h"
 #include "cutils/memory_helper.h"
 #include "cutils/log_helper.h"
-#include "opensles_wrapper.h"
+#include "sink_opensles_wrapper.h"
 
 #define TAG "[liteplayer]opensles"
 
@@ -154,8 +154,7 @@ sink_handle_t opensles_wrapper_open(int samplerate, int channels, void *sink_pri
 
     if (SL_RESULT_SUCCESS == result) {
         return priv;
-    }
-    else {
+    } else {
         opensles_wrapper_close(priv);
         return NULL;
     }

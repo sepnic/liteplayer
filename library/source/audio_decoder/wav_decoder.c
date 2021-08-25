@@ -143,16 +143,13 @@ static int drwav_run(wav_decoder_handle_t decoder)
         ret = audio_element_input_chunk(decoder->el, in->data+in->bytes_read, in->bytes_want);
         if (ret == in->bytes_want) {
             in->bytes_read += ret;
-        }
-        else if (ret == AEL_IO_OK || ret == AEL_IO_DONE || ret == AEL_IO_ABORT) {
+        } else if (ret == AEL_IO_OK || ret == AEL_IO_DONE || ret == AEL_IO_ABORT) {
             in->eof = true;
             return AEL_IO_DONE;
-        }
-        else if (ret < 0) {
+        } else if (ret < 0) {
             OS_LOGW(TAG, "Read chunk error: %d/%d", ret, in->bytes_want);
             return ret;
-        }
-        else {
+        } else {
             in->eof = true;
             in->bytes_read += ret;
         }
@@ -170,8 +167,7 @@ static int drwav_run(wav_decoder_handle_t decoder)
                 in->bytes_want = WAV_DECODER_INPUT_BUFFER_SIZE - in->bytes_read;
                 decoder->drwav_offset = in->bytes_read;
             }
-        }
-        else {
+        } else {
             in->bytes_want = WAV_DECODER_INPUT_BUFFER_SIZE;
             decoder->drwav_offset = 0;
         }
@@ -179,17 +175,14 @@ static int drwav_run(wav_decoder_handle_t decoder)
         if (ret == in->bytes_want) {
             in->bytes_read += ret;
             decoder->drwav_offset = 0;
-        }
-        else if (ret == AEL_IO_OK || ret == AEL_IO_DONE || ret == AEL_IO_ABORT) {
+        } else if (ret == AEL_IO_OK || ret == AEL_IO_DONE || ret == AEL_IO_ABORT) {
             in->eof = true;
             return AEL_IO_DONE;
-        }
-        else if (ret < 0) {
+        } else if (ret < 0) {
             OS_LOGW(TAG, "Read chunk error: %d/%d", ret, in->bytes_want);
             decoder->read_timeout = true;
             return ret;
-        }
-        else {
+        } else {
             in->eof = true;
             in->bytes_read += ret;
             decoder->drwav_offset = 0;
@@ -286,8 +279,7 @@ static int wav_decoder_process(audio_element_handle_t self, char *in_buffer, int
         if (ret < 0) {
             if (ret == AEL_IO_TIMEOUT) {
                 OS_LOGW(TAG, "drwav_run AEL_IO_TIMEOUT");
-            }
-            else if (ret != AEL_IO_DONE) {
+            } else if (ret != AEL_IO_DONE) {
                 OS_LOGE(TAG, "drwav_run failed:%d", ret);
             }
             return ret;

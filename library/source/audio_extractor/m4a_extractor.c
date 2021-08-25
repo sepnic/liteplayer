@@ -578,8 +578,7 @@ _next_atom:
     if (memcmp(atom_name, handle->atom->data, sizeof(atom_name)) == 0) {
         OS_LOGV(TAG, "----OK----");
         goto atom_found;
-    }
-    else {
+    } else {
         if (atom_size > 8) {
             ret = atom_rb_read(handle, atom_size-8);
             AUDIO_ERR_CHECK(TAG, ret == 0, return ret);
@@ -768,13 +767,11 @@ next_atom:
         handle->m4a_info->moov_tail = true;
         rb_reset(handle->rb);
         return AAC_ERR_AGAIN;
-    }
-    else if (memcmp(atom_name, "moov", 4) == 0) {
+    } else if (memcmp(atom_name, "moov", 4) == 0) {
         OS_LOGV(TAG, "moov ahead of mdat");
         handle->m4a_info->moov_tail = false;
         return moovin(handle, 8);
-    }
-    else {
+    } else {
         goto next_atom;
     }
 
@@ -800,13 +797,11 @@ int m4a_parse_header(ringbuf_handle rb, struct m4a_info *info)
     if (info->parsed_once) {
         if (info->moov_tail) {
             parser.offset = info->moov_offset;
-        }
-        else {
+        } else {
             OS_LOGE(TAG, "Failed to check moov");
             goto finish;
         }
-    }
-    else {
+    } else {
         err = m4a_check_header(&parser);
         if (err == AAC_ERR_AGAIN) {
             OS_LOGV(TAG, "moov behide of mdat, please check again with new offset(%u)", info->moov_offset);
@@ -886,15 +881,12 @@ m4a_parse:
             bytes_writen = rb_write(rb_atom, &buffer[bytes_writen], bytes_read, AUDIO_MAX_DELAY);
             if (bytes_writen > 0) {
                 bytes_read -= bytes_writen;
-            }
-            else {
+            } else {
                 if (bytes_writen == RB_DONE) {
                     OS_LOGV(TAG, "RB done write");
-                }
-                else if(bytes_writen == RB_ABORT) {
+                } else if(bytes_writen == RB_ABORT) {
                     OS_LOGV(TAG, "RB abort write");
-                }
-                else {
+                } else {
                     OS_LOGW(TAG, "RB write fail, ret=%d", bytes_writen);
                 }
                 goto m4a_writen;

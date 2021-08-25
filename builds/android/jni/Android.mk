@@ -89,9 +89,9 @@ THIRDPARTY_FILES := $(wildcard  ${TOP_DIR}/adapter/external/mbedtls/library/*.c 
 THIRDPARTY_FILES := $(THIRDPARTY_FILES:$(LOCAL_PATH)/%=%)
 LOCAL_SRC_FILES := \
     ${THIRDPARTY_FILES} \
-    ${TOP_DIR}/adapter/httpclient_wrapper.c \
-    ${TOP_DIR}/adapter/fatfs_wrapper.c \
-    ${TOP_DIR}/adapter/opensles_wrapper.cpp
+    ${TOP_DIR}/adapter/source_httpclient_wrapper.c \
+    ${TOP_DIR}/adapter/source_fatfs_wrapper.c \
+    ${TOP_DIR}/adapter/sink_opensles_wrapper.cpp
 LOCAL_C_INCLUDES += \
     ${TOP_DIR}/library/include \
     ${TOP_DIR}/adapter \

@@ -92,8 +92,7 @@ static char *m3u_parser_get_line(char *buffer, int *index, int *remain)
             if (c == '\r' || c == '\n') {
                 buffer[idx] = 0;
                 line_end = true;
-            }
-            else if (line_end) {
+            } else if (line_end) {
                 *remain -= idx - *index;
                 *index = idx;
                 return out;
@@ -114,15 +113,13 @@ static int m3u_parser_process_line(struct media_source_priv *priv, char *line)
     int ret = -1;
     if (strstr(line, "http") == line) { // full uri
         ret = m3u_list_insert(&priv->m3u_list, line);
-    }
-    else if (strstr(line, "//") == line) { //schemeless uri
+    } else if (strstr(line, "//") == line) { //schemeless uri
         if (strstr(priv->info.url, "https") == priv->info.url)
             snprintf(temp, sizeof(temp), "https:%s", line);
         else
             snprintf(temp, sizeof(temp), "http:%s", line);
         ret = m3u_list_insert(&priv->m3u_list, temp);
-    }
-    else if (strstr(line, "/") == line) { // Root uri
+    } else if (strstr(line, "/") == line) { // Root uri
         char *dup_url = audio_strdup(priv->info.url);
         if (dup_url == NULL) {
             return -1;
@@ -142,8 +139,7 @@ static int m3u_parser_process_line(struct media_source_priv *priv, char *line)
         snprintf(temp, sizeof(temp), "%s%s", dup_url, line);
         audio_free(dup_url);
         ret = m3u_list_insert(&priv->m3u_list, temp);
-    }
-    else { // Relative URI
+    } else { // Relative URI
         char *dup_url = audio_strdup(priv->info.url);
         if (dup_url == NULL) {
             return -1;
@@ -202,16 +198,14 @@ static int m3u_parser_resolve(struct media_source_priv *priv)
         if (!is_valid_url && strstr(line, "#EXTINF") == line) {
             is_valid_url = true;
             continue;
-        }
-        else if (!is_valid_url && strstr(line, "#EXT-X-STREAM-INF") == line) {
+        } else if (!is_valid_url && strstr(line, "#EXT-X-STREAM-INF") == line) {
             /**
              * As these are stream URIs we need to fetch thse periodically to keep live streaming.
              * For now we handle it same as normal uri and exit.
              */
             is_valid_url = true;
             continue;
-        }
-        else if (strncmp(line, "#", 1) == 0) {
+        } else if (strncmp(line, "#", 1) == 0) {
             /**
              * Some other playlist field we don't support.
              * Simply treat this as a comment and continue to find next line.
@@ -328,8 +322,7 @@ dequeue_url:
             OS_LOGE(TAG, "Read failed, request next url");
             state = MEDIA_SOURCE_READ_FAILED;
             goto dequeue_url;
-        }
-        else if (bytes_read == 0) {
+        } else if (bytes_read == 0) {
             OS_LOGD(TAG, "Read done, request next url");
             state = MEDIA_SOURCE_READ_DONE;
             goto dequeue_url;
@@ -346,13 +339,11 @@ dequeue_url:
             if (ret > 0) {
                 bytes_read -= ret;
                 bytes_written += ret;
-            }
-            else {
+            } else {
                 if (ret == RB_DONE || ret == RB_ABORT || ret == RB_OK) {
                     OS_LOGD(TAG, "Write done, abort left urls");
                     state = MEDIA_SOURCE_WRITE_DONE;
-                }
-                else {
+                } else {
                     OS_LOGD(TAG, "Write failed, abort left urls");
                     state = MEDIA_SOURCE_WRITE_FAILED;
                 }
@@ -443,16 +434,14 @@ int m3u_get_first_url(struct media_source_info *info, char *buf, int buf_size)
         if (!is_valid_url && strstr(line, "#EXTINF") == line) {
             is_valid_url = true;
             continue;
-        }
-        else if (!is_valid_url && strstr(line, "#EXT-X-STREAM-INF") == line) {
+        } else if (!is_valid_url && strstr(line, "#EXT-X-STREAM-INF") == line) {
             /**
              * As these are stream URIs we need to fetch thse periodically to keep live streaming.
              * For now we handle it same as normal uri and exit.
              */
             is_valid_url = true;
             continue;
-        }
-        else if (strncmp(line, "#", 1) == 0) {
+        } else if (strncmp(line, "#", 1) == 0) {
             /**
              * Some other playlist field we don't support.
              * Simply treat this as a comment and continue to find next line.
@@ -470,15 +459,13 @@ int m3u_get_first_url(struct media_source_info *info, char *buf, int buf_size)
         if (strstr(url_line, "http") == url_line) { // full uri
             snprintf(buf, buf_size, "%s", url_line);
             ret = 0;
-        }
-        else if (strstr(url_line, "//") == url_line) { //schemeless uri
+        } else if (strstr(url_line, "//") == url_line) { //schemeless uri
             if (strstr(info->url, "https") == info->url)
                 snprintf(buf, buf_size, "https:%s", url_line);
             else
                 snprintf(buf, buf_size, "http:%s", url_line);
             ret = 0;
-        }
-        else if (strstr(url_line, "/") == url_line) { // Root uri
+        } else if (strstr(url_line, "/") == url_line) { // Root uri
             char *dup_url = audio_strdup(info->url);
             if (dup_url == NULL) {
                 goto resolve_done;
@@ -498,8 +485,7 @@ int m3u_get_first_url(struct media_source_info *info, char *buf, int buf_size)
             snprintf(buf, buf_size, "%s%s", dup_url, url_line);
             audio_free(dup_url);
             ret = 0;
-        }
-        else { // Relative URI
+        } else { // Relative URI
             char *dup_url = audio_strdup(info->url);
             if (dup_url == NULL) {
                 goto resolve_done;
@@ -558,8 +544,7 @@ static void *media_source_thread(void *arg)
             state = MEDIA_SOURCE_READ_FAILED;
             goto thread_exit;
         }
-    }
-    else if (priv->info.source_type == MEDIA_SOURCE_FILE) {
+    } else if (priv->info.source_type == MEDIA_SOURCE_FILE) {
         file = priv->info.file_ops.open(priv->info.url,
                                         priv->info.content_pos,
                                         priv->info.file_ops.file_priv);
@@ -567,8 +552,7 @@ static void *media_source_thread(void *arg)
             state = MEDIA_SOURCE_READ_FAILED;
             goto thread_exit;
         }
-    }
-    else {
+    } else {
         state = MEDIA_SOURCE_READ_FAILED;
         goto thread_exit;
     }
@@ -597,8 +581,7 @@ static void *media_source_thread(void *arg)
             OS_LOGE(TAG, "Media source read failed");
             state = MEDIA_SOURCE_READ_FAILED;
             goto thread_exit;
-        }
-        else if (bytes_read == 0) {
+        } else if (bytes_read == 0) {
             OS_LOGD(TAG, "Media source read done");
             state = MEDIA_SOURCE_READ_DONE;
             goto thread_exit;
@@ -615,13 +598,11 @@ static void *media_source_thread(void *arg)
             if (ret > 0) {
                 bytes_read -= ret;
                 bytes_written += ret;
-            }
-            else {
+            } else {
                 if (ret == RB_DONE || ret == RB_ABORT || ret == RB_OK) {
                     OS_LOGD(TAG, "Media source write done");
                     state = MEDIA_SOURCE_WRITE_DONE;
-                }
-                else {
+                } else {
                     OS_LOGD(TAG, "Media source write failed");
                     state = MEDIA_SOURCE_WRITE_FAILED;
                 }

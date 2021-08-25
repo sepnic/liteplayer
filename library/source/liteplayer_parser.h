@@ -50,6 +50,8 @@ struct media_codec_info {
         struct mp3_info mp3_info;
         struct aac_info aac_info;
         struct m4a_info m4a_info;
+        //struct opus_info opus_info;
+        //struct flac_info flac_info;
     } detail;
 };
 

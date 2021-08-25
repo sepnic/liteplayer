@@ -92,15 +92,13 @@ static int mp3_decoder_process(audio_element_handle_t self, char *in_buffer, int
         byte_write = audio_element_output(self,
                         decoder->buf_out.data+decoder->buf_out.bytes_written,
                         decoder->buf_out.bytes_remain);
-    }
-    else {
+    } else {
         /* More data need to be wrote */
         ret = mp3_wrapper_run(decoder);
         if (ret < 0) {
             if (ret == AEL_IO_TIMEOUT) {
                 OS_LOGW(TAG, "mp3_wrapper_run AEL_IO_TIMEOUT");
-            }
-            else if (ret != AEL_IO_DONE) {
+            } else if (ret != AEL_IO_DONE) {
                 OS_LOGE(TAG, "mp3_wrapper_run failed:%d", ret);
             }
             return ret;

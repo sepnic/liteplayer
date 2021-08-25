@@ -26,12 +26,12 @@
 #include "cutils/memory_helper.h"
 #include "cutils/log_helper.h"
 #include "liteplayer_main.h"
-#include "httpclient_wrapper.h"
-#include "fatfs_wrapper.h"
+#include "source_httpclient_wrapper.h"
+#include "source_fatfs_wrapper.h"
 #if defined(ENABLE_LINUX_ALSA)
-#include "alsa_wrapper.h"
+#include "sink_alsa_wrapper.h"
 #else
-#include "wave_wrapper.h"
+#include "sink_wave_wrapper.h"
 #endif
 
 #define TAG "basic_demo"

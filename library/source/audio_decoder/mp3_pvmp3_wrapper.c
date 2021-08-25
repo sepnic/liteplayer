@@ -132,14 +132,12 @@ find_syncword:
             temp.sample_rate == info->sample_rate && temp.channels == info->channels) {
             found = true;
             goto finish;
-        }
-        else {
+        } else {
             OS_LOGD(TAG, "Retry to find sync word");
             last_position++;
             goto find_syncword;
         }
-    }
-    else {
+    } else {
         OS_LOGE(TAG, "Can't find mp3 sync word");
         goto finish;
     }
@@ -166,16 +164,13 @@ static int mp3_data_read(mp3_decoder_handle_t decoder)
         ret = audio_element_input_chunk(decoder->el, wrap->seek_buffer, wrap->bytes_seek);
         if (ret == wrap->bytes_seek) {
             OS_LOGV(TAG, "SEEK_MODE: Read chunk succeed: %d/%d", ret, wrap->bytes_seek);
-        }
-        else if (ret == AEL_IO_OK || ret == AEL_IO_DONE || ret == AEL_IO_ABORT) {
+        } else if (ret == AEL_IO_OK || ret == AEL_IO_DONE || ret == AEL_IO_ABORT) {
             in->eof = true;
             return AEL_IO_DONE;
-        }
-        else if (ret < 0) {
+        } else if (ret < 0) {
             OS_LOGW(TAG, "SEEK_MODE: Read chunk error: %d/%d", ret, wrap->bytes_seek);
             return ret;
-        }
-        else {
+        } else {
             OS_LOGW(TAG, "SEEK_MODE: Read chunk insufficient: %d/%d", ret, wrap->bytes_seek);
             in->eof = true;
             return AEL_IO_DONE;
@@ -211,16 +206,13 @@ static int mp3_data_read(mp3_decoder_handle_t decoder)
             if (ret == remain) {
                 OS_LOGV(TAG, "SEEK_MODE: Read chunk succeed: %d/%d", ret, remain);
                 wrap->bytes_seek = wrap->frame_size;
-            }
-            else if (ret == AEL_IO_OK || ret == AEL_IO_DONE || ret == AEL_IO_ABORT) {
+            } else if (ret == AEL_IO_OK || ret == AEL_IO_DONE || ret == AEL_IO_ABORT) {
                 in->eof = true;
                 return AEL_IO_DONE;
-            }
-            else if (ret < 0) {
+            } else if (ret < 0) {
                 OS_LOGW(TAG, "SEEK_MODE: Read chunk error: %d/%d", ret, remain);
                 return ret;
-            }
-            else {
+            } else {
                 OS_LOGW(TAG, "SEEK_MODE: Read chunk insufficient: %d/%d", ret, remain);
                 in->eof = true;
                 return AEL_IO_DONE;
@@ -259,8 +251,7 @@ static int mp3_data_read(mp3_decoder_handle_t decoder)
         if (wrap->new_frame) {
             OS_LOGD(TAG, "Remain %d/4 bytes header needed to read", in->bytes_want);
             goto fill_header;
-        }
-        else {
+        } else {
             OS_LOGD(TAG, "Remain %d/%d bytes frame needed to read", in->bytes_want, wrap->frame_size);
             goto fill_frame;
         }
@@ -276,15 +267,12 @@ fill_header:
             in->bytes_read += ret;
             in->bytes_want -= ret;
             return AEL_IO_TIMEOUT;
-        }
-        else if (ret == AEL_IO_TIMEOUT) {
+        } else if (ret == AEL_IO_TIMEOUT) {
             return AEL_IO_TIMEOUT;
-        }
-        else if (ret == AEL_IO_OK || ret == AEL_IO_DONE || ret == AEL_IO_ABORT) {
+        } else if (ret == AEL_IO_OK || ret == AEL_IO_DONE || ret == AEL_IO_ABORT) {
             in->eof = true;
             return AEL_IO_DONE;
-        }
-        else {
+        } else {
             return AEL_IO_FAIL;
         }
     }
@@ -306,15 +294,12 @@ fill_frame:
             in->bytes_read += ret;
             in->bytes_want -= ret;
             return AEL_IO_TIMEOUT;
-        }
-        else if (ret == AEL_IO_TIMEOUT) {
+        } else if (ret == AEL_IO_TIMEOUT) {
             return AEL_IO_TIMEOUT;
-        }
-        else if (ret == AEL_IO_OK || ret == AEL_IO_DONE || ret == AEL_IO_ABORT) {
+        } else if (ret == AEL_IO_OK || ret == AEL_IO_DONE || ret == AEL_IO_ABORT) {
             in->eof = true;
             return AEL_IO_DONE;
-        }
-        else {
+        } else {
             return AEL_IO_FAIL;
         }
     }

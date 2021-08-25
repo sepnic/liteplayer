@@ -25,6 +25,7 @@
 
 #include "osal/os_thread.h"
 #include "esp_adf/audio_element.h"
+#include "audio_extractor/aac_extractor.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,6 +55,7 @@ struct aac_decoder_cfg {
     int   out_rb_size;    /*!< Size of output ringbuffer */
     int   task_stack;     /*!< Task stack size */
     int   task_prio;      /*!< Task priority (based on freeRTOS priority) */
+    struct aac_info *aac_info;
 };
 
 #define AAC_DECODER_TASK_STACK          (4 * 1024)
@@ -85,6 +87,7 @@ struct aac_decoder {
     audio_element_handle_t  el;
     struct aac_buf_in       buf_in;
     struct aac_buf_out      buf_out;
+    struct aac_info        *aac_info;
     bool                    parsed_header;
     bool                    seek_mode;
 };

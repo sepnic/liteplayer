@@ -115,8 +115,7 @@ static int audio_resampler_process(resample_converter_handle_t self, const short
 
         priv->in_bytes = in_bytes;
         priv->out_bytes = out_bytes;
-    }
-    else if (in_bytes > priv->in_bytes) {
+    } else if (in_bytes > priv->in_bytes) {
         int in_rate   = priv->cfg.in_rate;
         int out_rate  = priv->cfg.out_rate;
         int out_bytes  = in_bytes * out_rate / in_rate + 4; /* 4 more bytes(one frame) for fraction ratio */
@@ -151,8 +150,7 @@ static int audio_resampler_process(resample_converter_handle_t self, const short
         else
             return -1;
         converter->out_bytes = out_sample * bytes_per_sample;
-    }
-    else if (priv->enable_channels_convert) {
+    } else if (priv->enable_channels_convert) {
         memcpy(converter->out_buf, in, in_bytes);
         converter->out_bytes = in_bytes;
     }

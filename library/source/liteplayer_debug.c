@@ -128,15 +128,12 @@ static void *socket_upload_thread(void *arg)
                 OS_LOGE(TAG, "Failed to send pcm data to server");
                 break;
             }
-        }
-        else {
+        } else {
             if (bytes_read == RB_DONE) {
                 OS_LOGV(TAG, "RB done");
-            }
-            else if(bytes_read == RB_ABORT) {
+            } else if(bytes_read == RB_ABORT) {
                 OS_LOGV(TAG, "RB abort");
-            }
-            else {
+            } else {
                 OS_LOGE(TAG, "RB read fail, ret=%d", bytes_read);
             }
             break;
@@ -200,8 +197,7 @@ int socket_upload_fill_data(socket_upload_handle_t handle, char *data, int size)
     int ret = rb_write(priv->rb, data, size, DEFAULT_SOCKET_UPLOAD_WRITE_TIMEOUT*1000);
     if (ret == RB_TIMEOUT) {
         OS_LOGE(TAG, "Timeout to write ringbuf");
-    }
-    else if (ret > 0) {
+    } else if (ret > 0) {
         ret = 0;
     }
 

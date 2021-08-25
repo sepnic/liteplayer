@@ -323,8 +323,7 @@ esp_err_t audio_pipeline_resume(audio_pipeline_handle_t pipeline, float start_th
         OS_LOGE(TAG, "Pipeline resume failed");
         audio_pipeline_change_state(pipeline, AEL_STATE_ERROR);
         audio_pipeline_terminate(pipeline);
-    }
-    else {
+    } else {
         audio_pipeline_change_state(pipeline, AEL_STATE_RUNNING);
     }
     OS_LOGD(TAG, "Pipeline resumed");

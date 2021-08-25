@@ -25,7 +25,7 @@
 #include "cutils/memory_helper.h"
 #include "cutils/log_helper.h"
 #include "httpclient/httpclient.h"
-#include "httpclient_wrapper.h"
+#include "source_httpclient_wrapper.h"
 
 #define TAG "[liteplayer]httpclient"
 

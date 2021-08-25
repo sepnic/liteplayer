@@ -89,8 +89,6 @@ typedef enum {
     AUDIO_CODEC_M4A,
     AUDIO_CODEC_OPUS,
     AUDIO_CODEC_FLAC,
-    AUDIO_CODEC_AMR,
-    AUDIO_CODEC_TS,
 } audio_codec_t;
 
 #define AUDIO_CHECK(TAG, a, action, msg) if (!(a)) {              \

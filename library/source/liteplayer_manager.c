@@ -33,7 +33,7 @@
 
 #define TAG "[liteplayer]MANAGER"
 
-struct liteplayer_mngr {
+struct liteplayer_manager {
     liteplayer_handle_t  player;
     mlooper_handle       looper;
     os_mutex             lock;
@@ -70,7 +70,7 @@ enum {
     PLAYER_DO_RESET,
 };
 
-static void playlist_clear(liteplayer_mngr_handle_t mngr)
+static void playlist_clear(liteplayermanager_handle_t mngr)
 {
     os_mutex_lock(mngr->lock);
 
@@ -84,7 +84,7 @@ static void playlist_clear(liteplayer_mngr_handle_t mngr)
     os_mutex_unlock(mngr->lock);
 }
 
-static int playlist_insert(liteplayer_mngr_handle_t mngr, const char *url)
+static int playlist_insert(liteplayermanager_handle_t mngr, const char *url)
 {
     os_mutex_lock(mngr->lock);
 
@@ -117,8 +117,7 @@ static char *playlist_get_line(char *buffer, int *index, int *remain)
             if (c == '\r' || c == '\n') {
                 buffer[idx] = 0;
                 line_end = true;
-            }
-            else if (line_end) {
+            } else if (line_end) {
                 *remain -= idx - *index;
                 *index = idx;
                 return out;
@@ -133,7 +132,7 @@ static char *playlist_get_line(char *buffer, int *index, int *remain)
     return NULL;
 }
 
-static int playlist_resolve(liteplayer_mngr_handle_t mngr, const char *filename)
+static int playlist_resolve(liteplayermanager_handle_t mngr, const char *filename)
 {
     int ret = -1;
     file_handle_t file = NULL;
@@ -184,7 +183,7 @@ resolve_done:
 
 static int manager_state_callback(enum liteplayer_state state, int errcode, void *priv)
 {
-    liteplayer_mngr_handle_t mngr = (liteplayer_mngr_handle_t)priv;
+    liteplayermanager_handle_t mngr = (liteplayermanager_handle_t)priv;
     bool state_sync = true;
 
     os_mutex_lock(mngr->lock);
@@ -302,7 +301,7 @@ static int manager_state_callback(enum liteplayer_state state, int errcode, void
 
 static void manager_looper_handle(struct message *msg)
 {
-    liteplayer_mngr_handle_t mngr = (liteplayer_mngr_handle_t)msg->data;
+    liteplayermanager_handle_t mngr = (liteplayermanager_handle_t)msg->data;
 
     switch (msg->what) {
     case PLAYER_DO_SET_SOURCE: {
@@ -390,9 +389,9 @@ static void manager_looper_free(struct message *msg)
     // nothing to free
 }
 
-liteplayer_mngr_handle_t liteplayer_mngr_create()
+liteplayermanager_handle_t liteplayermanager_create()
 {
-    liteplayer_mngr_handle_t mngr = (liteplayer_mngr_handle_t)audio_calloc(1, sizeof(struct liteplayer_mngr));
+    liteplayermanager_handle_t mngr = (liteplayermanager_handle_t)audio_calloc(1, sizeof(struct liteplayer_manager));
     if (mngr != NULL) {
         mngr->lock = os_mutex_create();
         if (mngr->lock == NULL)
@@ -418,11 +417,11 @@ liteplayer_mngr_handle_t liteplayer_mngr_create()
     return mngr;
 
 failed:
-    liteplayer_mngr_destroy(mngr);
+    liteplayermanager_destroy(mngr);
     return NULL;
 }
 
-int liteplayer_mngr_register_file_wrapper(liteplayer_mngr_handle_t mngr, struct file_wrapper *file_ops)
+int liteplayermanager_register_file_wrapper(liteplayermanager_handle_t mngr, struct file_wrapper *file_ops)
 {
     if (mngr == NULL || file_ops == NULL)
         return -1;
@@ -430,7 +429,7 @@ int liteplayer_mngr_register_file_wrapper(liteplayer_mngr_handle_t mngr, struct 
     return liteplayer_register_file_wrapper(mngr->player, file_ops);
 }
 
-int liteplayer_mngr_register_http_wrapper(liteplayer_mngr_handle_t mngr, struct http_wrapper *http_ops)
+int liteplayermanager_register_http_wrapper(liteplayermanager_handle_t mngr, struct http_wrapper *http_ops)
 {
     if (mngr == NULL || http_ops == NULL)
         return -1;
@@ -438,7 +437,7 @@ int liteplayer_mngr_register_http_wrapper(liteplayer_mngr_handle_t mngr, struct 
     return liteplayer_register_http_wrapper(mngr->player, http_ops);
 }
 
-int liteplayer_mngr_register_sink_wrapper(liteplayer_mngr_handle_t mngr, struct sink_wrapper *sink_ops)
+int liteplayermanager_register_sink_wrapper(liteplayermanager_handle_t mngr, struct sink_wrapper *sink_ops)
 {
     if (mngr == NULL || sink_ops == NULL)
         return -1;
@@ -446,7 +445,7 @@ int liteplayer_mngr_register_sink_wrapper(liteplayer_mngr_handle_t mngr, struct 
     return liteplayer_register_sink_wrapper(mngr->player, sink_ops);
 }
 
-int liteplayer_mngr_register_state_listener(liteplayer_mngr_handle_t mngr, liteplayer_state_cb listener, void *listener_priv)
+int liteplayermanager_register_state_listener(liteplayermanager_handle_t mngr, liteplayer_state_cb listener, void *listener_priv)
 {
     if (mngr == NULL)
         return -1;
@@ -455,7 +454,7 @@ int liteplayer_mngr_register_state_listener(liteplayer_mngr_handle_t mngr, litep
     return 0;
 }
 
-int liteplayer_mngr_set_data_source(liteplayer_mngr_handle_t mngr, const char *url, int threshold_ms)
+int liteplayermanager_set_data_source(liteplayermanager_handle_t mngr, const char *url, int threshold_ms)
 {
     if (mngr == NULL || url == NULL)
         return -1;
@@ -477,8 +476,7 @@ int liteplayer_mngr_set_data_source(liteplayer_mngr_handle_t mngr, const char *u
             OS_LOGE(TAG, "Failed to resolve playlist");
             return -1;
         }
-    }
-    else {
+    } else {
         if (playlist_insert(mngr, url) != 0) {
             OS_LOGE(TAG, "Failed to insert playlist");
             return -1;
@@ -495,7 +493,7 @@ int liteplayer_mngr_set_data_source(liteplayer_mngr_handle_t mngr, const char *u
     return -1;
 }
 
-int liteplayer_mngr_prepare_async(liteplayer_mngr_handle_t mngr)
+int liteplayermanager_prepare_async(liteplayermanager_handle_t mngr)
 {
     if (mngr == NULL)
         return -1;
@@ -507,14 +505,14 @@ int liteplayer_mngr_prepare_async(liteplayer_mngr_handle_t mngr)
     return -1;
 }
 
-int liteplayer_mngr_write(liteplayer_mngr_handle_t mngr, char *data, int size, bool final)
+int liteplayermanager_write(liteplayermanager_handle_t mngr, char *data, int size, bool final)
 {
     if (mngr == NULL)
         return -1;
     return liteplayer_write(mngr->player, data, size, final);
 }
 
-int liteplayer_mngr_start(liteplayer_mngr_handle_t mngr)
+int liteplayermanager_start(liteplayermanager_handle_t mngr)
 {
     if (mngr == NULL)
         return -1;
@@ -526,7 +524,7 @@ int liteplayer_mngr_start(liteplayer_mngr_handle_t mngr)
     return -1;
 }
 
-int liteplayer_mngr_pause(liteplayer_mngr_handle_t mngr)
+int liteplayermanager_pause(liteplayermanager_handle_t mngr)
 {
     if (mngr == NULL)
         return -1;
@@ -538,7 +536,7 @@ int liteplayer_mngr_pause(liteplayer_mngr_handle_t mngr)
     return -1;
 }
 
-int liteplayer_mngr_resume(liteplayer_mngr_handle_t mngr)
+int liteplayermanager_resume(liteplayermanager_handle_t mngr)
 {
     if (mngr == NULL)
         return -1;
@@ -550,7 +548,7 @@ int liteplayer_mngr_resume(liteplayer_mngr_handle_t mngr)
     return -1;
 }
 
-int liteplayer_mngr_seek(liteplayer_mngr_handle_t mngr, int msec)
+int liteplayermanager_seek(liteplayermanager_handle_t mngr, int msec)
 {
     if (mngr == NULL || msec < 0)
         return -1;
@@ -562,7 +560,7 @@ int liteplayer_mngr_seek(liteplayer_mngr_handle_t mngr, int msec)
     return -1;
 }
 
-int liteplayer_mngr_next(liteplayer_mngr_handle_t mngr)
+int liteplayermanager_next(liteplayermanager_handle_t mngr)
 {
     if (mngr == NULL)
         return -1;
@@ -583,7 +581,7 @@ int liteplayer_mngr_next(liteplayer_mngr_handle_t mngr)
     return -1;
 }
 
-int liteplayer_mngr_prev(liteplayer_mngr_handle_t mngr)
+int liteplayermanager_prev(liteplayermanager_handle_t mngr)
 {
     if (mngr == NULL)
         return -1;
@@ -604,7 +602,7 @@ int liteplayer_mngr_prev(liteplayer_mngr_handle_t mngr)
     return -1;
 }
 
-int liteplayer_mngr_set_single_looping(liteplayer_mngr_handle_t mngr, bool enable)
+int liteplayermanager_set_single_looping(liteplayermanager_handle_t mngr, bool enable)
 {
     if (mngr == NULL)
         return -1;
@@ -626,7 +624,7 @@ int liteplayer_mngr_set_single_looping(liteplayer_mngr_handle_t mngr, bool enabl
     return 0;
 }
 
-int liteplayer_mngr_stop(liteplayer_mngr_handle_t mngr)
+int liteplayermanager_stop(liteplayermanager_handle_t mngr)
 {
     if (mngr == NULL)
         return -1;
@@ -641,7 +639,7 @@ int liteplayer_mngr_stop(liteplayer_mngr_handle_t mngr)
     return -1;
 }
 
-int liteplayer_mngr_reset(liteplayer_mngr_handle_t mngr)
+int liteplayermanager_reset(liteplayermanager_handle_t mngr)
 {
     if (mngr == NULL)
         return -1;
@@ -656,28 +654,28 @@ int liteplayer_mngr_reset(liteplayer_mngr_handle_t mngr)
     return -1;
 }
 
-int liteplayer_mngr_get_available_size(liteplayer_mngr_handle_t mngr)
+int liteplayermanager_get_available_size(liteplayermanager_handle_t mngr)
 {
     if (mngr == NULL)
         return -1;
     return liteplayer_get_available_size(mngr->player);
 }
 
-int liteplayer_mngr_get_position(liteplayer_mngr_handle_t mngr, int *msec)
+int liteplayermanager_get_position(liteplayermanager_handle_t mngr, int *msec)
 {
     if (mngr == NULL || msec == NULL)
         return -1;
     return liteplayer_get_position(mngr->player, msec);
 }
 
-int liteplayer_mngr_get_duration(liteplayer_mngr_handle_t mngr, int *msec)
+int liteplayermanager_get_duration(liteplayermanager_handle_t mngr, int *msec)
 {
     if (mngr == NULL || msec == NULL)
         return -1;
     return liteplayer_get_duration(mngr->player, msec);
 }
 
-void liteplayer_mngr_destroy(liteplayer_mngr_handle_t mngr)
+void liteplayermanager_destroy(liteplayermanager_handle_t mngr)
 {
     if (mngr == NULL)
         return;

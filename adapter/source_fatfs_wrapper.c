@@ -23,7 +23,7 @@
 
 #include "cutils/memory_helper.h"
 #include "cutils/log_helper.h"
-#include "fatfs_wrapper.h"
+#include "source_fatfs_wrapper.h"
 
 #define TAG "[liteplayer]fatfs"
 

@@ -1202,8 +1202,7 @@ esp_err_t audio_element_pause(audio_element_handle_t el)
     if ((el->state_event & PAUSED_BIT) != 0) {
         OS_LOGD(TAG, "[%s] Element paused", el->tag);
         ret = ESP_OK;
-    }
-    else {
+    } else {
         OS_LOGE(TAG, "[%s] Element failed when AUDIO_ELEMENT_PAUSE", el->tag);
     }
     os_mutex_unlock(el->state_lock);
@@ -1246,8 +1245,7 @@ esp_err_t audio_element_resume(audio_element_handle_t el, float wait_for_rb_thre
     if ((el->state_event & RESUMED_BIT) != 0 && (el->is_running || el->state == AEL_STATE_FINISHED)) {
         OS_LOGD(TAG, "[%s] Element resumed", el->tag);
         ret = ESP_OK;
-    }
-    else {
+    } else {
         OS_LOGE(TAG, "[%s] Element failed when AUDIO_ELEMENT_RESUME", el->tag);
     }
     os_mutex_unlock(el->state_lock);
@@ -1283,8 +1281,7 @@ esp_err_t audio_element_seek(audio_element_handle_t el, long long offset)
     if ((el->state_event & SEEKED_BIT) != 0 && el->offset == SEEK_COMPLETED) {
         OS_LOGD(TAG, "[%s] Element seeked", el->tag);
         ret = ESP_OK;
-    }
-    else {
+    } else {
         OS_LOGE(TAG, "[%s] Element failed when AEL_MSG_CMD_SEEK", el->tag);
     }
     os_mutex_unlock(el->state_lock);
