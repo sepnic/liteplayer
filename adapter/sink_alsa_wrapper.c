@@ -40,8 +40,9 @@ struct alsa_wrapper {
     size_t bits_per_frame;
 };
 
-sink_handle_t alsa_wrapper_open(int samplerate, int channels, void *sink_priv)
+sink_handle_t alsa_wrapper_open(int samplerate, int channels, int bits, void *sink_priv)
 {
+    OS_LOGD(TAG, "Opening alsa: samplerate=%d, channels=%d, bits=%d", samplerate, channels, bits);
     struct alsa_wrapper *alsa =
         (struct alsa_wrapper *)OS_CALLOC(1, sizeof(struct alsa_wrapper));
     if (alsa == NULL)
@@ -50,7 +51,21 @@ sink_handle_t alsa_wrapper_open(int samplerate, int channels, void *sink_priv)
     snd_pcm_hw_params_t *hwparams = NULL;
     uint32_t exact_rate = (uint32_t)samplerate;
     uint32_t buffer_time, period_time;
-    alsa->format = SND_PCM_FORMAT_S16_LE;
+    switch (bits) {
+    case 16:
+        alsa->format = SND_PCM_FORMAT_S16_LE;
+        break;
+    case 24:
+        alsa->format = SND_PCM_FORMAT_S24_LE;
+        break;
+    case 32:
+        alsa->format = SND_PCM_FORMAT_S32_LE;
+        break;
+    default:
+        OS_LOGE(TAG, "Unsupported sample bits: %d", bits);
+        goto fail_open;
+        break;
+    }
 
     if (snd_pcm_open(&alsa->pcm, "default", SND_PCM_STREAM_PLAYBACK, 0) < 0) {
         OS_LOGE(TAG, "snd_pcm_open failed");
@@ -151,6 +166,7 @@ int alsa_wrapper_write(sink_handle_t handle, char *buffer, int size)
 
 void alsa_wrapper_close(sink_handle_t handle)
 {
+    OS_LOGD(TAG, "closing alsa");
     struct alsa_wrapper *alsa = (struct alsa_wrapper *)handle;
     snd_pcm_drain(alsa->pcm);
     snd_pcm_close(alsa->pcm);

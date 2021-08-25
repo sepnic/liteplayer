@@ -66,7 +66,7 @@ static esp_err_t sink_stream_open(audio_element_handle_t self)
             cfg.in_rate = config->in_samplerate;
             cfg.out_channels = config->out_channels;
             cfg.out_rate = config->out_samplerate;
-            cfg.bits = 16;
+            cfg.bits = config->bits;
             cfg.quality = CONFIG_SRC_QUALITY;
             if (sink->resampler && sink->resampler->open(sink->resampler, &cfg) == 0) {
                 sink->resample_opened = true;
@@ -86,9 +86,10 @@ static esp_err_t sink_stream_open(audio_element_handle_t self)
         config->out_samplerate = config->in_samplerate;
         config->out_channels = config->in_channels;
 #endif
-        OS_LOGI(TAG, "Open sink stream out: rate:%d, channels:%d", config->out_samplerate, config->out_channels);
+        OS_LOGI(TAG, "Open sink stream out: rate:%d, channels:%d, bits:%d",
+                config->out_samplerate, config->out_channels, config->bits);
         if (config->sink_open)
-            sink->out = config->sink_open(config->out_samplerate, config->out_channels, config->sink_priv);
+            sink->out = config->sink_open(config->out_samplerate, config->out_channels, config->bits, config->sink_priv);
         if (sink->out == NULL) {
             OS_LOGE(TAG, "Failed to open sink out");
             return AEL_IO_FAIL;
@@ -138,11 +139,14 @@ static int sink_stream_write(audio_element_handle_t self, char *buffer, int len,
         audio_element_getinfo(self, &info);
         // If samplerate not matched with decoder info, reopen sink
         if ((info.in_samplerate != 0 && config->in_samplerate != info.in_samplerate) ||
-            (info.in_channels != 0 && config->in_channels != info.in_channels)) {
-            OS_LOGW(TAG, "sink samplerate (%d) not match decoder samplerate (%d), reopen sink",
-                     config->in_samplerate, info.in_samplerate);
+            (info.in_channels != 0 && config->in_channels != info.in_channels) ||
+            (info.bits != 0 && config->bits != info.bits)) {
+            OS_LOGW(TAG, "sink rate:ch:bit (%d:%d:%d) not match decoder rate:ch:bit (%d:%d:%d), reopen sink",
+                     config->in_samplerate, config->in_channels, config->bits,
+                     info.in_samplerate, info.in_samplerate, info.bits);
             config->in_samplerate = info.in_samplerate;
             config->in_channels = info.in_channels;
+            config->bits = info.bits;
             sink_stream_close(self);
             sink_stream_open(self);
         }
@@ -151,7 +155,7 @@ static int sink_stream_write(audio_element_handle_t self, char *buffer, int len,
         info.in_channels = config->in_channels;
         info.out_samplerate = config->out_samplerate;
         info.out_channels = config->out_channels;
-        info.bits = 16;
+        info.bits = config->bits;
         audio_element_setinfo(self, &info);
         audio_element_report_info(self);
         sink->first_write = true;

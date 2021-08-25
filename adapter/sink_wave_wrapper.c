@@ -124,6 +124,7 @@ struct wave_priv {
     FILE *file;
     int samplerate;
     int channels;
+    int bits;
     long offset;
 };
 
@@ -144,8 +145,9 @@ static void wav_build_header(wav_header_t *header, int samplerate, int bits, int
     header->data.ChunkSize = LE_INT(datasize);
 }
 
-sink_handle_t wave_wrapper_open(int samplerate, int channels, void *sink_priv)
+sink_handle_t wave_wrapper_open(int samplerate, int channels, int bits, void *sink_priv)
 {
+    OS_LOGD(TAG, "Opening wave: samplerate=%d, channels=%d, bits=%d", samplerate, channels, bits);
     struct wave_priv *priv = OS_CALLOC(1, sizeof(struct wave_priv));
     if (priv == NULL)
         return NULL;
@@ -167,6 +169,7 @@ sink_handle_t wave_wrapper_open(int samplerate, int channels, void *sink_priv)
 
     priv->samplerate = samplerate;
     priv->channels = channels;
+    priv->bits = bits;
     priv->offset = 0;
 
     wav_header_t header;
@@ -187,11 +190,12 @@ int wave_wrapper_write(sink_handle_t handle, char *buffer, int size)
 
 void wave_wrapper_close(sink_handle_t handle)
 {
+    OS_LOGD(TAG, "closing wave");
     struct wave_priv *priv = (struct wave_priv *)handle;
 
     wav_header_t header;
     memset(&header, 0x0, sizeof(wav_header_t));
-    wav_build_header(&header, priv->samplerate, 16, priv->channels, WAV_FMT_PCM, priv->offset);
+    wav_build_header(&header, priv->samplerate, priv->bits, priv->channels, WAV_FMT_PCM, priv->offset);
     fseek(priv->file, 0, SEEK_SET);
     fwrite(&header, 1, sizeof(header), priv->file);
 

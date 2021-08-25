@@ -46,8 +46,9 @@ struct sink_stream_cfg {
     int             in_channels;
     int             out_samplerate;
     int             out_channels;
+    int             bits;
     void           *sink_priv;
-    sink_handle_t (*sink_open)(int samplerate, int channels, void *sink_priv);
+    sink_handle_t (*sink_open)(int samplerate, int channels, int bits, void *sink_priv);
     int           (*sink_write)(sink_handle_t handle, char *buffer, int size);
     void          (*sink_close)(sink_handle_t handle);
 };

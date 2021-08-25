@@ -27,7 +27,7 @@
 extern "C" {
 #endif
 
-sink_handle_t alsa_wrapper_open(int samplerate, int channels, void *sink_priv);
+sink_handle_t alsa_wrapper_open(int samplerate, int channels, int bits, void *sink_priv);
 
 int alsa_wrapper_write(sink_handle_t handle, char *buffer, int size);
 

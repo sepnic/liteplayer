@@ -98,7 +98,7 @@ fill_data:
         audio_element_info_t info = {0};
         info.out_samplerate = frame_info.sampRateOut;
         info.out_channels   = frame_info.nChans;
-        info.bits           = 16;
+        info.bits           = frame_info.bitsPerSample;
         audio_element_setinfo(decoder->el, &info);
         audio_element_report_info(decoder->el);
 
@@ -203,7 +203,7 @@ fill_data:
         audio_element_info_t info = {0};
         info.out_samplerate = frame_info.sampRateOut;
         info.out_channels   = frame_info.nChans;
-        info.bits           = 16;
+        info.bits           = frame_info.bitsPerSample;
         audio_element_setinfo(decoder->el, &info);
         audio_element_report_info(decoder->el);
 

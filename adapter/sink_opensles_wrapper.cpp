@@ -82,9 +82,14 @@ static void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context)
     os_mutex_unlock(priv->bufferLock);
 }
 
-sink_handle_t opensles_wrapper_open(int samplerate, int channels, void *sink_priv)
+sink_handle_t opensles_wrapper_open(int samplerate, int channels, int bits, void *sink_priv)
 {
-    OS_LOGD(TAG, "Opening OpenSLES: samplerate=%d, channels=%d", samplerate, channels);
+    OS_LOGD(TAG, "Opening OpenSLES: samplerate=%d, channels=%d, bits=%d", samplerate, channels, bits);
+    if (bits != 16) {
+        OS_LOGE(TAG, "Unsupported sample bits(%d) for OpenSLES", bits);
+        return NULL;
+    }
+
     struct opensles_priv *priv = (struct opensles_priv *)OS_CALLOC(1, sizeof(struct opensles_priv));
     if (priv == NULL)
         return NULL;
@@ -201,7 +206,7 @@ void opensles_wrapper_close(sink_handle_t handle)
     struct opensles_priv *priv = (struct opensles_priv *)handle;
 
     // waiting all buffers in the list finished playing
-    {
+    if (priv->bufferLock != NULL && priv->bufferCond != NULL && priv->bufferList != NULL) {
         os_mutex_lock(priv->bufferLock);
         while (!priv->bufferList->empty())
             os_cond_wait(priv->bufferCond, priv->bufferLock);

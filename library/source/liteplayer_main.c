@@ -202,12 +202,15 @@ static int audio_element_state_callback(audio_element_handle_t el, audio_event_i
                 audio_element_info_t sink_info = {0};
                 audio_element_getinfo(handle->el_sink, &sink_info);
                 if (sink_info.in_samplerate != decoder_info.out_samplerate ||
-                    sink_info.in_channels != decoder_info.out_channels) {
-                    OS_LOGW(TAG, "Forcely update sink samplerate(%d>>%d), channels(%d>>%d)",
+                    sink_info.in_channels != decoder_info.out_channels ||
+                    sink_info.bits != decoder_info.bits) {
+                    OS_LOGW(TAG, "Forcely update sink samplerate(%d>>%d), channels(%d>>%d), bits(%d>>%d)",
                              sink_info.in_samplerate, decoder_info.out_samplerate,
-                             sink_info.in_channels, decoder_info.out_channels);
+                             sink_info.in_channels, decoder_info.out_channels,
+                             sink_info.bits, decoder_info.bits);
                     sink_info.in_channels = decoder_info.out_channels;
                     sink_info.in_samplerate = decoder_info.out_samplerate;
+                    sink_info.bits = decoder_info.bits;
                     audio_element_setinfo(handle->el_sink, &sink_info);
                 }
             } else if (msg->source == (void *)handle->el_sink) {
@@ -366,6 +369,27 @@ static int main_pipeline_init(liteplayer_handle_t handle)
         sink_cfg.in_samplerate            = handle->codec_info.codec_samplerate;
         sink_cfg.out_samplerate           = DEFAULT_SINK_OUT_RATE;
         sink_cfg.out_channels             = DEFAULT_SINK_OUT_CHANNELS;
+#if defined(ENABLE_PCM_SAMPLE_S24LE_S32LE)
+        switch (handle->codec_info.codec_bits) {
+        case 16:
+            sink_cfg.bits = 16;
+            break;
+        case 24:
+            sink_cfg.bits = 24;
+            break;
+        case 32:
+            sink_cfg.bits = 32;
+            break;
+        default:
+            if (decoder->drwav.bitsPerSample > 32)
+                sink_cfg.bits = 32;
+            else
+                sink_cfg.bits = 16;
+            break;
+        }
+#else
+        sink_cfg.bits                     = 16;
+#endif
         sink_cfg.sink_priv                = handle->sink_ops.sink_priv;
         sink_cfg.sink_open                = handle->sink_ops.open;
         sink_cfg.sink_write               = handle->sink_ops.write;
@@ -377,7 +401,7 @@ static int main_pipeline_init(liteplayer_handle_t handle)
         audio_element_getinfo(handle->el_sink, &info);
         info.in_channels = handle->codec_info.codec_channels;
         info.in_samplerate = handle->codec_info.codec_samplerate;
-        info.bits = 16;
+        info.bits = sink_cfg.bits;
         audio_element_setinfo(handle->el_sink, &info);
     }
 

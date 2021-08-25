@@ -102,7 +102,7 @@ fill_data:
         audio_element_info_t info = {0};
         info.out_samplerate = frame_info->sampleRate;
         info.out_channels   = frame_info->numChannels;
-        info.bits           = 16;
+        info.bits           = 16; // todo: always 16 bits per sample?
         audio_element_setinfo(decoder->el, &info);
         audio_element_report_info(decoder->el);
 
