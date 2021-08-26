@@ -19,6 +19,8 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DFLOATING_POINT -DUSE_SSE")
 # cflags: if socketlen_t defined
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_SOCKLEN_T")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_HTTPCLIENT_MBEDTLS")
+# cflags: if support 24bits or 32bits
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_PCM_S24LE_S32LE_SUPPORT")
 
 # include files
 include_directories(${TOP_DIR}/thirdparty/sysutils/include)

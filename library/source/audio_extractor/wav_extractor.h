@@ -114,7 +114,7 @@ enum wav_format {
     WAV_FMT_DVI_ADPCM = 0x0011,
 };
 
-#define WAV_MAX_CHANNEL_COUNT 2
+#define WAV_MAX_CHANNEL_COUNT 8
 
 // Return the data size obtained
 typedef int (*wav_fetch_cb)(char *buf, int wanted_size, long offset, void *fetch_priv);

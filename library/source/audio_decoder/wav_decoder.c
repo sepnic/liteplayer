@@ -34,11 +34,11 @@
 
 #define WAV_DECODER_INPUT_TIMEOUT_MAX  200
 
-#define WAV_MAX_NCHANS                 (2)
+#define WAV_MAX_NCHANS                 (WAV_MAX_CHANNEL_COUNT)
 #define WAV_MAX_NSAMP                  (128)
 //For IEEE 64-bit floating point: MAX_NSAMP*MAX_NCHAN*sizeof(uint64_t)
 #define WAV_DECODER_INPUT_BUFFER_SIZE  (WAV_MAX_NSAMP*WAV_MAX_NCHANS*sizeof(uint64_t))
-#define WAV_DECODER_OUTPUT_BUFFER_SIZE (WAV_MAX_NSAMP*WAV_MAX_NCHANS*sizeof(short))
+#define WAV_DECODER_OUTPUT_BUFFER_SIZE (WAV_MAX_NSAMP*WAV_MAX_NCHANS*sizeof(uint32_t)) // output pcm format: S16LE/S24LE/S32LE
 
 struct wav_buf_in {
     char data[WAV_DECODER_INPUT_BUFFER_SIZE];
@@ -162,8 +162,8 @@ static int drwav_run(wav_decoder_handle_t decoder)
     if (in->bytes_read < decoder->block_align) {
         if (in->bytes_read > 0) {
             if (!decoder->read_timeout) {
-                OS_LOGD(TAG, "Refill data with remaining bytes:%d, offset:%d",
-                        in->bytes_read, decoder->drwav_offset);
+                //OS_LOGD(TAG, "Refill data with remaining bytes:%d, offset:%d",
+                //        in->bytes_read, decoder->drwav_offset);
                 memmove(in->data, in->data+decoder->drwav_offset, in->bytes_read);
                 in->bytes_want = WAV_DECODER_INPUT_BUFFER_SIZE - in->bytes_read;
                 decoder->drwav_offset = in->bytes_read;
@@ -204,7 +204,7 @@ static int drwav_run(wav_decoder_handle_t decoder)
             audio_element_info_t info = {0};
             info.out_samplerate = decoder->drwav.sampleRate;
             info.out_channels   = decoder->drwav.channels;
-#if defined(ENABLE_PCM_SAMPLE_S24LE_S32LE)
+#if defined(ENABLE_PCM_S24LE_S32LE_SUPPORT)
             switch (decoder->drwav.bitsPerSample) {
             case 16:
                 info.bits = 16;
@@ -237,7 +237,7 @@ static int drwav_run(wav_decoder_handle_t decoder)
     drwav_uint64 in_frames = (WAV_MAX_NSAMP > in->bytes_read/decoder->block_align) ?
                              in->bytes_read/decoder->block_align : WAV_MAX_NSAMP;
     drwav_uint64 out_frames;
-#if defined(ENABLE_PCM_SAMPLE_S24LE_S32LE)
+#if defined(ENABLE_PCM_S24LE_S32LE_SUPPORT)
     switch (decoder->bits) {
     case 16: {
         drwav_int16 *out = (drwav_int16 *)(decoder->buf_out.data);
@@ -262,7 +262,7 @@ static int drwav_run(wav_decoder_handle_t decoder)
         return AEL_IO_DONE;
     }
     //OS_LOGV(TAG, "WAVDecode out_frames: %d", out_frames);
-    decoder->buf_out.bytes_remain = out_frames * decoder->drwav.channels * sizeof(short);
+    decoder->buf_out.bytes_remain = out_frames * decoder->drwav.channels * (decoder->bits/8);
     return 0;
 }
 

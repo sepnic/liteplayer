@@ -7,10 +7,10 @@ TOP_DIR=${PWD}/..
 CUR_DIR=${PWD}
 OUTPUT_DIR=${PWD}/out
 
-# build liteplayercore lib
-echo "Building liteplayercore"
-mkdir -p ${OUTPUT_DIR}/libliteplayercore
-cd ${OUTPUT_DIR}/libliteplayercore
+# build libs
+echo "Building libs"
+mkdir -p ${OUTPUT_DIR}/libs
+cd ${OUTPUT_DIR}/libs
 cmake ${TOP_DIR}/library
 make
 

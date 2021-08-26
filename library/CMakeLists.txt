@@ -16,8 +16,8 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D__amd64__ -DUSE_DEFAULT_STDLIB")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DFIXED_POINT")
 # cflag: resampler: ENABLE_SRC, CONFIG_SRC_QUALITY
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_SRC -DCONFIG_SRC_QUALITY=8")
-# cflags: if socketlen_t defined
-#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_SOCKLEN_T")
+# cflags: if support 24bits or 32bits
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_PCM_S24LE_S32LE_SUPPORT")
 
 # include files
 include_directories(${THIRDPARTY_DIR}/sysutils/include)
@@ -47,17 +47,6 @@ set (LITEPLAYER_SRC
     ${TOP_DIR}/library/source/liteplayer_debug.c
     ${TOP_DIR}/library/source/liteplayer_main.c
     ${TOP_DIR}/library/source/liteplayer_manager.c
-)
-# sysutils files
-set (SYSUTILS_SRC
-    ${THIRDPARTY_DIR}/sysutils/osal/unix/os_log.c
-    ${THIRDPARTY_DIR}/sysutils/osal/unix/os_memory.c
-    ${THIRDPARTY_DIR}/sysutils/osal/unix/os_thread.c
-    ${THIRDPARTY_DIR}/sysutils/osal/unix/os_time.c
-    ${THIRDPARTY_DIR}/sysutils/source/cutils/memdbg.c
-    ${THIRDPARTY_DIR}/sysutils/source/cutils/mlooper.c
-    ${THIRDPARTY_DIR}/sysutils/source/cutils/mqueue.c
-    ${THIRDPARTY_DIR}/sysutils/source/cutils/ringbuf.c
 )
 # codecs files
 set (CODECS_SRC
@@ -101,7 +90,23 @@ set (CODECS_SRC
     ${THIRDPARTY_DIR}/codecs/aac-helix/tns.c
     ${THIRDPARTY_DIR}/codecs/aac-helix/trigtabs.c
 )
+# sysutils files
+set (SYSUTILS_SRC
+    ${THIRDPARTY_DIR}/sysutils/osal/unix/os_log.c
+    ${THIRDPARTY_DIR}/sysutils/osal/unix/os_memory.c
+    ${THIRDPARTY_DIR}/sysutils/osal/unix/os_thread.c
+    ${THIRDPARTY_DIR}/sysutils/osal/unix/os_time.c
+    ${THIRDPARTY_DIR}/sysutils/source/cutils/memdbg.c
+    ${THIRDPARTY_DIR}/sysutils/source/cutils/mlooper.c
+    ${THIRDPARTY_DIR}/sysutils/source/cutils/mqueue.c
+    ${THIRDPARTY_DIR}/sysutils/source/cutils/ringbuf.c
+)
 
 # liteplayer_core lib
-add_library(liteplayer_core   SHARED ${SYSUTILS_SRC} ${CODECS_SRC} ${LITEPLAYER_SRC})
-add_library(liteplayer_core_s STATIC ${SYSUTILS_SRC} ${CODECS_SRC} ${LITEPLAYER_SRC})
+add_library(liteplayer_core   SHARED ${CODECS_SRC} ${LITEPLAYER_SRC})
+add_library(liteplayer_core_s STATIC ${CODECS_SRC} ${LITEPLAYER_SRC})
+target_link_libraries(liteplayer_core sysutils)
+
+# sysutils lib
+add_library(sysutils   SHARED ${SYSUTILS_SRC})
+add_library(sysutils_s STATIC ${SYSUTILS_SRC})

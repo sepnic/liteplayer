@@ -85,7 +85,18 @@ static void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context)
 sink_handle_t opensles_wrapper_open(int samplerate, int channels, int bits, void *sink_priv)
 {
     OS_LOGD(TAG, "Opening OpenSLES: samplerate=%d, channels=%d, bits=%d", samplerate, channels, bits);
-    if (bits != 16) {
+    SLuint32 pcmformat;
+    switch (bits) {
+    case 16:
+        pcmformat = SL_PCMSAMPLEFORMAT_FIXED_16;
+        break;
+    case 24:
+        pcmformat = SL_PCMSAMPLEFORMAT_FIXED_24;
+        break;
+    case 32:
+        pcmformat = SL_PCMSAMPLEFORMAT_FIXED_32;
+        break;
+    default:
         OS_LOGE(TAG, "Unsupported sample bits(%d) for OpenSLES", bits);
         return NULL;
     }
@@ -101,6 +112,12 @@ sink_handle_t opensles_wrapper_open(int samplerate, int channels, int bits, void
 
     SLresult result = SL_RESULT_SUCCESS;
     do {
+        priv->bufferList = new std::list<OutBuffer *>();
+        priv->bufferLock = os_mutex_create();
+        if (priv->bufferLock == NULL) break;
+        priv->bufferCond = os_cond_create();
+        if (priv->bufferCond == NULL) break;
+
         // create engine
         result = slCreateEngine(&priv->engineObj, 0, NULL, 0, NULL, NULL);
         if (SL_RESULT_SUCCESS != result) break;
@@ -126,8 +143,8 @@ sink_handle_t opensles_wrapper_open(int samplerate, int channels, int bits, void
                 SL_DATAFORMAT_PCM,
                 static_cast<SLuint32>(channels),                 // channel count
                 static_cast<SLuint32>(samplerate*1000),          // sample rate in mili second
-                SL_PCMSAMPLEFORMAT_FIXED_16,                     // bitsPerSample
-                SL_PCMSAMPLEFORMAT_FIXED_16,                     // containerSize
+                pcmformat,                                       // bitsPerSample
+                pcmformat,                                       // containerSize
                 channels == 1 ? SL_SPEAKER_FRONT_LEFT : (SL_SPEAKER_FRONT_LEFT | SL_SPEAKER_FRONT_RIGHT),
                 SL_BYTEORDER_LITTLEENDIAN                        // endianness
         };
@@ -151,10 +168,6 @@ sink_handle_t opensles_wrapper_open(int samplerate, int channels, int bits, void
         // register callback on the buffer queue
         result = (*priv->playerBufferQueue)->RegisterCallback(priv->playerBufferQueue, bqPlayerCallback, priv);
         if (SL_RESULT_SUCCESS != result) break;
-
-        priv->bufferList = new std::list<OutBuffer *>();
-        priv->bufferLock = os_mutex_create();
-        priv->bufferCond = os_cond_create();
     } while (0);
 
     if (SL_RESULT_SUCCESS == result) {

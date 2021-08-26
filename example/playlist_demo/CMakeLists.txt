@@ -8,7 +8,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
 endif()
 
 set(TOP_DIR "${CMAKE_SOURCE_DIR}/../..")
-set(LIB_DIR "${TOP_DIR}/builds/out/libliteplayercore")
+set(LIB_DIR "${TOP_DIR}/builds/out/libs")
 
 # cflags: compile paramters
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -Wall -Werror")
@@ -120,7 +120,7 @@ LINK_DIRECTORIES(${LIB_DIR})
 
 # playlist_demo
 add_executable(playlist_demo playlist_demo.c ${ADAPTER_SRC})
-target_link_libraries(playlist_demo liteplayer_core_s.a pthread)
+target_link_libraries(playlist_demo liteplayer_core_s.a sysutils_s.a pthread)
 if (ENABLE_LINUX_ALSA)
 target_link_libraries(playlist_demo asound)
 endif()

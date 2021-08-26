@@ -369,19 +369,22 @@ static int main_pipeline_init(liteplayer_handle_t handle)
         sink_cfg.in_samplerate            = handle->codec_info.codec_samplerate;
         sink_cfg.out_samplerate           = DEFAULT_SINK_OUT_RATE;
         sink_cfg.out_channels             = DEFAULT_SINK_OUT_CHANNELS;
-#if defined(ENABLE_PCM_SAMPLE_S24LE_S32LE)
+#if defined(ENABLE_PCM_S24LE_S32LE_SUPPORT)
         switch (handle->codec_info.codec_bits) {
         case 16:
             sink_cfg.bits = 16;
             break;
         case 24:
-            sink_cfg.bits = 24;
+            if (handle->codec_info.codec_type == AUDIO_CODEC_WAV)
+                sink_cfg.bits = 32;
+            else
+                sink_cfg.bits = 24;
             break;
         case 32:
             sink_cfg.bits = 32;
             break;
         default:
-            if (decoder->drwav.bitsPerSample > 32)
+            if (handle->codec_info.codec_bits > 32)
                 sink_cfg.bits = 32;
             else
                 sink_cfg.bits = 16;
