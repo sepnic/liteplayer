@@ -14,9 +14,9 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D__amd64__ -DUSE_DEFAULT_STDLIB")
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DAAC_ENABLE_SBR")
 # cflag: libspeexdsp: FIXED_POINT/FLOATING_POINT, USE_NEON/USE_SSE
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DFIXED_POINT")
-# cflag: resampler: ENABLE_SRC, CONFIG_SRC_QUALITY
+# cflag: resampler: ENABLE_SRC, CONFIG_SRC_QUALITY, only support S16LE
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_SRC -DCONFIG_SRC_QUALITY=8")
-# cflags: if support 24bits or 32bits
+# cflags: support S24LE or S32LE? don't enable it if ENABLE_SRC
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_PCM_S24LE_S32LE_SUPPORT")
 
 # include files

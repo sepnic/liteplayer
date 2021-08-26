@@ -70,13 +70,23 @@ static int audio_resampler_open(resample_converter_handle_t self, struct resampl
     int quality     = config->quality;
     int ret = 0;
 
-    memcpy(&priv->cfg, config, sizeof(struct resample_cfg));
-
-    priv->enable_channels_convert = (in_channels != out_channels) ? true : false;
-    priv->enable_rate_convert = (in_rate != out_rate) ? true : false;
-
     OS_LOGD(TAG, "Open resampler: in_channels(%d), in_rate(%d), out_channels(%d), out_rate(%d), bits(%d), quality(%d)",
-             in_channels, in_rate, out_channels, out_rate, bits, quality);
+            in_channels, in_rate, out_channels, out_rate, bits, quality);
+
+    if (bits != 16) {
+        OS_LOGE(TAG, "Unsupported sample bits(%d) for rate_convert", bits);
+        return -1;
+    }
+
+    memcpy(&priv->cfg, config, sizeof(struct resample_cfg));
+    priv->enable_rate_convert = (in_rate != out_rate) ? true : false;
+    priv->enable_channels_convert = (in_channels != out_channels) ? true : false;
+    if (priv->enable_channels_convert) {
+        if (in_channels != 1 && in_channels != 2 && out_channels != 1 && out_channels != 2) {
+            OS_LOGE(TAG, "Unsupported channels(%d>>%d) for channels_convert", in_channels, out_channels);
+            return -1;
+        }
+    }
 
     if (priv->enable_rate_convert) {
         SpeexResamplerState *src_state = speex_resampler_init(in_channels, in_rate, out_rate, quality, &ret);
