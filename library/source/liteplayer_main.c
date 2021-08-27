@@ -369,7 +369,9 @@ static int main_pipeline_init(liteplayer_handle_t handle)
         sink_cfg.in_samplerate            = handle->codec_info.codec_samplerate;
         sink_cfg.out_samplerate           = DEFAULT_SINK_OUT_RATE;
         sink_cfg.out_channels             = DEFAULT_SINK_OUT_CHANNELS;
-#if defined(ENABLE_PCM_S24LE_S32LE_SUPPORT)
+#if defined(CONFIG_SINK_FIXED_S16LE)
+        sink_cfg.bits                     = 16;
+#else
         switch (handle->codec_info.codec_bits) {
         case 16:
             sink_cfg.bits = 16;
@@ -390,8 +392,6 @@ static int main_pipeline_init(liteplayer_handle_t handle)
                 sink_cfg.bits = 16;
             break;
         }
-#else
-        sink_cfg.bits                     = 16;
 #endif
         sink_cfg.sink_priv                = handle->sink_ops.sink_priv;
         sink_cfg.sink_open                = handle->sink_ops.open;

@@ -43,12 +43,8 @@
  * buffers.c - allocation and deallocation of internal AAC decoder buffers
  **************************************************************************************/
 
-#if defined(USE_DEFAULT_STDLIB) || defined(ARDUINO)
 #include <stdlib.h>
 #include <string.h>
-#else
-#include "hlxclib/stdlib.h"
-#endif
 
 #include "esp_adf/audio_common.h"
 #include "coder.h"

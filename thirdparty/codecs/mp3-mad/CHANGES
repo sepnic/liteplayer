@@ -252,11 +252,11 @@ Version 0.11.2 (beta)
     --enable-aso is given to `configure' to enable architecture-specific
     optimizations.)
 
-  * Reduced FPM_INTEL assembly to two instructions.
+  * Reduced CONFIG_MAD_FPM_INTEL assembly to two instructions.
 
   * Fixed accuracy problems with certain FPM modes in synth.c.
 
-  * Improved the accuracy of FPM_APPROX.
+  * Improved the accuracy of CONFIG_MAD_FPM_APPROX.
 
   * Improved the accuracy of SSO.
 

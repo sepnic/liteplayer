@@ -42,20 +42,20 @@ char const mad_build[] = ""
   "EXPERIMENTAL "
 # endif
 
-# if defined(FPM_64BIT)
-  "FPM_64BIT "
-# elif defined(FPM_INTEL)
-  "FPM_INTEL "
-# elif defined(FPM_ARM)
-  "FPM_ARM "
-# elif defined(FPM_MIPS)
-  "FPM_MIPS "
-# elif defined(FPM_SPARC)
-  "FPM_SPARC "
-# elif defined(FPM_PPC)
-  "FPM_PPC "
-# elif defined(FPM_DEFAULT)
-  "FPM_DEFAULT "
+# if defined(CONFIG_MAD_FPM_64BIT)
+  "CONFIG_MAD_FPM_64BIT "
+# elif defined(CONFIG_MAD_FPM_INTEL)
+  "CONFIG_MAD_FPM_INTEL "
+# elif defined(CONFIG_MAD_FPM_ARM)
+  "CONFIG_MAD_FPM_ARM "
+# elif defined(CONFIG_MAD_FPM_MIPS)
+  "CONFIG_MAD_FPM_MIPS "
+# elif defined(CONFIG_MAD_FPM_SPARC)
+  "CONFIG_MAD_FPM_SPARC "
+# elif defined(CONFIG_MAD_FPM_PPC)
+  "CONFIG_MAD_FPM_PPC "
+# elif defined(CONFIG_MAD_FPM_DEFAULT)
+  "CONFIG_MAD_FPM_DEFAULT "
 # endif
 
 # if defined(ASO_IMDCT)

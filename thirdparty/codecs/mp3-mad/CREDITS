@@ -97,7 +97,7 @@ CONTRIBUTORS
         2000/09/09: fixed.h
           - Parameterized all scaling for correct use of all multiplication
             methods within mad_synth_frame().
-          - Rewrote the FPM_ARM version of mad_f_mul() so we have 64-bit
+          - Rewrote the CONFIG_MAD_FPM_ARM version of mad_f_mul() so we have 64-bit
             multiplication result, rounding and scaling with 3 instructions.
         2000/09/09: imdct_l_arm.S
           - Optimized rounding + scaling operations.
@@ -108,7 +108,7 @@ CONTRIBUTORS
           - Suggested 64-bit FPM negation and negative term factorization
             during synthesis.
         2001/08/11: fixed.h
-          - Suggested unrounded behavior for FPM_DEFAULT when OPT_SPEED.
+          - Suggested unrounded behavior for CONFIG_MAD_FPM_DEFAULT when OPT_SPEED.
         2001/11/19: fixed.c
           - Suggested computation of any resampling ratio.
 

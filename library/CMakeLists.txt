@@ -6,18 +6,22 @@ set(THIRDPARTY_DIR "${TOP_DIR}/thirdparty")
 
 # cflags: OS_LINUX, OS_ANDROID, OS_APPLE, OS_RTOS
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -Wall -Werror -DOS_APPLE")
-# cflag: libmad: FPM_64BIT/FPM_INTEL/FPM_ARM/FPM_MIPS/FPM_DEFAULT
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DFPM_64BIT")
-# cflag: helix: __arm__/__amd64__, __GNUC__
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D__amd64__ -DUSE_DEFAULT_STDLIB")
-# cflag: if enable aac sbr
-#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DAAC_ENABLE_SBR")
-# cflag: libspeexdsp: FIXED_POINT/FLOATING_POINT, USE_NEON/USE_SSE
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DFIXED_POINT")
-# cflag: resampler: ENABLE_SRC, CONFIG_SRC_QUALITY, only support S16LE
-#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_SRC -DCONFIG_SRC_QUALITY=8")
-# cflags: support S24LE or S32LE? don't enable it if ENABLE_SRC
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_PCM_S24LE_S32LE_SUPPORT")
+
+# cflag: platform&compiler: __arm__/__amd64__, __GNUC__
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D__amd64__")
+
+# cflag: libmad: CONFIG_MAD_FPM_64BIT/CONFIG_MAD_FPM_ARM/CONFIG_MAD_FPM_DEFAULT
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCONFIG_MAD_FPM_64BIT")
+
+# cflag: libspeexdsp: CONFIG_SPEEXDSP_FIXED_POINT/CONFIG_SPEEXDSP_FLOATING_POINT
+# cflag: libspeexdsp: CONFIG_SPEEXDSP_USE_NEON/CONFIG_SPEEXDSP_USE_SSE
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCONFIG_SPEEXDSP_FIXED_POINT")
+
+# cflag: decoder: ENABLE_DECODER_AAC_SBR
+#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_DECODER_AAC_SBR")
+
+# cflags: sink: CONFIG_SINK_FIXED_S16LE. Don't config it if sink support S24LE/S32LE
+#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCONFIG_SINK_FIXED_S16LE")
 
 # include files
 include_directories(${THIRDPARTY_DIR}/sysutils/include)

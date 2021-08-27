@@ -68,14 +68,10 @@
 #
 #elif defined(_SOLARIS) && !defined(__GNUC__)
 #
-#elif defined(ARDUINO) || defined(USE_DEFAULT_STDLIB)
+#elif defined(ARDUINO)
 #
 #else
 #error No platform defined. See valid options in aacdec.h
-#endif
-
-#ifndef USE_DEFAULT_STDLIB
-#define USE_DEFAULT_STDLIB
 #endif
 
 #ifdef __cplusplus
@@ -101,7 +97,7 @@ extern "C" {
 
 /* define these to enable decoder features */
 #if defined(HELIX_FEATURE_AUDIO_CODEC_AAC_SBR)
-#define AAC_ENABLE_SBR
+#define ENABLE_DECODER_AAC_SBR
 #endif
 
 #define AAC_ENABLE_MPEG4

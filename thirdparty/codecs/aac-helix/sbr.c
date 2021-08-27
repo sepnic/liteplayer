@@ -43,11 +43,7 @@
  * sbr.c - top level functions for SBR
  **************************************************************************************/
 
-#if defined(USE_DEFAULT_STDLIB) || defined(ARDUINO)
 #include <stdlib.h>
-#else
-#include "hlxclib/stdlib.h"
-#endif
 
 #include "esp_adf/audio_common.h"
 #include "sbr.h"

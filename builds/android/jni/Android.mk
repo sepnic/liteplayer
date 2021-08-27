@@ -74,7 +74,8 @@ LOCAL_C_INCLUDES += \
     ${TOP_DIR}/thirdparty/codecs/aac-fdk/libArithCoding/include \
     ${TOP_DIR}/thirdparty/codecs/aac-fdk/libDRCdec/include \
     ${TOP_DIR}/thirdparty/codecs/aac-fdk/libSACdec/include
-LOCAL_CFLAGS += -DOS_ANDROID -DAAC_ENABLE_SBR -DFIXED_POINT
+LOCAL_CFLAGS += -DOS_ANDROID
+LOCAL_CFLAGS += -DCONFIG_SPEEXDSP_FIXED_POINT -DENABLE_DECODER_AAC_SBR -DCONFIG_SINK_FIXED_S16LE
 LOCAL_CFLAGS += -Wall -Werror -Wno-error=unused-function -Wno-error=unused-variable
 LOCAL_LDLIBS := -llog
 LOCAL_SHARED_LIBRARIES += sysutils

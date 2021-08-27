@@ -10,7 +10,9 @@ endif()
 set(TOP_DIR "${CMAKE_SOURCE_DIR}/../..")
 set(LIB_DIR "${TOP_DIR}/builds/out/libs")
 
-# cflags: compile paramters
+# cflags: OS_LINUX, OS_ANDROID, OS_APPLE, OS_RTOS
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DOS_APPLE")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D__amd64__")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -Wall -Werror")
 # cflags: if socketlen_t defined
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_SOCKLEN_T")

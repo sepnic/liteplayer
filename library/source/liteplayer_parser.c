@@ -106,7 +106,7 @@ static int m4a_header_parse(struct media_source_info *source_info, struct media_
 
     if (m4a_extractor(media_parser_fetch, &m4a_priv, &(codec_info->detail.m4a_info)) == 0) {
         codec_info->content_pos = codec_info->detail.m4a_info.mdat_offset;
-    #if defined(AAC_ENABLE_SBR)
+    #if defined(ENABLE_DECODER_AAC_SBR)
         codec_info->codec_samplerate = codec_info->detail.m4a_info.samplerate;
         codec_info->codec_channels = codec_info->detail.m4a_info.channels;
     #else

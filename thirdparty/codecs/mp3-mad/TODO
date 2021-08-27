@@ -18,7 +18,7 @@ libmad:
   - frame serial numbers, Layer III frame continuity checks
 
 fixed.h:
-  - experiment with FPM_INTEL:
+  - experiment with CONFIG_MAD_FPM_INTEL:
 
 # if 1
 #    define mad_f_scale64(hi, lo)  \

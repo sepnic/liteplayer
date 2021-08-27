@@ -86,9 +86,9 @@ void mad_synth_mute(struct mad_synth *synth)
  * saved in the PCM buffer. 14 + 12 + 2 == 28 bits.
  */
 
-/* FPM_DEFAULT without OPT_SSO will actually lose accuracy and performance */
+/* CONFIG_MAD_FPM_DEFAULT without OPT_SSO will actually lose accuracy and performance */
 
-# if defined(FPM_DEFAULT) && !defined(OPT_SSO)
+# if defined(CONFIG_MAD_FPM_DEFAULT) && !defined(OPT_SSO)
 #  define OPT_SSO
 # endif
 

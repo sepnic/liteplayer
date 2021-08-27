@@ -97,11 +97,11 @@ static void speex_free(void *ptr) {free(ptr);}
 #define UINT32_MAX 4294967295U
 #endif
 
-#ifdef USE_SSE
+#ifdef CONFIG_SPEEXDSP_USE_SSE
 #include "resample_sse.h"
 #endif
 
-#ifdef USE_NEON
+#ifdef CONFIG_SPEEXDSP_USE_NEON
 #include "resample_neon.h"
 #endif
 
@@ -271,7 +271,7 @@ int main(int argc, char **argv)
 }
 #endif
 
-#ifdef FIXED_POINT
+#ifdef CONFIG_SPEEXDSP_FIXED_POINT
 /* The slow way of computing a sinc for the table. Should improve that some day */
 static spx_word16_t sinc(float cutoff, float x, int N, const struct FuncDef *window_func)
 {
@@ -299,7 +299,7 @@ static spx_word16_t sinc(float cutoff, float x, int N, const struct FuncDef *win
 }
 #endif
 
-#ifdef FIXED_POINT
+#ifdef CONFIG_SPEEXDSP_FIXED_POINT
 static void cubic_coef(spx_word16_t x, spx_word16_t interp[4])
 {
    /* Compute interpolation coefficients. I'm not sure whether this corresponds to cubic interpolation
@@ -384,7 +384,7 @@ static int resampler_basic_direct_single(SpeexResamplerState *st, spx_uint32_t c
    return out_sample;
 }
 
-#ifdef FIXED_POINT
+#ifdef CONFIG_SPEEXDSP_FIXED_POINT
 #else
 /* This is the same as the previous function, except with a double-precision accumulator */
 static int resampler_basic_direct_double(SpeexResamplerState *st, spx_uint32_t channel_index, const spx_word16_t *in, spx_uint32_t *in_len, spx_word16_t *out, spx_uint32_t *out_len)
@@ -453,7 +453,7 @@ static int resampler_basic_interpolate_single(SpeexResamplerState *st, spx_uint3
       const spx_word16_t *iptr = & in[last_sample];
 
       const int offset = samp_frac_num*st->oversample/st->den_rate;
-#ifdef FIXED_POINT
+#ifdef CONFIG_SPEEXDSP_FIXED_POINT
       const spx_word16_t frac = PDIV32(SHL32((samp_frac_num*st->oversample) % st->den_rate,15),st->den_rate);
 #else
       const spx_word16_t frac = ((float)((samp_frac_num*st->oversample) % st->den_rate))/st->den_rate;
@@ -496,7 +496,7 @@ static int resampler_basic_interpolate_single(SpeexResamplerState *st, spx_uint3
    return out_sample;
 }
 
-#ifdef FIXED_POINT
+#ifdef CONFIG_SPEEXDSP_FIXED_POINT
 #else
 /* This is the same as the previous function, except with a double-precision accumulator */
 static int resampler_basic_interpolate_double(SpeexResamplerState *st, spx_uint32_t channel_index, const spx_word16_t *in, spx_uint32_t *in_len, spx_word16_t *out, spx_uint32_t *out_len)
@@ -516,7 +516,7 @@ static int resampler_basic_interpolate_double(SpeexResamplerState *st, spx_uint3
       const spx_word16_t *iptr = & in[last_sample];
 
       const int offset = samp_frac_num*st->oversample/st->den_rate;
-#ifdef FIXED_POINT
+#ifdef CONFIG_SPEEXDSP_FIXED_POINT
       const spx_word16_t frac = PDIV32(SHL32((samp_frac_num*st->oversample) % st->den_rate,15),st->den_rate);
 #else
       const spx_word16_t frac = ((float)((samp_frac_num*st->oversample) % st->den_rate))/st->den_rate;
@@ -677,7 +677,7 @@ static int update_filter(SpeexResamplerState *st)
             st->sinc_table[i*st->filt_len+j] = sinc(st->cutoff,((j-(spx_int32_t)st->filt_len/2+1)-((float)i)/st->den_rate), st->filt_len, quality_map[st->quality].window_func);
          }
       }
-#ifdef FIXED_POINT
+#ifdef CONFIG_SPEEXDSP_FIXED_POINT
       st->resampler_ptr = resampler_basic_direct_single;
 #else
       if (st->quality>8)
@@ -690,7 +690,7 @@ static int update_filter(SpeexResamplerState *st)
       spx_int32_t i;
       for (i=-4;i<(spx_int32_t)(st->oversample*st->filt_len+4);i++)
          st->sinc_table[i+4] = sinc(st->cutoff,(i/(float)st->oversample - st->filt_len/2), st->filt_len, quality_map[st->quality].window_func);
-#ifdef FIXED_POINT
+#ifdef CONFIG_SPEEXDSP_FIXED_POINT
       st->resampler_ptr = resampler_basic_interpolate_single;
 #else
       if (st->quality>8)
@@ -922,7 +922,7 @@ static int speex_resampler_magic(SpeexResamplerState *st, spx_uint32_t channel_i
    return out_len;
 }
 
-#ifdef FIXED_POINT
+#ifdef CONFIG_SPEEXDSP_FIXED_POINT
 EXPORT int speex_resampler_process_int(SpeexResamplerState *st, spx_uint32_t channel_index, const spx_int16_t *in, spx_uint32_t *in_len, spx_int16_t *out, spx_uint32_t *out_len)
 #else
 EXPORT int speex_resampler_process_float(SpeexResamplerState *st, spx_uint32_t channel_index, const float *in, spx_uint32_t *in_len, float *out, spx_uint32_t *out_len)
@@ -963,7 +963,7 @@ EXPORT int speex_resampler_process_float(SpeexResamplerState *st, spx_uint32_t c
    return st->resampler_ptr == resampler_basic_zero ? RESAMPLER_ERR_ALLOC_FAILED : RESAMPLER_ERR_SUCCESS;
 }
 
-#ifdef FIXED_POINT
+#ifdef CONFIG_SPEEXDSP_FIXED_POINT
 EXPORT int speex_resampler_process_float(SpeexResamplerState *st, spx_uint32_t channel_index, const float *in, spx_uint32_t *in_len, float *out, spx_uint32_t *out_len)
 #else
 EXPORT int speex_resampler_process_int(SpeexResamplerState *st, spx_uint32_t channel_index, const spx_int16_t *in, spx_uint32_t *in_len, spx_int16_t *out, spx_uint32_t *out_len)
@@ -1000,7 +1000,7 @@ EXPORT int speex_resampler_process_int(SpeexResamplerState *st, spx_uint32_t cha
      if (! st->magic_samples[channel_index]) {
        if (in) {
          for(j=0;j<ichunk;++j)
-#ifdef FIXED_POINT
+#ifdef CONFIG_SPEEXDSP_FIXED_POINT
            x[j+st->filt_len-1]=WORD2INT(in[j*istride_save]);
 #else
            x[j+st->filt_len-1]=in[j*istride_save];
@@ -1017,7 +1017,7 @@ EXPORT int speex_resampler_process_int(SpeexResamplerState *st, spx_uint32_t cha
      }
 
      for (j=0;j<ochunk+omagic;++j)
-#ifdef FIXED_POINT
+#ifdef CONFIG_SPEEXDSP_FIXED_POINT
         out[j*ostride_save] = ystack[j];
 #else
         out[j*ostride_save] = WORD2INT(ystack[j]);

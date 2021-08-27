@@ -204,7 +204,9 @@ static int drwav_run(wav_decoder_handle_t decoder)
             audio_element_info_t info = {0};
             info.out_samplerate = decoder->drwav.sampleRate;
             info.out_channels   = decoder->drwav.channels;
-#if defined(ENABLE_PCM_S24LE_S32LE_SUPPORT)
+#if defined(CONFIG_SINK_FIXED_S16LE)
+            info.bits           = 16;
+#else
             switch (decoder->drwav.bitsPerSample) {
             case 16:
                 info.bits = 16;
@@ -220,8 +222,6 @@ static int drwav_run(wav_decoder_handle_t decoder)
                     info.bits = 16;
                 break;
             }
-#else
-            info.bits           = 16;
 #endif
             audio_element_setinfo(decoder->el, &info);
             audio_element_report_info(decoder->el);
@@ -237,7 +237,10 @@ static int drwav_run(wav_decoder_handle_t decoder)
     drwav_uint64 in_frames = (WAV_MAX_NSAMP > in->bytes_read/decoder->block_align) ?
                              in->bytes_read/decoder->block_align : WAV_MAX_NSAMP;
     drwav_uint64 out_frames;
-#if defined(ENABLE_PCM_S24LE_S32LE_SUPPORT)
+#if defined(CONFIG_SINK_FIXED_S16LE)
+    drwav_int16 *out = (drwav_int16 *)(decoder->buf_out.data);
+    out_frames = drwav_read_pcm_frames_s16le(&decoder->drwav, in_frames, out);
+#else
     switch (decoder->bits) {
     case 16: {
         drwav_int16 *out = (drwav_int16 *)(decoder->buf_out.data);
@@ -253,9 +256,6 @@ static int drwav_run(wav_decoder_handle_t decoder)
         OS_LOGE(TAG, "Unsupported sample bits: %d", decoder->bits);
         return AEL_PROCESS_FAIL;
     }
-#else
-    drwav_int16 *out = (drwav_int16 *)(decoder->buf_out.data);
-    out_frames = drwav_read_pcm_frames_s16le(&decoder->drwav, in_frames, out);
 #endif
     if (out_frames == 0) {
         OS_LOGW(TAG, "WAVDecode dummy data, AEL_IO_DONE");
