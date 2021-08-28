@@ -23,6 +23,7 @@ include $(BUILD_SHARED_LIBRARY)
 include $(CLEAR_VARS)
 TOP_DIR := ${LOCAL_PATH}/../../..
 THIRDPARTY_FILES := $(wildcard  \
+    ${TOP_DIR}/thirdparty/speexdsp/resample.c \
     ${TOP_DIR}/thirdparty/codecs/mp3-pvmp3/src/*.cpp \
     ${TOP_DIR}/thirdparty/codecs/aac-fdk/libAACdec/src/*.cpp \
     ${TOP_DIR}/thirdparty/codecs/aac-fdk/libPCMutils/src/*.cpp \
@@ -49,14 +50,13 @@ LOCAL_SRC_FILES := \
     ${TOP_DIR}/library/source/audio_extractor/aac_extractor.c \
     ${TOP_DIR}/library/source/audio_extractor/m4a_extractor.c \
     ${TOP_DIR}/library/source/audio_extractor/wav_extractor.c \
-    ${TOP_DIR}/library/source/audio_resampler/audio_resampler.c \
-    ${TOP_DIR}/library/source/audio_resampler/speexdsp/resample.c \
     ${TOP_DIR}/library/source/audio_stream/sink_stream.c \
     ${TOP_DIR}/library/source/liteplayer_source.c \
     ${TOP_DIR}/library/source/liteplayer_parser.c \
     ${TOP_DIR}/library/source/liteplayer_debug.c \
     ${TOP_DIR}/library/source/liteplayer_main.c \
-    ${TOP_DIR}/library/source/liteplayer_manager.c
+    ${TOP_DIR}/library/source/liteplayer_manager.c \
+    ${TOP_DIR}/library/source/liteplayer_resampler.c
 LOCAL_C_INCLUDES += \
     ${TOP_DIR}/library/include \
     ${TOP_DIR}/library/source \

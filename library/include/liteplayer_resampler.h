@@ -18,8 +18,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef _AUDIO_RESAMPLER_H_
-#define _AUDIO_RESAMPLER_H_
+#ifndef _LITEPLAYER_RESAMPLER_H_
+#define _LITEPLAYER_RESAMPLER_H_
 
 #include <stdio.h>
 
@@ -27,16 +27,16 @@
 extern "C" {
 #endif
 
-#define AUDIO_RESAMPLE_CFG_DEFAULT()    { \
-    .in_rate      = 16000,                \
+#define RESAMPLER_CFG_DEFAULT()    {      \
+    .in_rate      = 44100,                \
     .in_channels  = 2,                    \
-    .out_rate     = 44100,                \
+    .out_rate     = 48000,                \
     .out_channels = 2,                    \
     .bits         = 16,                   \
     .quality      = 8,                    \
 }
 
-struct resample_cfg {
+struct resampler_cfg {
     int  in_channels;
     int  in_rate;
     int  out_channels;
@@ -45,22 +45,22 @@ struct resample_cfg {
     int  quality;
 };
 
-struct resample_converter;
-typedef struct resample_converter *resample_converter_handle_t;
+struct resampler;
+typedef struct resampler *resampler_handle_t;
 
-struct resample_converter {
-    int (*open)(resample_converter_handle_t self, struct resample_cfg *config);
-    int (*process)(resample_converter_handle_t self, const short *in, int in_bytes);
-    int (*close)(resample_converter_handle_t self);
-    void (*destroy)(resample_converter_handle_t self);
-    int out_bytes;          /*!< Output length for one converter */
-    short  *out_buf;         /*!< Output pointer for rate converter */
+struct resampler {
+    int (*open)(resampler_handle_t self, struct resampler_cfg *config);
+    int (*process)(resampler_handle_t self, const short *in, int in_bytes);
+    int (*close)(resampler_handle_t self);
+    void (*destroy)(resampler_handle_t self);
+    int out_bytes;   /*!< will update output length after process() */
+    short *out_buf;  /*!< will update output pointer after process() */
 };
 
-resample_converter_handle_t audio_resampler_init();
+resampler_handle_t resampler_init();
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif // _LITEPLAYER_RESAMPLER_H_

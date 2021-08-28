@@ -25,7 +25,6 @@
 #include "cutils/log_helper.h"
 #include "esp_adf/audio_common.h"
 #include "esp_adf/audio_element.h"
-#include "audio_resampler/audio_resampler.h"
 #include "audio_stream/sink_stream.h"
 
 #define TAG "[liteplayer]SINK_STREAM"

@@ -14,10 +14,9 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D__amd64__")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCONFIG_MAD_FPM_DEFAULT")
 
 # cflag: libspeexdsp: CONFIG_SPEEXDSP_FIXED_POINT/CONFIG_SPEEXDSP_FLOATING_POINT
-# cflag: libspeexdsp: CONFIG_SPEEXDSP_USE_NEON/CONFIG_SPEEXDSP_USE_SSE
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCONFIG_SPEEXDSP_FIXED_POINT")
 
-# cflag: decoder: ENABLE_DECODER_AAC_SBR
+# cflag: decoder: ENABLE_DECODER_AAC_SBR. It's better to enable it if using fdk-aac
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_DECODER_AAC_SBR")
 
 # cflags: sink: CONFIG_SINK_FIXED_S16LE. Don't config it if sink support S24LE/S32LE
@@ -26,6 +25,7 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCONFIG_SINK_FIXED_S16LE")
 # include files
 include_directories(${THIRDPARTY_DIR}/sysutils/include)
 include_directories(${THIRDPARTY_DIR}/codecs)
+include_directories(${THIRDPARTY_DIR}/speexdsp)
 include_directories(${TOP_DIR}/library/include)
 include_directories(${TOP_DIR}/library/source)
 # liteplayer files
@@ -43,17 +43,17 @@ set (LITEPLAYER_SRC
     ${TOP_DIR}/library/source/audio_extractor/aac_extractor.c
     ${TOP_DIR}/library/source/audio_extractor/m4a_extractor.c
     ${TOP_DIR}/library/source/audio_extractor/wav_extractor.c
-    ${TOP_DIR}/library/source/audio_resampler/audio_resampler.c
-    ${TOP_DIR}/library/source/audio_resampler/speexdsp/resample.c
     ${TOP_DIR}/library/source/audio_stream/sink_stream.c
     ${TOP_DIR}/library/source/liteplayer_source.c
     ${TOP_DIR}/library/source/liteplayer_parser.c
     ${TOP_DIR}/library/source/liteplayer_debug.c
     ${TOP_DIR}/library/source/liteplayer_main.c
     ${TOP_DIR}/library/source/liteplayer_manager.c
+    ${TOP_DIR}/library/source/liteplayer_resampler.c
 )
 # codecs files
 set (CODECS_SRC
+    ${THIRDPARTY_DIR}/speexdsp/resample.c   
     ${THIRDPARTY_DIR}/codecs/mp3-mad/bit.c
     ${THIRDPARTY_DIR}/codecs/mp3-mad/decoder.c
     ${THIRDPARTY_DIR}/codecs/mp3-mad/fixed.c

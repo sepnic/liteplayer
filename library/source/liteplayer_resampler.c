@@ -25,15 +25,15 @@
 
 #include "cutils/log_helper.h"
 #include "esp_adf/audio_common.h"
-#include "speexdsp/speex/speex_resampler.h"
-#include "audio_resampler/audio_resampler.h"
+#include "speex/speex_resampler.h"
+#include "liteplayer_resampler.h"
 
 #define TAG "[liteplayer]RESAMPLER"
 
 struct resample_priv {
-    struct resample_converter converter;
-    struct resample_cfg  cfg;
-    SpeexResamplerState  *src_state;
+    struct resampler     converter;
+    struct resampler_cfg cfg;
+    SpeexResamplerState *src_state;
     int                  in_bytes;
     int                  out_bytes;
     bool                 enable_rate_convert;
@@ -59,15 +59,15 @@ static int stereo_to_mono(short *buf, int nbytes)
     return 0;
 }
 
-static int audio_resampler_open(resample_converter_handle_t self, struct resample_cfg *config)
+static int resampler_open(resampler_handle_t self, struct resampler_cfg *config)
 {
     resample_priv_handle_t priv = (resample_priv_handle_t)self;
-    int in_channels = config->in_channels;
-    int in_rate     = config->in_rate;
+    int in_channels  = config->in_channels;
+    int in_rate      = config->in_rate;
     int out_channels = config->out_channels;
-    int out_rate    = config->out_rate;
-    int bits        = config->bits;
-    int quality     = config->quality;
+    int out_rate     = config->out_rate;
+    int bits         = config->bits;
+    int quality      = config->quality;
     int ret = 0;
 
     OS_LOGD(TAG, "Open resampler: in_channels(%d), in_rate(%d), out_channels(%d), out_rate(%d), bits(%d), quality(%d)",
@@ -78,7 +78,7 @@ static int audio_resampler_open(resample_converter_handle_t self, struct resampl
         return -1;
     }
 
-    memcpy(&priv->cfg, config, sizeof(struct resample_cfg));
+    memcpy(&priv->cfg, config, sizeof(struct resampler_cfg));
     priv->enable_rate_convert = (in_rate != out_rate) ? true : false;
     priv->enable_channels_convert = (in_channels != out_channels) ? true : false;
     if (priv->enable_channels_convert) {
@@ -98,10 +98,10 @@ static int audio_resampler_open(resample_converter_handle_t self, struct resampl
     return ret;
 }
 
-static int audio_resampler_process(resample_converter_handle_t self, const short *in, int in_bytes)
+static int resampler_process(resampler_handle_t self, const short *in, int in_bytes)
 {
     resample_priv_handle_t priv = (resample_priv_handle_t)self;
-    resample_converter_handle_t converter = &(priv->converter);
+    resampler_handle_t converter = &(priv->converter);
     int in_channels  = priv->cfg.in_channels;
     int out_channels = priv->cfg.out_channels;
     int ret = 0;
@@ -175,10 +175,10 @@ static int audio_resampler_process(resample_converter_handle_t self, const short
     return ret;
 }
 
-static int audio_resampler_close(resample_converter_handle_t self)
+static int resampler_close(resampler_handle_t self)
 {
     resample_priv_handle_t priv = (resample_priv_handle_t)self;
-    resample_converter_handle_t converter = &(priv->converter);
+    resampler_handle_t converter = &(priv->converter);
 
     if (priv->enable_rate_convert)
         speex_resampler_destroy(priv->src_state);
@@ -192,20 +192,20 @@ static int audio_resampler_close(resample_converter_handle_t self)
     return 0;
 }
 
-static void audio_resampler_destroy(resample_converter_handle_t self)
+static void resampler_destroy(resampler_handle_t self)
 {
     resample_priv_handle_t priv = (resample_priv_handle_t)self;
     audio_free(priv);
 }
 
-resample_converter_handle_t audio_resampler_init()
+resampler_handle_t resampler_init()
 {
     resample_priv_handle_t handle = audio_calloc(1, sizeof(struct resample_priv));
     AUDIO_MEM_CHECK(TAG, handle, return NULL);
 
-    handle->converter.open    = audio_resampler_open;
-    handle->converter.process = audio_resampler_process;
-    handle->converter.close   = audio_resampler_close;
-    handle->converter.destroy = audio_resampler_destroy;
-    return (resample_converter_handle_t)handle;
+    handle->converter.open    = resampler_open;
+    handle->converter.process = resampler_process;
+    handle->converter.close   = resampler_close;
+    handle->converter.destroy = resampler_destroy;
+    return (resampler_handle_t)handle;
 }
