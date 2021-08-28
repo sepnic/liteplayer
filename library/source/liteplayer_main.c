@@ -58,7 +58,7 @@ struct liteplayer {
     struct http_wrapper     http_ops;
     struct sink_wrapper     sink_ops;
 
-    audio_pipeline_handle_t pipeline;
+    audio_pipeline_handle_t audio_pipeline;
     audio_element_handle_t  ael_source;
     audio_element_handle_t  ael_decoder;
     audio_element_handle_t  ael_sink;
@@ -324,10 +324,10 @@ static int media_source_get_threshold(liteplayer_handle_t handle, int threshold_
 
 static void main_pipeline_deinit(liteplayer_handle_t handle)
 {
-    if (handle->pipeline != NULL) {
+    if (handle->audio_pipeline != NULL) {
         OS_LOGD(TAG, "Destroy audio pipeline");
-        audio_pipeline_deinit(handle->pipeline);
-        handle->pipeline = NULL;
+        audio_pipeline_deinit(handle->audio_pipeline);
+        handle->audio_pipeline = NULL;
         handle->ael_source = NULL;
         handle->ael_decoder = NULL;
         handle->ael_sink = NULL;
@@ -354,8 +354,8 @@ static int main_pipeline_init(liteplayer_handle_t handle)
     {
         OS_LOGD(TAG, "[1.0] Create audio pipeline");
         audio_pipeline_cfg_t pipeline_cfg = DEFAULT_AUDIO_PIPELINE_CONFIG();
-        handle->pipeline = audio_pipeline_init(&pipeline_cfg);
-        AUDIO_MEM_CHECK(TAG, handle->pipeline, goto pipeline_fail);
+        handle->audio_pipeline = audio_pipeline_init(&pipeline_cfg);
+        AUDIO_MEM_CHECK(TAG, handle->audio_pipeline, goto pipeline_fail);
     }
 
     {
@@ -518,11 +518,11 @@ static int main_pipeline_init(liteplayer_handle_t handle)
 
     {
         OS_LOGD(TAG, "[3.0] Register all elements to audio pipeline");
-        audio_pipeline_register(handle->pipeline, handle->ael_decoder, "decoder");
-        audio_pipeline_register(handle->pipeline, handle->ael_sink, "sink_w");
+        audio_pipeline_register(handle->audio_pipeline, handle->ael_decoder, "decoder");
+        audio_pipeline_register(handle->audio_pipeline, handle->ael_sink, "sink_w");
 
         OS_LOGD(TAG, "[3.1] Link elements together source_ringbuf->decoder->sink_w");
-        audio_pipeline_link(handle->pipeline, (const char *[]){"decoder", "sink_w"}, 2);
+        audio_pipeline_link(handle->audio_pipeline, (const char *[]){"decoder", "sink_w"}, 2);
 
         OS_LOGD(TAG, "[3.2] Register event callback of all elements");
         audio_element_set_event_callback(handle->ael_decoder, audio_element_state_callback, handle);
@@ -531,7 +531,7 @@ static int main_pipeline_init(liteplayer_handle_t handle)
 
     {
         OS_LOGD(TAG, "[4.0] Run audio pipeline");
-        if (audio_pipeline_run(handle->pipeline) != 0)
+        if (audio_pipeline_run(handle->audio_pipeline) != 0)
             goto pipeline_fail;
     }
 
@@ -809,14 +809,14 @@ int liteplayer_start(liteplayer_handle_t handle)
     int ret = ESP_OK;
 
     if (handle->state == LITEPLAYER_PREPARED) {
-        if (handle->pipeline == NULL)
+        if (handle->audio_pipeline == NULL)
             ret = main_pipeline_init(handle);
     } else {
-        if (handle->pipeline == NULL)
+        if (handle->audio_pipeline == NULL)
             ret = ESP_FAIL;
     }
     if (ret == ESP_OK)
-        ret = audio_pipeline_resume(handle->pipeline, 0, 0);
+        ret = audio_pipeline_resume(handle->audio_pipeline, 0, 0);
 
     {
         os_mutex_lock(handle->state_lock);
@@ -844,7 +844,7 @@ int liteplayer_pause(liteplayer_handle_t handle)
         return ESP_FAIL;
     }
 
-    int ret = audio_pipeline_pause(handle->pipeline);
+    int ret = audio_pipeline_pause(handle->audio_pipeline);
 
     {
         os_mutex_lock(handle->state_lock);
@@ -872,7 +872,7 @@ int liteplayer_resume(liteplayer_handle_t handle)
         return ESP_FAIL;
     }
 
-    int ret = audio_pipeline_resume(handle->pipeline, 0, 0);
+    int ret = audio_pipeline_resume(handle->audio_pipeline, 0, 0);
 
     {
         os_mutex_lock(handle->state_lock);
@@ -949,12 +949,12 @@ int liteplayer_seek(liteplayer_handle_t handle, int msec)
         handle->parser_handle = NULL;
     }
 
-    if (handle->pipeline == NULL) {
+    if (handle->audio_pipeline == NULL) {
         ret = main_pipeline_init(handle);
         if (ret != ESP_OK)
             goto seek_out;
     } else {
-        ret = audio_pipeline_pause(handle->pipeline);
+        ret = audio_pipeline_pause(handle->audio_pipeline);
         if (ret != ESP_OK)
             goto seek_out;
 
@@ -1013,7 +1013,7 @@ int liteplayer_seek(liteplayer_handle_t handle, int msec)
         }
     }
 
-    ret = audio_pipeline_seek(handle->pipeline, handle->seek_offset);
+    ret = audio_pipeline_seek(handle->audio_pipeline, handle->seek_offset);
     if (ret != ESP_OK)
         goto seek_out;
 
@@ -1049,12 +1049,12 @@ int liteplayer_stop(liteplayer_handle_t handle)
         return ESP_FAIL;
     }
 
-    ret = audio_pipeline_stop(handle->pipeline);
-    ret |= audio_pipeline_wait_for_stop(handle->pipeline);
+    ret = audio_pipeline_stop(handle->audio_pipeline);
+    ret |= audio_pipeline_wait_for_stop(handle->audio_pipeline);
     audio_element_reset_state(handle->ael_decoder);
     audio_element_reset_state(handle->ael_sink);
-    audio_pipeline_reset_ringbuffer(handle->pipeline);
-    audio_pipeline_reset_items_state(handle->pipeline);
+    audio_pipeline_reset_ringbuffer(handle->audio_pipeline);
+    audio_pipeline_reset_items_state(handle->audio_pipeline);
 
 stop_out:
     {
