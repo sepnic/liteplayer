@@ -37,10 +37,10 @@ extern "C" {
 }
 
 struct resampler_cfg {
-    int  in_channels;
     int  in_rate;
-    int  out_channels;
+    int  in_channels;
     int  out_rate;
+    int  out_channels;
     int  bits;
     int  quality;
 };

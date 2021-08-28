@@ -181,7 +181,7 @@ set (LITEPLAYER_SRC
 
 # basic_demo
 add_executable(basic_demo basic_demo.c ${THIRDPARTY_SRC} ${LITEPLAYER_SRC} ${ADAPTER_SRC})
-target_link_libraries(basic_demo pthread)
+target_link_libraries(basic_demo pthread m)
 if (ENABLE_LINUX_ALSA)
 target_link_libraries(basic_demo asound)
 endif()

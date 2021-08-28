@@ -27,25 +27,44 @@
 #include <alsa/asoundlib.h>
 #include "cutils/memory_helper.h"
 #include "cutils/log_helper.h"
-#include "sink_alsa_wrapper.h"
 #include "liteplayer_debug.h"
+#include "liteplayer_resampler.h"
+#include "sink_alsa_wrapper.h"
 
 #define TAG "[liteplayer]alsa"
 
-//#define ENABLE_SOCKET_UPLOAD
+//#define ENABLE_RESAMPLER
 
-// see tools/socket_upload.py
-#define SOCKET_UPLOAD_SERVER_ADDR "127.0.0.1"
-#define SOCKET_UPLOAD_SERVER_PORT 22808
+//#define ENABLE_SOCKETUPLOAD
+
+#if defined(ENABLE_RESAMPLER)
+    #define RESAMPLER_QUALITY      8
+    #define RESAMPLER_OUT_RATE     48000
+    #define RESAMPLER_OUT_CHANNELS 2
+#endif
+
+#if defined(ENABLE_SOCKETUPLOAD)
+    // see tools/socket_upload.py
+    #define SOCKETUPLOAD_SERVER_ADDR "127.0.0.1"
+    #define SOCKETUPLOAD_SERVER_PORT 22808
+#endif
 
 struct alsa_wrapper {
     snd_pcm_t *pcm;
+    snd_output_t *log;
     snd_pcm_uframes_t chunk_size;
     snd_pcm_uframes_t buffer_size;
     snd_pcm_format_t format;
     size_t bits_per_sample;
     size_t bits_per_frame;
+
+#if defined(ENABLE_RESAMPLER)
+    resampler_handle_t resampler;
+#endif
+
+#if defined(ENABLE_SOCKETUPLOAD)
     socketupload_handle_t uploader;
+#endif
 };
 
 sink_handle_t alsa_wrapper_open(int samplerate, int channels, int bits, void *sink_priv)
@@ -56,10 +75,29 @@ sink_handle_t alsa_wrapper_open(int samplerate, int channels, int bits, void *si
     if (alsa == NULL)
         return NULL;
 
-#if defined(ENABLE_SOCKET_UPLOAD)
+#if defined(ENABLE_RESAMPLER)
+    if (samplerate != RESAMPLER_OUT_RATE || channels != RESAMPLER_OUT_CHANNELS) {
+        alsa->resampler = resampler_init();
+        if (alsa->resampler == NULL) goto fail_open;
+        struct resampler_cfg cfg = {
+            .in_channels = channels,
+            .in_rate = samplerate,
+            .out_channels = RESAMPLER_OUT_CHANNELS,
+            .out_rate = RESAMPLER_OUT_RATE,
+            .bits = bits,
+            .quality = RESAMPLER_QUALITY,
+        };
+        if (alsa->resampler->open(alsa->resampler, &cfg) != 0)
+            goto fail_open;
+        samplerate = RESAMPLER_OUT_RATE;
+        channels = RESAMPLER_OUT_CHANNELS;
+    }
+#endif
+
+#if defined(ENABLE_SOCKETUPLOAD)
     alsa->uploader = socketupload_init();
     if (alsa->uploader == NULL) goto fail_open;
-    alsa->uploader->start(alsa->uploader, SOCKET_UPLOAD_SERVER_ADDR, SOCKET_UPLOAD_SERVER_PORT);
+    alsa->uploader->start(alsa->uploader, SOCKETUPLOAD_SERVER_ADDR, SOCKETUPLOAD_SERVER_PORT);
 #endif
 
     snd_pcm_hw_params_t *hwparams = NULL;
@@ -80,6 +118,11 @@ sink_handle_t alsa_wrapper_open(int samplerate, int channels, int bits, void *si
         goto fail_open;
         break;
     }
+
+    if (snd_output_stdio_attach(&alsa->log, stderr, 0) < 0) {
+        OS_LOGE(TAG, "snd_output_stdio_attach failed");
+        goto fail_open;
+	}
 
     if (snd_pcm_open(&alsa->pcm, "default", SND_PCM_STREAM_PLAYBACK, 0) < 0) {
         OS_LOGE(TAG, "snd_pcm_open failed");
@@ -140,13 +183,29 @@ sink_handle_t alsa_wrapper_open(int samplerate, int channels, int bits, void *si
     alsa->bits_per_sample = snd_pcm_format_physical_width(alsa->format);
     alsa->bits_per_frame = alsa->bits_per_sample * channels;
 
+    snd_pcm_dump(alsa->pcm, alsa->log);
     return alsa;
 
 fail_open:
     if (alsa->pcm != NULL)
         snd_pcm_close(alsa->pcm);
-    if (alsa->uploader != NULL)
+    if (alsa->log != NULL)
+        snd_output_close(alsa->log);
+
+#if defined(ENABLE_SOCKETUPLOAD)
+    if (alsa->uploader != NULL) {
         alsa->uploader->destroy(alsa->uploader);
+        alsa->uploader = NULL;
+    }
+#endif
+
+#if defined(ENABLE_RESAMPLER)
+    if (alsa->resampler != NULL) {
+        alsa->resampler->destroy(alsa->resampler);
+        alsa->resampler = NULL;
+    }
+#endif
+
     OS_FREE(alsa);
     return NULL;
 }
@@ -154,13 +213,27 @@ fail_open:
 int alsa_wrapper_write(sink_handle_t handle, char *buffer, int size)
 {
     struct alsa_wrapper *alsa = (struct alsa_wrapper *)handle;
+
+#if defined(ENABLE_RESAMPLER)
+    if (alsa->resampler != NULL) {
+        if (alsa->resampler->process(alsa->resampler, (const short *)buffer, size) == 0) {
+            buffer = (char *)alsa->resampler->out_buf;
+            size = alsa->resampler->out_bytes;
+        } else {
+            OS_LOGE(TAG, "Failed to process resampler");
+            return -1;
+        }
+    }
+#endif
+
+#if defined(ENABLE_SOCKETUPLOAD)
+    if (alsa->uploader != NULL)
+        alsa->uploader->fill_data(alsa->uploader, buffer, size);
+#endif
+
     size_t frame_count = (size_t)(size * 8 / alsa->bits_per_frame);
     unsigned char *data = (unsigned char *)buffer;
     ssize_t ret;
-
-    if (alsa->uploader != NULL)
-        alsa->uploader->fill_data(alsa->uploader, buffer, size);
-
     while (frame_count > 0) {
         ret = snd_pcm_writei(alsa->pcm, data, frame_count);
         if (ret == -EAGAIN || (ret >= 0 && (size_t)ret < frame_count)) {
@@ -187,11 +260,24 @@ void alsa_wrapper_close(sink_handle_t handle)
 {
     OS_LOGD(TAG, "closing alsa");
     struct alsa_wrapper *alsa = (struct alsa_wrapper *)handle;
+
+    snd_output_close(alsa->log);
     snd_pcm_drain(alsa->pcm);
     snd_pcm_close(alsa->pcm);
+
+#if defined(ENABLE_SOCKETUPLOAD)
     if (alsa->uploader != NULL) {
         alsa->uploader->stop(alsa->uploader);
         alsa->uploader->destroy(alsa->uploader);
     }
+#endif
+
+#if defined(ENABLE_RESAMPLER)
+    if (alsa->resampler != NULL) {
+        alsa->resampler->close(alsa->resampler);
+        alsa->resampler->destroy(alsa->resampler);
+    }
+#endif
+
     OS_FREE(alsa);
 }

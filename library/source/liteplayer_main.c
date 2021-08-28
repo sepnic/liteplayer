@@ -592,8 +592,12 @@ int liteplayer_register_state_listener(liteplayer_handle_t handle, liteplayer_st
 
 int liteplayer_set_data_source(liteplayer_handle_t handle, const char *url, int threshold_ms)
 {
-    if (handle == NULL || url == NULL)
+    if (handle == NULL)
         return ESP_FAIL;
+
+#define DEFAULT_TTS_FIXED_URL "tts_16KHZ_mono.mp3"
+    if (url == NULL)
+        url = DEFAULT_TTS_FIXED_URL;
 
     OS_LOGI(TAG, "Set player[%s] source:%s", media_source_tag(handle->source_type), url);
 
@@ -609,7 +613,7 @@ int liteplayer_set_data_source(liteplayer_handle_t handle, const char *url, int 
     handle->threshold_ms = threshold_ms;
     handle->state_error = false;
 
-    if (strncmp(url, DEFAULT_STREAM_FIXED_URL, 11) == 0)
+    if (strncmp(url, DEFAULT_TTS_FIXED_URL, strlen(DEFAULT_TTS_FIXED_URL)) == 0)
         handle->source_type = MEDIA_SOURCE_STREAM;
     else if (strncmp(url, "http://", 7) == 0 || strncmp(url, "https://", 8) == 0)
         handle->source_type = MEDIA_SOURCE_HTTP;
@@ -646,9 +650,9 @@ int liteplayer_prepare(liteplayer_handle_t handle)
 
     if (handle->source_type == MEDIA_SOURCE_STREAM) {
         // TODO: Fixed mp3/16KHz/mono
-        handle->codec_info.codec_type = DEFAULT_STREAM_FIXED_CODEC;
-        handle->codec_info.codec_samplerate = DEFAULT_STREAM_FIXED_SAMPLERATE;
-        handle->codec_info.codec_channels = DEFAULT_STREAM_FIXED_CHANNELS;
+        handle->codec_info.codec_type = DEFAULT_TTS_FIXED_CODEC;
+        handle->codec_info.codec_samplerate = DEFAULT_TTS_FIXED_SAMPLERATE;
+        handle->codec_info.codec_channels = DEFAULT_TTS_FIXED_CHANNELS;
     } else if (handle->source_type == MEDIA_SOURCE_HTTP) {
         struct media_source_info source_info = {0};
         source_info.url = handle->url;
@@ -696,9 +700,9 @@ int liteplayer_prepare_async(liteplayer_handle_t handle)
 
     if (handle->source_type == MEDIA_SOURCE_STREAM) {
         // TODO: Fixed mp3/16KHz/mono
-        handle->codec_info.codec_type = DEFAULT_STREAM_FIXED_CODEC;
-        handle->codec_info.codec_samplerate = DEFAULT_STREAM_FIXED_SAMPLERATE;
-        handle->codec_info.codec_channels = DEFAULT_STREAM_FIXED_CHANNELS;
+        handle->codec_info.codec_type = DEFAULT_TTS_FIXED_CODEC;
+        handle->codec_info.codec_samplerate = DEFAULT_TTS_FIXED_SAMPLERATE;
+        handle->codec_info.codec_channels = DEFAULT_TTS_FIXED_CHANNELS;
     } else if (handle->source_type == MEDIA_SOURCE_HTTP) {
         struct media_source_info source_info = {0};
         source_info.url = handle->url;

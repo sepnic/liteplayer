@@ -35,10 +35,9 @@ extern "C" {
 #define DEFAULT_PLAYLIST_BUFFER_SIZE             ( 1024*32 )
 
 // stream mode definations
-#define DEFAULT_STREAM_FIXED_URL                 "/websocket/tts.mp3"
-#define DEFAULT_STREAM_FIXED_CODEC               ( AUDIO_CODEC_MP3 )
-#define DEFAULT_STREAM_FIXED_SAMPLERATE          ( 16000 )
-#define DEFAULT_STREAM_FIXED_CHANNELS            ( 1 )
+#define DEFAULT_TTS_FIXED_CODEC                  ( AUDIO_CODEC_MP3 )
+#define DEFAULT_TTS_FIXED_SAMPLERATE             ( 16000 )
+#define DEFAULT_TTS_FIXED_CHANNELS               ( 1 )
 
 // decoder element definations
 #define DEFAULT_DECODER_TASK_PRIO                ( OS_THREAD_PRIO_HIGH )
@@ -65,7 +64,7 @@ extern "C" {
 #define DEFAULT_MEDIA_PARSER_TASK_STACKSIZE      ( 1024*8 )
 #define DEFAULT_MEDIA_PARSER_BUFFER_SIZE         ( 1024*2 )
 
-// socket upload definations
+// socket upload definations, use with tools/socket_upload.py
 #define DEFAULT_SOCKET_UPLOAD_START              "GENIE_SOCKET_UPLOAD_START"
 #define DEFAULT_SOCKET_UPLOAD_END                "GENIE_SOCKET_UPLOAD_END"
 #define DEFAULT_SOCKET_UPLOAD_TASK_PRIO          ( OS_THREAD_PRIO_NORMAL )
