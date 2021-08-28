@@ -25,13 +25,17 @@
 extern "C" {
 #endif
 
-typedef void *socket_upload_handle_t;
+struct socketupload;
+typedef struct socketupload *socketupload_handle_t;
 
-socket_upload_handle_t socket_upload_start(const char *server_addr, int server_port);
+struct socketupload {
+    int (*start)(socketupload_handle_t self, const char *server_addr, int server_port);
+    int (*fill_data)(socketupload_handle_t self, char *data, int size);
+    void (*stop)(socketupload_handle_t self);
+    void (*destroy)(socketupload_handle_t self);
+};
 
-int socket_upload_fill_data(socket_upload_handle_t handle, char *data, int size);
-
-void socket_upload_stop(socket_upload_handle_t handle);
+socketupload_handle_t socketupload_init();
 
 #ifdef __cplusplus
 }

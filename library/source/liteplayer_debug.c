@@ -43,7 +43,8 @@
 
 #define TAG "[liteplayer]DEBUG"
 
-struct socket_upload_priv {
+struct socketupload_priv {
+    struct socketupload uploader;
     int fd;
     const char *addr;
     int port;
@@ -94,18 +95,21 @@ static void socket_disconnet(int fd)
         close(fd);
 }
 
-static void socket_upload_cleanup(struct socket_upload_priv *priv)
+static void socketupload_cleanup(struct socketupload_priv *priv)
 {
-    if (priv->rb != NULL)
+    if (priv->rb != NULL) {
         rb_destroy(priv->rb);
-    if (priv->addr != NULL)
+        priv->rb = NULL;
+    }
+    if (priv->addr != NULL) {
         OS_FREE(priv->addr);
-    OS_FREE(priv);
+        priv->addr = NULL;
+    }
 }
 
-static void *socket_upload_thread(void *arg)
+static void *socketupload_thread(void *arg)
 {
-    struct socket_upload_priv *priv = (struct socket_upload_priv *)arg;
+    struct socketupload_priv *priv = (struct socketupload_priv *)arg;
     int ret = 0, bytes_read = 0;
 
     priv->fd = socket_connect(priv->addr, priv->port);
@@ -155,12 +159,9 @@ thread_exit:
     return NULL;
 }
 
-socket_upload_handle_t socket_upload_start(const char *server_addr, int server_port)
+static int socketupload_start(socketupload_handle_t self, const char *server_addr, int server_port)
 {
-    struct socket_upload_priv *priv = OS_CALLOC(1, sizeof(struct socket_upload_priv));
-    if (priv == NULL)
-        return NULL;
-
+    struct socketupload_priv *priv = (struct socketupload_priv *)self;
     priv->port = server_port;
     priv->addr = OS_STRDUP(server_addr);
     if (priv->addr == NULL)
@@ -171,49 +172,68 @@ socket_upload_handle_t socket_upload_start(const char *server_addr, int server_p
         goto start_failed;
 
     struct os_thread_attr attr = {
-        .name = "ael-debug",
+        .name = "ael-socketupload",
         .priority = DEFAULT_SOCKET_UPLOAD_TASK_PRIO,
         .stacksize = DEFAULT_SOCKET_UPLOAD_TASK_STACKSIZE,
         .joinable = true,
     };
-    priv->tid = os_thread_create(&attr, socket_upload_thread, priv);
+    priv->tid = os_thread_create(&attr, socketupload_thread, priv);
     if (priv->tid == NULL)
         goto start_failed;
 
     OS_LOGD(TAG, "Socket upload start");
-    return priv;
+    return 0;
 
 start_failed:
-    socket_upload_cleanup(priv);
-    return NULL;
+    socketupload_cleanup(priv);
+    priv->stop = true;
+    return -1;
 }
 
-int socket_upload_fill_data(socket_upload_handle_t handle, char *data, int size)
+static int socketupload_fill_data(socketupload_handle_t self, char *data, int size)
 {
-    struct socket_upload_priv *priv = (struct socket_upload_priv *)handle;
-    if (priv == NULL || priv->stop || data == NULL || size <= 0)
+    struct socketupload_priv *priv = (struct socketupload_priv *)self;
+    if (priv->stop || priv->rb == NULL || data == NULL || size <= 0)
         return -1;
-
     int ret = rb_write(priv->rb, data, size, DEFAULT_SOCKET_UPLOAD_WRITE_TIMEOUT*1000);
     if (ret == RB_TIMEOUT) {
         OS_LOGE(TAG, "Timeout to write ringbuf");
     } else if (ret > 0) {
         ret = 0;
     }
-
     return ret;
 }
 
-void socket_upload_stop(socket_upload_handle_t handle)
+static void socketupload_stop(socketupload_handle_t self)
 {
-    struct socket_upload_priv *priv = (struct socket_upload_priv *)handle;
-    if (priv == NULL)
-        return;
-
+    struct socketupload_priv *priv = (struct socketupload_priv *)self;
     OS_LOGD(TAG, "Socket upload stop");
-
-    rb_done_write(priv->rb);
+    if (priv->rb != NULL)
+        rb_done_write(priv->rb);
     priv->stop = true;
-    os_thread_join(priv->tid, NULL);
-    socket_upload_cleanup(priv);
+    if (priv->tid != NULL) {
+        os_thread_join(priv->tid, NULL);
+        priv->tid = NULL;
+    }
+    socketupload_cleanup(priv);
+}
+
+static void socketupload_destroy(socketupload_handle_t self)
+{
+    struct socketupload_priv *priv = (struct socketupload_priv *)self;
+    if (!priv->stop)
+        socketupload_stop(self);
+    audio_free(self);
+}
+
+socketupload_handle_t socketupload_init()
+{
+    struct socketupload_priv *handle = audio_calloc(1, sizeof(struct socketupload_priv));
+    AUDIO_MEM_CHECK(TAG, handle, return NULL);
+
+    handle->uploader.start     = socketupload_start;
+    handle->uploader.fill_data = socketupload_fill_data;
+    handle->uploader.stop      = socketupload_stop;
+    handle->uploader.destroy   = socketupload_destroy;
+    return (socketupload_handle_t)handle;
 }

@@ -51,7 +51,7 @@ typedef struct resampler *resampler_handle_t;
 struct resampler {
     int (*open)(resampler_handle_t self, struct resampler_cfg *config);
     int (*process)(resampler_handle_t self, const short *in, int in_bytes);
-    int (*close)(resampler_handle_t self);
+    void (*close)(resampler_handle_t self);
     void (*destroy)(resampler_handle_t self);
     int out_bytes;   /*!< will update output length after process() */
     short *out_buf;  /*!< will update output pointer after process() */

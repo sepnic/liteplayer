@@ -38,6 +38,7 @@ struct resample_priv {
     int                  out_bytes;
     bool                 enable_rate_convert;
     bool                 enable_channels_convert;
+    bool                 opened;
 };
 typedef struct resample_priv *resample_priv_handle_t;
 
@@ -95,6 +96,8 @@ static int resampler_open(resampler_handle_t self, struct resampler_cfg *config)
             priv->src_state = src_state;
         }
     }
+
+    priv->opened = ret == 0 ? true : false;
     return ret;
 }
 
@@ -110,6 +113,11 @@ static int resampler_process(resampler_handle_t self, const short *in, int in_by
         converter->out_buf = (short *)in;
         converter->out_bytes = in_bytes;
         return 0;
+    }
+
+    if (!priv->opened) {
+        OS_LOGE(TAG, "Resampler is NOT opened");
+        return -1;
     }
 
     if (converter->out_buf == NULL) {
@@ -175,13 +183,17 @@ static int resampler_process(resampler_handle_t self, const short *in, int in_by
     return ret;
 }
 
-static int resampler_close(resampler_handle_t self)
+static void resampler_close(resampler_handle_t self)
 {
     resample_priv_handle_t priv = (resample_priv_handle_t)self;
     resampler_handle_t converter = &(priv->converter);
 
-    if (priv->enable_rate_convert)
-        speex_resampler_destroy(priv->src_state);
+    if (priv->enable_channels_convert) {
+        if (priv->src_state != NULL) {
+            speex_resampler_destroy(priv->src_state);
+            priv->src_state = NULL;
+        }
+    }
 
     if (priv->enable_channels_convert || priv->enable_rate_convert) {
         if (converter->out_buf != NULL) {
@@ -189,12 +201,15 @@ static int resampler_close(resampler_handle_t self)
             converter->out_buf = NULL;
         }
     }
-    return 0;
+
+    priv->opened = false;
 }
 
 static void resampler_destroy(resampler_handle_t self)
 {
     resample_priv_handle_t priv = (resample_priv_handle_t)self;
+    if (priv->opened)
+        resampler_close(self);
     audio_free(priv);
 }
 

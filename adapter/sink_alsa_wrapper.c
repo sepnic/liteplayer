@@ -28,8 +28,15 @@
 #include "cutils/memory_helper.h"
 #include "cutils/log_helper.h"
 #include "sink_alsa_wrapper.h"
+#include "liteplayer_debug.h"
 
 #define TAG "[liteplayer]alsa"
+
+//#define ENABLE_SOCKET_UPLOAD
+
+// see tools/socket_upload.py
+#define SOCKET_UPLOAD_SERVER_ADDR "127.0.0.1"
+#define SOCKET_UPLOAD_SERVER_PORT 22808
 
 struct alsa_wrapper {
     snd_pcm_t *pcm;
@@ -38,6 +45,7 @@ struct alsa_wrapper {
     snd_pcm_format_t format;
     size_t bits_per_sample;
     size_t bits_per_frame;
+    socketupload_handle_t uploader;
 };
 
 sink_handle_t alsa_wrapper_open(int samplerate, int channels, int bits, void *sink_priv)
@@ -47,6 +55,12 @@ sink_handle_t alsa_wrapper_open(int samplerate, int channels, int bits, void *si
         (struct alsa_wrapper *)OS_CALLOC(1, sizeof(struct alsa_wrapper));
     if (alsa == NULL)
         return NULL;
+
+#if defined(ENABLE_SOCKET_UPLOAD)
+    alsa->uploader = socketupload_init();
+    if (alsa->uploader == NULL) goto fail_open;
+    alsa->uploader->start(alsa->uploader, SOCKET_UPLOAD_SERVER_ADDR, SOCKET_UPLOAD_SERVER_PORT);
+#endif
 
     snd_pcm_hw_params_t *hwparams = NULL;
     uint32_t exact_rate = (uint32_t)samplerate;
@@ -131,6 +145,8 @@ sink_handle_t alsa_wrapper_open(int samplerate, int channels, int bits, void *si
 fail_open:
     if (alsa->pcm != NULL)
         snd_pcm_close(alsa->pcm);
+    if (alsa->uploader != NULL)
+        alsa->uploader->destroy(alsa->uploader);
     OS_FREE(alsa);
     return NULL;
 }
@@ -141,6 +157,9 @@ int alsa_wrapper_write(sink_handle_t handle, char *buffer, int size)
     size_t frame_count = (size_t)(size * 8 / alsa->bits_per_frame);
     unsigned char *data = (unsigned char *)buffer;
     ssize_t ret;
+
+    if (alsa->uploader != NULL)
+        alsa->uploader->fill_data(alsa->uploader, buffer, size);
 
     while (frame_count > 0) {
         ret = snd_pcm_writei(alsa->pcm, data, frame_count);
@@ -170,5 +189,9 @@ void alsa_wrapper_close(sink_handle_t handle)
     struct alsa_wrapper *alsa = (struct alsa_wrapper *)handle;
     snd_pcm_drain(alsa->pcm);
     snd_pcm_close(alsa->pcm);
+    if (alsa->uploader != NULL) {
+        alsa->uploader->stop(alsa->uploader);
+        alsa->uploader->destroy(alsa->uploader);
+    }
     OS_FREE(alsa);
 }
