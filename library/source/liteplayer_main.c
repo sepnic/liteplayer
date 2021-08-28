@@ -197,19 +197,19 @@ static int audio_element_state_callback(audio_element_handle_t el, audio_event_i
                 audio_element_getinfo(handle->el_decoder, &decoder_info);
                 OS_LOGD(TAG, "[ %s-%s ] Receive decoder info: samplerate=%d, ch=%d, bits=%d",
                         media_source_tag(handle->source_type), audio_element_get_tag(el),
-                        decoder_info.out_samplerate, decoder_info.out_channels, decoder_info.bits);
+                        decoder_info.samplerate, decoder_info.channels, decoder_info.bits);
 
                 audio_element_info_t sink_info = {0};
                 audio_element_getinfo(handle->el_sink, &sink_info);
-                if (sink_info.in_samplerate != decoder_info.out_samplerate ||
-                    sink_info.in_channels != decoder_info.out_channels ||
+                if (sink_info.samplerate != decoder_info.samplerate ||
+                    sink_info.channels != decoder_info.channels ||
                     sink_info.bits != decoder_info.bits) {
                     OS_LOGW(TAG, "Forcely update sink samplerate(%d>>%d), channels(%d>>%d), bits(%d>>%d)",
-                             sink_info.in_samplerate, decoder_info.out_samplerate,
-                             sink_info.in_channels, decoder_info.out_channels,
+                             sink_info.samplerate, decoder_info.samplerate,
+                             sink_info.channels, decoder_info.channels,
                              sink_info.bits, decoder_info.bits);
-                    sink_info.in_channels = decoder_info.out_channels;
-                    sink_info.in_samplerate = decoder_info.out_samplerate;
+                    sink_info.channels = decoder_info.channels;
+                    sink_info.samplerate = decoder_info.samplerate;
                     sink_info.bits = decoder_info.bits;
                     audio_element_setinfo(handle->el_sink, &sink_info);
                 }
@@ -218,9 +218,9 @@ static int audio_element_state_callback(audio_element_handle_t el, audio_event_i
                 audio_element_getinfo(handle->el_sink, &sink_info);
                 OS_LOGD(TAG, "[ %s-%s ] Receive sink info: samplerate=%d, ch=%d, bits=%d",
                          media_source_tag(handle->source_type), audio_element_get_tag(el),
-                         sink_info.out_samplerate, sink_info.out_channels, sink_info.bits);
-                handle->sink_samplerate = sink_info.out_samplerate;
-                handle->sink_channels = sink_info.out_channels;
+                         sink_info.samplerate, sink_info.channels, sink_info.bits);
+                handle->sink_samplerate = sink_info.samplerate;
+                handle->sink_channels = sink_info.channels;
                 handle->sink_bits = sink_info.bits;
             }
         } else if (msg->cmd == AEL_MSG_CMD_REPORT_POSITION) {
@@ -365,10 +365,8 @@ static int main_pipeline_init(liteplayer_handle_t handle)
         sink_cfg.task_stack               = DEFAULT_SINK_TASK_STACKSIZE;
         sink_cfg.out_rb_size              = DEFAULT_SINK_RINGBUF_SIZE;
         sink_cfg.buf_sz                   = DEFAULT_SINK_BUFFER_SIZE;
-        sink_cfg.in_channels              = handle->codec_info.codec_channels;
-        sink_cfg.in_samplerate            = handle->codec_info.codec_samplerate;
-        sink_cfg.out_samplerate           = DEFAULT_SINK_OUT_RATE;
-        sink_cfg.out_channels             = DEFAULT_SINK_OUT_CHANNELS;
+        sink_cfg.channels                 = handle->codec_info.codec_channels;
+        sink_cfg.samplerate               = handle->codec_info.codec_samplerate;
 #if defined(CONFIG_SINK_FIXED_S16LE)
         sink_cfg.bits                     = 16;
 #else
@@ -402,8 +400,8 @@ static int main_pipeline_init(liteplayer_handle_t handle)
 
         audio_element_info_t info;
         audio_element_getinfo(handle->el_sink, &info);
-        info.in_channels = handle->codec_info.codec_channels;
-        info.in_samplerate = handle->codec_info.codec_samplerate;
+        info.channels = handle->codec_info.codec_channels;
+        info.samplerate = handle->codec_info.codec_samplerate;
         info.bits = sink_cfg.bits;
         audio_element_setinfo(handle->el_sink, &info);
     }

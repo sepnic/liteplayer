@@ -42,10 +42,8 @@ struct sink_stream_cfg {
     int             out_rb_size;    /*!< Size of output ringbuffer */
     int             buf_sz;         /*!< Audio Element Buffer size */
 
-    int             in_samplerate;
-    int             in_channels;
-    int             out_samplerate;
-    int             out_channels;
+    int             samplerate;
+    int             channels;
     int             bits;
     void           *sink_priv;
     sink_handle_t (*sink_open)(int samplerate, int channels, int bits, void *sink_priv);
@@ -66,8 +64,8 @@ struct sink_stream_cfg {
     .out_rb_size    = SINK_STREAM_RINGBUFFER_SIZE,  \
     .buf_sz         = SINK_STREAM_BUF_SIZE,         \
     .sink_priv      = NULL,                         \
-    .out_samplerate = SINK_STREAM_SAMPLE_RATE,      \
-    .out_channels   = SINK_STREAM_CHANNELS,         \
+    .samplerate     = SINK_STREAM_SAMPLE_RATE,      \
+    .channels       = SINK_STREAM_CHANNELS,         \
 }
 
 /**

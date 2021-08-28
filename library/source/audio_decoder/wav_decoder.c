@@ -202,10 +202,10 @@ static int drwav_run(wav_decoder_handle_t decoder)
 
         if (!decoder->parsed_header) {
             audio_element_info_t info = {0};
-            info.out_samplerate = decoder->drwav.sampleRate;
-            info.out_channels   = decoder->drwav.channels;
+            info.samplerate = decoder->drwav.sampleRate;
+            info.channels   = decoder->drwav.channels;
 #if defined(CONFIG_SINK_FIXED_S16LE)
-            info.bits           = 16;
+            info.bits       = 16;
 #else
             switch (decoder->drwav.bitsPerSample) {
             case 16:
@@ -226,7 +226,7 @@ static int drwav_run(wav_decoder_handle_t decoder)
             audio_element_setinfo(decoder->el, &info);
             audio_element_report_info(decoder->el);
 
-            OS_LOGV(TAG,"Found wav header: SR=%d, CH=%d, BITS=%d", info.out_samplerate, info.out_channels, info.bits);
+            OS_LOGV(TAG,"Found wav header: SR=%d, CH=%d, BITS=%d", info.samplerate, info.channels, info.bits);
             decoder->bits = info.bits;
             decoder->parsed_header = true;
         }

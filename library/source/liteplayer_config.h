@@ -51,8 +51,6 @@ extern "C" {
 #define DEFAULT_SINK_TASK_STACKSIZE              ( 1024*16 )
 #define DEFAULT_SINK_RINGBUF_SIZE                ( 1024*8 )
 #define DEFAULT_SINK_BUFFER_SIZE                 ( 1024*2 )
-#define DEFAULT_SINK_OUT_RATE                    ( 48000 ) // force sink rate if ENABLE_SRC
-#define DEFAULT_SINK_OUT_CHANNELS                ( 2 ) // force sink channels if ENABLE_SRC
 
 // media source definations
 #define DEFAULT_MEDIA_SOURCE_TASK_PRIO           ( OS_THREAD_PRIO_HIGH )

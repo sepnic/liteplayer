@@ -405,10 +405,10 @@ decode_data:
 
     if (!decoder->parsed_header) {
         audio_element_info_t info = {0};
-        info.out_samplerate = frame->header.samplerate;
-        info.out_channels   = MAD_NCHANNELS(&(frame->header));
-        info.bits           = 16;
-        OS_LOGV(TAG,"Found mp3 header: SR=%d, CH=%d", info.out_samplerate, info.out_channels);
+        info.samplerate = frame->header.samplerate;
+        info.channels   = MAD_NCHANNELS(&(frame->header));
+        info.bits       = 16;
+        OS_LOGV(TAG,"Found mp3 header: SR=%d, CH=%d, BITS=%d", info.samplerate, info.channels, info.bits);
         audio_element_setinfo(decoder->el, &info);
         audio_element_report_info(decoder->el);
         decoder->parsed_header = true;

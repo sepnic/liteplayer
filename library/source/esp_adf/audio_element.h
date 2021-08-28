@@ -116,10 +116,8 @@ typedef struct {
  * @brief Audio Element informations
  */
 typedef struct {
-    int in_samplerate;                          /*!< Input samplerate in Hz */
-    int in_channels;                            /*!< Input number of audio channel, mono is 1, stereo is 2 */
-    int out_samplerate;                         /*!< Output samplerate in Hz */
-    int out_channels;                           /*!< Output number of audio channel, mono is 1, stereo is 2 */
+    int samplerate;                             /*!< Output samplerate in Hz */
+    int channels;                               /*!< Output number of audio channel, mono is 1, stereo is 2 */
     int bits;                                   /*!< Bit wide (8, 16, 24, 32 bits) */
     long long byte_pos;                         /*!< The current position (in bytes) being processed for an element */
     long long total_bytes;                      /*!< The total bytes for an element */
@@ -129,10 +127,8 @@ typedef struct {
 } audio_element_info_t;
 
 #define AUDIO_ELEMENT_INFO_DEFAULT()    {   \
-    .in_samplerate = 44100,                 \
-    .in_channels = 2,                       \
-    .out_samplerate = 44100,                \
-    .out_channels = 2,                      \
+    .samplerate = 44100,                    \
+    .channels = 2,                          \
     .bits = 16,                             \
     .uri = NULL,                            \
 }

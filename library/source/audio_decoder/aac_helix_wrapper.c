@@ -96,13 +96,13 @@ fill_data:
 
     if (!decoder->parsed_header && frame_info.sampRateOut != 0 && frame_info.nChans != 0) {
         audio_element_info_t info = {0};
-        info.out_samplerate = frame_info.sampRateOut;
-        info.out_channels   = frame_info.nChans;
-        info.bits           = frame_info.bitsPerSample;
+        info.samplerate = frame_info.sampRateOut;
+        info.channels   = frame_info.nChans;
+        info.bits       = frame_info.bitsPerSample;
         audio_element_setinfo(decoder->el, &info);
         audio_element_report_info(decoder->el);
 
-        OS_LOGV(TAG,"Found aac header: SR=%d, CH=%d", info.out_samplerate, info.out_channels);
+        OS_LOGV(TAG,"Found aac header: SR=%d, CH=%d, BITS=%d", info.samplerate, info.channels, info.bits);
         decoder->parsed_header = true;
     }
     return 0;
@@ -201,13 +201,13 @@ fill_data:
 
     if (!decoder->parsed_header && frame_info.sampRateOut != 0 && frame_info.nChans != 0) {
         audio_element_info_t info = {0};
-        info.out_samplerate = frame_info.sampRateOut;
-        info.out_channels   = frame_info.nChans;
-        info.bits           = frame_info.bitsPerSample;
+        info.samplerate = frame_info.sampRateOut;
+        info.channels   = frame_info.nChans;
+        info.bits       = frame_info.bitsPerSample;
         audio_element_setinfo(decoder->el, &info);
         audio_element_report_info(decoder->el);
 
-        OS_LOGV(TAG,"Found aac header: SR=%d, CH=%d", info.out_samplerate, info.out_channels);
+        OS_LOGV(TAG,"Found aac header: SR=%d, CH=%d, BITS=%d", info.samplerate, info.channels, info.bits);
         decoder->parsed_header = true;
     }
     return 0;

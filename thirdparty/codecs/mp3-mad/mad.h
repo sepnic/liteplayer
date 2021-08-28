@@ -24,7 +24,7 @@
 extern "C" {
 # endif
 
-# define CONFIG_MAD_FPM_DEFAULT
+//# define CONFIG_MAD_FPM_DEFAULT
 
 
 # define OPT_SPEED

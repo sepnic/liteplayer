@@ -100,13 +100,13 @@ fill_data:
 
     if (!decoder->parsed_header) {
         audio_element_info_t info = {0};
-        info.out_samplerate = frame_info->sampleRate;
-        info.out_channels   = frame_info->numChannels;
-        info.bits           = 16; // todo: always 16 bits per sample?
+        info.samplerate = frame_info->sampleRate;
+        info.channels   = frame_info->numChannels;
+        info.bits       = 16; // todo: always 16 bits per sample?
         audio_element_setinfo(decoder->el, &info);
         audio_element_report_info(decoder->el);
 
-        OS_LOGV(TAG,"Found aac header: SR=%d, CH=%d", info.out_samplerate, info.out_channels);
+        OS_LOGV(TAG,"Found aac header: SR=%d, CH=%d, BITS=%d", info.samplerate, info.channels, info.bits);
         decoder->parsed_header = true;
     }
     return 0;
@@ -207,13 +207,13 @@ int m4a_wrapper_run(m4a_decoder_handle_t decoder)
 
     if (!decoder->parsed_header) {
         audio_element_info_t info = {0};
-        info.out_samplerate = frame_info->sampleRate;
-        info.out_channels   = frame_info->numChannels;
-        info.bits           = 16;
+        info.samplerate = frame_info->sampleRate;
+        info.channels   = frame_info->numChannels;
+        info.bits       = 16;
         audio_element_setinfo(decoder->el, &info);
         audio_element_report_info(decoder->el);
 
-        OS_LOGV(TAG,"Found aac header: SR=%d, CH=%d", info.out_samplerate, info.out_channels);
+        OS_LOGV(TAG,"Found aac header: SR=%d, CH=%d, BITS=%d", info.samplerate, info.channels, info.bits);
         decoder->parsed_header = true;
     }
     return 0;

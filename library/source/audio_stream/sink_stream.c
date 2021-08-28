@@ -30,23 +30,12 @@
 
 #define TAG "[liteplayer]SINK_STREAM"
 
-//#define ENABLE_SRC
-
-#if !defined(CONFIG_SRC_QUALITY)
-#define CONFIG_SRC_QUALITY      8
-#endif
-
 #define SINK_INPUT_TIMEOUT_MAX  50
 
 struct sink_stream {
     struct sink_stream_cfg config;
     sink_handle_t out;
     bool first_write;
-#if defined(ENABLE_SRC)
-    resample_converter_handle_t resampler;
-    bool resampler_inited;
-    bool resample_opened;
-#endif
 };
 
 static esp_err_t sink_stream_open(audio_element_handle_t self)
@@ -56,40 +45,11 @@ static esp_err_t sink_stream_open(audio_element_handle_t self)
 
     OS_LOGV(TAG, "Open sink stream");
 
-#if defined(ENABLE_SRC)
-    if (!sink->resampler_inited) {
-        OS_LOGI(TAG, "Input: channels=%d, rate=%d, output:channels=%d, rate=%d",
-                 config->in_channels, config->in_samplerate, config->out_channels, config->out_samplerate);
-        if (config->in_samplerate != config->out_samplerate || config->in_channels != config->out_channels) {
-            struct resample_cfg cfg;
-            cfg.in_channels = config->in_channels;
-            cfg.in_rate = config->in_samplerate;
-            cfg.out_channels = config->out_channels;
-            cfg.out_rate = config->out_samplerate;
-            cfg.bits = config->bits;
-            cfg.quality = CONFIG_SRC_QUALITY;
-            if (sink->resampler && sink->resampler->open(sink->resampler, &cfg) == 0) {
-                sink->resample_opened = true;
-            } else {
-                OS_LOGE(TAG, "Failed to open resampler");
-                return AEL_IO_FAIL;
-            }
-        }
-        sink->resampler_inited = true;
-    }
-#endif
-
     if (sink->out == NULL) {
-#if defined(ENABLE_SRC)
-        // nothing
-#else
-        config->out_samplerate = config->in_samplerate;
-        config->out_channels = config->in_channels;
-#endif
         OS_LOGI(TAG, "Open sink stream out: rate:%d, channels:%d, bits:%d",
-                config->out_samplerate, config->out_channels, config->bits);
+                config->samplerate, config->channels, config->bits);
         if (config->sink_open)
-            sink->out = config->sink_open(config->out_samplerate, config->out_channels, config->bits, config->sink_priv);
+            sink->out = config->sink_open(config->samplerate, config->channels, config->bits, config->sink_priv);
         if (sink->out == NULL) {
             OS_LOGE(TAG, "Failed to open sink out");
             return AEL_IO_FAIL;
@@ -105,14 +65,6 @@ static esp_err_t sink_stream_close(audio_element_handle_t self)
     struct sink_stream_cfg *config = &sink->config;
 
     OS_LOGV(TAG, "Close sink stream");
-
-#if defined(ENABLE_SRC)
-    if (sink->resample_opened && sink->resampler) {
-        sink->resampler->close(sink->resampler);
-        sink->resampler_inited = false;
-        sink->resample_opened = false;
-    }
-#endif
 
     if (config->sink_close && sink->out != NULL) {
         config->sink_close(sink->out);
@@ -138,23 +90,20 @@ static int sink_stream_write(audio_element_handle_t self, char *buffer, int len,
         audio_element_info_t info = {0};
         audio_element_getinfo(self, &info);
         // If samplerate not matched with decoder info, reopen sink
-        if ((info.in_samplerate != 0 && config->in_samplerate != info.in_samplerate) ||
-            (info.in_channels != 0 && config->in_channels != info.in_channels) ||
+        if ((info.samplerate != 0 && config->samplerate != info.samplerate) ||
+            (info.channels != 0 && config->channels != info.channels) ||
             (info.bits != 0 && config->bits != info.bits)) {
             OS_LOGW(TAG, "sink rate:ch:bit (%d:%d:%d) not match decoder rate:ch:bit (%d:%d:%d), reopen sink",
-                     config->in_samplerate, config->in_channels, config->bits,
-                     info.in_samplerate, info.in_samplerate, info.bits);
-            config->in_samplerate = info.in_samplerate;
-            config->in_channels = info.in_channels;
+                    config->samplerate, config->channels, config->bits, info.samplerate, info.channels, info.bits);
+            config->samplerate = info.samplerate;
+            config->channels = info.channels;
             config->bits = info.bits;
             sink_stream_close(self);
             sink_stream_open(self);
         }
         // Update element info once
-        info.in_samplerate = config->in_samplerate;
-        info.in_channels = config->in_channels;
-        info.out_samplerate = config->out_samplerate;
-        info.out_channels = config->out_channels;
+        info.samplerate = config->samplerate;
+        info.channels = config->channels;
         info.bits = config->bits;
         audio_element_setinfo(self, &info);
         audio_element_report_info(self);
@@ -190,19 +139,6 @@ static int sink_stream_process(audio_element_handle_t self, char *in_buffer, int
     int r_size = audio_element_input(self, in_buffer, in_len);
     int w_size = 0;
     if (r_size > 0) {
-#if defined(ENABLE_SRC)
-        struct sink_stream *sink = (struct sink_stream *)audio_element_getdata(self);
-        if (sink->resample_opened && sink->resampler) {
-            int ret = sink->resampler->process(sink->resampler, (const short *)in_buffer, r_size);
-            if (ret == 0) {
-                in_buffer = (char *)sink->resampler->out_buf;
-                r_size = sink->resampler->out_bytes;
-            } else {
-                OS_LOGE(TAG, "Failed to process resampler");
-                return AEL_IO_FAIL;
-            }
-        }
-#endif
         w_size = audio_element_output(self, in_buffer, r_size);
     } else {
         w_size = r_size;
@@ -226,11 +162,6 @@ static esp_err_t sink_stream_destroy(audio_element_handle_t self)
     struct sink_stream_cfg *config = &sink->config;
 
     OS_LOGV(TAG, "Destroy sink stream");
-
-#if defined(ENABLE_SRC)
-    if (sink->resampler)
-        sink->resampler->destroy(sink->resampler);
-#endif
 
     if (config->sink_close && sink->out != NULL) {
         config->sink_close(sink->out);
@@ -270,12 +201,6 @@ audio_element_handle_t sink_stream_init(struct sink_stream_cfg *config)
         return NULL;
     }
     audio_element_setdata(el, sink);
-
-#if defined(ENABLE_SRC)
-    sink->resampler = audio_resampler_init();
-    sink->resampler_inited = false;
-    sink->resample_opened = false;
-#endif
 
     audio_element_set_input_timeout(el, SINK_INPUT_TIMEOUT_MAX);
     return el;
