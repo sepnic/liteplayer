@@ -159,7 +159,6 @@ endif()
 set (LITEPLAYER_SRC
     ${TOP_DIR}/library/source/esp_adf/audio_element.c
     ${TOP_DIR}/library/source/esp_adf/audio_event_iface.c
-    ${TOP_DIR}/library/source/esp_adf/audio_pipeline.c
     ${TOP_DIR}/library/source/audio_decoder/mp3_pvmp3_wrapper.c
     ${TOP_DIR}/library/source/audio_decoder/mp3_decoder.c
     ${TOP_DIR}/library/source/audio_decoder/aac_fdk_wrapper.c

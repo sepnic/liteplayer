@@ -39,7 +39,6 @@ LOCAL_SRC_FILES := \
     ${THIRDPARTY_FILES} \
     ${TOP_DIR}/library/source/esp_adf/audio_element.c \
     ${TOP_DIR}/library/source/esp_adf/audio_event_iface.c \
-    ${TOP_DIR}/library/source/esp_adf/audio_pipeline.c \
     ${TOP_DIR}/library/source/audio_decoder/mp3_pvmp3_wrapper.c \
     ${TOP_DIR}/library/source/audio_decoder/mp3_decoder.c \
     ${TOP_DIR}/library/source/audio_decoder/aac_fdk_wrapper.c \
@@ -52,10 +51,8 @@ LOCAL_SRC_FILES := \
     ${TOP_DIR}/library/source/audio_extractor/wav_extractor.c \
     ${TOP_DIR}/library/source/liteplayer_source.c \
     ${TOP_DIR}/library/source/liteplayer_parser.c \
-    ${TOP_DIR}/library/source/liteplayer_debug.c \
     ${TOP_DIR}/library/source/liteplayer_main.c \
-    ${TOP_DIR}/library/source/liteplayer_manager.c \
-    ${TOP_DIR}/library/source/liteplayer_resampler.c
+    ${TOP_DIR}/library/source/liteplayer_manager.c
 LOCAL_C_INCLUDES += \
     ${TOP_DIR}/library/include \
     ${TOP_DIR}/library/source \

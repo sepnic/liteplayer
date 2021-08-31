@@ -971,25 +971,6 @@ esp_err_t audio_element_set_write_cb(audio_element_handle_t el, stream_callback_
     return ESP_FAIL;
 }
 
-esp_err_t audio_element_wait_for_stop(audio_element_handle_t el)
-{
-    if (el->state == AEL_STATE_STOPPED
-        || el->state == AEL_STATE_INIT) {
-        OS_LOGV(TAG, "[%s] Element already stopped, no need waiting", el->tag);
-        return ESP_OK;
-    }
-    esp_err_t ret = ESP_FAIL;
-    os_mutex_lock(el->state_lock);
-    while ((el->state_event & STOPPED_BIT) == 0) {
-        if (os_cond_timedwait(el->state_cond, el->state_lock, DEFAULT_WAIT_TIMEOUT_MS*1000) != 0)
-            break;
-    }
-    if ((el->state_event & STOPPED_BIT) != 0)
-        ret = ESP_OK;
-    os_mutex_unlock(el->state_lock);
-    return ret;
-}
-
 esp_err_t audio_element_wait_for_buffer(audio_element_handle_t el, int size_expect, int timeout_ms)
 {
     esp_err_t ret = ESP_FAIL;
@@ -1126,7 +1107,7 @@ _element_init_failed:
 esp_err_t audio_element_deinit(audio_element_handle_t el)
 {
     audio_element_stop(el);
-    audio_element_wait_for_stop(el);
+    audio_element_wait_for_stop_ms(el, AUDIO_MAX_DELAY);
     audio_element_terminate(el);
     os_mutex_destroy(el->state_lock);
     os_cond_destroy(el->state_cond);

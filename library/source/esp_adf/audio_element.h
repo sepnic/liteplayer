@@ -336,18 +336,6 @@ esp_err_t audio_element_stop(audio_element_handle_t el);
 
 /**
  * @brief      After the `audio_element_stop` function is called, the Element task will perform some abort procedures.
- *             This function will be blocked (Time is DEFAULT_WAIT_TIMEOUT_MS) until Element Task has done and exit.
- *
- * @param[in]  el    The audio element handle
- *
- * @return
- *     - ESP_OK
- *     - ESP_FAIL
- */
-esp_err_t audio_element_wait_for_stop(audio_element_handle_t el);
-
-/**
- * @brief      After the `audio_element_stop` function is called, the Element task will perform some abort procedures.
  *             The maximum amount of time should block waiting for Element task has stopped.
  *
  * @param[in]  el               The audio element handle
