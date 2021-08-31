@@ -468,13 +468,15 @@ esp_err_t audio_pipeline_wait_for_stop(audio_pipeline_handle_t pipeline)
 
 static esp_err_t _pipeline_rb_linked(audio_pipeline_handle_t pipeline, audio_element_handle_t el, bool first, bool last)
 {
-    static ringbuf_handle rb;
+    static ringbuf_handle rb = NULL;
     ringbuf_item_t *rb_item;
     if (last) {
-        audio_element_set_input_ringbuf(el, rb);
+        if (rb != NULL)
+            audio_element_set_input_ringbuf(el, rb);
     } else {
         if (!first) {
-            audio_element_set_input_ringbuf(el, rb);
+            if (rb != NULL)
+                audio_element_set_input_ringbuf(el, rb);
         }
         bool _success = (
                             (rb_item = audio_calloc(1, sizeof(ringbuf_item_t))) &&
@@ -482,7 +484,8 @@ static esp_err_t _pipeline_rb_linked(audio_pipeline_handle_t pipeline, audio_ele
                         );
 
         AUDIO_MEM_CHECK(TAG, _success, {
-            audio_free(rb_item);
+            if (rb_item) audio_free(rb_item);
+            if (rb) rb_destroy(rb);
             return ESP_ERR_NO_MEM;
         });
 

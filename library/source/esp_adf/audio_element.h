@@ -73,7 +73,7 @@ typedef enum {
     AEL_MSG_CMD_SEEK                = 6,
     AEL_MSG_CMD_DESTROY             = 7,
     AEL_MSG_CMD_REPORT_STATUS       = 8,
-    AEL_MSG_CMD_REPORT_MUSIC_INFO   = 9,
+    AEL_MSG_CMD_REPORT_INFO         = 9,
     AEL_MSG_CMD_REPORT_CODEC_FMT    = 10,
     AEL_MSG_CMD_REPORT_POSITION     = 11,
 } audio_element_msg_cmd_t;
@@ -136,8 +136,14 @@ typedef struct {
 typedef esp_err_t (*io_func)(audio_element_handle_t self);
 typedef esp_err_t (*seek_func)(audio_element_handle_t self, long long offset);
 typedef int (*process_func)(audio_element_handle_t self, char *el_buffer, int el_buf_len);
-typedef int (*stream_func)(audio_element_handle_t self, char *buffer, int len, int timeout_ms, void *context);
 typedef esp_err_t (*event_cb_func)(audio_element_handle_t el, audio_event_iface_msg_t *event, void *ctx);
+
+typedef struct stream_callback {
+    int (*open)(audio_element_handle_t self, void *ctx);
+    void (*close)(audio_element_handle_t self, void *ctx);
+    int (*fill)(audio_element_handle_t self, char *buffer, int len, int timeout_ms, void *ctx);
+    void *ctx;
+} stream_callback_t;
 
 /**
  * @brief Audio Element configurations.
@@ -152,8 +158,8 @@ typedef struct {
     process_func        process;          /*!< Process callback function */
     io_func             close;            /*!< Close callback function */
     io_func             destroy;          /*!< Destroy callback function */
-    stream_func         read;             /*!< Read callback function */
-    stream_func         write;            /*!< Write callback function */
+    stream_callback_t   *reader;          /*!< Read callback function */
+    stream_callback_t   *writer;          /*!< Write callback function */
     int                 buffer_len;       /*!< Buffer length use for an Element */
     int                 task_stack;       /*!< Element task stack */
     int                 task_prio;        /*!< Element task priority (based on freeRTOS priority) */
@@ -696,7 +702,7 @@ int audio_element_output_chunk(audio_element_handle_t el, char *buffer, int writ
  *     - ESP_OK
  *     - ESP_FAIL
  */
-esp_err_t audio_element_set_read_cb(audio_element_handle_t el, stream_func fn, void *context);
+esp_err_t audio_element_set_read_cb(audio_element_handle_t el, stream_callback_t *reader);
 
 /**
  * @brief     This API allows the application to set a write callback for the last audio_element in the pipeline for
@@ -713,7 +719,7 @@ esp_err_t audio_element_set_read_cb(audio_element_handle_t el, stream_func fn, v
  *     - ESP_OK
  *     - ESP_FAIL
  */
-esp_err_t audio_element_set_write_cb(audio_element_handle_t el, stream_func fn, void *context);
+esp_err_t audio_element_set_write_cb(audio_element_handle_t el, stream_callback_t *writer);
 
 /**
  * @brief      Get External queue of Emitter.

@@ -39,14 +39,6 @@
 #define DEFAULT_WAIT_TIMEOUT_MS (3000) // ms
 
 /**
- *  I/O Element Abstract
- */
-typedef struct io_callback {
-    stream_func                 cb;
-    void                        *ctx;
-} io_callback_t;
-
-/**
  *  Audio Callback Abstract
  */
 typedef struct audio_callback {
@@ -79,12 +71,12 @@ struct audio_element {
     io_type_t                   read_type;
     union {
         ringbuf_handle          input_rb;
-        io_callback_t           read_cb;
+        stream_callback_t       read_cb;
     } in;
     io_type_t                   write_type;
     union {
         ringbuf_handle          output_rb;
-        io_callback_t           write_cb;
+        stream_callback_t       write_cb;
     } out;
 
     audio_multi_rb_t            multi_in;
@@ -183,6 +175,30 @@ static esp_err_t audio_element_msg_sendout(audio_element_handle_t el, audio_even
 
 static esp_err_t audio_element_process_open(audio_element_handle_t el)
 {
+    if (el->is_open) {
+        OS_LOGW(TAG, "[%s] el has been already opened", el->tag);
+        return ESP_OK;
+    }
+
+    if (el->read_type == IO_TYPE_CB) {
+        if (el->in.read_cb.open != NULL) {
+            OS_LOGD(TAG, "[%s] opening input reader", el->tag);
+            if (el->in.read_cb.open(el, el->in.read_cb.ctx) != 0) {
+                OS_LOGE(TAG, "[%s] open input reader failed", el->tag);
+                goto open_fail;
+            }
+        }
+    }
+    if (el->write_type == IO_TYPE_CB) {
+        if (el->out.write_cb.open != NULL) {
+            OS_LOGD(TAG, "[%s] opening output writer", el->tag);
+            if (el->out.write_cb.open(el, el->out.write_cb.ctx) != 0) {
+                OS_LOGE(TAG, "[%s] open output writer failed", el->tag);
+                goto open_fail;
+            }
+        }
+    }
+
     if (el->open == NULL) {
         el->is_open = true;
         audio_element_set_state_event(el, STARTED_BIT);
@@ -196,6 +212,8 @@ static esp_err_t audio_element_process_open(audio_element_handle_t el)
         audio_element_set_state_event(el, STARTED_BIT);
         return ESP_OK;
     }
+
+open_fail:
     OS_LOGE(TAG, "[%s] AEL_STATUS_ERROR_OPEN", el->tag);
     audio_element_report_status(el, AEL_STATUS_ERROR_OPEN);
     audio_element_cmd_send(el, AEL_MSG_CMD_ERROR);
@@ -216,6 +234,20 @@ static esp_err_t audio_element_process_close(audio_element_handle_t el)
     if (el->is_open) {
         if (el->close)
             el->close(el);
+
+        if (el->read_type == IO_TYPE_CB) {
+            if (el->in.read_cb.close != NULL) {
+                OS_LOGD(TAG, "[%s] closing input reader", el->tag);
+                el->in.read_cb.close(el, el->in.read_cb.ctx);
+            }
+        }
+        if (el->write_type == IO_TYPE_CB) {
+            if (el->out.write_cb.close != NULL) {
+                OS_LOGD(TAG, "[%s] closing output writer", el->tag);
+                el->out.write_cb.close(el, el->out.write_cb.ctx);
+            }
+        }
+
         el->is_open = false;
         OS_LOGD(TAG, "[%s] closed", el->tag);
     }
@@ -371,12 +403,11 @@ int audio_element_input(audio_element_handle_t el, char *buffer, int wanted_size
 {
     int in_len = 0;
     if (el->read_type == IO_TYPE_CB) {
-        if (el->in.read_cb.cb == NULL) {
+        if (el->in.read_cb.fill == NULL) {
             OS_LOGE(TAG, "[%s] Read IO Type callback but callback not set", el->tag);
             return ESP_FAIL;
         }
-        in_len = el->in.read_cb.cb(el, buffer, wanted_size, el->input_timeout_ms,
-                                   el->in.read_cb.ctx);
+        in_len = el->in.read_cb.fill(el, buffer, wanted_size, el->input_timeout_ms, el->in.read_cb.ctx);
     } else if (el->read_type == IO_TYPE_RB) {
         if (el->in.input_rb == NULL) {
             OS_LOGE(TAG, "[%s] Read IO type ringbuf but ringbuf not set", el->tag);
@@ -420,9 +451,8 @@ int audio_element_output(audio_element_handle_t el, char *buffer, int write_size
 {
     int output_len = 0;
     if (el->write_type == IO_TYPE_CB) {
-        if (el->out.write_cb.cb && write_size) {
-            output_len = el->out.write_cb.cb(el, buffer, write_size, el->output_timeout_ms,
-                                             el->out.write_cb.ctx);
+        if (el->out.write_cb.fill && write_size) {
+            output_len = el->out.write_cb.fill(el, buffer, write_size, el->output_timeout_ms, el->out.write_cb.ctx);
         }
     } else if (el->write_type == IO_TYPE_RB) {
         if (el->out.output_rb && write_size) {
@@ -468,12 +498,11 @@ int audio_element_input_chunk(audio_element_handle_t el, char *buffer, int wante
 {
     int in_len = 0;
     if (el->read_type == IO_TYPE_CB) {
-        if (el->in.read_cb.cb == NULL) {
+        if (el->in.read_cb.fill == NULL) {
             OS_LOGE(TAG, "[%s] Read IO Type callback but callback not set", el->tag);
             return ESP_FAIL;
         }
-        in_len = el->in.read_cb.cb(el, buffer, wanted_size, el->input_timeout_ms,
-                                   el->in.read_cb.ctx);
+        in_len = el->in.read_cb.fill(el, buffer, wanted_size, el->input_timeout_ms, el->in.read_cb.ctx);
     } else if (el->read_type == IO_TYPE_RB) {
         if (el->in.input_rb == NULL) {
             OS_LOGE(TAG, "[%s] Read IO type ringbuf but ringbuf not set", el->tag);
@@ -517,9 +546,8 @@ int audio_element_output_chunk(audio_element_handle_t el, char *buffer, int writ
 {
     int output_len = 0;
     if (el->write_type == IO_TYPE_CB) {
-        if (el->out.write_cb.cb && write_size) {
-            output_len = el->out.write_cb.cb(el, buffer, write_size, el->output_timeout_ms,
-                                             el->out.write_cb.ctx);
+        if (el->out.write_cb.fill && write_size) {
+            output_len = el->out.write_cb.fill(el, buffer, write_size, el->output_timeout_ms, el->out.write_cb.ctx);
         }
     } else if (el->write_type == IO_TYPE_RB) {
         if (el->out.output_rb && write_size) {
@@ -586,12 +614,7 @@ void *audio_element_task(void *pv)
         }
     }
 
-    if (el->is_open) {
-        if (el->close)
-            el->close(el);
-        el->is_open = false;
-        OS_LOGD(TAG, "[%s] el closed", el->tag);
-    }
+    audio_element_process_close(el);
     audio_free(el->buf);
     OS_LOGV(TAG, "[%s] el task deleted,%p", el->tag, os_thread_self());
     el->task_run = false;
@@ -715,7 +738,7 @@ esp_err_t audio_element_report_info(audio_element_handle_t el)
 {
     if (el) {
         audio_event_iface_msg_t msg = { 0 };
-        msg.cmd = AEL_MSG_CMD_REPORT_MUSIC_INFO;
+        msg.cmd = AEL_MSG_CMD_REPORT_INFO;
         msg.data = NULL;
         OS_LOGV(TAG, "REPORT_INFO,[%s]evt out cmd:%d,", el->tag, msg.cmd);
         audio_element_msg_sendout(el, &msg);
@@ -922,22 +945,26 @@ esp_err_t audio_element_set_output_ringbuf_size(audio_element_handle_t el, int r
     return ESP_FAIL;
 }
 
-esp_err_t audio_element_set_read_cb(audio_element_handle_t el, stream_func fn, void *context)
+esp_err_t audio_element_set_read_cb(audio_element_handle_t el, stream_callback_t *reader)
 {
-    if (el) {
-        el->in.read_cb.cb = fn;
-        el->in.read_cb.ctx = context;
+    if (el && reader) {
+        el->in.read_cb.open = reader->open;
+        el->in.read_cb.close = reader->close;
+        el->in.read_cb.fill = reader->fill;
+        el->in.read_cb.ctx = reader->ctx;
         el->read_type = IO_TYPE_CB;
         return ESP_OK;
     }
     return ESP_FAIL;
 }
 
-esp_err_t audio_element_set_write_cb(audio_element_handle_t el, stream_func fn, void *context)
+esp_err_t audio_element_set_write_cb(audio_element_handle_t el, stream_callback_t *writer)
 {
-    if (el) {
-        el->out.write_cb.cb = fn;
-        el->out.write_cb.ctx = context;
+    if (el && writer) {
+        el->out.write_cb.open = writer->open;
+        el->out.write_cb.close = writer->close;
+        el->out.write_cb.fill = writer->fill;
+        el->out.write_cb.ctx = writer->ctx;
         el->write_type = IO_TYPE_CB;
         return ESP_OK;
     }
@@ -1045,16 +1072,22 @@ audio_element_handle_t audio_element_init(audio_element_cfg_t *config)
     audio_element_set_input_timeout(el, AUDIO_MAX_DELAY);
     audio_element_set_output_timeout(el, AUDIO_MAX_DELAY);
 
-    if (config->read != NULL) {
+    if (config->reader != NULL) {
         el->read_type = IO_TYPE_CB;
-        el->in.read_cb.cb = config->read;
+        el->in.read_cb.open = config->reader->open;
+        el->in.read_cb.close = config->reader->close;
+        el->in.read_cb.fill = config->reader->fill;
+        el->in.read_cb.ctx = config->reader->ctx;
     } else {
         el->read_type = IO_TYPE_RB;
     }
 
-    if (config->write != NULL) {
+    if (config->writer != NULL) {
         el->write_type = IO_TYPE_CB;
-        el->out.write_cb.cb = config->write;
+        el->out.write_cb.open = config->writer->open;
+        el->out.write_cb.close = config->writer->close;
+        el->out.write_cb.fill = config->writer->fill;
+        el->out.write_cb.ctx = config->writer->ctx;
     } else {
         el->write_type = IO_TYPE_RB;
     }

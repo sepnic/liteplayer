@@ -45,12 +45,6 @@ extern "C" {
 #define DEFAULT_DECODER_RINGBUF_SIZE             ( 1024*32 )
 #define DEFAULT_DECODER_BUFFER_SIZE              ( 512 )
 
-// sink element definations
-#define DEFAULT_SINK_TASK_PRIO                   ( OS_THREAD_PRIO_REALTIME )
-#define DEFAULT_SINK_TASK_STACKSIZE              ( 1024*16 )
-#define DEFAULT_SINK_RINGBUF_SIZE                ( 1024*8 )
-#define DEFAULT_SINK_BUFFER_SIZE                 ( 1024*2 )
-
 // media source definations
 #define DEFAULT_MEDIA_SOURCE_TASK_PRIO           ( OS_THREAD_PRIO_HIGH )
 #define DEFAULT_MEDIA_SOURCE_TASK_STACKSIZE      ( 1024*6 )
