@@ -32,14 +32,12 @@ extern "C" {
  * @brief      M4A Decoder configurations
  */
 struct m4a_decoder_cfg {
-    int   out_rb_size;    /*!< Size of output ringbuffer */
     int   task_stack;     /*!< Task stack size */
     int   task_prio;      /*!< Task priority (based on freeRTOS priority) */
     struct m4a_info *m4a_info;
 };
 
 #define DEFAULT_M4A_DECODER_CONFIG() {\
-    .out_rb_size    = AAC_DECODER_RINGBUFFER_SIZE,\
     .task_stack     = AAC_DECODER_TASK_STACK,\
     .task_prio      = AAC_DECODER_TASK_PRIO,\
 }

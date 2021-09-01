@@ -179,6 +179,7 @@ typedef struct {
     .buffer_len         = DEFAULT_ELEMENT_BUFFER_LENGTH,\
     .task_stack         = DEFAULT_ELEMENT_STACK_SIZE,   \
     .task_prio          = DEFAULT_ELEMENT_TASK_PRIO,    \
+    .out_rb_size        = DEFAULT_ELEMENT_RINGBUF_SIZE, \
     .multi_in_rb_num    = 0,                            \
     .multi_out_rb_num   = 0,                            \
 }

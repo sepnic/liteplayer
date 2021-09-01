@@ -39,11 +39,13 @@ extern "C" {
 #define DEFAULT_TTS_FIXED_SAMPLERATE             ( 16000 )
 #define DEFAULT_TTS_FIXED_CHANNELS               ( 1 )
 
+// media parser definations
+#define DEFAULT_MEDIA_PARSER_TASK_PRIO           ( OS_THREAD_PRIO_NORMAL )
+#define DEFAULT_MEDIA_PARSER_TASK_STACKSIZE      ( 1024*12 )
+
 // decoder element definations
 #define DEFAULT_DECODER_TASK_PRIO                ( OS_THREAD_PRIO_HIGH )
-#define DEFAULT_DECODER_TASK_STACKSIZE           ( 1024*16 )
-#define DEFAULT_DECODER_RINGBUF_SIZE             ( 1024*32 )
-#define DEFAULT_DECODER_BUFFER_SIZE              ( 512 )
+#define DEFAULT_DECODER_TASK_STACKSIZE           ( 1024*32 )
 
 // media source definations
 #define DEFAULT_MEDIA_SOURCE_TASK_PRIO           ( OS_THREAD_PRIO_HIGH )
@@ -52,11 +54,6 @@ extern "C" {
 #define DEFAULT_MEDIA_SOURCE_HTTP_RINGBUF_SIZE   ( 1024*256 )
 #define DEFAULT_MEDIA_SOURCE_FILE_RINGBUF_SIZE   ( 1024*32 )
 #define DEFAULT_MEDIA_SOURCE_STREAM_RINGBUF_SIZE ( 1024*32 )
-
-// media parser definations
-#define DEFAULT_MEDIA_PARSER_TASK_PRIO           ( OS_THREAD_PRIO_NORMAL )
-#define DEFAULT_MEDIA_PARSER_TASK_STACKSIZE      ( 1024*8 )
-#define DEFAULT_MEDIA_PARSER_BUFFER_SIZE         ( 1024*2 )
 
 // socket upload definations, use with tools/socket_upload.py
 #define DEFAULT_SOCKET_UPLOAD_START              "GENIE_SOCKET_UPLOAD_START"

@@ -223,18 +223,14 @@ void wav_build_header(wav_header_t *header, int samplerate, int bits, int channe
 
 int wav_extractor(wav_fetch_cb fetch_cb, void *fetch_priv, struct wav_info *info)
 {
-    int buf_size = WAV_PARSE_BUFFER_SIZE;
-    char *buf = (char *)audio_calloc(1, buf_size);
+    char buf[WAV_PARSE_BUFFER_SIZE];
+    int buf_size = sizeof(buf);
     int ret = -1;
-
-    AUDIO_MEM_CHECK(TAG, buf, return -1);
 
     buf_size = fetch_cb(buf, buf_size, 0, fetch_priv);
     ret = wav_parse_header(buf, buf_size, info);
     if (ret != 0) {
         OS_LOGE(TAG, "Failed to parse wav header");
     }
-
-    audio_free(buf);
     return ret;
 }

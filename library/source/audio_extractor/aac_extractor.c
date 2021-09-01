@@ -304,10 +304,8 @@ int aac_extractor(aac_fetch_cb fetch_cb, void *fetch_priv, struct aac_info *info
     int frame_start_offset = 0;
     int id3v2_len = 0;
     bool found = false;
-    int buf_size = DEFAULT_AAC_PARSER_BUFFER_SIZE;
-    char *buf = (char *)audio_calloc(1, buf_size);
-
-    AUDIO_MEM_CHECK(TAG, buf, return -1);
+    char buf[DEFAULT_AAC_PARSER_BUFFER_SIZE];
+    int buf_size = sizeof(buf);
 
     buf_size = fetch_cb(buf, buf_size, 0, fetch_priv);
     if (buf_size < 9) {
@@ -336,7 +334,7 @@ int aac_extractor(aac_fetch_cb fetch_cb, void *fetch_priv, struct aac_info *info
 
     if (frame_start_offset != 0) {
         OS_LOGV(TAG, "Request more data to parse frame header");
-        buf_size = DEFAULT_AAC_PARSER_BUFFER_SIZE;
+        buf_size = sizeof(buf);
         buf_size = fetch_cb(buf, buf_size, frame_start_offset, fetch_priv);
         if (buf_size < 9) {
             OS_LOGE(TAG, "Not enough data[%d] to parse", buf_size);
@@ -375,7 +373,5 @@ finish:
         info->frame_start_offset = frame_start_offset;
         aac_dump_info(info);
     }
-
-    audio_free(buf);
     return found ? 0 : -1;
 }

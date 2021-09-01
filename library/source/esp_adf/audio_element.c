@@ -615,7 +615,7 @@ void *audio_element_task(void *pv)
     }
 
     audio_element_process_close(el);
-    audio_free(el->buf);
+    if (el->buf) audio_free(el->buf);
     OS_LOGV(TAG, "[%s] el task deleted,%p", el->tag, os_thread_self());
     el->task_run = false;
     audio_element_set_state_event(el, TASK_DESTROYED_BIT);

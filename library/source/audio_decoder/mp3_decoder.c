@@ -153,10 +153,9 @@ audio_element_handle_t mp3_decoder_init(struct mp3_decoder_cfg *config)
     cfg.close   = mp3_decoder_close;
     cfg.process = mp3_decoder_process;
     cfg.seek    = mp3_decoder_seek;
-    cfg.buffer_len = MP3_DECODER_BUFFER_SIZE;
+    cfg.buffer_len = 0;
     cfg.task_stack  = config->task_stack;
     cfg.task_prio   = config->task_prio;
-    cfg.out_rb_size = config->out_rb_size;
     if (cfg.task_stack == 0)
         cfg.task_stack = MP3_DECODER_TASK_STACK;
     cfg.tag = "mp3_dec";

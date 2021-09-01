@@ -33,7 +33,6 @@ extern "C" {
  * brief      WAV Decoder configurations
  */
 struct wav_decoder_cfg {
-    int out_rb_size;    /*!< Size of output ringbuffer */
     int task_stack;     /*!< Task stack size */
     int task_prio;      /*!< Task priority (based on freeRTOS priority) */
     struct wav_info *wav_info;
@@ -41,13 +40,10 @@ struct wav_decoder_cfg {
 
 #define WAV_DECODER_TASK_PRIO           (OS_THREAD_PRIO_NORMAL)
 #define WAV_DECODER_TASK_STACK          (4 * 1024)
-#define WAV_DECODER_RINGBUFFER_SIZE     (8 * 1024)
-#define WAV_DECODER_BUFFER_SIZE         (512)
 
 #define DEFAULT_WAV_DECODER_CONFIG() {\
     .task_prio          = WAV_DECODER_TASK_PRIO,\
     .task_stack         = WAV_DECODER_TASK_STACK,\
-    .out_rb_size        = WAV_DECODER_RINGBUFFER_SIZE,\
 }
 
 /**

@@ -21,6 +21,7 @@
 #ifndef _LITEPLAYER_MEDIAPARSER_H_
 #define _LITEPLAYER_MEDIAPARSER_H_
 
+#include "esp_adf/audio_common.h"
 #include "audio_extractor/mp3_extractor.h"
 #include "audio_extractor/aac_extractor.h"
 #include "audio_extractor/m4a_extractor.h"
@@ -55,13 +56,13 @@ struct media_codec_info {
     } detail;
 };
 
-typedef void (*media_parser_state_cb)(enum media_parser_state state, struct media_codec_info *codec_info, void *priv);
+typedef void (*media_parser_state_cb)(enum media_parser_state state, struct media_codec_info *info, void *priv);
 
 typedef void *media_parser_handle_t;
 
-int media_info_parse(struct media_source_info *source_info, struct media_codec_info *codec_info);
+int media_info_parse(struct media_source_info *source, struct media_codec_info *codec);
 
-media_parser_handle_t media_parser_start_async(struct media_source_info *source_info,
+media_parser_handle_t media_parser_start_async(struct media_source_info *source,
                                                media_parser_state_cb listener,
                                                void *listener_priv);
 void media_parser_stop(media_parser_handle_t handle);

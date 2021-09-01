@@ -39,7 +39,6 @@ extern "C" {
  * @brief      Mp3 Decoder configurations
  */
 struct mp3_decoder_cfg {
-    int   out_rb_size;    /*!< Size of output ringbuffer */
     int   task_stack;     /*!< Task stack size */
     int   task_prio;      /*!< Task priority (based on freeRTOS priority) */
     struct mp3_info *mp3_info;
@@ -47,11 +46,8 @@ struct mp3_decoder_cfg {
 
 #define MP3_DECODER_TASK_STACK          (4 * 1024)
 #define MP3_DECODER_TASK_PRIO           (OS_THREAD_PRIO_NORMAL)
-#define MP3_DECODER_RINGBUFFER_SIZE     (8 * 1024)
-#define MP3_DECODER_BUFFER_SIZE         (512)
 
 #define DEFAULT_MP3_DECODER_CONFIG() {\
-    .out_rb_size    = MP3_DECODER_RINGBUFFER_SIZE,\
     .task_stack     = MP3_DECODER_TASK_STACK,\
     .task_prio      = MP3_DECODER_TASK_PRIO,\
 }

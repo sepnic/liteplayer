@@ -364,11 +364,9 @@ audio_element_handle_t wav_decoder_init(struct wav_decoder_cfg *config)
     cfg.close       = wav_decoder_close;
     cfg.process     = wav_decoder_process;
     cfg.seek        = wav_decoder_seek;
-    cfg.buffer_len  = WAV_DECODER_BUFFER_SIZE;
-
+    cfg.buffer_len  = 0;
     cfg.task_stack  = config->task_stack;
     cfg.task_prio   = config->task_prio;
-    cfg.out_rb_size = config->out_rb_size;
     if (cfg.task_stack == 0)
         cfg.task_stack = WAV_DECODER_TASK_STACK;
     cfg.tag = "wav_dec";
