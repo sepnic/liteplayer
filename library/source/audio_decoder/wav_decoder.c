@@ -32,23 +32,20 @@
 
 #define TAG "[liteplayer]WAV_DEC"
 
-#define WAV_DECODER_INPUT_TIMEOUT_MAX  200
-
-#define WAV_MAX_NCHANS                 (WAV_MAX_CHANNEL_COUNT)
-#define WAV_MAX_NSAMP                  (128)
-//For IEEE 64-bit floating point: MAX_NSAMP*MAX_NCHAN*sizeof(uint64_t)
-#define WAV_DECODER_INPUT_BUFFER_SIZE  (WAV_MAX_NSAMP*WAV_MAX_NCHANS*sizeof(uint64_t))
-#define WAV_DECODER_OUTPUT_BUFFER_SIZE (WAV_MAX_NSAMP*WAV_MAX_NCHANS*sizeof(uint32_t)) // output pcm format: S16LE/S24LE/S32LE
+#define WAV_DECODER_INPUT_TIMEOUT_MAX  200 // ms
+#define WAV_PREFERED_PEROID_MS  20 // ms
 
 struct wav_buf_in {
-    char data[WAV_DECODER_INPUT_BUFFER_SIZE];
+    char *data;
+    int  size;
     int  bytes_want;     // bytes that want to read
     int  bytes_read;     // bytes that have read
     bool eof;            // if end of stream
 };
 
 struct wav_buf_out {
-    char data[WAV_DECODER_OUTPUT_BUFFER_SIZE];
+    char *data;
+    int  size;
     int  bytes_remain;   // bytes that remained to write
     int  bytes_written;  // bytes that have written
 };
@@ -65,7 +62,8 @@ struct wav_decoder {
     bool                    filled_header;
     bool                    read_timeout;
     struct wav_info        *wav_info;
-    int                     bits;
+    int                     sink_bits;
+    int                     prefered_frames;
 };
 typedef struct wav_decoder *wav_decoder_handle_t;
 
@@ -125,6 +123,7 @@ static drwav_bool32 drwav_on_seek(void *pUserData, int offset, drwav_seek_origin
 static int drwav_run(wav_decoder_handle_t decoder)
 {
     struct wav_buf_in *in = &decoder->buf_in;
+    int prefered_size = decoder->prefered_frames * decoder->wav_info->blockAlign;
     int ret = AEL_IO_OK;
 
     if (in->eof && in->bytes_read < decoder->block_align) {
@@ -134,13 +133,13 @@ static int drwav_run(wav_decoder_handle_t decoder)
 
     if (!decoder->filled_header) {
         if (in->bytes_read < decoder->wav_info->header_size) {
-            if (decoder->wav_info->header_size > WAV_DECODER_INPUT_BUFFER_SIZE)
+            if (decoder->wav_info->header_size > prefered_size)
                 return AEL_PROCESS_FAIL;
             memcpy(in->data, decoder->wav_info->header_buff, decoder->wav_info->header_size);
             in->bytes_read = decoder->wav_info->header_size;
         }
 
-        in->bytes_want = WAV_DECODER_INPUT_BUFFER_SIZE - in->bytes_read;
+        in->bytes_want = prefered_size - in->bytes_read;
         ret = audio_element_input_chunk(decoder->el, in->data+in->bytes_read, in->bytes_want);
         if (ret == in->bytes_want) {
             in->bytes_read += ret;
@@ -165,11 +164,11 @@ static int drwav_run(wav_decoder_handle_t decoder)
                 //OS_LOGD(TAG, "Refill data with remaining bytes:%d, offset:%d",
                 //        in->bytes_read, decoder->drwav_offset);
                 memmove(in->data, in->data+decoder->drwav_offset, in->bytes_read);
-                in->bytes_want = WAV_DECODER_INPUT_BUFFER_SIZE - in->bytes_read;
+                in->bytes_want = prefered_size - in->bytes_read;
                 decoder->drwav_offset = in->bytes_read;
             }
         } else {
-            in->bytes_want = WAV_DECODER_INPUT_BUFFER_SIZE;
+            in->bytes_want = prefered_size;
             decoder->drwav_offset = 0;
         }
         ret = audio_element_input_chunk(decoder->el, in->data+decoder->drwav_offset, in->bytes_want);
@@ -207,41 +206,32 @@ static int drwav_run(wav_decoder_handle_t decoder)
 #if defined(CONFIG_SINK_FIXED_S16LE)
             info.bits       = 16;
 #else
-            switch (decoder->drwav.bitsPerSample) {
-            case 16:
-                info.bits = 16;
-                break;
-            case 24:
-            case 32:
+            if (decoder->drwav.bitsPerSample >= 32)
                 info.bits = 32;
-                break;
-            default:
-                if (decoder->drwav.bitsPerSample > 32)
-                    info.bits = 32;
-                else
-                    info.bits = 16;
-                break;
-            }
+            else if (decoder->drwav.bitsPerSample >= 16)
+                info.bits = 16;
+            else
+                info.bits = decoder->drwav.bitsPerSample;
 #endif
             audio_element_setinfo(decoder->el, &info);
             audio_element_report_info(decoder->el);
 
             OS_LOGV(TAG,"Found wav header: SR=%d, CH=%d, BITS=%d", info.samplerate, info.channels, info.bits);
-            decoder->bits = info.bits;
+            decoder->sink_bits = info.bits;
             decoder->parsed_header = true;
         }
         decoder->block_align = decoder->drwav.channels*decoder->drwav.bitsPerSample/8;
         decoder->drwav_inited = true;
     }
 
-    drwav_uint64 in_frames = (WAV_MAX_NSAMP > in->bytes_read/decoder->block_align) ?
-                             in->bytes_read/decoder->block_align : WAV_MAX_NSAMP;
+    drwav_uint64 in_frames = (decoder->prefered_frames > in->bytes_read/decoder->block_align) ?
+                             in->bytes_read/decoder->block_align : decoder->prefered_frames;
     drwav_uint64 out_frames;
 #if defined(CONFIG_SINK_FIXED_S16LE)
     drwav_int16 *out = (drwav_int16 *)(decoder->buf_out.data);
     out_frames = drwav_read_pcm_frames_s16le(&decoder->drwav, in_frames, out);
 #else
-    switch (decoder->bits) {
+    switch (decoder->sink_bits) {
     case 16: {
         drwav_int16 *out = (drwav_int16 *)(decoder->buf_out.data);
         out_frames = drwav_read_pcm_frames_s16le(&decoder->drwav, in_frames, out);
@@ -253,7 +243,7 @@ static int drwav_run(wav_decoder_handle_t decoder)
         break;
     }
     default:
-        OS_LOGE(TAG, "Unsupported sample bits: %d", decoder->bits);
+        OS_LOGE(TAG, "Unsupported sample bits: %d", decoder->sink_bits);
         return AEL_PROCESS_FAIL;
     }
 #endif
@@ -262,7 +252,7 @@ static int drwav_run(wav_decoder_handle_t decoder)
         return AEL_IO_DONE;
     }
     //OS_LOGV(TAG, "WAVDecode out_frames: %d", out_frames);
-    decoder->buf_out.bytes_remain = out_frames * decoder->drwav.channels * (decoder->bits/8);
+    decoder->buf_out.bytes_remain = out_frames * decoder->drwav.channels * (decoder->sink_bits/8);
     return 0;
 }
 
@@ -270,6 +260,8 @@ static esp_err_t wav_decoder_destroy(audio_element_handle_t self)
 {
     wav_decoder_handle_t decoder = (wav_decoder_handle_t)audio_element_getdata(self);
     OS_LOGV(TAG, "Destroy wav decoder");
+    audio_free(decoder->buf_in.data);
+    audio_free(decoder->buf_out.data);
     audio_free(decoder);
     return ESP_OK;
 }
@@ -306,6 +298,20 @@ static int wav_decoder_process(audio_element_handle_t self, char *in_buffer, int
     int byte_write = 0;
     int ret = AEL_IO_FAIL;
     wav_decoder_handle_t decoder = (wav_decoder_handle_t)audio_element_getdata(self);
+
+    if (!decoder->drwav_inited) {
+        // update prefered frames according the size of input ringbuf
+        ringbuf_handle rb = audio_element_get_input_ringbuf(self);
+        if (rb != NULL) {
+            int rb_size = rb_get_size(rb);
+            int max_frames = rb_size / decoder->wav_info->blockAlign;
+            if (max_frames > 0 && decoder->prefered_frames > max_frames) {
+                OS_LOGW(TAG, "WAV decoder input ringbuf is too small, update prefered_frames: %d>>%d",
+                        decoder->prefered_frames, max_frames);
+                decoder->prefered_frames = max_frames;
+            }
+        }
+    }
 
     if (decoder->buf_out.bytes_remain > 0) {
         /* Output buffer have remain data */
@@ -349,8 +355,11 @@ static esp_err_t wav_decoder_seek(audio_element_handle_t self, long long offset)
     wav_decoder_handle_t decoder = (wav_decoder_handle_t)audio_element_getdata(self);
     decoder->drwav_offset = 0;
     decoder->read_timeout = false;
-    memset(&decoder->buf_in, 0x0, sizeof(decoder->buf_in));
-    memset(&decoder->buf_out, 0x0, sizeof(decoder->buf_out));
+    decoder->buf_in.bytes_read = 0;
+    decoder->buf_in.bytes_want = 0;
+    decoder->buf_in.eof = false;
+    decoder->buf_out.bytes_remain = 0;
+    decoder->buf_out.bytes_written = 0;
     return ESP_OK;
 }
 
@@ -375,6 +384,13 @@ audio_element_handle_t wav_decoder_init(struct wav_decoder_cfg *config)
     if (decoder == NULL)
         return NULL;
 
+    decoder->prefered_frames = (config->wav_info->sampleRate/1000) * WAV_PREFERED_PEROID_MS;
+    decoder->buf_in.size = decoder->prefered_frames * config->wav_info->blockAlign;
+    decoder->buf_out.size = decoder->prefered_frames * config->wav_info->blockAlign;
+    decoder->buf_in.data = audio_malloc(decoder->buf_in.size);
+    decoder->buf_out.data = audio_malloc(decoder->buf_out.size);
+    AUDIO_MEM_CHECK(TAG, decoder->buf_in.data && decoder->buf_out.data, goto wav_init_error);
+
     audio_element_handle_t el = audio_element_init(&cfg);
     AUDIO_MEM_CHECK(TAG, el, goto wav_init_error);
     decoder->el = el;
@@ -390,6 +406,10 @@ audio_element_handle_t wav_decoder_init(struct wav_decoder_cfg *config)
     return el;
 
 wav_init_error:
+    if (decoder->buf_in.data)
+        audio_free(decoder->buf_in.data);
+    if (decoder->buf_out.data)
+        audio_free(decoder->buf_out.data);
     audio_free(decoder);
     return NULL;
 }

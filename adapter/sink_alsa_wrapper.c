@@ -119,7 +119,7 @@ sink_handle_t alsa_wrapper_open(int samplerate, int channels, int bits, void *si
         break;
     }
 
-    if (snd_output_stdio_attach(&alsa->log, stderr, 0) < 0) {
+    if (snd_output_stdio_attach(&alsa->log, stdout, 0) < 0) {
         OS_LOGE(TAG, "snd_output_stdio_attach failed");
         goto fail_open;
 	}
