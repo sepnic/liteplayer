@@ -18,8 +18,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef _HTTPCLIENT_WRAPPER_H_
-#define _HTTPCLIENT_WRAPPER_H_
+#ifndef _LITEPLAYER_ADAPTER_INTERNAL_H_
+#define _LITEPLAYER_ADAPTER_INTERNAL_H_
 
 #include "liteplayer_adapter.h"
 
@@ -27,20 +27,21 @@
 extern "C" {
 #endif
 
-const char *httpclient_wrapper_procotol();
+struct liteplayer_adapter;
+typedef struct liteplayer_adapter *liteplayer_adapter_handle_t;
 
-source_handle_t httpclient_wrapper_open(const char *url, long long content_pos, void *priv_data);
+struct liteplayer_adapter {
+    int                    (*add_source_wrapper)(liteplayer_adapter_handle_t self, struct source_wrapper *wrapper);
+    struct source_wrapper *(*find_source_wrapper)(liteplayer_adapter_handle_t self, const char *url);
+    int                    (*add_sink_wrapper)(liteplayer_adapter_handle_t self, struct sink_wrapper *wrapper);
+    struct sink_wrapper   *(*find_sink_wrapper)(liteplayer_adapter_handle_t self, const char *name);
+    void                   (*destory)(liteplayer_adapter_handle_t self);
+};
 
-int httpclient_wrapper_read(source_handle_t handle, char *buffer, int size);
-
-long long httpclient_wrapper_filesize(source_handle_t handle);
-
-int httpclient_wrapper_seek(source_handle_t handle, long offset);
-
-void httpclient_wrapper_close(source_handle_t handle);
+liteplayer_adapter_handle_t liteplayer_adapter_init();
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif // _LITEPLAYER_ADAPTER_INTERNAL_H_

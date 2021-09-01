@@ -82,7 +82,12 @@ static void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context)
     os_mutex_unlock(priv->bufferLock);
 }
 
-sink_handle_t opensles_wrapper_open(int samplerate, int channels, int bits, void *sink_priv)
+const char *opensles_wrapper_name()
+{
+    return "opensles";
+}
+
+sink_handle_t opensles_wrapper_open(int samplerate, int channels, int bits, void *priv_data)
 {
     OS_LOGD(TAG, "Opening OpenSLES: samplerate=%d, channels=%d, bits=%d", samplerate, channels, bits);
     SLuint32 pcmformat;

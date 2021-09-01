@@ -27,7 +27,9 @@
 extern "C" {
 #endif
 
-sink_handle_t wave_wrapper_open(int samplerate, int channels, int bits, void *sink_priv);
+const char *wave_wrapper_name();
+
+sink_handle_t wave_wrapper_open(int samplerate, int channels, int bits, void *priv_data);
 
 int wave_wrapper_write(sink_handle_t handle, char *buffer, int size);
 

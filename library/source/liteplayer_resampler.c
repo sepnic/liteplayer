@@ -128,7 +128,7 @@ static int resampler_process(resampler_handle_t self, const short *in, int in_by
         if (in_channels == 1 && out_channels == 2)
             out_bytes *= 2;
 
-        converter->out_buf = (short *)audio_calloc(1, out_bytes);
+        converter->out_buf = audio_calloc(1, out_bytes);
         AUDIO_MEM_CHECK(TAG, converter->out_buf, return -1);
 
         priv->in_bytes = in_bytes;
@@ -143,7 +143,7 @@ static int resampler_process(resampler_handle_t self, const short *in, int in_by
 
         if (out_bytes > priv->out_bytes) {
             OS_LOGV(TAG, "Not enough buffer, realloc new size(%d)", out_bytes);
-            converter->out_buf = (short *)audio_realloc(converter->out_buf, out_bytes);
+            converter->out_buf = audio_realloc(converter->out_buf, out_bytes);
             AUDIO_MEM_CHECK(TAG, converter->out_buf, return -1);
         }
 

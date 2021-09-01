@@ -45,8 +45,9 @@
 
 #if defined(ENABLE_SOCKETUPLOAD)
     // see tools/socket_upload.py
-    #define SOCKETUPLOAD_SERVER_ADDR "127.0.0.1"
-    #define SOCKETUPLOAD_SERVER_PORT 22808
+    #define SOCKETUPLOAD_SERVER_ADDR  "127.0.0.1"
+    #define SOCKETUPLOAD_SERVER_PORT  22808
+    #define SOCKETUPLOAD_RINGBUF_SIZE (1024*256)
 #endif
 
 struct alsa_wrapper {
@@ -67,7 +68,12 @@ struct alsa_wrapper {
 #endif
 };
 
-sink_handle_t alsa_wrapper_open(int samplerate, int channels, int bits, void *sink_priv)
+const char *alsa_wrapper_name()
+{
+    return "alsa";
+}
+
+sink_handle_t alsa_wrapper_open(int samplerate, int channels, int bits, void *priv_data)
 {
     OS_LOGD(TAG, "Opening alsa: samplerate=%d, channels=%d, bits=%d", samplerate, channels, bits);
     struct alsa_wrapper *alsa =
@@ -95,7 +101,7 @@ sink_handle_t alsa_wrapper_open(int samplerate, int channels, int bits, void *si
 #endif
 
 #if defined(ENABLE_SOCKETUPLOAD)
-    alsa->uploader = socketupload_init();
+    alsa->uploader = socketupload_init(SOCKETUPLOAD_RINGBUF_SIZE);
     if (alsa->uploader == NULL) goto fail_open;
     alsa->uploader->start(alsa->uploader, SOCKETUPLOAD_SERVER_ADDR, SOCKETUPLOAD_SERVER_PORT);
 #endif

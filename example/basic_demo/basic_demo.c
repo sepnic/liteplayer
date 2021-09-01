@@ -99,14 +99,16 @@ static int basic_demo(const char *url)
 
 #if defined(ENABLE_LINUX_ALSA)
     struct sink_wrapper sink_ops = {
-        .sink_priv = NULL,
+        .priv_data = NULL,
+        .name = alsa_wrapper_name,
         .open = alsa_wrapper_open,
         .write = alsa_wrapper_write,
         .close = alsa_wrapper_close,
     };
 #else
     struct sink_wrapper sink_ops = {
-        .sink_priv = NULL,
+        .priv_data = NULL,
+        .name = wave_wrapper_name,
         .open = wave_wrapper_open,
         .write = wave_wrapper_write,
         .close = wave_wrapper_close,
@@ -114,25 +116,31 @@ static int basic_demo(const char *url)
 #endif
     liteplayer_register_sink_wrapper(player, &sink_ops);
 
-    struct file_wrapper file_ops = {
-        .file_priv = NULL,
+    struct source_wrapper file_ops = {
+        .async_mode = false,
+        .ringbuf_size = 32*1024,
+        .priv_data = NULL,
+        .procotol = fatfs_wrapper_procotol,
         .open = fatfs_wrapper_open,
         .read = fatfs_wrapper_read,
         .filesize = fatfs_wrapper_filesize,
         .seek = fatfs_wrapper_seek,
         .close = fatfs_wrapper_close,
     };
-    liteplayer_register_file_wrapper(player, &file_ops);
+    liteplayer_register_source_wrapper(player, &file_ops);
 
-    struct http_wrapper http_ops = {
-        .http_priv = NULL,
+    struct source_wrapper http_ops = {
+        .async_mode = true,
+        .ringbuf_size = 256*1024,
+        .priv_data = NULL,
+        .procotol = httpclient_wrapper_procotol,
         .open = httpclient_wrapper_open,
         .read = httpclient_wrapper_read,
         .filesize = httpclient_wrapper_filesize,
         .seek = httpclient_wrapper_seek,
         .close = httpclient_wrapper_close,
     };
-    liteplayer_register_http_wrapper(player, &http_ops);
+    liteplayer_register_source_wrapper(player, &http_ops);
 
     if (liteplayer_set_data_source(player, url, BASIC_DEMO_THRESHOLD_MS) != 0) {
         OS_LOGE(TAG, "Failed to set data source");

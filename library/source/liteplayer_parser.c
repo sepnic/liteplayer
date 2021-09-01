@@ -39,8 +39,7 @@ struct media_parser_priv {
     struct media_source_info source;
     struct media_codec_info codec;
 
-    http_handle_t http_handle;
-    file_handle_t file_handle;
+    source_handle_t source_handle;
     long offset;
 
     media_parser_state_cb listener;
@@ -56,23 +55,13 @@ static int media_parser_fetch(char *buf, int wanted_size, long offset, void *pri
     struct media_parser_priv *parser = (struct media_parser_priv *)priv;
     int bytes_read = ESP_FAIL;
 
-    if (parser->source.source_type == MEDIA_SOURCE_FILE) {
-        if (parser->offset != offset) {
-            OS_LOGD(TAG, "file seek position: %ld>>%ld", parser->offset, offset);
-            if (parser->source.file_ops.seek(parser->file_handle, offset) != 0)
-                return ESP_FAIL;
-            parser->offset = offset;
-        }
-        bytes_read = parser->source.file_ops.read(parser->file_handle, buf, wanted_size);
-    } else if (parser->source.source_type == MEDIA_SOURCE_HTTP) {
-        if (parser->offset != offset) {
-            OS_LOGD(TAG, "http seek position: %ld>>%ld", parser->offset, offset);
-            if (parser->source.http_ops.seek(parser->http_handle, offset) != 0)
-                return ESP_FAIL;
-            parser->offset = offset;
-        }
-        bytes_read = parser->source.http_ops.read(parser->http_handle, buf, wanted_size);
+    if (parser->offset != offset) {
+        OS_LOGD(TAG, "seek source position: %ld>>%ld", parser->offset, offset);
+        if (parser->source.source_ops->seek(parser->source_handle, offset) != 0)
+            return ESP_FAIL;
+        parser->offset = offset;
     }
+    bytes_read = parser->source.source_ops->read(parser->source_handle, buf, wanted_size);
 
     if (bytes_read > 0)
         parser->offset += bytes_read;
@@ -81,26 +70,16 @@ static int media_parser_fetch(char *buf, int wanted_size, long offset, void *pri
 
 static int m4a_header_parse(struct media_source_info *source, struct media_codec_info *codec)
 {
-    if (source->source_type != MEDIA_SOURCE_FILE && source->source_type != MEDIA_SOURCE_HTTP)
-        return ESP_FAIL;
-
     struct media_parser_priv m4a_priv = {
         .offset = 0,
-        .file_handle = NULL,
-        .http_handle = NULL,
+        .source_handle = NULL,
     };
     memcpy(&m4a_priv.source, source, sizeof(struct media_source_info));
     int ret = ESP_FAIL;
 
-    if (source->source_type == MEDIA_SOURCE_FILE) {
-        m4a_priv.file_handle = source->file_ops.open(source->url, 0, source->file_ops.file_priv);
-        if (m4a_priv.file_handle == NULL)
-            return ESP_FAIL;
-    } else if (source->source_type == MEDIA_SOURCE_HTTP) {
-        m4a_priv.http_handle = source->http_ops.open(source->url, 0, source->http_ops.http_priv);
-        if (m4a_priv.http_handle == NULL)
-            return ESP_FAIL;
-    }
+    m4a_priv.source_handle = source->source_ops->open(source->url, 0, source->source_ops->priv_data);
+    if (m4a_priv.source_handle == NULL)
+        return ESP_FAIL;
 
     if (m4a_extractor(media_parser_fetch, &m4a_priv, &(codec->detail.m4a_info)) == 0) {
         codec->content_pos = codec->detail.m4a_info.mdat_offset;
@@ -117,11 +96,7 @@ static int m4a_header_parse(struct media_source_info *source, struct media_codec
         ret = ESP_OK;
     }
 
-    if (source->source_type == MEDIA_SOURCE_FILE)
-        source->file_ops.close(m4a_priv.file_handle);
-    else if (source->source_type == MEDIA_SOURCE_HTTP)
-        source->http_ops.close(m4a_priv.http_handle);
-
+    source->source_ops->close(m4a_priv.source_handle);
     return ret;
 }
 
@@ -143,42 +118,23 @@ static int get_start_offset(char *buf)
 
 static int media_header_parse(struct media_source_info *source, struct media_codec_info *codec)
 {
-    if (source->source_type != MEDIA_SOURCE_FILE &&
-        source->source_type != MEDIA_SOURCE_HTTP)
-        return ESP_FAIL;
-
-    http_handle_t client = NULL;
-    file_handle_t file = NULL;
+    source_handle_t source_handle = NULL;
     long long filesize = 0;
     int bytes_read = 0;
     char buf[DEFAULT_MEDIA_PARSER_BUFFER_SIZE];
     int ret = ESP_FAIL;
 
-    if (source->source_type == MEDIA_SOURCE_HTTP) {
-        client = source->http_ops.open(source->url, 0, source->http_ops.http_priv);
-        if (client == NULL) {
-            OS_LOGE(TAG, "Failed to connect http, url=%s", source->url);
-            goto parse_done;
-        }
-        bytes_read = source->http_ops.read(client, buf, sizeof(buf));
-        if (bytes_read <= 0) {
-            OS_LOGE(TAG, "Failed to read http");
-            goto parse_done;
-        }
-        filesize = source->http_ops.filesize(client);
-    } else if (source->source_type == MEDIA_SOURCE_FILE) {
-        file = source->file_ops.open(source->url, 0, source->file_ops.file_priv);
-        if (file == NULL) {
-            OS_LOGE(TAG, "Failed to open file, url=%s", source->url);
-            goto parse_done;
-        }
-        bytes_read = source->file_ops.read(file, buf, sizeof(buf));
-        if (bytes_read <= 0) {
-            OS_LOGE(TAG, "Failed to read file");
-            goto parse_done;
-        }
-        filesize = source->file_ops.filesize(file);
+    source_handle = source->source_ops->open(source->url, 0, source->source_ops->priv_data);
+    if (source_handle == NULL) {
+        OS_LOGE(TAG, "Failed to open source, url=%s", source->url);
+        goto parse_done;
     }
+    bytes_read = source->source_ops->read(source_handle, buf, sizeof(buf));
+    if (bytes_read <= 0) {
+        OS_LOGE(TAG, "Failed to read source");
+        goto parse_done;
+    }
+    filesize = source->source_ops->filesize(source_handle);
 
     if (bytes_read < 64) {
         OS_LOGE(TAG, "Insufficient bytes read: %d", bytes_read);
@@ -226,15 +182,9 @@ static int media_header_parse(struct media_source_info *source, struct media_cod
                 goto parse_done;
         } else {
             bytes_read = 0;
-            if (source->source_type == MEDIA_SOURCE_HTTP) {
-                if (source->http_ops.seek(client, frame_start_offset) != 0)
-                    goto parse_done;
-                bytes_read = source->http_ops.read(client, buf, sizeof(buf));
-            } else if (source->source_type == MEDIA_SOURCE_FILE) {
-                if (source->file_ops.seek(file, frame_start_offset) != 0)
-                    goto parse_done;
-                bytes_read = source->file_ops.read(file, buf, sizeof(buf));
-            }
+            if (source->source_ops->seek(source_handle, frame_start_offset) != 0)
+                goto parse_done;
+            bytes_read = source->source_ops->read(source_handle, buf, sizeof(buf));
             if (bytes_read < 4)
                 goto parse_done;
             if (mp3_parse_header(buf, bytes_read, info) != 0)
@@ -259,15 +209,9 @@ static int media_header_parse(struct media_source_info *source, struct media_cod
                 goto parse_done;
         } else {
             bytes_read = 0;
-            if (source->source_type == MEDIA_SOURCE_HTTP) {
-                if (source->http_ops.seek(client, frame_start_offset) != 0)
-                    goto parse_done;
-                bytes_read = source->http_ops.read(client, buf, sizeof(buf));
-            } else if (source->source_type == MEDIA_SOURCE_FILE) {
-                if (source->file_ops.seek(file, frame_start_offset) != 0)
-                    goto parse_done;
-                bytes_read = source->file_ops.read(file, buf, sizeof(buf));
-            }
+            if (source->source_ops->seek(source_handle, frame_start_offset) != 0)
+                goto parse_done;
+            bytes_read = source->source_ops->read(source_handle, buf, sizeof(buf));
             if (bytes_read < 9)
                 goto parse_done;
             if (aac_parse_adts_frame(buf, bytes_read, info) != 0)
@@ -324,10 +268,8 @@ static int media_header_parse(struct media_source_info *source, struct media_cod
     ret = ESP_OK;
 
 parse_done:
-    if (source->source_type == MEDIA_SOURCE_HTTP && client != NULL)
-        source->http_ops.close(client);
-    if (source->source_type == MEDIA_SOURCE_FILE && file != NULL)
-        source->file_ops.close(file);
+    if (source_handle != NULL)
+        source->source_ops->close(source_handle);
     return ret;
 }
 
@@ -406,13 +348,13 @@ int media_info_parse(struct media_source_info *source, struct media_codec_info *
         codec->codec_type = AUDIO_CODEC_FLAC;
 
     if (media_header_parse(source, codec) != ESP_OK) {
-        OS_LOGE(TAG, "Failed to parse file url:[%s]", source->url);
+        OS_LOGE(TAG, "Failed to parse url:[%s]", source->url);
         return ESP_FAIL;
     }
 
 parse_succeed:
     OS_LOGI(TAG, "MediaInfo: codec_type[%d], samplerate[%d], channels[%d], bits[%d], offset[%ld], length[%ld]",
-             source->source_type,
+             codec->codec_type,
              codec->codec_samplerate, codec->codec_channels, codec->codec_bits,
              codec->content_pos, codec->content_len);
     return ESP_OK;

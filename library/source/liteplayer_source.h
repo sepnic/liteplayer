@@ -28,13 +28,6 @@
 extern "C" {
 #endif
 
-enum media_source_type {
-    MEDIA_SOURCE_UNKNOWN,
-    MEDIA_SOURCE_STREAM,
-    MEDIA_SOURCE_HTTP,
-    MEDIA_SOURCE_FILE,
-};
-
 enum media_source_state {
     MEDIA_SOURCE_READ_SUCCEED,
     MEDIA_SOURCE_READ_FAILED,
@@ -49,9 +42,7 @@ typedef void (*media_source_state_cb)(enum media_source_state state, void *priv)
 
 struct media_source_info {
     const char *url;
-    enum media_source_type source_type;
-    struct http_wrapper http_ops;
-    struct file_wrapper file_ops;
+    struct source_wrapper *source_ops;
     long long content_pos;
     int threshold_size;
 };

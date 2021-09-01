@@ -43,6 +43,9 @@
 
 #define TAG "[liteplayer]DEBUG"
 
+#define DEFAULT_SOCKET_UPLOAD_RINGBUF_SIZE  ( 1024*64 )
+#define DEFAULT_SOCKET_UPLOAD_TIMEOUT_MS    ( 2000 )
+
 struct socketupload_priv {
     struct socketupload uploader;
     int fd;
@@ -51,6 +54,7 @@ struct socketupload_priv {
     ringbuf_handle rb;
     os_thread tid;
     char buffer[2048];
+    int ringbuf_size;
     bool stop;
 };
 
@@ -167,7 +171,7 @@ static int socketupload_start(socketupload_handle_t self, const char *server_add
     if (priv->addr == NULL)
         goto start_failed;
 
-    priv->rb = rb_create(DEFAULT_SOCKET_UPLOAD_RINGBUF_SIZE);
+    priv->rb = rb_create(priv->ringbuf_size);
     if (priv->rb == NULL)
         goto start_failed;
 
@@ -195,7 +199,7 @@ static int socketupload_fill_data(socketupload_handle_t self, char *data, int si
     struct socketupload_priv *priv = (struct socketupload_priv *)self;
     if (priv->stop || priv->rb == NULL || data == NULL || size <= 0)
         return -1;
-    int ret = rb_write(priv->rb, data, size, DEFAULT_SOCKET_UPLOAD_WRITE_TIMEOUT*1000);
+    int ret = rb_write(priv->rb, data, size, DEFAULT_SOCKET_UPLOAD_TIMEOUT_MS*1000);
     if (ret == RB_TIMEOUT) {
         OS_LOGE(TAG, "Timeout to write ringbuf");
     } else if (ret > 0) {
@@ -226,11 +230,15 @@ static void socketupload_destroy(socketupload_handle_t self)
     audio_free(self);
 }
 
-socketupload_handle_t socketupload_init()
+socketupload_handle_t socketupload_init(int ringbuf_size)
 {
     struct socketupload_priv *handle = audio_calloc(1, sizeof(struct socketupload_priv));
     AUDIO_MEM_CHECK(TAG, handle, return NULL);
 
+    if (ringbuf_size <= 0)
+        handle->ringbuf_size = DEFAULT_SOCKET_UPLOAD_RINGBUF_SIZE;
+    else
+        handle->ringbuf_size = ringbuf_size;
     handle->uploader.start     = socketupload_start;
     handle->uploader.fill_data = socketupload_fill_data;
     handle->uploader.stop      = socketupload_stop;

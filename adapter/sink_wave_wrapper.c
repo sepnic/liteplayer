@@ -145,7 +145,12 @@ static void wav_build_header(wav_header_t *header, int samplerate, int bits, int
     header->data.ChunkSize = LE_INT(datasize);
 }
 
-sink_handle_t wave_wrapper_open(int samplerate, int channels, int bits, void *sink_priv)
+const char *wave_wrapper_name()
+{
+    return "wave";
+}
+
+sink_handle_t wave_wrapper_open(int samplerate, int channels, int bits, void *priv_data)
 {
     OS_LOGD(TAG, "Opening wave: samplerate=%d, channels=%d, bits=%d", samplerate, channels, bits);
     struct wave_priv *priv = OS_CALLOC(1, sizeof(struct wave_priv));
@@ -157,8 +162,8 @@ sink_handle_t wave_wrapper_open(int samplerate, int channels, int bits, void *si
     os_realtime_to_walltime(&ts);
     memset(filename, 0x0, sizeof(filename));
     snprintf(filename, sizeof(filename),
-             "pcm_out-%04d%02d%02d-%02d%02d%02d.wav",
-             ts.year, ts.mon, ts.day, ts.hour, ts.min, ts.sec
+             "pcm_out-%04d%02d%02d-%02d%02d%02d-%03d.wav",
+             ts.year, ts.mon, ts.day, ts.hour, ts.min, ts.sec, ts.msec
     );
 
     priv->file = fopen(filename, "wb+");

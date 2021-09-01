@@ -42,6 +42,7 @@ set (LITEPLAYER_SRC
     ${TOP_DIR}/library/source/audio_extractor/aac_extractor.c
     ${TOP_DIR}/library/source/audio_extractor/m4a_extractor.c
     ${TOP_DIR}/library/source/audio_extractor/wav_extractor.c
+    ${TOP_DIR}/library/source/liteplayer_adapter.c
     ${TOP_DIR}/library/source/liteplayer_source.c
     ${TOP_DIR}/library/source/liteplayer_parser.c
     ${TOP_DIR}/library/source/liteplayer_debug.c

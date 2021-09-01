@@ -27,41 +27,29 @@
 extern "C" {
 #endif
 
+// media parser definations
+#define DEFAULT_MEDIA_PARSER_TASK_PRIO           ( OS_THREAD_PRIO_NORMAL )
+#define DEFAULT_MEDIA_PARSER_TASK_STACKSIZE      ( 1024*12 )
+
+// media decoder definations
+#define DEFAULT_MEDIA_DECODER_TASK_PRIO          ( OS_THREAD_PRIO_HIGH )
+#define DEFAULT_MEDIA_DECODER_TASK_STACKSIZE     ( 1024*32 )
+
+// media source definations
+#define DEFAULT_MEDIA_SOURCE_TASK_PRIO           ( OS_THREAD_PRIO_HIGH )
+#define DEFAULT_MEDIA_SOURCE_TASK_STACKSIZE      ( 1024*6 )
+
 // player manager definations
 #define DEFAULT_MANAGER_TASK_PRIO                ( OS_THREAD_PRIO_HIGH )
 #define DEFAULT_MANAGER_TASK_STACKSIZE           ( 1024*4 )
 #define DEFAULT_PLAYLIST_FILE_SUFFIX             ".playlist"
 #define DEFAULT_PLAYLIST_URL_MAX                 ( 200 )
-#define DEFAULT_PLAYLIST_BUFFER_SIZE             ( 1024*32 )
-
-// stream mode definations
-#define DEFAULT_TTS_FIXED_CODEC                  ( AUDIO_CODEC_MP3 )
-#define DEFAULT_TTS_FIXED_SAMPLERATE             ( 16000 )
-#define DEFAULT_TTS_FIXED_CHANNELS               ( 1 )
-
-// media parser definations
-#define DEFAULT_MEDIA_PARSER_TASK_PRIO           ( OS_THREAD_PRIO_NORMAL )
-#define DEFAULT_MEDIA_PARSER_TASK_STACKSIZE      ( 1024*12 )
-
-// decoder element definations
-#define DEFAULT_DECODER_TASK_PRIO                ( OS_THREAD_PRIO_HIGH )
-#define DEFAULT_DECODER_TASK_STACKSIZE           ( 1024*32 )
-
-// media source definations
-#define DEFAULT_MEDIA_SOURCE_TASK_PRIO           ( OS_THREAD_PRIO_HIGH )
-#define DEFAULT_MEDIA_SOURCE_TASK_STACKSIZE      ( 1024*6 )
-#define DEFAULT_MEDIA_SOURCE_BUFFER_SIZE         ( 1024*8+1 )
-#define DEFAULT_MEDIA_SOURCE_HTTP_RINGBUF_SIZE   ( 1024*256 )
-#define DEFAULT_MEDIA_SOURCE_FILE_RINGBUF_SIZE   ( 1024*32 )
-#define DEFAULT_MEDIA_SOURCE_STREAM_RINGBUF_SIZE ( 1024*32 )
 
 // socket upload definations, use with tools/socket_upload.py
 #define DEFAULT_SOCKET_UPLOAD_START              "GENIE_SOCKET_UPLOAD_START"
 #define DEFAULT_SOCKET_UPLOAD_END                "GENIE_SOCKET_UPLOAD_END"
 #define DEFAULT_SOCKET_UPLOAD_TASK_PRIO          ( OS_THREAD_PRIO_NORMAL )
 #define DEFAULT_SOCKET_UPLOAD_TASK_STACKSIZE     ( 1024*2 )
-#define DEFAULT_SOCKET_UPLOAD_RINGBUF_SIZE       ( 1024*256 )
-#define DEFAULT_SOCKET_UPLOAD_WRITE_TIMEOUT      ( 2000 )
 
 #ifdef __cplusplus
 }

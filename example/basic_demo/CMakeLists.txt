@@ -23,6 +23,9 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_DECODER_AAC_SBR")
 # cflags: sink: CONFIG_SINK_FIXED_S16LE. Don't config it if sink support S24LE/S32LE
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCONFIG_SINK_FIXED_S16LE")
 
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_MEMORY_LEAK_DETECT")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DENABLE_MEMORY_LEAK_DETECT")
+
 # include files
 include_directories(${TOP_DIR}/thirdparty/sysutils/include)
 include_directories(${TOP_DIR}/thirdparty/codecs)
@@ -169,6 +172,7 @@ set (LITEPLAYER_SRC
     ${TOP_DIR}/library/source/audio_extractor/aac_extractor.c
     ${TOP_DIR}/library/source/audio_extractor/m4a_extractor.c
     ${TOP_DIR}/library/source/audio_extractor/wav_extractor.c
+    ${TOP_DIR}/library/source/liteplayer_adapter.c
     ${TOP_DIR}/library/source/liteplayer_source.c
     ${TOP_DIR}/library/source/liteplayer_parser.c
     ${TOP_DIR}/library/source/liteplayer_debug.c

@@ -21,36 +21,32 @@
 #ifndef _LITEPLAYER_ADAPTER_H_
 #define _LITEPLAYER_ADAPTER_H_
 
+#include <stdbool.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef void *file_handle_t;
-typedef void *http_handle_t;
+typedef void *source_handle_t;
 typedef void *sink_handle_t;
 
-struct file_wrapper {
-    void            *file_priv;
-    file_handle_t  (*open)(const char *url, long long content_pos, void *file_priv);
-    int            (*read)(file_handle_t handle, char *buffer, int size);
-    long long      (*filesize)(file_handle_t handle);
-    int            (*seek)(file_handle_t handle, long offset);
-    void           (*close)(file_handle_t handle);
-};
-
-struct http_wrapper {
-    void            *http_priv;
-    http_handle_t  (*open)(const char *url, long long content_pos, void *http_priv);
-    int            (*read)(http_handle_t handle, char *buffer, int size);
-    long long      (*filesize)(http_handle_t handle);
-    int            (*seek)(http_handle_t handle, long offset);
-    void           (*close)(http_handle_t handle);
+struct source_wrapper {
+    bool            async_mode; // for network stream, it's better to set async mode
+    int             ringbuf_size; // only use for async mode
+    void            *priv_data;
+    const char *    (*procotol)(); // "http", "tts", "rtsp", "rtmp", "file"
+    source_handle_t (*open)(const char *url, long long content_pos, void *priv_data);
+    int             (*read)(source_handle_t handle, char *buffer, int size);//note: 0<=ret<size means eof
+    long long       (*filesize)(source_handle_t handle);
+    int             (*seek)(source_handle_t handle, long offset);
+    void            (*close)(source_handle_t handle);
 };
 
 struct sink_wrapper {
-    void            *sink_priv;
-    sink_handle_t  (*open)(int samplerate, int channels, int bits, void *sink_priv);
-    int            (*write)(sink_handle_t handle, char *buffer, int size);
+    void           *priv_data;
+    const char *   (*name)(); // "alsa", "wave", "opensles", "audiotrack"
+    sink_handle_t  (*open)(int samplerate, int channels, int bits, void *priv_data);
+    int            (*write)(sink_handle_t handle, char *buffer, int size);//return actual written size
     void           (*close)(sink_handle_t handle);
 };
 

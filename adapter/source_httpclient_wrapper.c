@@ -46,7 +46,7 @@ struct httpclient_priv {
     int                  retrycount;
 };
 
-static int httpclient_wrapper_connect(http_handle_t handle)
+static int httpclient_wrapper_connect(source_handle_t handle)
 {
     struct httpclient_priv *priv = (struct httpclient_priv *)handle;
     HTTPCLIENT_RESULT ret = HTTPCLIENT_OK;
@@ -74,7 +74,7 @@ reconnect:
     return ret;
 }
 
-static void httpclient_wrapper_disconnect(http_handle_t handle)
+static void httpclient_wrapper_disconnect(source_handle_t handle)
 {
     struct httpclient_priv *priv = (struct httpclient_priv *)handle;
     httpclient_close(&priv->client);
@@ -95,7 +95,12 @@ static int httpclient_wrapper_parse_content_length(char *header_buf, long long *
     return ret;
 }
 
-http_handle_t httpclient_wrapper_open(const char *url, long long content_pos, void *http_priv)
+const char *httpclient_wrapper_procotol()
+{
+    return "http";
+}
+
+source_handle_t httpclient_wrapper_open(const char *url, long long content_pos, void *priv_data)
 {
     struct httpclient_priv *priv = OS_CALLOC(1, sizeof(struct httpclient_priv));
     if (priv == NULL)
@@ -112,7 +117,7 @@ http_handle_t httpclient_wrapper_open(const char *url, long long content_pos, vo
     return priv;
 }
 
-int httpclient_wrapper_read(http_handle_t handle, char *buffer, int size)
+int httpclient_wrapper_read(source_handle_t handle, char *buffer, int size)
 {
     struct httpclient_priv *priv = (struct httpclient_priv *)handle;
     httpclient_t *client = &priv->client;
@@ -202,13 +207,13 @@ reconnect:
     return -1;
 }
 
-long long httpclient_wrapper_filesize(http_handle_t handle)
+long long httpclient_wrapper_filesize(source_handle_t handle)
 {
     struct httpclient_priv *priv = (struct httpclient_priv *)handle;
     return priv->content_len;
 }
 
-int httpclient_wrapper_seek(http_handle_t handle, long offset)
+int httpclient_wrapper_seek(source_handle_t handle, long offset)
 {
     struct httpclient_priv *priv = (struct httpclient_priv *)handle;
 
@@ -219,7 +224,7 @@ int httpclient_wrapper_seek(http_handle_t handle, long offset)
     return httpclient_wrapper_connect(priv);
 }
 
-void httpclient_wrapper_close(http_handle_t handle)
+void httpclient_wrapper_close(source_handle_t handle)
 {
     struct httpclient_priv *priv = (struct httpclient_priv *)handle;
 

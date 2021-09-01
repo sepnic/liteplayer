@@ -27,15 +27,17 @@
 extern "C" {
 #endif
 
-file_handle_t fatfs_wrapper_open(const char *url, long long content_pos, void *file_priv);
+const char *fatfs_wrapper_procotol();
 
-int fatfs_wrapper_read(file_handle_t handle, char *buffer, int size);
+source_handle_t fatfs_wrapper_open(const char *url, long long content_pos, void *priv_data);
 
-long long fatfs_wrapper_filesize(file_handle_t handle);
+int fatfs_wrapper_read(source_handle_t handle, char *buffer, int size);
 
-int fatfs_wrapper_seek(file_handle_t handle, long offset);
+long long fatfs_wrapper_filesize(source_handle_t handle);
 
-void fatfs_wrapper_close(file_handle_t handle);
+int fatfs_wrapper_seek(source_handle_t handle, long offset);
+
+void fatfs_wrapper_close(source_handle_t handle);
 
 #ifdef __cplusplus
 }

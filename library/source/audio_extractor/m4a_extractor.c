@@ -362,7 +362,7 @@ static AAC_ERR_T sttsin(atom_parser_handle_t handle, uint32_t atom_size)
 
     m4a_info->stts_time2sample_entries = u32in(buf); buf += 4;
     m4a_info->stts_time2sample =
-        (struct time2sample *)audio_calloc(m4a_info->stts_time2sample_entries, sizeof(struct time2sample));
+        audio_calloc(m4a_info->stts_time2sample_entries, sizeof(struct time2sample));
     if (m4a_info->stts_time2sample == NULL) {
         return AAC_ERR_NOMEM;
     }
@@ -399,7 +399,7 @@ static AAC_ERR_T stscin(atom_parser_handle_t handle, uint32_t atom_size)
 
     m4a_info->stsc_sample2chunk_entries = u32in(buf); buf += 4;
     m4a_info->stsc_sample2chunk =
-        (struct sample2chunk *)audio_calloc(m4a_info->stsc_sample2chunk_entries, sizeof(struct sample2chunk));
+        audio_calloc(m4a_info->stsc_sample2chunk_entries, sizeof(struct sample2chunk));
     if (m4a_info->stsc_sample2chunk == NULL) {
         return AAC_ERR_NOMEM;
     }
@@ -449,7 +449,7 @@ static AAC_ERR_T stszin(atom_parser_handle_t handle, uint32_t atom_size)
         OS_LOGE(TAG, "Large STSZ(%u), out of memory", (uint32_t)(m4a_info->stsz_samplesize_entries*sizeof(int16_t)));
         return AAC_ERR_NOMEM;
     }
-    m4a_info->stsz_samplesize = (uint16_t *)audio_calloc(m4a_info->stsz_samplesize_entries, sizeof(uint16_t));
+    m4a_info->stsz_samplesize = audio_calloc(m4a_info->stsz_samplesize_entries, sizeof(uint16_t));
     if (m4a_info->stsz_samplesize == NULL) {
         return AAC_ERR_NOMEM;
     }
@@ -496,7 +496,7 @@ static AAC_ERR_T stcoin(atom_parser_handle_t handle, uint32_t atom_size)
     // Number of entries
     m4a_info->stco_chunk2offset_entries = u32in(buf); buf += 4;
     m4a_info->stco_chunk2offset =
-        (struct chunk2offset *)audio_calloc(m4a_info->stco_chunk2offset_entries, sizeof(struct chunk2offset));
+        audio_calloc(m4a_info->stco_chunk2offset_entries, sizeof(struct chunk2offset));
     if (m4a_info->stco_chunk2offset == NULL) {
         return AAC_ERR_NOMEM;
     }

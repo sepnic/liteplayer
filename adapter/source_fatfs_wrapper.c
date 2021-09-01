@@ -34,7 +34,12 @@ struct fatfs_priv {
     long content_len;
 };
 
-file_handle_t fatfs_wrapper_open(const char *url, long long content_pos, void *file_priv)
+const char *fatfs_wrapper_procotol()
+{
+    return "file";
+}
+
+source_handle_t fatfs_wrapper_open(const char *url, long long content_pos, void *priv_data)
 {
     struct fatfs_priv *priv = OS_CALLOC(1, sizeof(struct fatfs_priv));
     FILE *file = NULL;
@@ -62,7 +67,7 @@ file_handle_t fatfs_wrapper_open(const char *url, long long content_pos, void *f
     return priv;
 }
 
-int fatfs_wrapper_read(file_handle_t handle, char *buffer, int size)
+int fatfs_wrapper_read(source_handle_t handle, char *buffer, int size)
 {
     struct fatfs_priv *priv = (struct fatfs_priv *)handle;
     if (priv->file) {
@@ -78,7 +83,7 @@ int fatfs_wrapper_read(file_handle_t handle, char *buffer, int size)
     return -1;
 }
 
-long long fatfs_wrapper_filesize(file_handle_t handle)
+long long fatfs_wrapper_filesize(source_handle_t handle)
 {
     struct fatfs_priv *priv = (struct fatfs_priv *)handle;
     if (priv->file)
@@ -86,7 +91,7 @@ long long fatfs_wrapper_filesize(file_handle_t handle)
     return 0;
 }
 
-int fatfs_wrapper_seek(file_handle_t handle, long offset)
+int fatfs_wrapper_seek(source_handle_t handle, long offset)
 {
     struct fatfs_priv *priv = (struct fatfs_priv *)handle;
     if (priv->file) {
@@ -98,7 +103,7 @@ int fatfs_wrapper_seek(file_handle_t handle, long offset)
     return -1;
 }
 
-void fatfs_wrapper_close(file_handle_t handle)
+void fatfs_wrapper_close(source_handle_t handle)
 {
     struct fatfs_priv *priv = (struct fatfs_priv *)handle;
     if (priv->file) {

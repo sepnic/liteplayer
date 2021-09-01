@@ -26,12 +26,15 @@
 #include "cutils/log_helper.h"
 #include "cutils/mlooper.h"
 #include "esp_adf/audio_common.h"
+#include "liteplayer_adapter_internal.h"
 #include "liteplayer_adapter.h"
 #include "liteplayer_config.h"
 #include "liteplayer_main.h"
 #include "liteplayer_manager.h"
 
 #define TAG "[liteplayer]MANAGER"
+
+#define DEFAULT_PLAYLIST_BUFFER_SIZE  (1024*32)
 
 struct liteplayer_manager {
     liteplayer_handle_t  player;
@@ -42,9 +45,8 @@ struct liteplayer_manager {
     liteplayer_state_cb  listener;
     void                *listener_priv;
 
-    struct file_wrapper  file_ops;
-    struct http_wrapper  http_ops;
-    struct sink_wrapper  sink_ops;
+    liteplayer_adapter_handle_t adapter_handle;
+    struct source_wrapper *file_ops;
 
     char                *url_list[DEFAULT_PLAYLIST_URL_MAX];
     int                  url_index;
@@ -135,20 +137,20 @@ static char *playlist_get_line(char *buffer, int *index, int *remain)
 static int playlist_resolve(liteplayermanager_handle_t mngr, const char *filename)
 {
     int ret = -1;
-    file_handle_t file = NULL;
+    source_handle_t file = NULL;
     char *content = audio_malloc(DEFAULT_PLAYLIST_BUFFER_SIZE);
     if (content == NULL) {
         OS_LOGE(TAG, "Failed to allocate playlist parser buffer");
         goto resolve_done;
     }
 
-    file = mngr->file_ops.open(filename, 0, mngr->file_ops.file_priv);
+    file = mngr->file_ops->open(filename, 0, mngr->file_ops->priv_data);
     if (file == NULL) {
         OS_LOGE(TAG, "Failed to open playlist");
         goto resolve_done;
     }
 
-    int bytes_read = mngr->file_ops.read(file, content, DEFAULT_PLAYLIST_BUFFER_SIZE);
+    int bytes_read = mngr->file_ops->read(file, content, DEFAULT_PLAYLIST_BUFFER_SIZE);
     if (bytes_read <= 0) {
         OS_LOGE(TAG, "Failed to read playlist");
         goto resolve_done;
@@ -175,7 +177,7 @@ static int playlist_resolve(liteplayermanager_handle_t mngr, const char *filenam
 
 resolve_done:
     if (file != NULL)
-        mngr->file_ops.close(file);
+        mngr->file_ops->close(file);
     if (content != NULL)
         audio_free(content);
     return ret;
@@ -391,10 +393,14 @@ static void manager_looper_free(struct message *msg)
 
 liteplayermanager_handle_t liteplayermanager_create()
 {
-    liteplayermanager_handle_t mngr = (liteplayermanager_handle_t)audio_calloc(1, sizeof(struct liteplayer_manager));
+    liteplayermanager_handle_t mngr = audio_calloc(1, sizeof(struct liteplayer_manager));
     if (mngr != NULL) {
         mngr->lock = os_mutex_create();
         if (mngr->lock == NULL)
+            goto failed;
+
+        mngr->adapter_handle = liteplayer_adapter_init();
+        if (mngr->adapter_handle == NULL)
             goto failed;
 
         mngr->player = liteplayer_create();
@@ -421,28 +427,34 @@ failed:
     return NULL;
 }
 
-int liteplayermanager_register_file_wrapper(liteplayermanager_handle_t mngr, struct file_wrapper *file_ops)
+int liteplayermanager_register_source_wrapper(liteplayermanager_handle_t mngr, struct source_wrapper *wrapper)
 {
-    if (mngr == NULL || file_ops == NULL)
+    if (mngr == NULL || wrapper == NULL)
         return -1;
-    memcpy(&mngr->file_ops, file_ops, sizeof(struct file_wrapper));
-    return liteplayer_register_file_wrapper(mngr->player, file_ops);
+    mngr->adapter_handle->add_source_wrapper(mngr->adapter_handle, wrapper);
+    return liteplayer_register_source_wrapper(mngr->player, wrapper);
 }
 
-int liteplayermanager_register_http_wrapper(liteplayermanager_handle_t mngr, struct http_wrapper *http_ops)
+int liteplayermanager_set_prefered_source_wrapper(liteplayermanager_handle_t mngr, struct source_wrapper *wrapper)
 {
-    if (mngr == NULL || http_ops == NULL)
+    if (mngr == NULL || wrapper == NULL)
         return -1;
-    memcpy(&mngr->http_ops, http_ops, sizeof(struct http_wrapper));
-    return liteplayer_register_http_wrapper(mngr->player, http_ops);
+    return liteplayer_set_prefered_source_wrapper(mngr->player, wrapper);
 }
 
-int liteplayermanager_register_sink_wrapper(liteplayermanager_handle_t mngr, struct sink_wrapper *sink_ops)
+int liteplayermanager_register_sink_wrapper(liteplayermanager_handle_t mngr, struct sink_wrapper *wrapper)
 {
-    if (mngr == NULL || sink_ops == NULL)
+    if (mngr == NULL || wrapper == NULL)
         return -1;
-    memcpy(&mngr->sink_ops, sink_ops, sizeof(struct sink_wrapper));
-    return liteplayer_register_sink_wrapper(mngr->player, sink_ops);
+    mngr->adapter_handle->add_sink_wrapper(mngr->adapter_handle, wrapper);
+    return liteplayer_register_sink_wrapper(mngr->player, wrapper);
+}
+
+int liteplayermanager_set_prefered_sink_wrapper(liteplayermanager_handle_t mngr, struct sink_wrapper *wrapper)
+{
+    if (mngr == NULL || wrapper == NULL)
+        return -1;
+    return liteplayer_set_prefered_sink_wrapper(mngr->player, wrapper);
 }
 
 int liteplayermanager_register_state_listener(liteplayermanager_handle_t mngr, liteplayer_state_cb listener, void *listener_priv)
@@ -469,6 +481,15 @@ int liteplayermanager_set_data_source(liteplayermanager_handle_t mngr, const cha
     mngr->is_completed = false;
     mngr->is_paused = false;
     mngr->has_started = false;
+
+    if (mngr->file_ops == NULL) {
+        mngr->file_ops = mngr->adapter_handle->find_source_wrapper(mngr->adapter_handle, url);
+        if (mngr->file_ops == NULL) {
+            OS_LOGE(TAG, "Can't find source wrapper for this url");
+            os_mutex_unlock(mngr->lock);
+            return -1;
+        }
+    }
     os_mutex_unlock(mngr->lock);
 
     if (strstr(url, DEFAULT_PLAYLIST_FILE_SUFFIX) != NULL) {
@@ -497,19 +518,13 @@ int liteplayermanager_prepare_async(liteplayermanager_handle_t mngr)
 {
     if (mngr == NULL)
         return -1;
+
     struct message *msg = message_obtain(PLAYER_DO_PREPARE, 0, 0, mngr);
     if (msg != NULL) {
         mlooper_post_message(mngr->looper, msg);
         return 0;
     }
     return -1;
-}
-
-int liteplayermanager_write(liteplayermanager_handle_t mngr, char *data, int size, bool final)
-{
-    if (mngr == NULL)
-        return -1;
-    return liteplayer_write(mngr->player, data, size, final);
 }
 
 int liteplayermanager_start(liteplayermanager_handle_t mngr)
@@ -654,13 +669,6 @@ int liteplayermanager_reset(liteplayermanager_handle_t mngr)
     return -1;
 }
 
-int liteplayermanager_get_available_size(liteplayermanager_handle_t mngr)
-{
-    if (mngr == NULL)
-        return -1;
-    return liteplayer_get_available_size(mngr->player);
-}
-
 int liteplayermanager_get_position(liteplayermanager_handle_t mngr, int *msec)
 {
     if (mngr == NULL || msec == NULL)
@@ -685,5 +693,7 @@ void liteplayermanager_destroy(liteplayermanager_handle_t mngr)
         liteplayer_destroy(mngr->player);
     if (mngr->lock != NULL)
         os_mutex_destroy(mngr->lock);
+    if (mngr->adapter_handle != NULL)
+        mngr->adapter_handle->destory(mngr->adapter_handle);
     audio_free(mngr);
 }

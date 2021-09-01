@@ -47,11 +47,13 @@ typedef struct liteplayer *liteplayer_handle_t;
 
 liteplayer_handle_t liteplayer_create();
 
-int liteplayer_register_file_wrapper(liteplayer_handle_t handle, struct file_wrapper *file_ops);
+int liteplayer_register_source_wrapper(liteplayer_handle_t handle, struct source_wrapper *wrapper);
 
-int liteplayer_register_http_wrapper(liteplayer_handle_t handle, struct http_wrapper *http_ops);
+int liteplayer_set_prefered_source_wrapper(liteplayer_handle_t handle, struct source_wrapper *wrapper);
 
-int liteplayer_register_sink_wrapper(liteplayer_handle_t handle, struct sink_wrapper *sink_ops);
+int liteplayer_register_sink_wrapper(liteplayer_handle_t handle, struct sink_wrapper *wrapper);
+
+int liteplayer_set_prefered_sink_wrapper(liteplayer_handle_t handle, struct sink_wrapper *wrapper);
 
 int liteplayer_register_state_listener(liteplayer_handle_t handle, liteplayer_state_cb listener, void *listener_priv);
 
@@ -60,8 +62,6 @@ int liteplayer_set_data_source(liteplayer_handle_t handle, const char *url, int 
 int liteplayer_prepare(liteplayer_handle_t handle);
 
 int liteplayer_prepare_async(liteplayer_handle_t handle);
-
-int liteplayer_write(liteplayer_handle_t handle, char *data, int size, bool final);
 
 int liteplayer_start(liteplayer_handle_t handle);
 
@@ -74,8 +74,6 @@ int liteplayer_seek(liteplayer_handle_t handle, int msec);
 int liteplayer_stop(liteplayer_handle_t handle);
 
 int liteplayer_reset(liteplayer_handle_t handle);
-
-int liteplayer_get_available_size(liteplayer_handle_t handle);
 
 int liteplayer_get_position(liteplayer_handle_t handle, int *msec);
 
