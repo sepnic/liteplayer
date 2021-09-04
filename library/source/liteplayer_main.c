@@ -46,13 +46,14 @@ struct liteplayer {
     const char             *url; // STREAM: /websocket/tts.mp3
                                  // HTTP  : http://..., https://...
                                  // FILE  : others
+    int                     threshold_ms;
+    os_mutex                io_lock;
+
     enum liteplayer_state   state;
     os_mutex                state_lock;
     liteplayer_state_cb     state_listener;
     void                   *state_userdata;
     bool                    state_error;
-
-    os_mutex                io_lock;
 
     liteplayer_adapter_handle_t adapter_handle;
     struct source_wrapper  *source_ops;
@@ -63,9 +64,9 @@ struct liteplayer {
 
     audio_element_handle_t  ael_decoder;
 
+    source_handle_t         source_handle;
     ringbuf_handle          source_ringbuf;
     media_source_handle_t   media_source_handle;
-    int                     threshold_ms;
 
     sink_handle_t           sink_handle;
     int                     sink_samplerate;
@@ -78,14 +79,53 @@ struct liteplayer {
     long long               seek_offset;
 };
 
+static int audio_source_open(audio_element_handle_t self, void *ctx)
+{
+    liteplayer_handle_t handle = (liteplayer_handle_t)ctx;
+    OS_LOGI(TAG, "Opening source: url: %s", handle->url);
+    if (handle->source_handle == NULL) {
+        handle->source_handle = handle->source_ops->open(handle->url,
+            handle->media_codec_info.content_pos + handle->seek_offset,
+            handle->source_ops->priv_data);
+        if (handle->source_handle == NULL) {
+            OS_LOGE(TAG, "Failed to open source");
+            return AEL_IO_FAIL;
+        }
+    }
+    return AEL_IO_OK;
+}
+
+static void audio_source_close(audio_element_handle_t self, void *ctx)
+{
+    liteplayer_handle_t handle = (liteplayer_handle_t)ctx;
+    if (handle->source_handle != NULL) {
+        OS_LOGI(TAG, "Closing source");
+        handle->source_ops->close(handle->source_handle);
+        handle->source_handle = NULL;
+    }
+}
+
+static int audio_source_read(audio_element_handle_t self, char *buffer, int len, int timeout_ms, void *ctx)
+{
+    liteplayer_handle_t handle = (liteplayer_handle_t)ctx;
+    int bytes_read = handle->source_ops->read(handle->source_handle, buffer, len);
+    if (bytes_read < 0) {
+        OS_LOGE(TAG, "Failed to read source, ret:%d", bytes_read);
+        bytes_read = AEL_IO_FAIL;
+    } else if (bytes_read == 0) {
+        bytes_read = AEL_IO_DONE;
+    }
+    return bytes_read;
+}
+
 static int audio_sink_open(audio_element_handle_t self, void *ctx)
 {
     liteplayer_handle_t handle = (liteplayer_handle_t)ctx;
     if (!handle->sink_inited) {
-        OS_LOGV(TAG, "Sink out not inited, abort opening");
-        return 0;
+        OS_LOGV(TAG, "Sink not inited, abort opening");
+        return AEL_IO_OK;
     }
-    OS_LOGI(TAG, "Opening sink out: rate:%d, channels:%d, bits:%d",
+    OS_LOGI(TAG, "Opening sink: rate:%d, channels:%d, bits:%d",
             handle->sink_samplerate, handle->sink_channels, handle->sink_bits);
     if (handle->sink_handle == NULL) {
         handle->sink_handle = handle->sink_ops->open(handle->sink_samplerate,
@@ -93,17 +133,18 @@ static int audio_sink_open(audio_element_handle_t self, void *ctx)
                                                      handle->sink_bits,
                                                      handle->sink_ops->priv_data);
         if (handle->sink_handle == NULL) {
-            OS_LOGE(TAG, "Failed to open sink out");
-            return -1;
+            OS_LOGE(TAG, "Failed to open sink");
+            return AEL_IO_FAIL;
         }
     }
-    return 0;
+    return AEL_IO_OK;
 }
+
 static void audio_sink_close(audio_element_handle_t self, void *ctx)
 {
     liteplayer_handle_t handle = (liteplayer_handle_t)ctx;
     if (handle->sink_handle != NULL) {
-        OS_LOGI(TAG, "Closing sink out");
+        OS_LOGI(TAG, "Closing sink");
         handle->sink_ops->close(handle->sink_handle);
         handle->sink_handle = NULL;
     }
@@ -119,7 +160,7 @@ static int audio_sink_write(audio_element_handle_t self, char *buffer, int len, 
     if (!handle->sink_inited) {
         handle->sink_inited = true;
         if (audio_sink_open(self, ctx) != 0)
-            return -1;
+            return AEL_IO_FAIL;
     }
 
     int bytes_written = handle->sink_ops->write(handle->sink_handle, buffer, len);
@@ -127,6 +168,7 @@ static int audio_sink_write(audio_element_handle_t self, char *buffer, int len, 
         handle->sink_position += bytes_written;
     } else {
         OS_LOGE(TAG, "Failed to write pcm, ret:%d", bytes_written);
+        bytes_written = AEL_IO_FAIL;
     }
     return bytes_written;
 }
@@ -170,11 +212,15 @@ static int audio_element_state_callback(audio_element_handle_t el, audio_event_i
 
             case AEL_STATUS_ERROR_TIMEOUT:
                 if (msg->source == (void *)handle->ael_decoder) {
-                    OS_LOGW(TAG, "[ %s-%s ] Receive inputtimeout event, filled/total: %d/%d",
-                            handle->source_ops->procotol(),
-                            audio_element_get_tag(el),
-                            rb_bytes_filled(handle->source_ringbuf),
-                            rb_get_size(handle->source_ringbuf));
+                    if (handle->source_ringbuf != NULL) {
+                        OS_LOGW(TAG, "[ %s-%s ] Receive inputtimeout event, filled/total: %d/%d",
+                                handle->source_ops->procotol(), audio_element_get_tag(el),
+                                rb_bytes_filled(handle->source_ringbuf),
+                                rb_get_size(handle->source_ringbuf));
+                    } else {
+                        OS_LOGW(TAG, "[ %s-%s ] Receive inputtimeout event",
+                                handle->source_ops->procotol(), audio_element_get_tag(el));
+                    }
                 }
                 break;
 
@@ -418,21 +464,30 @@ static int main_pipeline_init(liteplayer_handle_t handle)
         audio_element_set_write_cb(handle->ael_decoder, &audio_sink);
     }
 
-    {
+    if (handle->source_ops->async_mode) {
         OS_LOGD(TAG, "[1.2] Create source element");
         handle->source_ringbuf = rb_create(handle->source_ops->ringbuf_size);
         AUDIO_MEM_CHECK(TAG, handle->source_ringbuf, goto pipeline_fail);
 
         audio_element_set_input_ringbuf(handle->ael_decoder, handle->source_ringbuf);
 
-        struct media_source_info info = {
+        struct media_source_info source_info = {
             .url = handle->url,
             .source_ops = handle->source_ops,
             .content_pos = handle->media_codec_info.content_pos + handle->seek_offset,
             .threshold_size = media_source_get_threshold(handle, handle->threshold_ms),
         };
-        handle->media_source_handle = media_source_start(&info, handle->source_ringbuf, media_source_state_callback, handle);
+        handle->media_source_handle = media_source_start(&source_info, handle->source_ringbuf, media_source_state_callback, handle);
         AUDIO_MEM_CHECK(TAG, handle->media_source_handle, goto pipeline_fail);
+    } else {
+        OS_LOGD(TAG, "[1.2] Create source element");
+        stream_callback_t audio_source = {
+            .open = audio_source_open,
+            .close = audio_source_close,
+            .fill = audio_source_read,
+            .ctx = handle,
+        };
+        audio_element_set_read_cb(handle->ael_decoder, &audio_source);
     }
 
     {
@@ -851,19 +906,30 @@ int liteplayer_seek(liteplayer_handle_t handle, int msec)
             handle->source_ringbuf = NULL;
         }
 
-        handle->source_ringbuf = rb_create(handle->source_ops->ringbuf_size);
-        AUDIO_MEM_CHECK(TAG, handle->source_ringbuf, goto seek_out);
+        if (handle->source_ops->async_mode) {
+            handle->source_ringbuf = rb_create(handle->source_ops->ringbuf_size);
+            AUDIO_MEM_CHECK(TAG, handle->source_ringbuf, goto seek_out);
 
-        audio_element_set_input_ringbuf(handle->ael_decoder, handle->source_ringbuf);
+            audio_element_set_input_ringbuf(handle->ael_decoder, handle->source_ringbuf);
 
-        struct media_source_info info = {
-            .url = handle->url,
-            .source_ops = handle->source_ops,
-            .content_pos = handle->media_codec_info.content_pos + handle->seek_offset,
-            .threshold_size = 0,
-        };
-        handle->media_source_handle = media_source_start(&info, handle->source_ringbuf, media_source_state_callback, handle);
-        AUDIO_MEM_CHECK(TAG, handle->media_source_handle, goto seek_out);
+            struct media_source_info info = {
+                .url = handle->url,
+                .source_ops = handle->source_ops,
+                .content_pos = handle->media_codec_info.content_pos + handle->seek_offset,
+                .threshold_size = 0,
+            };
+            handle->media_source_handle =
+                media_source_start(&info, handle->source_ringbuf, media_source_state_callback, handle);
+            AUDIO_MEM_CHECK(TAG, handle->media_source_handle, goto seek_out);
+        } else {
+            stream_callback_t audio_source = {
+                .open = audio_source_open,
+                .close = audio_source_close,
+                .fill = audio_source_read,
+                .ctx = handle,
+            };
+            audio_element_set_read_cb(handle->ael_decoder, &audio_source);
+        }
     }
 
     ret = audio_element_seek(handle->ael_decoder, handle->seek_offset);

@@ -235,16 +235,16 @@ static esp_err_t audio_element_process_close(audio_element_handle_t el)
         if (el->close)
             el->close(el);
 
-        if (el->read_type == IO_TYPE_CB) {
-            if (el->in.read_cb.close != NULL) {
-                OS_LOGD(TAG, "[%s] closing input reader", el->tag);
-                el->in.read_cb.close(el, el->in.read_cb.ctx);
-            }
-        }
         if (el->write_type == IO_TYPE_CB) {
             if (el->out.write_cb.close != NULL) {
                 OS_LOGD(TAG, "[%s] closing output writer", el->tag);
                 el->out.write_cb.close(el, el->out.write_cb.ctx);
+            }
+        }
+        if (el->read_type == IO_TYPE_CB) {
+            if (el->in.read_cb.close != NULL) {
+                OS_LOGD(TAG, "[%s] closing input reader", el->tag);
+                el->in.read_cb.close(el, el->in.read_cb.ctx);
             }
         }
 

@@ -263,7 +263,7 @@ static int mp3_data_read(mp3_decoder_handle_t decoder)
 fill_header:
     ret = audio_element_input(decoder->el, in->data+in->bytes_read, in->bytes_want);
     if (ret < in->bytes_want) {
-        if (ret >= 0) {
+        if (ret > 0) {
             in->bytes_read += ret;
             in->bytes_want -= ret;
             return AEL_IO_TIMEOUT;
@@ -290,7 +290,7 @@ fill_header:
 fill_frame:
     ret = audio_element_input(decoder->el, in->data+in->bytes_read, in->bytes_want);
     if (ret < in->bytes_want) {
-        if (ret >= 0) {
+        if (ret > 0) {
             in->bytes_read += ret;
             in->bytes_want -= ret;
             return AEL_IO_TIMEOUT;

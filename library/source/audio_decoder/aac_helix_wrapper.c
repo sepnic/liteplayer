@@ -41,7 +41,7 @@ static int aac_adts_read(aac_decoder_handle_t decoder)
         memmove(data, &data[want], remain);
 
     int ret = audio_element_input(decoder->el, &data[remain], want);
-    if (ret >= 0) {
+    if (ret > 0) {
         decoder->buf_in.bytes_read += ret;
         return AEL_IO_OK;
     } else if (ret == AEL_IO_TIMEOUT) {
