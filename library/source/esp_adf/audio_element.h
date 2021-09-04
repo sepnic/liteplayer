@@ -139,9 +139,10 @@ typedef int (*process_func)(audio_element_handle_t self, char *el_buffer, int el
 typedef esp_err_t (*event_cb_func)(audio_element_handle_t el, audio_event_iface_msg_t *event, void *ctx);
 
 typedef struct stream_callback {
-    int (*open)(audio_element_handle_t self, void *ctx);
+    int  (*open)(audio_element_handle_t self, void *ctx);
+    int  (*read)(audio_element_handle_t self, char *buffer, int len, int timeout_ms, void *ctx);
+    int  (*write)(audio_element_handle_t self, char *buffer, int len, int timeout_ms, void *ctx);
     void (*close)(audio_element_handle_t self, void *ctx);
-    int (*fill)(audio_element_handle_t self, char *buffer, int len, int timeout_ms, void *ctx);
     void *ctx;
 } stream_callback_t;
 
