@@ -18,8 +18,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef _FILE_WRAPPER_H_
-#define _FILE_WRAPPER_H_
+#ifndef _LITEPLAYER_ADAPTER_FILE_WRAPPER_H_
+#define _LITEPLAYER_ADAPTER_FILE_WRAPPER_H_
 
 #include "liteplayer_adapter.h"
 
@@ -43,4 +43,4 @@ void file_wrapper_close(source_handle_t handle);
 }
 #endif
 
-#endif
+#endif // _LITEPLAYER_ADAPTER_FILE_WRAPPER_H_

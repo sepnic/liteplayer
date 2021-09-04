@@ -62,4 +62,4 @@ int m3u_get_first_url(struct media_source_info *info, char *buf, int buf_size);
 }
 #endif
 
-#endif
+#endif // _LITEPLAYER_MEDIASOURCE_H_

@@ -85,4 +85,4 @@ void liteplayer_destroy(liteplayer_handle_t handle);
 }
 #endif
 
-#endif
+#endif // _LITEPLAYER_MAIN_H_

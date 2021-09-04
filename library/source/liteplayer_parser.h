@@ -71,4 +71,4 @@ void media_parser_stop(media_parser_handle_t handle);
 }
 #endif
 
-#endif
+#endif // _LITEPLAYER_MEDIAPARSER_H_

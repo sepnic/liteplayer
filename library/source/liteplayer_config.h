@@ -53,4 +53,4 @@ extern "C" {
 }
 #endif
 
-#endif
+#endif // _LITEPLAYER_CONFIG_H_

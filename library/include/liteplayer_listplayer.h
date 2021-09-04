@@ -18,8 +18,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef _LITEPLAYER_PLAYLIST_H_
-#define _LITEPLAYER_PLAYLIST_H_
+#ifndef _LITEPLAYER_LISTPLAYER_H_
+#define _LITEPLAYER_LISTPLAYER_H_
 
 #include "liteplayer_adapter.h"
 #include "liteplayer_main.h"
@@ -87,4 +87,4 @@ void listplayer_destroy(listplayer_handle_t handle);
 }
 #endif
 
-#endif // _LITEPLAYER_PLAYLIST_H_
+#endif // _LITEPLAYER_LISTPLAYER_H_

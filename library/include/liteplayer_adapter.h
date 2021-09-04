@@ -54,4 +54,4 @@ struct sink_wrapper {
 }
 #endif
 
-#endif
+#endif // _LITEPLAYER_ADAPTER_H_

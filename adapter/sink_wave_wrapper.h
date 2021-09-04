@@ -18,8 +18,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef _WAVE_WRAPPER_H_
-#define _WAVE_WRAPPER_H_
+#ifndef _LITEPLAYER_ADAPTER_WAVE_WRAPPER_H_
+#define _LITEPLAYER_ADAPTER_WAVE_WRAPPER_H_
 
 #include "liteplayer_adapter.h"
 
@@ -39,4 +39,4 @@ void wave_wrapper_close(sink_handle_t handle);
 }
 #endif
 
-#endif
+#endif // _LITEPLAYER_ADAPTER_WAVE_WRAPPER_H_
