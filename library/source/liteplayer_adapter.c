@@ -32,7 +32,7 @@
 
 #define TAG "[liteplayer]adapter"
 
-#define DEFAULT_SOURCE_RINGBUF_SIZE (1024*32)
+#define DEFAULT_SOURCE_RINGBUF_SIZE (1024*16)
 #define DEFAULT_SOURCE_URL_PROTOCOL "file"
 
 struct liteplayer_adapter_priv {
@@ -164,10 +164,13 @@ static int add_source_wrapper(liteplayer_adapter_handle_t self, struct source_wr
         list_add_head(&priv->source_list, &node->listnode);
     }
 
-    if (wrapper->ringbuf_size > 0)
-        node->wrapper.ringbuf_size = wrapper->ringbuf_size;
-    else
+    if (wrapper->async_mode && wrapper->ringbuf_size < DEFAULT_SOURCE_RINGBUF_SIZE) {
+        OS_LOGW(TAG, "Output ringbuf is too small, force ringbuf_size to be %d",
+                DEFAULT_SOURCE_RINGBUF_SIZE);
         node->wrapper.ringbuf_size = DEFAULT_SOURCE_RINGBUF_SIZE;
+    } else {
+        node->wrapper.ringbuf_size = wrapper->ringbuf_size;
+    }
     node->wrapper.async_mode = wrapper->async_mode;
     node->wrapper.priv_data = wrapper->priv_data;
     node->wrapper.procotol = wrapper->procotol;

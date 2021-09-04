@@ -26,7 +26,7 @@
 #include "esp_adf/audio_common.h"
 #include "audio_decoder/mp3_decoder.h"
 
-#define TAG "[liteplayer]MP3_DECODER"
+#define TAG "[liteplayer]mp3_decoder"
 
 #define MP3_DECODER_INPUT_TIMEOUT_MAX  200
 

@@ -29,7 +29,7 @@
 #include "audio_decoder/m4a_decoder.h"
 #include "aac-helix/aacdec.h"
 
-#define TAG "[liteplayer]AAC_DECODER"
+#define TAG "[liteplayer]aac_decoder"
 
 static int aac_adts_read(aac_decoder_handle_t decoder)
 {

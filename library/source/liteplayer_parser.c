@@ -31,7 +31,7 @@
 #include "liteplayer_config.h"
 #include "liteplayer_parser.h"
 
-#define TAG "[liteplayer]PARSER"
+#define TAG "[liteplayer]parser"
 
 #define DEFAULT_MEDIA_PARSER_BUFFER_SIZE 2048
 

@@ -27,7 +27,7 @@
 #include "esp_adf/audio_common.h"
 #include "audio_extractor/wav_extractor.h"
 
-#define TAG "[liteplayer]WAV_EXTRACTOR"
+#define TAG "[liteplayer]wav_extractor"
 
 #define WAV_PARSE_BUFFER_SIZE (2048)
 

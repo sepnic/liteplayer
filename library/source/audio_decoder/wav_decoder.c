@@ -30,7 +30,7 @@
 #include "audio_decoder/wav_decoder.h"
 #include "dr_libs/dr_wav.h"
 
-#define TAG "[liteplayer]WAV_DEC"
+#define TAG "[liteplayer]wav_decoder"
 
 #define WAV_DECODER_INPUT_TIMEOUT_MAX  200 // ms
 #define WAV_DECODER_PREFERED_PEROID_MS 20 // ms

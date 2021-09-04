@@ -28,9 +28,9 @@
 #include "speex/speex_resampler.h"
 #include "liteplayer_resampler.h"
 
-#define TAG "[liteplayer]RESAMPLER"
+#define TAG "[liteplayer]resampler"
 
-struct resample_priv {
+struct resampler_priv {
     struct resampler     converter;
     struct resampler_cfg cfg;
     SpeexResamplerState *src_state;
@@ -40,7 +40,7 @@ struct resample_priv {
     bool                 enable_channels_convert;
     bool                 opened;
 };
-typedef struct resample_priv *resample_priv_handle_t;
+typedef struct resampler_priv *resampler_priv_handle_t;
 
 static int mono_to_stereo(short *buf, int nbytes)
 {
@@ -62,7 +62,7 @@ static int stereo_to_mono(short *buf, int nbytes)
 
 static int resampler_open(resampler_handle_t self, struct resampler_cfg *config)
 {
-    resample_priv_handle_t priv = (resample_priv_handle_t)self;
+    resampler_priv_handle_t priv = (resampler_priv_handle_t)self;
     int in_channels  = config->in_channels;
     int in_rate      = config->in_rate;
     int out_channels = config->out_channels;
@@ -103,7 +103,7 @@ static int resampler_open(resampler_handle_t self, struct resampler_cfg *config)
 
 static int resampler_process(resampler_handle_t self, const short *in, int in_bytes)
 {
-    resample_priv_handle_t priv = (resample_priv_handle_t)self;
+    resampler_priv_handle_t priv = (resampler_priv_handle_t)self;
     resampler_handle_t converter = &(priv->converter);
     int in_channels  = priv->cfg.in_channels;
     int out_channels = priv->cfg.out_channels;
@@ -185,7 +185,7 @@ static int resampler_process(resampler_handle_t self, const short *in, int in_by
 
 static void resampler_close(resampler_handle_t self)
 {
-    resample_priv_handle_t priv = (resample_priv_handle_t)self;
+    resampler_priv_handle_t priv = (resampler_priv_handle_t)self;
     resampler_handle_t converter = &(priv->converter);
 
     if (priv->enable_channels_convert) {
@@ -207,7 +207,7 @@ static void resampler_close(resampler_handle_t self)
 
 static void resampler_destroy(resampler_handle_t self)
 {
-    resample_priv_handle_t priv = (resample_priv_handle_t)self;
+    resampler_priv_handle_t priv = (resampler_priv_handle_t)self;
     if (priv->opened)
         resampler_close(self);
     audio_free(priv);
@@ -215,7 +215,7 @@ static void resampler_destroy(resampler_handle_t self)
 
 resampler_handle_t resampler_init()
 {
-    resample_priv_handle_t handle = audio_calloc(1, sizeof(struct resample_priv));
+    resampler_priv_handle_t handle = audio_calloc(1, sizeof(struct resampler_priv));
     AUDIO_MEM_CHECK(TAG, handle, return NULL);
 
     handle->converter.open    = resampler_open;

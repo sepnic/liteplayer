@@ -27,7 +27,7 @@
 #include "cutils/log_helper.h"
 #include "liteplayer_main.h"
 #include "source_httpclient_wrapper.h"
-#include "source_fatfs_wrapper.h"
+#include "source_file_wrapper.h"
 #if defined(ENABLE_LINUX_ALSA)
 #include "sink_alsa_wrapper.h"
 #else
@@ -120,12 +120,12 @@ static int basic_demo(const char *url)
         .async_mode = false,
         .ringbuf_size = 32*1024,
         .priv_data = NULL,
-        .procotol = fatfs_wrapper_procotol,
-        .open = fatfs_wrapper_open,
-        .read = fatfs_wrapper_read,
-        .filesize = fatfs_wrapper_filesize,
-        .seek = fatfs_wrapper_seek,
-        .close = fatfs_wrapper_close,
+        .procotol = file_wrapper_procotol,
+        .open = file_wrapper_open,
+        .read = file_wrapper_read,
+        .filesize = file_wrapper_filesize,
+        .seek = file_wrapper_seek,
+        .close = file_wrapper_close,
     };
     liteplayer_register_source_wrapper(player, &file_ops);
 

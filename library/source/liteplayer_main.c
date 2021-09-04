@@ -40,7 +40,7 @@
 #include "liteplayer_parser.h"
 #include "liteplayer_main.h"
 
-#define TAG "[liteplayer]CORE"
+#define TAG "[liteplayer]core"
 
 struct liteplayer {
     const char             *url; // STREAM: /websocket/tts.mp3
@@ -246,16 +246,16 @@ static void media_source_state_callback(enum media_source_state state, void *pri
     switch (state) {
     case MEDIA_SOURCE_READ_FAILED:
     case MEDIA_SOURCE_WRITE_FAILED:
-        OS_LOGE(TAG, "[ %s-SOURCE ] Receive error[%d]", handle->source_ops->procotol(), state);
+        OS_LOGE(TAG, "[ %s-source ] Receive error[%d]", handle->source_ops->procotol(), state);
         handle->state = LITEPLAYER_ERROR;
         media_player_state_callback(handle, LITEPLAYER_ERROR, state);
         break;
     case MEDIA_SOURCE_READ_DONE:
-        OS_LOGD(TAG, "[ %s-SOURCE ] Receive inputdone event", handle->source_ops->procotol());
+        OS_LOGD(TAG, "[ %s-source ] Receive inputdone event", handle->source_ops->procotol());
         media_player_state_callback(handle, LITEPLAYER_NEARLYCOMPLETED, 0);
         break;
     case MEDIA_SOURCE_REACH_THRESHOLD:
-        OS_LOGI(TAG, "[ %s-SOURCE ] Receive threshold event: threshold/total=%d/%d", handle->source_ops->procotol(),
+        OS_LOGI(TAG, "[ %s-source ] Receive threshold event: threshold/total=%d/%d", handle->source_ops->procotol(),
                 rb_get_threshold(handle->source_ringbuf), rb_get_size(handle->source_ringbuf));
         media_player_state_callback(handle, LITEPLAYER_CACHECOMPLETED, 0);
         break;
@@ -490,7 +490,6 @@ int liteplayer_register_source_wrapper(liteplayer_handle_t handle, struct source
         os_mutex_unlock(handle->io_lock);
         return ESP_FAIL;
     }
-
     int ret = handle->adapter_handle->add_source_wrapper(handle->adapter_handle, wrapper);
     os_mutex_unlock(handle->io_lock);
     return ret;
@@ -513,7 +512,6 @@ int liteplayer_register_sink_wrapper(liteplayer_handle_t handle, struct sink_wra
         os_mutex_unlock(handle->io_lock);
         return ESP_FAIL;
     }
-
     int ret = handle->adapter_handle->add_sink_wrapper(handle->adapter_handle, wrapper);
     os_mutex_unlock(handle->io_lock);
     return ret;
@@ -529,8 +527,16 @@ int liteplayer_register_state_listener(liteplayer_handle_t handle, liteplayer_st
 {
     if (handle == NULL || listener == NULL)
         return ESP_FAIL;
+
+    os_mutex_lock(handle->io_lock);
+    if (handle->state != LITEPLAYER_IDLE) {
+        OS_LOGE(TAG, "Can't set listener in state=[%d]", handle->state);
+        os_mutex_unlock(handle->io_lock);
+        return ESP_FAIL;
+    }
     handle->state_listener = listener;
     handle->state_userdata = listener_priv;
+    os_mutex_unlock(handle->io_lock);
     return ESP_OK;
 }
 

@@ -28,7 +28,7 @@
 #include "esp_adf/audio_event_iface.h"
 #include "esp_adf/audio_common.h"
 
-#define TAG  "[liteplayer]AUDIO_EVT"
+#define TAG  "[liteplayer]audio_event"
 
 
 typedef struct audio_event_iface_item {

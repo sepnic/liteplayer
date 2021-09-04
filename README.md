@@ -14,7 +14,7 @@ Liteplayer 具有如下特点：
 
 **播放器高级接口**：
 - 提供播放管理器功能，支持本地播放列表，切换上下首、单曲循环等操作
-- [https://github.com/sepnic/liteplayer_priv/blob/master/library/include/liteplayer_manager.h](https://github.com/sepnic/liteplayer_priv/blob/master/library/include/liteplayer_manager.h)
+- [https://github.com/sepnic/liteplayer_priv/blob/master/library/include/liteplayer_listplayer.h](https://github.com/sepnic/liteplayer_priv/blob/master/library/include/liteplayer_listplayer.h)
 
 **播放器适配层**：
 - 文件读写、网络访问、音频设备输出的抽象接口，默认适配了 "文件读写-标准文件系统"、 "网络访问-httpclient"、"音频设备输出-tinyalsa/OpenSLES/AudioTrack"

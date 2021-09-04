@@ -53,7 +53,7 @@ LOCAL_SRC_FILES := \
     ${TOP_DIR}/library/source/liteplayer_source.c \
     ${TOP_DIR}/library/source/liteplayer_parser.c \
     ${TOP_DIR}/library/source/liteplayer_main.c \
-    ${TOP_DIR}/library/source/liteplayer_manager.c
+    ${TOP_DIR}/library/source/liteplayer_listplayer.c
 LOCAL_C_INCLUDES += \
     ${TOP_DIR}/library/include \
     ${TOP_DIR}/library/source \
@@ -88,7 +88,7 @@ THIRDPARTY_FILES := $(THIRDPARTY_FILES:$(LOCAL_PATH)/%=%)
 LOCAL_SRC_FILES := \
     ${THIRDPARTY_FILES} \
     ${TOP_DIR}/adapter/source_httpclient_wrapper.c \
-    ${TOP_DIR}/adapter/source_fatfs_wrapper.c \
+    ${TOP_DIR}/adapter/source_file_wrapper.c \
     ${TOP_DIR}/adapter/sink_opensles_wrapper.cpp
 LOCAL_C_INCLUDES += \
     ${TOP_DIR}/library/include \

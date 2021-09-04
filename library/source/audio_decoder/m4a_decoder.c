@@ -27,7 +27,7 @@
 #include "esp_adf/audio_element.h"
 #include "audio_decoder/m4a_decoder.h"
 
-#define TAG "[liteplayer]M4A_DECODER"
+#define TAG "[liteplayer]m4a_decoder"
 
 #define M4A_DECODER_INPUT_TIMEOUT_MAX  200
 

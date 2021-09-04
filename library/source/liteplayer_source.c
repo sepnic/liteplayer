@@ -30,7 +30,7 @@
 #include "liteplayer_config.h"
 #include "liteplayer_source.h"
 
-#define TAG "[liteplayer]SOURCE"
+#define TAG "[liteplayer]source"
 
 #define DEFAULT_MEDIA_SOURCE_BUFFER_SIZE ( 1024*8+1 )
 

@@ -41,7 +41,7 @@
 #include <arpa/inet.h>
 #endif
 
-#define TAG "[liteplayer]DEBUG"
+#define TAG "[liteplayer]debug"
 
 #define DEFAULT_SOCKET_UPLOAD_RINGBUF_SIZE  ( 1024*64 )
 #define DEFAULT_SOCKET_UPLOAD_TIMEOUT_MS    ( 2000 )

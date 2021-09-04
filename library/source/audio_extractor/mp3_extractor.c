@@ -26,7 +26,7 @@
 #include "esp_adf/audio_common.h"
 #include "audio_extractor/mp3_extractor.h"
 
-#define TAG "[liteplayer]MP3_EXTRACTOR"
+#define TAG "[liteplayer]mp3_extractor"
 
 #define DEFAULT_MP3_PARSER_BUFFER_SIZE 2048
 

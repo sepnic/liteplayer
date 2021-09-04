@@ -27,25 +27,23 @@
 extern "C" {
 #endif
 
-// media parser definations
-#define DEFAULT_MEDIA_PARSER_TASK_PRIO           ( OS_THREAD_PRIO_NORMAL )
+// media parser definations, core feature
+#define DEFAULT_MEDIA_PARSER_TASK_PRIO           ( OS_THREAD_PRIO_HIGH )
 #define DEFAULT_MEDIA_PARSER_TASK_STACKSIZE      ( 1024*12 )
 
-// media decoder definations
-#define DEFAULT_MEDIA_DECODER_TASK_PRIO          ( OS_THREAD_PRIO_HIGH )
+// media decoder definations, core feature
+#define DEFAULT_MEDIA_DECODER_TASK_PRIO          ( OS_THREAD_PRIO_REALTIME )
 #define DEFAULT_MEDIA_DECODER_TASK_STACKSIZE     ( 1024*32 )
 
-// media source definations
+// media source definations, core feature, for source async mode
 #define DEFAULT_MEDIA_SOURCE_TASK_PRIO           ( OS_THREAD_PRIO_HIGH )
 #define DEFAULT_MEDIA_SOURCE_TASK_STACKSIZE      ( 1024*6 )
 
-// player manager definations
-#define DEFAULT_MANAGER_TASK_PRIO                ( OS_THREAD_PRIO_HIGH )
-#define DEFAULT_MANAGER_TASK_STACKSIZE           ( 1024*4 )
-#define DEFAULT_PLAYLIST_FILE_SUFFIX             ".playlist"
-#define DEFAULT_PLAYLIST_URL_MAX                 ( 200 )
+// playlist player definations, for playlist support
+#define DEFAULT_LISTPLAYER_TASK_PRIO             ( OS_THREAD_PRIO_HIGH )
+#define DEFAULT_LISTPLAYER_TASK_STACKSIZE        ( 1024*4 )
 
-// socket upload definations, use with tools/socket_upload.py
+// socket upload definations, for data dump, see tools/README.md
 #define DEFAULT_SOCKET_UPLOAD_START              "GENIE_SOCKET_UPLOAD_START"
 #define DEFAULT_SOCKET_UPLOAD_END                "GENIE_SOCKET_UPLOAD_END"
 #define DEFAULT_SOCKET_UPLOAD_TASK_PRIO          ( OS_THREAD_PRIO_NORMAL )

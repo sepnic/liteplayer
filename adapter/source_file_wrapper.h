@@ -18,8 +18,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef _FATFS_WRAPPER_H_
-#define _FATFS_WRAPPER_H_
+#ifndef _FILE_WRAPPER_H_
+#define _FILE_WRAPPER_H_
 
 #include "liteplayer_adapter.h"
 
@@ -27,17 +27,17 @@
 extern "C" {
 #endif
 
-const char *fatfs_wrapper_procotol();
+const char *file_wrapper_procotol();
 
-source_handle_t fatfs_wrapper_open(const char *url, long long content_pos, void *priv_data);
+source_handle_t file_wrapper_open(const char *url, long long content_pos, void *priv_data);
 
-int fatfs_wrapper_read(source_handle_t handle, char *buffer, int size);
+int file_wrapper_read(source_handle_t handle, char *buffer, int size);
 
-long long fatfs_wrapper_filesize(source_handle_t handle);
+long long file_wrapper_filesize(source_handle_t handle);
 
-int fatfs_wrapper_seek(source_handle_t handle, long offset);
+int file_wrapper_seek(source_handle_t handle, long offset);
 
-void fatfs_wrapper_close(source_handle_t handle);
+void file_wrapper_close(source_handle_t handle);
 
 #ifdef __cplusplus
 }

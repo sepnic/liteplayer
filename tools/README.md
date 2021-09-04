@@ -8,12 +8,18 @@
 ### 2. 使用方法
 
 #### 2.1. 设备端接口说明
-
-1. socket_upload_start(addr, port)：创建 socket upload 线程和资源
-
-2. socket_upload_fill_data(handle, data, size)：填充数据到 socket upload 缓冲区
-
-3. socket_upload_stop(handle)：停止 socket upload，阻塞等待 socket upload 线程退出
+``` c
+struct socketupload {
+    // start: 创建 socketupload 线程和缓冲区，连接 socket server
+    int (*start)(socketupload_handle_t self, const char *server_addr, int server_port);
+    // fill_data: 填充数据到 socketupload 缓冲区
+    int (*fill_data)(socketupload_handle_t self, char *data, int size);
+    // stop: 停止 socketupload，阻塞等待 socketupload 线程退出并释放缓冲区
+    void (*stop)(socketupload_handle_t self);
+    // destroy: 销毁 socketupload 资源
+    void (*destroy)(socketupload_handle_t self);
+};
+```
 
 #### 2.2. socket server 启动说明
 

@@ -36,7 +36,7 @@
 #include "esp_adf/audio_event_iface.h"
 #include "esp_adf/audio_common.h"
 
-#define TAG  "[liteplayer]AUDIO_PIPELINE"
+#define TAG  "[liteplayer]audio_pipeline"
 
 #define PIPELINE_DEBUG(x) debug_pipeline_lists(x, __LINE__, __func__)
 

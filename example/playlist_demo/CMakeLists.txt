@@ -107,7 +107,7 @@ set (ADAPTER_SRC
     ${TOP_DIR}/adapter/external/mbedtls/library/x509write_csr.c
     ${TOP_DIR}/adapter/external/mbedtls/library/xtea.c
     ${TOP_DIR}/adapter/source_httpclient_wrapper.c
-    ${TOP_DIR}/adapter/source_fatfs_wrapper.c
+    ${TOP_DIR}/adapter/source_file_wrapper.c
     ${TOP_DIR}/adapter/sink_wave_wrapper.c
 )
 

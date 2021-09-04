@@ -28,7 +28,7 @@
 #include "audio_extractor/aac_extractor.h"
 #include "audio_extractor/m4a_extractor.h"
 
-#define TAG "[liteplayer]M4A_EXTRACTOR"
+#define TAG "[liteplayer]m4a_extractor"
 
 // FIXME: If low memory, please reduce STSZ_MAX_BUFFER, that will failed to parse for some m4a resource
 #define STSZ_MAX_BUFFER       (256*1024)

@@ -26,7 +26,7 @@
 #include "esp_adf/audio_common.h"
 #include "audio_extractor/aac_extractor.h"
 
-#define TAG "[liteplayer]AAC_EXTRACTOR"
+#define TAG "[liteplayer]aac_extractor"
 
 #define DEFAULT_AAC_PARSER_BUFFER_SIZE 2048
 

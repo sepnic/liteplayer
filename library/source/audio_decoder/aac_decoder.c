@@ -28,7 +28,7 @@
 #include "esp_adf/audio_element.h"
 #include "audio_decoder/aac_decoder.h"
 
-#define TAG "[liteplayer]AAC_DECODER"
+#define TAG "[liteplayer]aac_decoder"
 
 #define AAC_DECODER_INPUT_TIMEOUT_MAX  200
 

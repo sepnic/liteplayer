@@ -30,7 +30,7 @@
 #include "audio_extractor/mp3_extractor.h"
 #include "audio_decoder/mp3_decoder.h"
 
-#define TAG "[liteplayer]MP3_DECODER"
+#define TAG "[liteplayer]mp3_decoder"
 
 struct mad_wrapper {
     struct mad_stream stream;
