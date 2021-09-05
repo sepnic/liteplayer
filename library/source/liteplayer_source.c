@@ -222,14 +222,13 @@ static int m3u_parser_resolve(struct media_source_priv *priv)
 
     if (!list_empty(&priv->m3u_list))
         ret = 0;
-#if 0
+
     struct listnode *item;
     int i = 0;
     list_for_each(item, &priv->m3u_list) {
         struct m3u_node *node = listnode_to_item(item, struct m3u_node, listnode);
-        OS_LOGD(TAG, "-->url[%d]=[%s]", i++, node->url);
+        OS_LOGV(TAG, "-->m3ulist: url[%d]=[%s]", i++, node->url);
     }
-#endif
 
 resolve_done:
     if (http != NULL)
@@ -527,7 +526,6 @@ static void *media_source_thread(void *arg)
 {
     struct media_source_priv *priv = (struct media_source_priv *)arg;
     enum media_source_state state = MEDIA_SOURCE_READ_FAILED;
-    source_handle_t source_handle = NULL;
     char *buffer = NULL;
 
     buffer = audio_malloc(DEFAULT_MEDIA_SOURCE_BUFFER_SIZE);
@@ -536,10 +534,13 @@ static void *media_source_thread(void *arg)
         goto thread_exit;
     }
 
-    source_handle = priv->info.source_ops->open(priv->info.url, priv->info.content_pos, priv->info.source_ops->priv_data);
-    if (source_handle == NULL) {
-        state = MEDIA_SOURCE_READ_FAILED;
-        goto thread_exit;
+    if (priv->info.source_handle == NULL) {
+        priv->info.source_handle = priv->info.source_ops->open(priv->info.url,
+                priv->info.content_pos, priv->info.source_ops->priv_data);
+        if (priv->info.source_handle == NULL) {
+            state = MEDIA_SOURCE_READ_FAILED;
+            goto thread_exit;
+        }
     }
 
     if (priv->info.threshold_size > 0) {
@@ -557,8 +558,7 @@ static void *media_source_thread(void *arg)
     int bytes_read = 0, bytes_written = 0;
     int ret = 0;
     while (!priv->stop) {
-        if (source_handle != NULL)
-            bytes_read = priv->info.source_ops->read(source_handle, buffer, DEFAULT_MEDIA_SOURCE_BUFFER_SIZE);
+        bytes_read = priv->info.source_ops->read(priv->info.source_handle, buffer, DEFAULT_MEDIA_SOURCE_BUFFER_SIZE);
 
         if (bytes_read < 0) {
             OS_LOGE(TAG, "Media source read failed");
@@ -603,8 +603,10 @@ static void *media_source_thread(void *arg)
     }
 
 thread_exit:
-    if (source_handle != NULL)
-        priv->info.source_ops->close(source_handle);
+    if (priv->info.source_handle != NULL) {
+        priv->info.source_ops->close(priv->info.source_handle);
+        priv->info.source_handle = NULL;
+    }
     if (buffer != NULL)
         audio_free(buffer);
 

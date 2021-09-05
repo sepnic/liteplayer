@@ -154,6 +154,8 @@ static void audio_source_close(audio_element_handle_t self, void *ctx)
         OS_LOGI(TAG, "Closing source");
         handle->source_ops->close(handle->source_handle);
         handle->source_handle = NULL;
+        handle->source_buffer_pw = handle->source_buffer_po;
+        handle->source_buffer_pr = handle->source_buffer_po;
     }
 }
 
@@ -629,7 +631,7 @@ int liteplayer_set_data_source(liteplayer_handle_t handle, const char *url, int 
     if (handle == NULL || url == NULL)
         return ESP_FAIL;
 
-    OS_LOGI(TAG, "Set player source:%s", url);
+    OS_LOGI(TAG, "Set player source: %s", url);
 
     os_mutex_lock(handle->io_lock);
 
@@ -1055,6 +1057,7 @@ int liteplayer_reset(liteplayer_handle_t handle)
 
     handle->state_error = false;
     handle->source_ops = NULL;
+    handle->sink_ops = NULL;
     handle->sink_samplerate = 0;
     handle->sink_channels = 0;
     handle->sink_bits = 0;
