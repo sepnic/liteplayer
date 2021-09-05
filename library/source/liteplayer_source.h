@@ -42,15 +42,16 @@ typedef void (*media_source_state_cb)(enum media_source_state state, void *priv)
 
 struct media_source_info {
     const char *url;
+    source_handle_t source_handle;
     struct source_wrapper *source_ops;
     long long content_pos;
     int threshold_size;
+    ringbuf_handle out_ringbuf;
 };
 
 typedef void *media_source_handle_t;
 
 media_source_handle_t media_source_start(struct media_source_info *info,
-                                         ringbuf_handle rb,
                                          media_source_state_cb listener,
                                          void *listener_priv);
 

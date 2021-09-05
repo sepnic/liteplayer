@@ -39,7 +39,6 @@
 
 struct media_source_priv {
     struct media_source_info info;
-    ringbuf_handle rb;
     struct listnode m3u_list;
 
     media_source_state_cb listener;
@@ -258,11 +257,11 @@ static void *m3u_source_thread(void *arg)
     if (priv->info.threshold_size > 0) {
         os_mutex_lock(priv->lock);
         if (!priv->stop) {
-            int total_size = rb_get_size(priv->rb);
+            int total_size = rb_get_size(priv->info.out_ringbuf);
             if (priv->info.threshold_size > total_size)
                 priv->info.threshold_size = total_size;
             OS_LOGD(TAG, "Media source set threshold: %d/%d", priv->info.threshold_size, total_size);
-            rb_set_threshold(priv->rb, priv->info.threshold_size);
+            rb_set_threshold(priv->info.out_ringbuf, priv->info.threshold_size);
         }
         os_mutex_unlock(priv->lock);
     }
@@ -282,7 +281,7 @@ dequeue_url:
         while (!priv->stop) {
             os_mutex_lock(priv->lock);
             if (!priv->stop)
-                fill_size = rb_bytes_filled(priv->rb);
+                fill_size = rb_bytes_filled(priv->info.out_ringbuf);
             else
                 fill_size = 0;
             os_mutex_unlock(priv->lock);
@@ -335,7 +334,7 @@ dequeue_url:
         do {
             os_mutex_lock(priv->lock);
             if (!priv->stop)
-                ret = rb_write(priv->rb, &buffer[bytes_written], bytes_read, AUDIO_MAX_DELAY);
+                ret = rb_write(priv->info.out_ringbuf, &buffer[bytes_written], bytes_read, AUDIO_MAX_DELAY);
             os_mutex_unlock(priv->lock);
 
             if (ret > 0) {
@@ -355,7 +354,7 @@ dequeue_url:
 
         if (!priv->reach_threshold) {
             os_mutex_lock(priv->lock);
-            priv->reach_threshold = rb_reach_threshold(priv->rb);
+            priv->reach_threshold = rb_reach_threshold(priv->info.out_ringbuf);
             if (priv->reach_threshold && priv->listener)
                 priv->listener(MEDIA_SOURCE_REACH_THRESHOLD, priv->listener_priv);
             os_mutex_unlock(priv->lock);
@@ -373,9 +372,9 @@ thread_exit:
 
         if (!priv->stop) {
             if (state == MEDIA_SOURCE_READ_DONE || state == MEDIA_SOURCE_WRITE_DONE)
-                rb_done_write(priv->rb);
+                rb_done_write(priv->info.out_ringbuf);
             else
-                rb_abort(priv->rb);
+                rb_abort(priv->info.out_ringbuf);
             if (priv->listener)
                 priv->listener(state, priv->listener_priv);
         }
@@ -546,11 +545,11 @@ static void *media_source_thread(void *arg)
     if (priv->info.threshold_size > 0) {
         os_mutex_lock(priv->lock);
         if (!priv->stop) {
-            int total_size = rb_get_size(priv->rb);
+            int total_size = rb_get_size(priv->info.out_ringbuf);
             if (priv->info.threshold_size > total_size)
                 priv->info.threshold_size = total_size;
             OS_LOGD(TAG, "Media source set threshold: %d/%d", priv->info.threshold_size, total_size);
-            rb_set_threshold(priv->rb, priv->info.threshold_size);
+            rb_set_threshold(priv->info.out_ringbuf, priv->info.threshold_size);
         }
         os_mutex_unlock(priv->lock);
     }
@@ -576,7 +575,7 @@ static void *media_source_thread(void *arg)
         do {
             os_mutex_lock(priv->lock);
             if (!priv->stop)
-                ret = rb_write(priv->rb, &buffer[bytes_written], bytes_read, AUDIO_MAX_DELAY);
+                ret = rb_write(priv->info.out_ringbuf, &buffer[bytes_written], bytes_read, AUDIO_MAX_DELAY);
             os_mutex_unlock(priv->lock);
 
             if (ret > 0) {
@@ -596,7 +595,7 @@ static void *media_source_thread(void *arg)
 
         if (!priv->reach_threshold) {
             os_mutex_lock(priv->lock);
-            priv->reach_threshold = rb_reach_threshold(priv->rb);
+            priv->reach_threshold = rb_reach_threshold(priv->info.out_ringbuf);
             if (priv->reach_threshold && priv->listener)
                 priv->listener(MEDIA_SOURCE_REACH_THRESHOLD, priv->listener_priv);
             os_mutex_unlock(priv->lock);
@@ -614,9 +613,9 @@ thread_exit:
 
         if (!priv->stop) {
             if (state == MEDIA_SOURCE_READ_DONE || state == MEDIA_SOURCE_WRITE_DONE)
-                rb_done_write(priv->rb);
+                rb_done_write(priv->info.out_ringbuf);
             else
-                rb_abort(priv->rb);
+                rb_abort(priv->info.out_ringbuf);
             if (priv->listener)
                 priv->listener(state, priv->listener_priv);
         }
@@ -634,11 +633,10 @@ thread_exit:
 }
 
 media_source_handle_t media_source_start(struct media_source_info *info,
-                                         ringbuf_handle rb,
                                          media_source_state_cb listener,
                                          void *listener_priv)
 {
-    if (info == NULL || info->url == NULL || rb == NULL)
+    if (info == NULL || info->url == NULL || info->out_ringbuf == NULL || info->source_ops == NULL)
         return NULL;
 
     struct media_source_priv *priv = audio_calloc(1, sizeof(struct media_source_priv));
@@ -646,7 +644,6 @@ media_source_handle_t media_source_start(struct media_source_info *info,
         return NULL;
 
     memcpy(&priv->info, info, sizeof(struct media_source_info));
-    priv->rb = rb;
     priv->listener = listener;
     priv->listener_priv = listener_priv;
     priv->lock = os_mutex_create();
@@ -664,10 +661,16 @@ media_source_handle_t media_source_start(struct media_source_info *info,
     };
     os_thread id = NULL;
 
-    if (strstr(info->url, ".m3u") != NULL)
+    if (strstr(priv->info.url, ".m3u") != NULL) {
+        if (priv->info.source_handle != NULL) {
+            priv->info.source_ops->close(priv->info.source_handle);
+            rb_reset(priv->info.out_ringbuf);
+            priv->info.source_handle = NULL;
+        }
         id = os_thread_create(&attr, m3u_source_thread, priv);
-    else
+    } else {
         id = os_thread_create(&attr, media_source_thread, priv);
+    }
     if (id == NULL)
         goto start_failed;
 
@@ -684,8 +687,8 @@ void media_source_stop(media_source_handle_t handle)
     if (priv == NULL)
         return;
 
-    rb_done_read(priv->rb);
-    rb_done_write(priv->rb);
+    rb_done_read(priv->info.out_ringbuf);
+    rb_done_write(priv->info.out_ringbuf);
 
     {
         os_mutex_lock(priv->lock);
