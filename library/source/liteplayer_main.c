@@ -591,12 +591,6 @@ int liteplayer_register_source_wrapper(liteplayer_handle_t handle, struct source
     return ret;
 }
 
-int liteplayer_set_prefered_source_wrapper(liteplayer_handle_t handle, struct source_wrapper *wrapper)
-{
-    // todo
-    return ESP_FAIL;
-}
-
 int liteplayer_register_sink_wrapper(liteplayer_handle_t handle, struct sink_wrapper *wrapper)
 {
     if (handle == NULL || wrapper == NULL)
@@ -611,12 +605,6 @@ int liteplayer_register_sink_wrapper(liteplayer_handle_t handle, struct sink_wra
     int ret = handle->adapter_handle->add_sink_wrapper(handle->adapter_handle, wrapper);
     os_mutex_unlock(handle->io_lock);
     return ret;
-}
-
-int liteplayer_set_prefered_sink_wrapper(liteplayer_handle_t handle, struct sink_wrapper *wrapper)
-{
-    // todo
-    return ESP_FAIL;
 }
 
 int liteplayer_register_state_listener(liteplayer_handle_t handle, liteplayer_state_cb listener, void *listener_priv)

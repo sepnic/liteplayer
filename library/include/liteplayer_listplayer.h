@@ -47,11 +47,7 @@ listplayer_handle_t listplayer_create(struct listplayer_cfg *cfg);
 
 int listplayer_register_source_wrapper(listplayer_handle_t handle, struct source_wrapper *wrapper);
 
-int listplayer_set_prefered_source_wrapper(listplayer_handle_t handle, struct source_wrapper *wrapper);
-
 int listplayer_register_sink_wrapper(listplayer_handle_t handle, struct sink_wrapper *wrapper);
-
-int listplayer_set_prefered_sink_wrapper(listplayer_handle_t handle, struct sink_wrapper *wrapper);
 
 int listplayer_register_state_listener(listplayer_handle_t handle, liteplayer_state_cb listener, void *listener_priv);
 

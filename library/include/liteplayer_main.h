@@ -49,11 +49,7 @@ liteplayer_handle_t liteplayer_create();
 
 int liteplayer_register_source_wrapper(liteplayer_handle_t handle, struct source_wrapper *wrapper);
 
-int liteplayer_set_prefered_source_wrapper(liteplayer_handle_t handle, struct source_wrapper *wrapper);
-
 int liteplayer_register_sink_wrapper(liteplayer_handle_t handle, struct sink_wrapper *wrapper);
-
-int liteplayer_set_prefered_sink_wrapper(liteplayer_handle_t handle, struct sink_wrapper *wrapper);
 
 int liteplayer_register_state_listener(liteplayer_handle_t handle, liteplayer_state_cb listener, void *listener_priv);
 

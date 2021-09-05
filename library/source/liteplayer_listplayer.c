@@ -454,22 +454,6 @@ int listplayer_register_source_wrapper(listplayer_handle_t handle, struct source
     return liteplayer_register_source_wrapper(handle->player, wrapper);
 }
 
-int listplayer_set_prefered_source_wrapper(listplayer_handle_t handle, struct source_wrapper *wrapper)
-{
-    if (handle == NULL || wrapper == NULL)
-        return -1;
-
-    os_mutex_lock(handle->lock);
-    if (handle->state != LITEPLAYER_IDLE) {
-        OS_LOGE(TAG, "Can't set prefered source wrapper in state=[%d]", handle->state);
-        os_mutex_unlock(handle->lock);
-        return -1;
-    }
-    os_mutex_unlock(handle->lock);
-
-    return liteplayer_set_prefered_source_wrapper(handle->player, wrapper);
-}
-
 int listplayer_register_sink_wrapper(listplayer_handle_t handle, struct sink_wrapper *wrapper)
 {
     if (handle == NULL || wrapper == NULL)
@@ -485,22 +469,6 @@ int listplayer_register_sink_wrapper(listplayer_handle_t handle, struct sink_wra
 
     handle->adapter->add_sink_wrapper(handle->adapter, wrapper);
     return liteplayer_register_sink_wrapper(handle->player, wrapper);
-}
-
-int listplayer_set_prefered_sink_wrapper(listplayer_handle_t handle, struct sink_wrapper *wrapper)
-{
-    if (handle == NULL || wrapper == NULL)
-        return -1;
-
-    os_mutex_lock(handle->lock);
-    if (handle->state != LITEPLAYER_IDLE) {
-        OS_LOGE(TAG, "Can't set prefered sink wrapper in state=[%d]", handle->state);
-        os_mutex_unlock(handle->lock);
-        return -1;
-    }
-    os_mutex_unlock(handle->lock);
-
-    return liteplayer_set_prefered_sink_wrapper(handle->player, wrapper);
 }
 
 int listplayer_register_state_listener(listplayer_handle_t handle, liteplayer_state_cb listener, void *listener_priv)
