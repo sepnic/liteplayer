@@ -27,13 +27,13 @@
 extern "C" {
 #endif
 
-const char *file_wrapper_procotol();
+const char *file_wrapper_url_protocol();
 
 source_handle_t file_wrapper_open(const char *url, long long content_pos, void *priv_data);
 
 int file_wrapper_read(source_handle_t handle, char *buffer, int size);
 
-long long file_wrapper_filesize(source_handle_t handle);
+long long file_wrapper_content_len(source_handle_t handle);
 
 int file_wrapper_seek(source_handle_t handle, long offset);
 

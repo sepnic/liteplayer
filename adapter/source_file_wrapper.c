@@ -34,7 +34,7 @@ struct file_priv {
     long content_len;
 };
 
-const char *file_wrapper_procotol()
+const char *file_wrapper_url_protocol()
 {
     return "file";
 }
@@ -83,7 +83,7 @@ int file_wrapper_read(source_handle_t handle, char *buffer, int size)
     return -1;
 }
 
-long long file_wrapper_filesize(source_handle_t handle)
+long long file_wrapper_content_len(source_handle_t handle)
 {
     struct file_priv *priv = (struct file_priv *)handle;
     if (priv->file)

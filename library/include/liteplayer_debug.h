@@ -35,7 +35,7 @@ struct socketupload {
     void (*destroy)(socketupload_handle_t self);
 };
 
-socketupload_handle_t socketupload_init(int ringbuf_size);
+socketupload_handle_t socketupload_init(int buffer_size);
 
 #ifdef __cplusplus
 }

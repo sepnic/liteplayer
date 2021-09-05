@@ -42,8 +42,6 @@
 
 #define TAG "[liteplayer]core"
 
-#define DEFAULT_SOURCE_WRAPPER_BUFFER_SIZE (1024*2+1)
-
 struct liteplayer {
     const char             *url; // STREAM: /websocket/tts.mp3
                                  // HTTP  : http://..., https://...
@@ -119,7 +117,7 @@ static int audio_source_read(audio_element_handle_t self, char *buffer, int len,
 
     int bytes_want = len - bytes_remain;
     int bytes_read = 0;
-    if (bytes_want < handle->source_buffer_size) {
+    if (bytes_want < handle->source_buffer_size/2) {
         bytes_read = handle->source_ops->read(handle->source_handle,
                                               handle->source_buffer_po,
                                               handle->source_buffer_size);
@@ -247,7 +245,7 @@ static int audio_element_state_callback(audio_element_handle_t el, audio_event_i
             case AEL_STATUS_ERROR_OUTPUT:
             case AEL_STATUS_ERROR_UNKNOWN:
                 OS_LOGE(TAG, "[ %s-%s ] Receive error[%d]",
-                        handle->source_ops->procotol(), audio_element_get_tag(el), el_status);
+                        handle->source_ops->url_protocol(), audio_element_get_tag(el), el_status);
                 handle->state = LITEPLAYER_ERROR;
                 media_player_state_callback(handle, LITEPLAYER_ERROR, el_status);
                 break;
@@ -256,12 +254,12 @@ static int audio_element_state_callback(audio_element_handle_t el, audio_event_i
                 if (msg->source == (void *)handle->ael_decoder) {
                     if (handle->media_source_ringbuf != NULL) {
                         OS_LOGW(TAG, "[ %s-%s ] Receive inputtimeout event, filled/total: %d/%d",
-                                handle->source_ops->procotol(), audio_element_get_tag(el),
+                                handle->source_ops->url_protocol(), audio_element_get_tag(el),
                                 rb_bytes_filled(handle->media_source_ringbuf),
                                 rb_get_size(handle->media_source_ringbuf));
                     } else {
                         OS_LOGW(TAG, "[ %s-%s ] Receive inputtimeout event",
-                                handle->source_ops->procotol(), audio_element_get_tag(el));
+                                handle->source_ops->url_protocol(), audio_element_get_tag(el));
                     }
                 }
                 break;
@@ -269,7 +267,7 @@ static int audio_element_state_callback(audio_element_handle_t el, audio_event_i
             case AEL_STATUS_STATE_RUNNING:
                 if (msg->source == (void *)handle->ael_decoder) {
                     OS_LOGD(TAG, "[ %s-%s ] Receive started event",
-                            handle->source_ops->procotol(), audio_element_get_tag(el));
+                            handle->source_ops->url_protocol(), audio_element_get_tag(el));
                     //handle->state = LITEPLAYER_STARTED;
                     //media_player_state_callback(handle, LITEPLAYER_STARTED, 0);
                 }
@@ -278,7 +276,7 @@ static int audio_element_state_callback(audio_element_handle_t el, audio_event_i
             case AEL_STATUS_STATE_PAUSED:
                 if (msg->source == (void *)handle->ael_decoder) {
                     OS_LOGD(TAG, "[ %s-%s ] Receive paused event",
-                            handle->source_ops->procotol(), audio_element_get_tag(el));
+                            handle->source_ops->url_protocol(), audio_element_get_tag(el));
                     //handle->state = LITEPLAYER_PAUSED;
                     //media_player_state_callback(handle, LITEPLAYER_PAUSED, 0);
                 }
@@ -287,7 +285,7 @@ static int audio_element_state_callback(audio_element_handle_t el, audio_event_i
             case AEL_STATUS_STATE_FINISHED:
                 if (msg->source == (void *)handle->ael_decoder) {
                     OS_LOGD(TAG, "[ %s-%s ] Receive finished event",
-                            handle->source_ops->procotol(), audio_element_get_tag(el));
+                            handle->source_ops->url_protocol(), audio_element_get_tag(el));
                     if (handle->state != LITEPLAYER_ERROR && handle->state != LITEPLAYER_STOPPED) {
                         handle->state = LITEPLAYER_COMPLETED;
                         media_player_state_callback(handle, LITEPLAYER_COMPLETED, 0);
@@ -298,7 +296,7 @@ static int audio_element_state_callback(audio_element_handle_t el, audio_event_i
             case AEL_STATUS_STATE_STOPPED:
                 if (msg->source == (void *)handle->ael_decoder) {
                     OS_LOGD(TAG, "[ %s-%s ] Receive stopped event",
-                            handle->source_ops->procotol(), audio_element_get_tag(el));
+                            handle->source_ops->url_protocol(), audio_element_get_tag(el));
                     //handle->state = LITEPLAYER_STOPPED;
                     //media_player_state_callback(handle, LITEPLAYER_STOPPED, 0);
                 }
@@ -312,7 +310,7 @@ static int audio_element_state_callback(audio_element_handle_t el, audio_event_i
                 audio_element_info_t info = {0};
                 audio_element_getinfo(handle->ael_decoder, &info);
                 OS_LOGI(TAG, "[ %s-%s ] Receive codec info: samplerate=%d, ch=%d, bits=%d",
-                        handle->source_ops->procotol(), audio_element_get_tag(el),
+                        handle->source_ops->url_protocol(), audio_element_get_tag(el),
                         info.samplerate, info.channels, info.bits);
                 handle->sink_samplerate = info.samplerate;
                 handle->sink_channels = info.channels;
@@ -334,16 +332,16 @@ static void media_source_state_callback(enum media_source_state state, void *pri
     switch (state) {
     case MEDIA_SOURCE_READ_FAILED:
     case MEDIA_SOURCE_WRITE_FAILED:
-        OS_LOGE(TAG, "[ %s-source ] Receive error[%d]", handle->source_ops->procotol(), state);
+        OS_LOGE(TAG, "[ %s-source ] Receive error[%d]", handle->source_ops->url_protocol(), state);
         handle->state = LITEPLAYER_ERROR;
         media_player_state_callback(handle, LITEPLAYER_ERROR, state);
         break;
     case MEDIA_SOURCE_READ_DONE:
-        OS_LOGD(TAG, "[ %s-source ] Receive inputdone event", handle->source_ops->procotol());
+        OS_LOGD(TAG, "[ %s-source ] Receive inputdone event", handle->source_ops->url_protocol());
         media_player_state_callback(handle, LITEPLAYER_NEARLYCOMPLETED, 0);
         break;
     case MEDIA_SOURCE_REACH_THRESHOLD:
-        OS_LOGI(TAG, "[ %s-source ] Receive threshold event: threshold/total=%d/%d", handle->source_ops->procotol(),
+        OS_LOGI(TAG, "[ %s-source ] Receive threshold event: threshold/total=%d/%d", handle->source_ops->url_protocol(),
                 rb_get_threshold(handle->media_source_ringbuf), rb_get_size(handle->media_source_ringbuf));
         media_player_state_callback(handle, LITEPLAYER_CACHECOMPLETED, 0);
         break;
@@ -362,12 +360,12 @@ static void media_parser_state_callback(enum media_parser_state state, struct me
 
     switch (state) {
     case MEDIA_PARSER_FAILED:
-        OS_LOGE(TAG, "[ %s-PARSER ] Receive error[%d]", handle->source_ops->procotol(), state);
+        OS_LOGE(TAG, "[ %s-PARSER ] Receive error[%d]", handle->source_ops->url_protocol(), state);
         handle->state = LITEPLAYER_ERROR;
         media_player_state_callback(handle, LITEPLAYER_ERROR, MEDIA_PARSER_FAILED);
         break;
     case MEDIA_PARSER_SUCCEED:
-        OS_LOGD(TAG, "[ %s-PARSER ] Receive prepared event", handle->source_ops->procotol());
+        OS_LOGD(TAG, "[ %s-PARSER ] Receive prepared event", handle->source_ops->url_protocol());
         memcpy(&handle->media_codec_info, info, sizeof(struct media_codec_info));
         handle->state = LITEPLAYER_PREPARED;
         media_player_state_callback(handle, LITEPLAYER_PREPARED, 0);
@@ -512,8 +510,8 @@ static int main_pipeline_init(liteplayer_handle_t handle)
     }
 
     if (handle->source_ops->async_mode) {
-        OS_LOGD(TAG, "[1.2] Create source element");
-        handle->media_source_ringbuf = rb_create(handle->source_ops->ringbuf_size);
+        OS_LOGD(TAG, "[1.2] Create source element, async mode, ringbuf size: %d", handle->source_ops->buffer_size);
+        handle->media_source_ringbuf = rb_create(handle->source_ops->buffer_size);
         AUDIO_MEM_CHECK(TAG, handle->media_source_ringbuf, goto pipeline_fail);
 
         audio_element_set_input_ringbuf(handle->ael_decoder, handle->media_source_ringbuf);
@@ -528,8 +526,8 @@ static int main_pipeline_init(liteplayer_handle_t handle)
             media_source_start(&source_info, handle->media_source_ringbuf, media_source_state_callback, handle);
         AUDIO_MEM_CHECK(TAG, handle->media_source_handle, goto pipeline_fail);
     } else {
-        OS_LOGD(TAG, "[1.2] Create source element");
-        handle->source_buffer_size = DEFAULT_SOURCE_WRAPPER_BUFFER_SIZE;
+        OS_LOGD(TAG, "[1.2] Create source element, sync mode, buffer size: %d", handle->source_ops->buffer_size);
+        handle->source_buffer_size = handle->source_ops->buffer_size;
         handle->source_buffer_po   = audio_malloc(handle->source_buffer_size);
         handle->source_buffer_pw   = handle->source_buffer_po;
         handle->source_buffer_pr   = handle->source_buffer_po;
@@ -683,7 +681,7 @@ int liteplayer_set_data_source(liteplayer_handle_t handle, const char *url, int 
         }
     }
     OS_LOGD(TAG, "Using source_wrapper: (%s), sink_wrapper: (%s)",
-            handle->source_ops->procotol(), handle->sink_ops->name());
+            handle->source_ops->url_protocol(), handle->sink_ops->name());
 
     handle->url = audio_strdup(url);
     handle->threshold_ms = threshold_ms;
@@ -705,7 +703,7 @@ int liteplayer_prepare(liteplayer_handle_t handle)
     if (handle == NULL)
         return ESP_FAIL;
 
-    OS_LOGI(TAG, "Preparing player[%s]", handle->source_ops->procotol());
+    OS_LOGI(TAG, "Preparing player[%s]", handle->source_ops->url_protocol());
 
     os_mutex_lock(handle->io_lock);
 
@@ -739,7 +737,7 @@ int liteplayer_prepare_async(liteplayer_handle_t handle)
     if (handle == NULL)
         return ESP_FAIL;
 
-    OS_LOGI(TAG, "Async preparing player[%s]", handle->source_ops->procotol());
+    OS_LOGI(TAG, "Async preparing player[%s]", handle->source_ops->url_protocol());
 
     os_mutex_lock(handle->io_lock);
 
@@ -782,7 +780,7 @@ int liteplayer_start(liteplayer_handle_t handle)
     if (handle == NULL)
         return ESP_FAIL;
 
-    OS_LOGI(TAG, "Starting player[%s]", handle->source_ops->procotol());
+    OS_LOGI(TAG, "Starting player[%s]", handle->source_ops->url_protocol());
 
     os_mutex_lock(handle->io_lock);
 
@@ -827,7 +825,7 @@ int liteplayer_pause(liteplayer_handle_t handle)
     if (handle == NULL)
         return ESP_FAIL;
 
-    OS_LOGI(TAG, "Pausing player[%s]", handle->source_ops->procotol());
+    OS_LOGI(TAG, "Pausing player[%s]", handle->source_ops->url_protocol());
 
     os_mutex_lock(handle->io_lock);
 
@@ -855,7 +853,7 @@ int liteplayer_resume(liteplayer_handle_t handle)
     if (handle == NULL)
         return ESP_FAIL;
 
-    OS_LOGI(TAG, "Resuming player[%s]", handle->source_ops->procotol());
+    OS_LOGI(TAG, "Resuming player[%s]", handle->source_ops->url_protocol());
 
     os_mutex_lock(handle->io_lock);
 
@@ -883,7 +881,7 @@ int liteplayer_seek(liteplayer_handle_t handle, int msec)
     if (handle == NULL || msec < 0)
         return ESP_FAIL;
 
-    OS_LOGI(TAG, "Seeking player[%s], offset=%d(s)", handle->source_ops->procotol(), (int)(msec/1000));
+    OS_LOGI(TAG, "Seeking player[%s], offset=%d(s)", handle->source_ops->url_protocol(), (int)(msec/1000));
 
     int ret = ESP_FAIL;
     bool state_sync = false;
@@ -961,7 +959,7 @@ int liteplayer_seek(liteplayer_handle_t handle, int msec)
         }
 
         if (handle->source_ops->async_mode) {
-            handle->media_source_ringbuf = rb_create(handle->source_ops->ringbuf_size);
+            handle->media_source_ringbuf = rb_create(handle->source_ops->buffer_size);
             AUDIO_MEM_CHECK(TAG, handle->media_source_ringbuf, goto seek_out);
 
             audio_element_set_input_ringbuf(handle->ael_decoder, handle->media_source_ringbuf);
@@ -1011,7 +1009,7 @@ int liteplayer_stop(liteplayer_handle_t handle)
 
     int ret = ESP_OK;
 
-    OS_LOGI(TAG, "Stopping player[%s]", handle->source_ops->procotol());
+    OS_LOGI(TAG, "Stopping player[%s]", handle->source_ops->url_protocol());
 
     os_mutex_lock(handle->io_lock);
 
@@ -1047,7 +1045,7 @@ int liteplayer_reset(liteplayer_handle_t handle)
     if (handle == NULL)
         return ESP_FAIL;
 
-    OS_LOGI(TAG, "Resetting player[%s]", handle->source_ops->procotol());
+    OS_LOGI(TAG, "Resetting player[%s]", handle->source_ops->url_protocol());
 
     os_mutex_lock(handle->io_lock);
 

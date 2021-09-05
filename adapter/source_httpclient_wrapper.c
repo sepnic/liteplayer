@@ -95,7 +95,7 @@ static int httpclient_wrapper_parse_content_length(char *header_buf, long long *
     return ret;
 }
 
-const char *httpclient_wrapper_procotol()
+const char *httpclient_wrapper_url_protocol()
 {
     return "http";
 }
@@ -207,7 +207,7 @@ reconnect:
     return -1;
 }
 
-long long httpclient_wrapper_filesize(source_handle_t handle)
+long long httpclient_wrapper_content_len(source_handle_t handle)
 {
     struct httpclient_priv *priv = (struct httpclient_priv *)handle;
     return priv->content_len;

@@ -119,7 +119,7 @@ static int get_start_offset(char *buf)
 static int media_header_parse(struct media_source_info *source, struct media_codec_info *codec)
 {
     source_handle_t source_handle = NULL;
-    long long filesize = 0;
+    long long content_len = 0;
     int bytes_read = 0;
     char buf[DEFAULT_MEDIA_PARSER_BUFFER_SIZE];
     int ret = ESP_FAIL;
@@ -134,7 +134,7 @@ static int media_header_parse(struct media_source_info *source, struct media_cod
         OS_LOGE(TAG, "Failed to read source");
         goto parse_done;
     }
-    filesize = source->source_ops->filesize(source_handle);
+    content_len = source->source_ops->content_len(source_handle);
 
     if (bytes_read < 64) {
         OS_LOGE(TAG, "Insufficient bytes read: %d", bytes_read);
@@ -195,8 +195,8 @@ static int media_header_parse(struct media_source_info *source, struct media_cod
         channels = info->channels;
         bits = 16;
         bytes_per_sec = info->bit_rate*1000/8;
-        if (filesize > frame_start_offset)
-            duration_ms = (filesize - frame_start_offset)*8/info->bit_rate;
+        if (content_len > frame_start_offset)
+            duration_ms = (content_len - frame_start_offset)*8/info->bit_rate;
         break;
     }
     case AUDIO_CODEC_AAC: {
@@ -222,8 +222,8 @@ static int media_header_parse(struct media_source_info *source, struct media_cod
         channels = info->channels;
         bits = 16;
         //bytes_per_sec = info->bit_rate*1000/8;
-        //if (filesize > frame_start_offset)
-        //    duration_ms = (filesize - frame_start_offset)*8/info->bit_rate;
+        //if (content_len > frame_start_offset)
+        //    duration_ms = (content_len - frame_start_offset)*8/info->bit_rate;
         break;
     }
     case AUDIO_CODEC_M4A: {

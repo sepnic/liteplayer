@@ -32,22 +32,22 @@ typedef void *sink_handle_t;
 
 struct source_wrapper {
     bool            async_mode; // for network stream, it's better to set async mode
-    int             ringbuf_size; // only use for async mode
+    int             buffer_size; // size of the buffer that save source data
     void            *priv_data;
-    const char *    (*procotol)(); // "http", "tts", "rtsp", "rtmp", "file"
+    const char *    (*url_protocol)(); // "http", "tts", "rtsp", "rtmp", "file"
     source_handle_t (*open)(const char *url, long long content_pos, void *priv_data);
     int             (*read)(source_handle_t handle, char *buffer, int size);//note: 0<=ret<size means eof
-    long long       (*filesize)(source_handle_t handle);
+    long long       (*content_len)(source_handle_t handle);
     int             (*seek)(source_handle_t handle, long offset);
     void            (*close)(source_handle_t handle);
 };
 
 struct sink_wrapper {
-    void           *priv_data;
-    const char *   (*name)(); // "alsa", "wave", "opensles", "audiotrack"
-    sink_handle_t  (*open)(int samplerate, int channels, int bits, void *priv_data);
-    int            (*write)(sink_handle_t handle, char *buffer, int size);//return actual written size
-    void           (*close)(sink_handle_t handle);
+    void            *priv_data;
+    const char *    (*name)(); // "alsa", "wave", "opensles", "audiotrack"
+    sink_handle_t   (*open)(int samplerate, int channels, int bits, void *priv_data);
+    int             (*write)(sink_handle_t handle, char *buffer, int size);//return actual written size
+    void            (*close)(sink_handle_t handle);
 };
 
 #ifdef __cplusplus

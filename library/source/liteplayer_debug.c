@@ -43,7 +43,9 @@
 
 #define TAG "[liteplayer]debug"
 
-#define DEFAULT_SOCKET_UPLOAD_RINGBUF_SIZE  ( 1024*64 )
+#define MIN_SOCKET_UPLOAD_RINGBUF_SIZE  ( 1024*16 )
+#define MAX_SOCKET_UPLOAD_RINGBUF_SIZE  ( 1024*1024 )
+
 #define DEFAULT_SOCKET_UPLOAD_TIMEOUT_MS    ( 2000 )
 
 struct socketupload_priv {
@@ -54,7 +56,7 @@ struct socketupload_priv {
     ringbuf_handle rb;
     os_thread tid;
     char buffer[2048];
-    int ringbuf_size;
+    int buffer_size;
     bool stop;
 };
 
@@ -171,7 +173,7 @@ static int socketupload_start(socketupload_handle_t self, const char *server_add
     if (priv->addr == NULL)
         goto start_failed;
 
-    priv->rb = rb_create(priv->ringbuf_size);
+    priv->rb = rb_create(priv->buffer_size);
     if (priv->rb == NULL)
         goto start_failed;
 
@@ -230,15 +232,16 @@ static void socketupload_destroy(socketupload_handle_t self)
     audio_free(self);
 }
 
-socketupload_handle_t socketupload_init(int ringbuf_size)
+socketupload_handle_t socketupload_init(int buffer_size)
 {
     struct socketupload_priv *handle = audio_calloc(1, sizeof(struct socketupload_priv));
     AUDIO_MEM_CHECK(TAG, handle, return NULL);
 
-    if (ringbuf_size <= 0)
-        handle->ringbuf_size = DEFAULT_SOCKET_UPLOAD_RINGBUF_SIZE;
-    else
-        handle->ringbuf_size = ringbuf_size;
+    handle->buffer_size = (buffer_size/1024)*1024;
+    if (buffer_size < MIN_SOCKET_UPLOAD_RINGBUF_SIZE)
+        handle->buffer_size = MIN_SOCKET_UPLOAD_RINGBUF_SIZE;
+    else if (buffer_size > MAX_SOCKET_UPLOAD_RINGBUF_SIZE)
+        handle->buffer_size = MAX_SOCKET_UPLOAD_RINGBUF_SIZE;
     handle->uploader.start     = socketupload_start;
     handle->uploader.fill_data = socketupload_fill_data;
     handle->uploader.stop      = socketupload_stop;

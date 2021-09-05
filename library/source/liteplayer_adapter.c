@@ -32,7 +32,11 @@
 
 #define TAG "[liteplayer]adapter"
 
-#define DEFAULT_SOURCE_RINGBUF_SIZE (1024*16)
+#define MIN_SOURCE_ASYNC_BUFFER_SIZE  ( 1024*32 )
+#define MAX_SOURCE_ASYNC_BUFFER_SIZE  ( 1024*1024 )
+#define MIN_SOURCE_SYNC_BUFFER_SIZE   ( 1024*2 )
+#define MAX_SOURCE_SYNC_BUFFER_SIZE   ( 1024*16 )
+
 #define DEFAULT_SOURCE_URL_PROTOCOL "file"
 
 struct liteplayer_adapter_priv {
@@ -59,7 +63,7 @@ struct file_wrapper_priv {
     long content_len;
 };
 
-static const char *file_wrapper_protocol()
+static const char *file_wrapper_url_protocol()
 {
     return DEFAULT_SOURCE_URL_PROTOCOL;
 }
@@ -105,7 +109,7 @@ static int file_wrapper_read(source_handle_t handle, char *buffer, int size)
     return -1;
 }
 
-static long long file_wrapper_filesize(source_handle_t handle)
+static long long file_wrapper_content_len(source_handle_t handle)
 {
     struct file_wrapper_priv *priv = (struct file_wrapper_priv *)handle;
     if (priv->file)
@@ -137,7 +141,7 @@ static void file_wrapper_close(source_handle_t handle)
 
 static int add_source_wrapper(liteplayer_adapter_handle_t self, struct source_wrapper *wrapper)
 {
-    if (wrapper == NULL || wrapper->procotol() == NULL)
+    if (wrapper == NULL || wrapper->url_protocol() == NULL)
         return ESP_FAIL;
 
     struct liteplayer_adapter_priv *priv = (struct liteplayer_adapter_priv *)self;
@@ -149,7 +153,7 @@ static int add_source_wrapper(liteplayer_adapter_handle_t self, struct source_wr
 
     list_for_each(item, &priv->source_list) {
         node = listnode_to_item(item, struct source_wrapper_node, listnode);
-        if (strcasecmp(wrapper->procotol(), node->wrapper.procotol()) == 0) {
+        if (strcasecmp(wrapper->url_protocol(), node->wrapper.url_protocol()) == 0) {
             found = true;
             break;
         }
@@ -164,19 +168,24 @@ static int add_source_wrapper(liteplayer_adapter_handle_t self, struct source_wr
         list_add_head(&priv->source_list, &node->listnode);
     }
 
-    if (wrapper->async_mode && wrapper->ringbuf_size < DEFAULT_SOURCE_RINGBUF_SIZE) {
-        OS_LOGW(TAG, "Output ringbuf is too small, force ringbuf_size to be %d",
-                DEFAULT_SOURCE_RINGBUF_SIZE);
-        node->wrapper.ringbuf_size = DEFAULT_SOURCE_RINGBUF_SIZE;
+    node->wrapper.buffer_size = (wrapper->buffer_size/1024)*1024;
+    if (wrapper->async_mode) {
+        if (wrapper->buffer_size < MIN_SOURCE_ASYNC_BUFFER_SIZE)
+            node->wrapper.buffer_size = MIN_SOURCE_ASYNC_BUFFER_SIZE;
+        else if (wrapper->buffer_size > MAX_SOURCE_ASYNC_BUFFER_SIZE)
+            node->wrapper.buffer_size = MAX_SOURCE_ASYNC_BUFFER_SIZE;
     } else {
-        node->wrapper.ringbuf_size = wrapper->ringbuf_size;
+        if (wrapper->buffer_size < MIN_SOURCE_SYNC_BUFFER_SIZE)
+            node->wrapper.buffer_size = MIN_SOURCE_SYNC_BUFFER_SIZE;
+        else if (wrapper->buffer_size > MAX_SOURCE_SYNC_BUFFER_SIZE)
+            node->wrapper.buffer_size = MAX_SOURCE_SYNC_BUFFER_SIZE;
     }
     node->wrapper.async_mode = wrapper->async_mode;
     node->wrapper.priv_data = wrapper->priv_data;
-    node->wrapper.procotol = wrapper->procotol;
+    node->wrapper.url_protocol = wrapper->url_protocol;
     node->wrapper.open = wrapper->open;
     node->wrapper.read = wrapper->read;
-    node->wrapper.filesize = wrapper->filesize;
+    node->wrapper.content_len = wrapper->content_len;
     node->wrapper.seek = wrapper->seek;
     node->wrapper.close = wrapper->close;
 
@@ -197,14 +206,14 @@ static struct source_wrapper *find_source_wrapper(liteplayer_adapter_handle_t se
 
     list_for_each(item, &priv->source_list) {
         node = listnode_to_item(item, struct source_wrapper_node, listnode);
-        if (strncasecmp(url, node->wrapper.procotol(), strlen(node->wrapper.procotol())) == 0) {
+        if (strncasecmp(url, node->wrapper.url_protocol(), strlen(node->wrapper.url_protocol())) == 0) {
             goto find_out;
         }
     }
     // if found no source wrapper, now we treat it as file url
     list_for_each(item, &priv->source_list) {
         node = listnode_to_item(item, struct source_wrapper_node, listnode);
-        if (strcasecmp(DEFAULT_SOURCE_URL_PROTOCOL, node->wrapper.procotol()) == 0) {
+        if (strcasecmp(DEFAULT_SOURCE_URL_PROTOCOL, node->wrapper.url_protocol()) == 0) {
             goto find_out;
         }
     }
@@ -328,12 +337,12 @@ liteplayer_adapter_handle_t liteplayer_adapter_init()
 
     struct source_wrapper file_wrapper = {
         .async_mode = false,
-        .ringbuf_size = DEFAULT_SOURCE_RINGBUF_SIZE,
+        .buffer_size = MIN_SOURCE_SYNC_BUFFER_SIZE,
         .priv_data = NULL,
-        .procotol = file_wrapper_protocol,
+        .url_protocol = file_wrapper_url_protocol,
         .open = file_wrapper_open,
         .read = file_wrapper_read,
-        .filesize = file_wrapper_filesize,
+        .content_len = file_wrapper_content_len,
         .seek = file_wrapper_seek,
         .close = file_wrapper_close,
     };

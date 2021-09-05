@@ -177,12 +177,12 @@ static void *playlist_demo_thread(void *arg)
 
     struct source_wrapper file_ops = {
         .async_mode = false,
-        .ringbuf_size = 32*1024,
+        .buffer_size = 2*1024,
         .priv_data = NULL,
-        .procotol = file_wrapper_procotol,
+        .url_protocol = file_wrapper_url_protocol,
         .open = file_wrapper_open,
         .read = file_wrapper_read,
-        .filesize = file_wrapper_filesize,
+        .content_len = file_wrapper_content_len,
         .seek = file_wrapper_seek,
         .close = file_wrapper_close,
     };
@@ -190,12 +190,12 @@ static void *playlist_demo_thread(void *arg)
 
     struct source_wrapper http_ops = {
         .async_mode = true,
-        .ringbuf_size = 256*1024,
+        .buffer_size = 256*1024,
         .priv_data = NULL,
-        .procotol = httpclient_wrapper_procotol,
+        .url_protocol = httpclient_wrapper_url_protocol,
         .open = httpclient_wrapper_open,
         .read = httpclient_wrapper_read,
-        .filesize = httpclient_wrapper_filesize,
+        .content_len = httpclient_wrapper_content_len,
         .seek = httpclient_wrapper_seek,
         .close = httpclient_wrapper_close,
     };

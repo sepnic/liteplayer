@@ -27,13 +27,13 @@
 extern "C" {
 #endif
 
-const char *httpclient_wrapper_procotol();
+const char *httpclient_wrapper_url_protocol();
 
 source_handle_t httpclient_wrapper_open(const char *url, long long content_pos, void *priv_data);
 
 int httpclient_wrapper_read(source_handle_t handle, char *buffer, int size);
 
-long long httpclient_wrapper_filesize(source_handle_t handle);
+long long httpclient_wrapper_content_len(source_handle_t handle);
 
 int httpclient_wrapper_seek(source_handle_t handle, long offset);
 
