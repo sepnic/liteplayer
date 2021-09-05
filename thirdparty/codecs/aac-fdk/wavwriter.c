@@ -21,6 +21,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include "esp_adf/audio_common.h"
 
 struct wav_writer {
 	FILE *wav;
@@ -73,11 +74,11 @@ static void write_header(struct wav_writer* ww, int length) {
 }
 
 void* wav_write_open(const char *filename, int sample_rate, int bits_per_sample, int channels) {
-	struct wav_writer* ww = (struct wav_writer*) malloc(sizeof(*ww));
+	struct wav_writer* ww = (struct wav_writer*) audio_malloc(sizeof(*ww));
 	memset(ww, 0, sizeof(*ww));
 	ww->wav = fopen(filename, "wb");
 	if (ww->wav == NULL) {
-		free(ww);
+		audio_free(ww);
 		return NULL;
 	}
 	ww->data_length = 0;
@@ -92,13 +93,13 @@ void* wav_write_open(const char *filename, int sample_rate, int bits_per_sample,
 void wav_write_close(void* obj) {
 	struct wav_writer* ww = (struct wav_writer*) obj;
 	if (ww->wav == NULL) {
-		free(ww);
+		audio_free(ww);
 		return;
 	}
 	fseek(ww->wav, 0, SEEK_SET);
 	write_header(ww, ww->data_length);
 	fclose(ww->wav);
-	free(ww);
+	audio_free(ww);
 }
 
 void wav_write_data(void* obj, const unsigned char* data, int length) {

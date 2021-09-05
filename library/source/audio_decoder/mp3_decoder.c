@@ -158,7 +158,7 @@ audio_element_handle_t mp3_decoder_init(struct mp3_decoder_cfg *config)
     cfg.task_prio   = config->task_prio;
     if (cfg.task_stack == 0)
         cfg.task_stack = MP3_DECODER_TASK_STACK;
-    cfg.tag = "mp3_dec";
+    cfg.tag = "mp3_decoder";
 
     audio_element_handle_t el = audio_element_init(&cfg);
     AUDIO_MEM_CHECK(TAG, el, goto mp3_init_error);

@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include "libAACenc/include/aacenc_lib.h"
 #include "wavreader.h"
+#include "esp_adf/audio_common.h"
 
 void usage(const char* name) {
 	fprintf(stderr, "%s [-r bitrate] [-t aot] [-a afterburner] [-s sbr] [-v vbr] in.wav out.aac\n", name);
@@ -175,8 +176,8 @@ int main(int argc, char *argv[]) {
 	}
 
 	input_size = channels*2*info.frameLength;
-	input_buf = (uint8_t*) malloc(input_size);
-	convert_buf = (int16_t*) malloc(input_size);
+	input_buf = (uint8_t*) audio_malloc(input_size);
+	convert_buf = (int16_t*) audio_malloc(input_size);
 
 	while (1) {
 		AACENC_BufDesc in_buf = { 0 }, out_buf = { 0 };
@@ -226,8 +227,8 @@ int main(int argc, char *argv[]) {
 			continue;
 		fwrite(outbuf, 1, out_args.numOutBytes, out);
 	}
-	free(input_buf);
-	free(convert_buf);
+	audio_free(input_buf);
+	audio_free(convert_buf);
 	fclose(out);
 	wav_read_close(wav);
 	aacEncClose(&handle);

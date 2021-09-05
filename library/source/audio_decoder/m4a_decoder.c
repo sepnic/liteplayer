@@ -158,7 +158,7 @@ audio_element_handle_t m4a_decoder_init(struct m4a_decoder_cfg *config)
     cfg.task_prio   = config->task_prio;
     if (cfg.task_stack == 0)
         cfg.task_stack = AAC_DECODER_TASK_STACK;
-    cfg.tag = "m4a";
+    cfg.tag = "m4a_decoder";
 
     audio_element_handle_t el = audio_element_init(&cfg);
     AUDIO_MEM_CHECK(TAG, el, goto m4a_init_error);

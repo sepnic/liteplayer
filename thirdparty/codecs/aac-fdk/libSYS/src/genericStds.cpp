@@ -109,6 +109,7 @@ amm-info@iis.fraunhofer.de
 #define __GENERICSTDS_CPP__
 
 #include "genericStds.h"
+#include "esp_adf/audio_common.h"
 
 /* library info */
 #define SYS_LIB_VL0 2
@@ -192,7 +193,7 @@ char *FDKstrncpy(char *dest, const char *src, UINT n) {
 void *FDKcalloc(const UINT n, const UINT size) {
   void *ptr;
 
-  ptr = calloc(n, size);
+  ptr = audio_calloc(n, size);
 
   return ptr;
 }
@@ -200,12 +201,12 @@ void *FDKcalloc(const UINT n, const UINT size) {
 void *FDKmalloc(const UINT size) {
   void *ptr;
 
-  ptr = malloc(size);
+  ptr = audio_malloc(size);
 
   return ptr;
 }
 
-void FDKfree(void *ptr) { free((INT *)ptr); }
+void FDKfree(void *ptr) { audio_free(ptr); }
 
 void *FDKaalloc(const UINT size, const UINT alignment) {
   void *addr, *result = NULL;

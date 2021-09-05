@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include "esp_adf/audio_common.h"
 
 #define TAG(a, b, c, d) (((a) << 24) | ((b) << 16) | ((c) << 8) | (d))
 
@@ -70,7 +71,7 @@ static void skip(FILE *f, int n) {
 }
 
 void* wav_read_open(const char *filename) {
-	struct wav_reader* wr = (struct wav_reader*) malloc(sizeof(*wr));
+	struct wav_reader* wr = (struct wav_reader*) audio_malloc(sizeof(*wr));
 	long data_pos = 0;
 	memset(wr, 0, sizeof(*wr));
 
@@ -79,7 +80,7 @@ void* wav_read_open(const char *filename) {
 	else
 		wr->wav = fopen(filename, "rb");
 	if (wr->wav == NULL) {
-		free(wr);
+		audio_free(wr);
 		return NULL;
 	}
 
@@ -161,7 +162,7 @@ void wav_read_close(void* obj) {
 	struct wav_reader* wr = (struct wav_reader*) obj;
 	if (wr->wav != stdin)
 		fclose(wr->wav);
-	free(wr);
+	audio_free(wr);
 }
 
 int wav_get_header(void* obj, int* format, int* channels, int* sample_rate, int* bits_per_sample, unsigned int* data_length) {

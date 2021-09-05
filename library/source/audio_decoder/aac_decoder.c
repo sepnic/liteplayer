@@ -160,7 +160,7 @@ audio_element_handle_t aac_decoder_init(struct aac_decoder_cfg *config)
     cfg.task_prio   = config->task_prio;
     if (cfg.task_stack == 0)
         cfg.task_stack = AAC_DECODER_TASK_STACK;
-    cfg.tag = "aac";
+    cfg.tag = "aac_decoder";
 
     audio_element_handle_t el = audio_element_init(&cfg);
     AUDIO_MEM_CHECK(TAG, el, goto aac_init_error);

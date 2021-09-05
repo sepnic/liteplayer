@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include "libAACdec/include/aacdecoder_lib.h"
 #include "wavwriter.h"
+#include "esp_adf/audio_common.h"
 
 int main(int argc, char *argv[]) {
 	const char *infile, *outfile;
@@ -47,8 +48,8 @@ int main(int argc, char *argv[]) {
 	}
 
 	output_size = 8*sizeof(INT_PCM)*2048;
-	output_buf = (uint8_t*) malloc(output_size);
-	decode_buf = (INT_PCM*) malloc(output_size);
+	output_buf = (uint8_t*) audio_malloc(output_size);
+	decode_buf = (INT_PCM*) audio_malloc(output_size);
 
 	while (1) {
 		uint8_t packet[10240], *ptr = packet;
@@ -103,8 +104,8 @@ int main(int argc, char *argv[]) {
 		}
 		wav_write_data(wav, output_buf, sizeof(INT_PCM)*frame_size);
 	}
-	free(output_buf);
-	free(decode_buf);
+	audio_free(output_buf);
+	audio_free(decode_buf);
 	fclose(in);
 	if (wav)
 		wav_write_close(wav);

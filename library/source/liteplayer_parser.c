@@ -403,10 +403,8 @@ void media_parser_stop(media_parser_handle_t handle)
 
     {
         os_mutex_lock(priv->lock);
-
         priv->stop = true;
         os_cond_signal(priv->cond);
-
         os_mutex_unlock(priv->lock);
     }
 }

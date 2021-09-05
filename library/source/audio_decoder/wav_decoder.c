@@ -396,7 +396,7 @@ audio_element_handle_t wav_decoder_init(struct wav_decoder_cfg *config)
     cfg.task_prio   = config->task_prio;
     if (cfg.task_stack == 0)
         cfg.task_stack = WAV_DECODER_TASK_STACK;
-    cfg.tag = "wav_dec";
+    cfg.tag = "wav_decoder";
 
     wav_decoder_handle_t decoder = audio_calloc(1, sizeof(struct wav_decoder));
     if (decoder == NULL)

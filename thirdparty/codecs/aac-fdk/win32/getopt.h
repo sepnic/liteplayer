@@ -50,6 +50,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include "esp_adf/audio_common.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -614,7 +615,7 @@ int getopt_parse( int mode, getopt_std_args, ... )
     /*
      * we use `this_arg' to store these temporarily.
      */
-    CHAR **this_arg = malloc(sizeof(CHAR*) * optspan);
+    CHAR **this_arg = audio_malloc(sizeof(CHAR*) * optspan);
     /*
      * we cannot manipulate `argv' directly, since the `getopt'
      * API prototypes it as `read-only'; this cast to `arglist'
@@ -645,7 +646,7 @@ int getopt_parse( int mode, getopt_std_args, ... )
      */
     optbase += optspan;
 	
-	free(this_arg);
+	audio_free(this_arg);
   }
 
   else

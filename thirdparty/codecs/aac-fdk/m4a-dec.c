@@ -23,6 +23,7 @@
 #include "libAACdec/include/aacdecoder_lib.h"
 #include "wavwriter.h"
 #include <libavformat/avformat.h>
+#include "esp_adf/audio_common.h"
 
 #if LIBAVCODEC_VERSION_MAJOR < 55
 #define AV_CODEC_ID_AAC CODEC_ID_AAC
@@ -83,8 +84,8 @@ int main(int argc, char *argv[]) {
 	}
 
 	output_size = 8*sizeof(INT_PCM)*2048;
-	output_buf = (uint8_t*) malloc(output_size);
-	decode_buf = (INT_PCM*) malloc(output_size);
+	output_buf = (uint8_t*) audio_malloc(output_size);
+	decode_buf = (INT_PCM*) audio_malloc(output_size);
 
 	while (1) {
 		UINT valid;
@@ -141,8 +142,8 @@ int main(int argc, char *argv[]) {
 		}
 		wav_write_data(wav, output_buf, sizeof(INT_PCM)*frame_size);
 	}
-	free(output_buf);
-	free(decode_buf);
+	audio_free(output_buf);
+	audio_free(decode_buf);
 	avformat_close_input(&in);
 	if (wav)
 		wav_write_close(wav);
