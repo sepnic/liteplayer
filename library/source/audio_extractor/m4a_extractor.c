@@ -34,7 +34,7 @@
 #define STSZ_MAX_BUFFER       (256*1024)
 #define STREAM_BUFFER_SIZE    (1024)
 
-#define M4A_PARSER_TASK_PRIO  (OS_THREAD_PRIO_NORMAL)
+#define M4A_PARSER_TASK_PRIO  (OS_THREAD_PRIO_HIGH)
 #define M4A_PARSER_TASK_STACK (2048)
 
 typedef enum aac_error {
@@ -111,7 +111,7 @@ static int32_t atom_rb_read(atom_parser_handle_t handle, int32_t wanted_size)
     }
 
     if (wanted_size != 0) {
-        byte_read = rb_read(handle->rb, (char *)handle->data, wanted_size, AUDIO_MAX_DELAY);
+        byte_read = rb_read_chunk(handle->rb, (char *)handle->data, wanted_size, AUDIO_MAX_DELAY);
         if (byte_read < 0) {
             OS_LOGE(TAG, "Failed to read rb, ret=%d", byte_read);
             return byte_read;

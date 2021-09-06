@@ -504,7 +504,7 @@ static int main_pipeline_init(liteplayer_handle_t handle)
         handle->media_source_info.content_pos = handle->media_codec_info.content_pos + handle->seek_offset;
         handle->media_source_info.threshold_size = media_source_get_threshold(handle, handle->threshold_ms);
         handle->media_source_handle =
-            media_source_start(&handle->media_source_info, media_source_state_callback, handle);
+            media_source_start_async(&handle->media_source_info, media_source_state_callback, handle);
         AUDIO_MEM_CHECK(TAG, handle->media_source_handle, goto pipeline_fail);
     } else {
         OS_LOGD(TAG, "[1.2] Create source element, sync mode, buffer size: %d", handle->source_ops->buffer_size);
@@ -547,8 +547,7 @@ liteplayer_handle_t liteplayer_create()
         handle->io_lock = os_mutex_create();
         handle->state_lock = os_mutex_create();
         handle->adapter_handle = liteplayer_adapter_init();
-        if (handle->io_lock == NULL || handle->state_lock == NULL ||
-            handle->adapter_handle == NULL) {
+        if (handle->io_lock == NULL || handle->state_lock == NULL || handle->adapter_handle == NULL) {
             goto create_fail;
         }
     }
@@ -629,23 +628,17 @@ int liteplayer_set_data_source(liteplayer_handle_t handle, const char *url, int 
         return ESP_FAIL;
     }
 
+    handle->source_ops = handle->adapter_handle->find_source_wrapper(handle->adapter_handle, url);
     if (handle->source_ops == NULL) {
-        handle->source_ops =
-            handle->adapter_handle->find_source_wrapper(handle->adapter_handle, url);
-        if (handle->source_ops == NULL) {
-            OS_LOGE(TAG, "Can't find source wrapper for this url");
-            os_mutex_unlock(handle->io_lock);
-            return ESP_FAIL;
-        }
+        OS_LOGE(TAG, "Can't find source wrapper for this url");
+        os_mutex_unlock(handle->io_lock);
+        return ESP_FAIL;
     }
+    handle->sink_ops = handle->adapter_handle->find_sink_wrapper(handle->adapter_handle, "default");
     if (handle->sink_ops == NULL) {
-        handle->sink_ops =
-            handle->adapter_handle->find_sink_wrapper(handle->adapter_handle, "default");
-        if (handle->sink_ops == NULL) {
-            OS_LOGE(TAG, "Can't find sink wrapper");
-            os_mutex_unlock(handle->io_lock);
-            return ESP_FAIL;
-        }
+        OS_LOGE(TAG, "Can't find sink wrapper");
+        os_mutex_unlock(handle->io_lock);
+        return ESP_FAIL;
     }
     OS_LOGD(TAG, "Using source_wrapper: (%s), sink_wrapper: (%s)",
             handle->source_ops->url_protocol(), handle->sink_ops->name());
@@ -939,7 +932,7 @@ int liteplayer_seek(liteplayer_handle_t handle, int msec)
             handle->media_source_info.content_pos = handle->media_codec_info.content_pos + handle->seek_offset;
             handle->media_source_info.threshold_size = 0;
             handle->media_source_handle =
-                media_source_start(&handle->media_source_info, media_source_state_callback, handle);
+                media_source_start_async(&handle->media_source_info, media_source_state_callback, handle);
             AUDIO_MEM_CHECK(TAG, handle->media_source_handle, goto seek_out);
         } else {
             stream_callback_t audio_source = {

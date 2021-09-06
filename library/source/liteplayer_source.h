@@ -51,9 +51,9 @@ struct media_source_info {
 
 typedef void *media_source_handle_t;
 
-media_source_handle_t media_source_start(struct media_source_info *info,
-                                         media_source_state_cb listener,
-                                         void *listener_priv);
+media_source_handle_t media_source_start_async(struct media_source_info *info,
+                                               media_source_state_cb listener,
+                                               void *listener_priv);
 
 void media_source_stop(media_source_handle_t handle);
 

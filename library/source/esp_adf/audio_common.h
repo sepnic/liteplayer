@@ -28,9 +28,7 @@
 #define _AUDIO_COMMON_H_
 
 #include <stdio.h>
-#include <stdint.h>
 
-#include "osal/os_thread.h"
 #include "cutils/memory_helper.h"
 #include "cutils/log_helper.h"
 
@@ -38,7 +36,7 @@
 extern "C" {
 #endif
 
-typedef int32_t esp_err_t;
+typedef int esp_err_t;
 
 /* Definitions for error constants. */
 #define ESP_OK          0       /*!< esp_err_t value indicating success (no error) */

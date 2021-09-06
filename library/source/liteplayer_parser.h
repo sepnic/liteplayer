@@ -65,6 +65,7 @@ int media_info_parse(struct media_source_info *source, struct media_codec_info *
 media_parser_handle_t media_parser_start_async(struct media_source_info *source,
                                                media_parser_state_cb listener,
                                                void *listener_priv);
+
 void media_parser_stop(media_parser_handle_t handle);
 
 #ifdef __cplusplus
