@@ -56,6 +56,8 @@ struct listplayer {
     bool                 is_paused;
     bool                 is_completed;
     bool                 is_looping;
+    bool                 has_inited;
+    bool                 has_prepared;
     bool                 has_started;
 };
 
@@ -191,23 +193,25 @@ static int listplayer_state_callback(enum liteplayer_state state, int errcode, v
 
     switch (state) {
     case LITEPLAYER_INITED:
-        if (handle->is_completed) {
+        if (handle->is_completed && handle->has_inited) {
             struct message *msg = message_obtain(PLAYER_DO_PREPARE, 0, 0, handle);
             if (msg != NULL) {
                 state_sync = false;
                 mlooper_post_message(handle->looper, msg);
             }
         }
+        handle->has_inited = true;
         break;
 
     case LITEPLAYER_PREPARED:
-        if (handle->is_completed) {
+        if (handle->is_completed && handle->has_prepared) {
             struct message *msg = message_obtain(PLAYER_DO_START, 0, 0, handle);
             if (msg != NULL) {
                 state_sync = false;
                 mlooper_post_message(handle->looper, msg);
             }
         }
+        handle->has_prepared = true;
         break;
 
     case LITEPLAYER_STARTED:
