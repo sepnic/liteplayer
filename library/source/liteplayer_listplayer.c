@@ -23,6 +23,7 @@
 #include <string.h>
 
 #include "osal/os_thread.h"
+#include "cutils/list.h"
 #include "cutils/log_helper.h"
 #include "cutils/mlooper.h"
 #include "esp_adf/audio_common.h"
@@ -37,6 +38,7 @@
 #define DEFAULT_PLAYLIST_URL_LEN  128
 
 struct listplayer {
+    struct listplayer_cfg       cfg;
     liteplayer_handle_t         player;
     liteplayer_adapter_handle_t adapter;
     mlooper_handle              looper;
@@ -45,20 +47,23 @@ struct listplayer {
     enum liteplayer_state       state;
     liteplayer_state_cb         listener;
     void                       *listener_priv;
-    struct listplayer_cfg       cfg;
     struct source_wrapper      *file_ops;
 
-    char               **url_list;
-    int                  url_index;
+    struct listnode      url_list;
+    struct listnode     *url_curr;
     int                  url_count;
 
     bool                 is_list;
     bool                 is_paused;
-    bool                 is_completed;
     bool                 is_looping;
     bool                 has_inited;
     bool                 has_prepared;
     bool                 has_started;
+};
+
+struct url_node {
+    const char *url;
+    struct listnode listnode;
 };
 
 enum {
@@ -76,15 +81,17 @@ enum {
 
 static void playlist_clear(listplayer_handle_t handle)
 {
+    struct url_node *node = NULL;
+    struct listnode *item, *tmp;
     os_mutex_lock(handle->lock);
-
-    for (int i = 0; i < handle->url_count; i++) {
-        audio_free(handle->url_list[i]);
+    list_for_each_safe(item, tmp, &handle->url_list) {
+        node = listnode_to_item(item, struct url_node, listnode);
+        list_remove(item);
+        audio_free(node->url);
+        audio_free(node);
     }
-    handle->url_index = 0;
     handle->url_count = 0;
     handle->is_list = false;
-
     os_mutex_unlock(handle->lock);
 }
 
@@ -98,12 +105,19 @@ static int playlist_insert(listplayer_handle_t handle, const char *url)
         return -1;
     }
 
-    char *insert = audio_strdup(url);
-    if (insert == NULL) {
+    struct url_node *node = audio_calloc(1, sizeof(struct url_node));
+    if (node == NULL) {
         os_mutex_unlock(handle->lock);
         return -1;
     }
-    handle->url_list[handle->url_count] = insert;
+    node->url = audio_strdup(url);
+    if (node->url == NULL) {
+        audio_free(node);
+        os_mutex_unlock(handle->lock);
+        return -1;
+    }
+
+    list_add_tail(&handle->url_list, &node->listnode);
     handle->url_count++;
 
     os_mutex_unlock(handle->lock);
@@ -168,11 +182,15 @@ static int playlist_resolve(listplayer_handle_t handle, const char *filename)
 
     os_mutex_lock(handle->lock);
     if (handle->url_count > 0) {
+        struct listnode *item;
+        int i = 0;
+        list_for_each(item, &handle->url_list) {
+            struct url_node *node = listnode_to_item(item, struct url_node, listnode);
+            OS_LOGD(TAG, "-->playlist: url[%d]=[%s]", i, node->url);
+            i++;
+        }
         handle->is_list = true;
         ret = 0;
-    }
-    for (int i = 0; i < handle->url_count; i++) {
-        OS_LOGD(TAG, "-->playlist: url[%d]=[%s]", i, handle->url_list[i]);
     }
     os_mutex_unlock(handle->lock);
 
@@ -193,7 +211,7 @@ static int listplayer_state_callback(enum liteplayer_state state, int errcode, v
 
     switch (state) {
     case LITEPLAYER_INITED:
-        if (handle->is_completed && handle->has_inited) {
+        if (handle->has_inited) {
             struct message *msg = message_obtain(PLAYER_DO_PREPARE, 0, 0, handle);
             if (msg != NULL) {
                 state_sync = false;
@@ -204,7 +222,7 @@ static int listplayer_state_callback(enum liteplayer_state state, int errcode, v
         break;
 
     case LITEPLAYER_PREPARED:
-        if (handle->is_completed && handle->has_prepared) {
+        if (handle->has_prepared) {
             struct message *msg = message_obtain(PLAYER_DO_START, 0, 0, handle);
             if (msg != NULL) {
                 state_sync = false;
@@ -218,7 +236,6 @@ static int listplayer_state_callback(enum liteplayer_state state, int errcode, v
         if (handle->has_started) {
             state_sync = handle->is_paused;
         }
-        handle->is_completed = false;
         handle->is_paused = false;
         handle->has_started = true;
         break;
@@ -244,7 +261,6 @@ static int listplayer_state_callback(enum liteplayer_state state, int errcode, v
         break;
 
     case LITEPLAYER_COMPLETED:
-        handle->is_completed = true;
         if (handle->is_list || handle->is_looping) {
             struct message *msg = message_obtain(PLAYER_DO_STOP, 0, 0, handle);
             if (msg != NULL) {
@@ -255,18 +271,32 @@ static int listplayer_state_callback(enum liteplayer_state state, int errcode, v
         break;
 
     case LITEPLAYER_ERROR:
-        if (handle->is_list && !handle->is_looping && handle->url_count > 1) {
-            handle->is_completed = true; // fake completed, try to play next
-            struct message *msg = message_obtain(PLAYER_DO_STOP, 0, 0, handle);
-            if (msg != NULL) {
-                state_sync = false;
-                mlooper_post_message(handle->looper, msg);
+        {
+            struct listnode *curr = handle->url_curr;
+            if (curr == list_head(&handle->url_list))
+                handle->url_curr = list_tail(&handle->url_list);
+            else
+                handle->url_curr = curr->prev;
+            list_remove(curr);
+            handle->url_count--;
+
+            struct url_node *node = listnode_to_item(curr, struct url_node, listnode);
+            OS_LOGW(TAG, "Failed to play url: %s, remove this url from list", node->url);
+            audio_free(node->url);
+            audio_free(node);
+
+            if ((handle->is_list || handle->is_looping) && handle->url_count > 0) {
+                struct message *msg = message_obtain(PLAYER_DO_STOP, 0, 0, handle);
+                if (msg != NULL) {
+                    state_sync = false;
+                    mlooper_post_message(handle->looper, msg);
+                }
             }
         }
         break;
 
     case LITEPLAYER_STOPPED:
-        if ((handle->is_list || handle->is_looping) && handle->is_completed) {
+        if ((handle->is_list || handle->is_looping) && handle->url_count > 0) {
             struct message *msg = message_obtain(PLAYER_DO_RESET, 0, 0, handle);
             if (msg != NULL) {
                 state_sync = false;
@@ -276,11 +306,13 @@ static int listplayer_state_callback(enum liteplayer_state state, int errcode, v
         break;
 
     case LITEPLAYER_IDLE:
-        if ((handle->is_list || handle->is_looping) && handle->is_completed) {
+        if ((handle->is_list || handle->is_looping) && handle->url_count > 0) {
             if (!handle->is_looping) {
-                handle->url_index++;
-                if (handle->url_index >= handle->url_count)
-                    handle->url_index = 0;
+                if (handle->url_curr == list_tail(&handle->url_list)) {
+                    handle->url_curr = list_head(&handle->url_list);
+                } else {
+                    handle->url_curr = handle->url_curr->next;
+                }
             }
             struct message *msg = message_obtain(PLAYER_DO_SET_SOURCE, 0, 0, handle);
             if (msg != NULL) {
@@ -312,7 +344,8 @@ static void listplayer_looper_handle(struct message *msg)
     case PLAYER_DO_SET_SOURCE: {
         const char *url = NULL;
         os_mutex_lock(handle->lock);
-        url = audio_strdup(handle->url_list[handle->url_index]);
+        struct url_node *node = listnode_to_item(handle->url_curr, struct url_node, listnode);
+        url = audio_strdup(node->url);
         os_mutex_unlock(handle->lock);
         if (url != NULL) {
             liteplayer_set_data_source(handle->player, url, handle->threshold_ms);
@@ -345,11 +378,12 @@ static void listplayer_looper_handle(struct message *msg)
         os_mutex_lock(handle->lock);
         if (handle->is_list) {
             if (handle->is_looping) {
-                handle->url_index++;
-                if (handle->url_index >= handle->url_count)
-                    handle->url_index = 0;
+                if (handle->url_curr == list_tail(&handle->url_list)) {
+                    handle->url_curr = list_head(&handle->url_list);
+                } else {
+                    handle->url_curr = handle->url_curr->next;
+                }
             }
-            handle->is_completed = true;
         }
         os_mutex_unlock(handle->lock);
         if (handle->is_list)
@@ -360,15 +394,18 @@ static void listplayer_looper_handle(struct message *msg)
     case PLAYER_DO_PREV: {
         os_mutex_lock(handle->lock);
         if (handle->is_list) {
-            handle->url_index--;
-            if (handle->url_index < 0)
-                handle->url_index = handle->url_count -1;
-            if (!handle->is_looping) {
-                handle->url_index--;
-                if (handle->url_index < 0)
-                    handle->url_index = handle->url_count -1;
+            if (handle->url_curr == list_head(&handle->url_list)) {
+                handle->url_curr = list_tail(&handle->url_list);
+            } else {
+                handle->url_curr = handle->url_curr->prev;
             }
-            handle->is_completed = true;
+            if (!handle->is_looping) {
+                if (handle->url_curr == list_head(&handle->url_list)) {
+                    handle->url_curr = list_tail(&handle->url_list);
+                } else {
+                    handle->url_curr = handle->url_curr->prev;
+                }
+            }
         }
         os_mutex_unlock(handle->lock);
         if (handle->is_list)
@@ -405,9 +442,8 @@ listplayer_handle_t listplayer_create(struct listplayer_cfg *cfg)
         } else {
             handle->cfg.playlist_url_max = 1;
         }
-        handle->url_list = audio_malloc(sizeof(char *) * handle->cfg.playlist_url_max);
-        if (handle->url_list == NULL)
-            goto failed;
+
+        list_init(&handle->url_list);
 
         handle->lock = os_mutex_create();
         if (handle->lock == NULL)
@@ -505,8 +541,9 @@ int listplayer_set_data_source(listplayer_handle_t handle, const char *url, int 
         return -1;
     }
     handle->is_list = false;
-    handle->is_completed = false;
     handle->is_paused = false;
+    handle->has_inited = false;
+    handle->has_prepared = false;
     handle->has_started = false;
 
     if (handle->file_ops == NULL) {
@@ -532,6 +569,11 @@ int listplayer_set_data_source(listplayer_handle_t handle, const char *url, int 
             return -1;
         }
     }
+
+    if (!list_empty(&handle->url_list))
+        handle->url_curr = list_head(&handle->url_list);
+    else
+        return -1;
 
     handle->threshold_ms = threshold_ms;
     liteplayer_register_state_listener(handle->player, listplayer_state_callback, (void *)handle);
@@ -724,7 +766,5 @@ void listplayer_destroy(listplayer_handle_t handle)
         os_mutex_destroy(handle->lock);
     if (handle->cfg.playlist_url_suffix != NULL)
         audio_free(handle->cfg.playlist_url_suffix);
-    if (handle->url_list != NULL)
-        audio_free(handle->url_list);
     audio_free(handle);
 }
