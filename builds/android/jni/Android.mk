@@ -74,6 +74,7 @@ LOCAL_C_INCLUDES += \
 LOCAL_CFLAGS += -DOS_ANDROID
 LOCAL_CFLAGS += -DCONFIG_SPEEXDSP_FIXED_POINT -DENABLE_DECODER_AAC_SBR -DCONFIG_SINK_FIXED_S16LE
 LOCAL_CFLAGS += -Wall -Werror -Wno-error=unused-function -Wno-error=unused-variable
+LOCAL_CFLAGS += -Wno-error=void-pointer-to-enum-cast -Wno-error=implicit-const-int-float-conversion
 LOCAL_LDLIBS := -llog
 LOCAL_SHARED_LIBRARIES += sysutils
 LOCAL_MODULE := libliteplayer_core
