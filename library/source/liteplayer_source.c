@@ -45,7 +45,6 @@ struct media_source_priv {
     void *listener_priv;
 
     bool stop;
-    bool reach_threshold;
     os_mutex lock; // lock for rb/listener
     os_cond cond;  // wait stop to exit mediasource thread
 };
@@ -253,18 +252,6 @@ static void *m3u_source_thread(void *arg)
         goto thread_exit;
     }
 
-    if (priv->info.threshold_size > 0) {
-        os_mutex_lock(priv->lock);
-        if (!priv->stop) {
-            int total_size = rb_get_size(priv->info.out_ringbuf);
-            if (priv->info.threshold_size > total_size)
-                priv->info.threshold_size = total_size;
-            OS_LOGD(TAG, "Media source set threshold: %d/%d", priv->info.threshold_size, total_size);
-            rb_set_threshold(priv->info.out_ringbuf, priv->info.threshold_size);
-        }
-        os_mutex_unlock(priv->lock);
-    }
-
 resolve_m3u:
     if (priv->stop)
         goto thread_exit;
@@ -329,7 +316,6 @@ dequeue_url:
         }
 
         bytes_written = 0;
-
         do {
             os_mutex_lock(priv->lock);
             if (!priv->stop)
@@ -350,14 +336,6 @@ dequeue_url:
                 goto thread_exit;
             }
         } while (!priv->stop && bytes_read > 0);
-
-        if (!priv->reach_threshold) {
-            os_mutex_lock(priv->lock);
-            priv->reach_threshold = rb_reach_threshold(priv->info.out_ringbuf);
-            if (priv->reach_threshold && priv->listener)
-                priv->listener(MEDIA_SOURCE_REACH_THRESHOLD, priv->listener_priv);
-            os_mutex_unlock(priv->lock);
-        }
     }
 
 thread_exit:
@@ -534,32 +512,17 @@ static void *media_source_thread(void *arg)
         goto thread_exit;
     }
 
+    priv->info.source_handle = priv->info.source_ops->open(priv->info.url,
+            priv->info.content_pos, priv->info.source_ops->priv_data);
     if (priv->info.source_handle == NULL) {
-        priv->info.source_handle = priv->info.source_ops->open(priv->info.url,
-                priv->info.content_pos, priv->info.source_ops->priv_data);
-        if (priv->info.source_handle == NULL) {
-            state = MEDIA_SOURCE_READ_FAILED;
-            goto thread_exit;
-        }
-    }
-
-    if (priv->info.threshold_size > 0) {
-        os_mutex_lock(priv->lock);
-        if (!priv->stop) {
-            int total_size = rb_get_size(priv->info.out_ringbuf);
-            if (priv->info.threshold_size > total_size)
-                priv->info.threshold_size = total_size;
-            OS_LOGD(TAG, "Media source set threshold: %d/%d", priv->info.threshold_size, total_size);
-            rb_set_threshold(priv->info.out_ringbuf, priv->info.threshold_size);
-        }
-        os_mutex_unlock(priv->lock);
+        state = MEDIA_SOURCE_READ_FAILED;
+        goto thread_exit;
     }
 
     int bytes_read = 0, bytes_written = 0;
     int ret = 0;
     while (!priv->stop) {
         bytes_read = priv->info.source_ops->read(priv->info.source_handle, buffer, DEFAULT_MEDIA_SOURCE_BUFFER_SIZE);
-
         if (bytes_read < 0) {
             OS_LOGE(TAG, "Media source read failed");
             state = MEDIA_SOURCE_READ_FAILED;
@@ -571,7 +534,6 @@ static void *media_source_thread(void *arg)
         }
 
         bytes_written = 0;
-
         do {
             os_mutex_lock(priv->lock);
             if (!priv->stop)
@@ -592,14 +554,6 @@ static void *media_source_thread(void *arg)
                 goto thread_exit;
             }
         } while (!priv->stop && bytes_read > 0);
-
-        if (!priv->reach_threshold) {
-            os_mutex_lock(priv->lock);
-            priv->reach_threshold = rb_reach_threshold(priv->info.out_ringbuf);
-            if (priv->reach_threshold && priv->listener)
-                priv->listener(MEDIA_SOURCE_REACH_THRESHOLD, priv->listener_priv);
-            os_mutex_unlock(priv->lock);
-        }
     }
 
 thread_exit:
@@ -655,6 +609,12 @@ media_source_handle_t media_source_start_async(struct media_source_info *info,
     if (priv->lock == NULL || priv->cond == NULL || priv->info.url == NULL)
         goto start_failed;
 
+    if (priv->info.source_handle != NULL) {
+        priv->info.source_ops->close(priv->info.source_handle);
+        priv->info.source_handle = NULL;
+    }
+    rb_reset(priv->info.out_ringbuf);
+
     struct os_thread_attr attr = {
         .name = "ael-source",
         .priority = DEFAULT_MEDIA_SOURCE_TASK_PRIO,
@@ -664,11 +624,6 @@ media_source_handle_t media_source_start_async(struct media_source_info *info,
     os_thread id = NULL;
 
     if (strstr(priv->info.url, ".m3u") != NULL) {
-        if (priv->info.source_handle != NULL) {
-            priv->info.source_ops->close(priv->info.source_handle);
-            rb_reset(priv->info.out_ringbuf);
-            priv->info.source_handle = NULL;
-        }
         id = os_thread_create(&attr, m3u_source_thread, priv);
     } else {
         id = os_thread_create(&attr, media_source_thread, priv);

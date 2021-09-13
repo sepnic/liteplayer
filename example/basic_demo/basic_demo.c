@@ -36,8 +36,6 @@
 
 #define TAG "basic_demo"
 
-#define BASIC_DEMO_THRESHOLD_MS (5000)
-
 static int basic_demo_state_listener(enum liteplayer_state state, int errcode, void *priv)
 {
     enum liteplayer_state *player_state = (enum liteplayer_state *)priv;
@@ -58,10 +56,6 @@ static int basic_demo_state_listener(enum liteplayer_state state, int errcode, v
         break;
     case LITEPLAYER_PAUSED:
         OS_LOGD(TAG, "-->LITEPLAYER_PAUSED");
-        break;
-    case LITEPLAYER_CACHECOMPLETED:
-        OS_LOGD(TAG, "-->LITEPLAYER_CACHECOMPLETED");
-        state_sync = false;
         break;
     case LITEPLAYER_NEARLYCOMPLETED:
         OS_LOGD(TAG, "-->LITEPLAYER_NEARLYCOMPLETED");
@@ -142,7 +136,7 @@ static int basic_demo(const char *url)
     };
     liteplayer_register_source_wrapper(player, &http_ops);
 
-    if (liteplayer_set_data_source(player, url, BASIC_DEMO_THRESHOLD_MS) != 0) {
+    if (liteplayer_set_data_source(player, url) != 0) {
         OS_LOGE(TAG, "Failed to set data source");
         goto test_done;
     }

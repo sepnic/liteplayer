@@ -34,11 +34,10 @@ enum liteplayer_state {
     LITEPLAYER_STARTED         = 0x03,
     LITEPLAYER_PAUSED          = 0x04,
     LITEPLAYER_SEEKCOMPLETED   = 0x05,
-    LITEPLAYER_CACHECOMPLETED  = 0x06,
-    LITEPLAYER_NEARLYCOMPLETED = 0x07,
-    LITEPLAYER_COMPLETED       = 0x08,
-    LITEPLAYER_STOPPED         = 0x09,
-    LITEPLAYER_ERROR           = 0x0A,
+    LITEPLAYER_NEARLYCOMPLETED = 0x06,
+    LITEPLAYER_COMPLETED       = 0x07,
+    LITEPLAYER_STOPPED         = 0x08,
+    LITEPLAYER_ERROR           = 0xFF,
 };
 
 typedef int (*liteplayer_state_cb)(enum liteplayer_state state, int errcode, void *priv);
@@ -53,7 +52,7 @@ int liteplayer_register_sink_wrapper(liteplayer_handle_t handle, struct sink_wra
 
 int liteplayer_register_state_listener(liteplayer_handle_t handle, liteplayer_state_cb listener, void *listener_priv);
 
-int liteplayer_set_data_source(liteplayer_handle_t handle, const char *url, int threshold_ms);
+int liteplayer_set_data_source(liteplayer_handle_t handle, const char *url);
 
 int liteplayer_prepare(liteplayer_handle_t handle);
 

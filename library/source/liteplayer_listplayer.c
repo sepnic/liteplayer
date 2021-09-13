@@ -43,7 +43,6 @@ struct listplayer {
     liteplayer_adapter_handle_t adapter;
     mlooper_handle              looper;
     os_mutex                    lock;
-    int                         threshold_ms;
     enum liteplayer_state       state;
     liteplayer_state_cb         listener;
     void                       *listener_priv;
@@ -253,7 +252,6 @@ static int listplayer_state_callback(enum liteplayer_state state, int errcode, v
         }
         break;
 
-    case LITEPLAYER_CACHECOMPLETED:
     case LITEPLAYER_NEARLYCOMPLETED:
         if (handle->is_list || handle->is_looping) {
             state_sync = false;
@@ -348,7 +346,7 @@ static void listplayer_looper_handle(struct message *msg)
         url = audio_strdup(node->url);
         os_mutex_unlock(handle->lock);
         if (url != NULL) {
-            liteplayer_set_data_source(handle->player, url, handle->threshold_ms);
+            liteplayer_set_data_source(handle->player, url);
             audio_free(url);
         }
         break;
@@ -529,7 +527,7 @@ int listplayer_register_state_listener(listplayer_handle_t handle, liteplayer_st
     return 0;
 }
 
-int listplayer_set_data_source(listplayer_handle_t handle, const char *url, int threshold_ms)
+int listplayer_set_data_source(listplayer_handle_t handle, const char *url)
 {
     if (handle == NULL || url == NULL)
         return -1;
@@ -575,7 +573,6 @@ int listplayer_set_data_source(listplayer_handle_t handle, const char *url, int 
     else
         return -1;
 
-    handle->threshold_ms = threshold_ms;
     liteplayer_register_state_listener(handle->player, listplayer_state_callback, (void *)handle);
     struct message *msg = message_obtain(PLAYER_DO_SET_SOURCE, 0, 0, handle);
     if (msg != NULL) {

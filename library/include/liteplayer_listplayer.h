@@ -51,7 +51,7 @@ int listplayer_register_sink_wrapper(listplayer_handle_t handle, struct sink_wra
 
 int listplayer_register_state_listener(listplayer_handle_t handle, liteplayer_state_cb listener, void *listener_priv);
 
-int listplayer_set_data_source(listplayer_handle_t handle, const char *url, int threshold_ms);
+int listplayer_set_data_source(listplayer_handle_t handle, const char *url);
 
 int listplayer_prepare_async(listplayer_handle_t handle);
 

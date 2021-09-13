@@ -44,7 +44,6 @@
 
 #define PLAYLIST_DEMO_TASK_PRIO    (OS_THREAD_PRIO_NORMAL)
 #define PLAYLIST_DEMO_TASK_STACK   (8192)
-#define PLAYLIST_DEMO_THRESHOLD_MS (5000)
 
 struct playlist_demo_priv {
     const char *url;
@@ -114,10 +113,6 @@ static int playlist_demo_state_callback(enum liteplayer_state state, int errcode
         break;
     case LITEPLAYER_SEEKCOMPLETED:
         OS_LOGI(TAG, "-->LITEPLAYER_SEEKCOMPLETED");
-        break;
-    case LITEPLAYER_CACHECOMPLETED:
-        OS_LOGI(TAG, "-->LITEPLAYER_CACHECOMPLETED");
-        state_sync = false;
         break;
     case LITEPLAYER_NEARLYCOMPLETED:
         OS_LOGI(TAG, "-->LITEPLAYER_NEARLYCOMPLETED");
@@ -201,7 +196,7 @@ static void *playlist_demo_thread(void *arg)
     };
     listplayer_register_source_wrapper(demo->player_handle, &http_ops);
 
-    if (listplayer_set_data_source(demo->player_handle, demo->url, PLAYLIST_DEMO_THRESHOLD_MS) != 0) {
+    if (listplayer_set_data_source(demo->player_handle, demo->url) != 0) {
         OS_LOGE(TAG, "Failed to set data source");
         goto thread_exit;
     }

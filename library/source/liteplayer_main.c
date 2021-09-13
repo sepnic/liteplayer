@@ -43,10 +43,9 @@
 #define TAG "[liteplayer]core"
 
 struct liteplayer {
-    const char             *url; // STREAM: /websocket/tts.mp3
+    const char             *url; // TTS   : tts.mp3
                                  // HTTP  : http://..., https://...
                                  // FILE  : others
-    int                     threshold_ms;
     os_mutex                io_lock;
 
     enum liteplayer_state   state;
@@ -332,13 +331,6 @@ static void media_source_state_callback(enum media_source_state state, void *pri
         OS_LOGD(TAG, "[ %s-source ] Receive inputdone event", handle->source_ops->url_protocol());
         media_player_state_callback(handle, LITEPLAYER_NEARLYCOMPLETED, 0);
         break;
-    case MEDIA_SOURCE_REACH_THRESHOLD:
-        OS_LOGI(TAG, "[ %s-source ] Receive threshold event: threshold/total=%d/%d",
-                handle->source_ops->url_protocol(),
-                rb_get_threshold(handle->media_source_info.out_ringbuf),
-                rb_get_size(handle->media_source_info.out_ringbuf));
-        media_player_state_callback(handle, LITEPLAYER_CACHECOMPLETED, 0);
-        break;
     default:
         break;
     }
@@ -369,35 +361,6 @@ static void media_parser_state_callback(enum media_parser_state state, struct me
     }
 
     os_mutex_unlock(handle->state_lock);
-}
-
-static int media_source_get_threshold(liteplayer_handle_t handle, int threshold_ms)
-{
-    int threshold_size = 0;
-    if (threshold_ms <= 0)
-        return threshold_size;
-
-    if (threshold_ms > handle->media_codec_info.duration_ms)
-        threshold_ms = handle->media_codec_info.duration_ms;
-
-    switch (handle->media_codec_info.codec_type) {
-    case AUDIO_CODEC_WAV:
-    case AUDIO_CODEC_MP3: {
-        threshold_size = (handle->media_codec_info.bytes_per_sec*(threshold_ms/1000));
-        break;
-    }
-    case AUDIO_CODEC_M4A: {
-        unsigned int sample_index = 0;
-        unsigned int sample_offset = 0;
-        if (m4a_get_seek_offset(threshold_ms, &(handle->media_codec_info.detail.m4a_info), &sample_index, &sample_offset) == 0)
-            threshold_size = (int)sample_offset;
-        break;
-    }
-    default:
-        break;
-    }
-
-    return threshold_size;
 }
 
 static void main_pipeline_deinit(liteplayer_handle_t handle)
@@ -502,7 +465,6 @@ static int main_pipeline_init(liteplayer_handle_t handle)
         OS_LOGD(TAG, "[1.2] Create source element, async mode, ringbuf size: %d", handle->source_ops->buffer_size);
         audio_element_set_input_ringbuf(handle->ael_decoder, handle->media_source_info.out_ringbuf);
         handle->media_source_info.content_pos = handle->media_codec_info.content_pos + handle->seek_offset;
-        handle->media_source_info.threshold_size = media_source_get_threshold(handle, handle->threshold_ms);
         handle->media_source_handle =
             media_source_start_async(&handle->media_source_info, media_source_state_callback, handle);
         AUDIO_MEM_CHECK(TAG, handle->media_source_handle, goto pipeline_fail);
@@ -613,7 +575,7 @@ int liteplayer_register_state_listener(liteplayer_handle_t handle, liteplayer_st
     return ESP_OK;
 }
 
-int liteplayer_set_data_source(liteplayer_handle_t handle, const char *url, int threshold_ms)
+int liteplayer_set_data_source(liteplayer_handle_t handle, const char *url)
 {
     if (handle == NULL || url == NULL)
         return ESP_FAIL;
@@ -643,7 +605,6 @@ int liteplayer_set_data_source(liteplayer_handle_t handle, const char *url, int 
     OS_LOGD(TAG, "Using source_wrapper: (%s), sink_wrapper: (%s)",
             handle->source_ops->url_protocol(), handle->sink_ops->name());
 
-    handle->threshold_ms = threshold_ms;
     handle->state_error = false;
     handle->url = audio_strdup(url);
     if (handle->url == NULL) {
@@ -930,7 +891,6 @@ int liteplayer_seek(liteplayer_handle_t handle, int msec)
         if (handle->source_ops->async_mode) {
             handle->media_source_info.source_handle = NULL;
             handle->media_source_info.content_pos = handle->media_codec_info.content_pos + handle->seek_offset;
-            handle->media_source_info.threshold_size = 0;
             handle->media_source_handle =
                 media_source_start_async(&handle->media_source_info, media_source_state_callback, handle);
             AUDIO_MEM_CHECK(TAG, handle->media_source_handle, goto seek_out);

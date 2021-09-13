@@ -35,7 +35,6 @@ enum media_source_state {
     MEDIA_SOURCE_WRITE_SUCCEED,
     MEDIA_SOURCE_WRITE_FAILED,
     MEDIA_SOURCE_WRITE_DONE,
-    MEDIA_SOURCE_REACH_THRESHOLD,
 };
 
 typedef void (*media_source_state_cb)(enum media_source_state state, void *priv);
@@ -45,7 +44,6 @@ struct media_source_info {
     source_handle_t source_handle;
     struct source_wrapper *source_ops;
     long long content_pos;
-    int threshold_size;
     ringbuf_handle out_ringbuf;
 };
 
