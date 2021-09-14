@@ -381,6 +381,11 @@ static void main_pipeline_deinit(liteplayer_handle_t handle)
         handle->media_source_handle = NULL;
     }
 
+    if (handle->media_source_info.out_ringbuf != NULL) {
+        rb_destroy(handle->media_source_info.out_ringbuf);
+        handle->media_source_info.out_ringbuf = NULL;
+    }
+
     if (handle->source_buffer_addr != NULL) {
         audio_free(handle->source_buffer_addr);
         handle->source_buffer_addr = NULL;
@@ -461,6 +466,8 @@ static int main_pipeline_init(liteplayer_handle_t handle)
         audio_element_set_write_cb(handle->ael_decoder, &audio_sink);
     }
 
+    handle->media_source_info.out_ringbuf = rb_create(handle->source_ops->buffer_size);
+    AUDIO_MEM_CHECK(TAG, handle->media_source_info.out_ringbuf, goto pipeline_fail);
     if (handle->source_ops->async_mode) {
         OS_LOGD(TAG, "[1.2] Create source element, async mode, ringbuf size: %d", handle->source_ops->buffer_size);
         audio_element_set_input_ringbuf(handle->ael_decoder, handle->media_source_info.out_ringbuf);
@@ -469,11 +476,10 @@ static int main_pipeline_init(liteplayer_handle_t handle)
             media_source_start_async(&handle->media_source_info, media_source_state_callback, handle);
         AUDIO_MEM_CHECK(TAG, handle->media_source_handle, goto pipeline_fail);
     } else {
-        OS_LOGD(TAG, "[1.2] Create source element, sync mode, buffer size: %d", handle->source_ops->buffer_size);
+        OS_LOGD(TAG, "[1.2] Create source element, sync mode, ringbuf size: %d", handle->source_ops->buffer_size);
         handle->source_buffer_size = handle->source_ops->buffer_size;
         handle->source_buffer_addr = audio_malloc(handle->source_buffer_size);
         AUDIO_MEM_CHECK(TAG, handle->source_buffer_addr, goto pipeline_fail);
-
         stream_callback_t audio_source = {
             .open = audio_source_open,
             .read = audio_source_read,
@@ -607,19 +613,10 @@ int liteplayer_set_data_source(liteplayer_handle_t handle, const char *url)
 
     handle->state_error = false;
     handle->url = audio_strdup(url);
-    if (handle->url == NULL) {
-        os_mutex_unlock(handle->io_lock);
-        return ESP_FAIL;
-    }
+    AUDIO_MEM_CHECK(TAG, handle->url, goto set_fail);
 
     handle->media_source_info.url = handle->url;
     handle->media_source_info.source_ops = handle->source_ops;
-    handle->media_source_info.out_ringbuf = rb_create(handle->source_ops->buffer_size);
-    if (handle->media_source_info.out_ringbuf == NULL) {
-        audio_free(handle->url);
-        os_mutex_unlock(handle->io_lock);
-        return ESP_FAIL;
-    }
 
     {
         os_mutex_lock(handle->state_lock);
@@ -630,6 +627,14 @@ int liteplayer_set_data_source(liteplayer_handle_t handle, const char *url)
 
     os_mutex_unlock(handle->io_lock);
     return ESP_OK;
+
+set_fail:
+    if (handle->url != NULL) {
+        audio_free(handle->url);
+        handle->url = NULL;
+    }
+    os_mutex_unlock(handle->io_lock);
+    return ESP_FAIL;
 }
 
 int liteplayer_prepare(liteplayer_handle_t handle)
@@ -647,7 +652,7 @@ int liteplayer_prepare(liteplayer_handle_t handle)
         return ESP_FAIL;
     }
 
-    int ret = media_info_parse(&handle->media_source_info, &handle->media_codec_info);
+    int ret = media_parser_get_codec_info(&handle->media_source_info, &handle->media_codec_info);
     if (ret == ESP_OK)
         ret = main_pipeline_init(handle);
 
@@ -690,7 +695,7 @@ int liteplayer_prepare_async(liteplayer_handle_t handle)
             os_mutex_unlock(handle->state_lock);
         }
     } else {
-        ret = media_info_parse(&handle->media_source_info, &handle->media_codec_info);
+        ret = media_parser_get_codec_info(&handle->media_source_info, &handle->media_codec_info);
         if (ret == ESP_OK)
             ret = main_pipeline_init(handle);
         os_mutex_lock(handle->state_lock);
@@ -828,31 +833,8 @@ int liteplayer_seek(liteplayer_handle_t handle, int msec)
         goto seek_out;
     }
 
-    long long offset = 0;
-    switch (handle->media_codec_info.codec_type) {
-    case AUDIO_CODEC_WAV:
-    case AUDIO_CODEC_MP3: {
-        offset = (handle->media_codec_info.bytes_per_sec*(msec/1000));
-        break;
-    }
-    case AUDIO_CODEC_M4A: {
-        unsigned int sample_index = 0;
-        unsigned int sample_offset = 0;
-        if (m4a_get_seek_offset(msec, &(handle->media_codec_info.detail.m4a_info), &sample_index, &sample_offset) != 0) {
-            ret = ESP_OK;
-            goto seek_out;
-        }
-        offset = (long long)sample_offset - handle->media_codec_info.content_pos;
-        handle->media_codec_info.detail.m4a_info.stsz_samplesize_index = sample_index;
-        break;
-    }
-    default:
-        OS_LOGE(TAG, "Unsupported seek for codec: %d", handle->media_codec_info.codec_type);
-        ret = ESP_OK;
-        goto seek_out;
-    }
-    if (handle->media_codec_info.content_len > 0 && offset >= handle->media_codec_info.content_len) {
-        OS_LOGE(TAG, "Invalid seek offset");
+    long long offset = media_parser_get_seek_offset(&handle->media_codec_info, msec);
+    if (offset < 0) {
         ret = ESP_OK;
         goto seek_out;
     }
@@ -989,11 +971,8 @@ int liteplayer_reset(liteplayer_handle_t handle)
             audio_free(handle->media_codec_info.detail.wav_info.header_buff);
     }
 
-    if (handle->media_source_info.out_ringbuf != NULL) {
-        rb_destroy(handle->media_source_info.out_ringbuf);
-        handle->media_source_info.out_ringbuf = NULL;
-    }
     memset(&handle->media_source_info, 0x0, sizeof(handle->media_source_info));
+    memset(&handle->media_codec_info, 0x0, sizeof(handle->media_codec_info));
 
     handle->state_error = false;
     handle->source_ops = NULL;
@@ -1005,7 +984,6 @@ int liteplayer_reset(liteplayer_handle_t handle)
     handle->sink_inited = false;
     handle->seek_time = 0;
     handle->seek_offset = 0;
-    memset(&handle->media_codec_info, 0x0, sizeof(handle->media_codec_info));
 
     {
         os_mutex_lock(handle->state_lock);

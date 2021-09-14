@@ -60,7 +60,9 @@ typedef void (*media_parser_state_cb)(enum media_parser_state state, struct medi
 
 typedef void *media_parser_handle_t;
 
-int media_info_parse(struct media_source_info *source, struct media_codec_info *codec);
+int media_parser_get_codec_info(struct media_source_info *source, struct media_codec_info *codec);
+
+long long media_parser_get_seek_offset(struct media_codec_info *codec, int seek_msec);
 
 media_parser_handle_t media_parser_start_async(struct media_source_info *source,
                                                media_parser_state_cb listener,

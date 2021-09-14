@@ -119,8 +119,6 @@ enum wav_format {
 // Return the data size obtained
 typedef int (*wav_fetch_cb)(char *buf, int wanted_size, long offset, void *fetch_priv);
 
-void wav_build_header(wav_header_t *header, int samplerate, int bits, int channels, enum wav_format format, long datasize);
-
 int wav_parse_header(char *buf, int buf_size, struct wav_info *info);
 
 int wav_extractor(wav_fetch_cb fetch_cb, void *fetch_priv, struct wav_info *info);

@@ -116,6 +116,40 @@ static int get_start_offset(char *buf)
     return frame_start_offset;
 }
 
+static audio_codec_t get_codec_type(const char *url, char *buf)
+{
+    audio_codec_t codec = AUDIO_CODEC_NONE;
+    if (memcmp(&buf[4], "ftyp", 4) == 0) {
+        OS_LOGV(TAG, "Found M4A media");
+        codec = AUDIO_CODEC_M4A;
+    } else if (memcmp(&buf[0], "ID3", 3) == 0) {
+        if (strstr(url, "mp3") != NULL) {
+            OS_LOGV(TAG, "Found MP3 media with ID3 tag");
+            codec = AUDIO_CODEC_MP3;
+        } else if (strstr(url, "aac") != NULL) {
+            OS_LOGV(TAG, "Found AAC media with ID3 tag");
+            codec = AUDIO_CODEC_AAC;
+        } else {
+            OS_LOGV(TAG, "Unknown type with ID3, assume codec is MP3");
+            codec = AUDIO_CODEC_MP3;
+        }
+    } else if ((buf[0] & 0xFF) == 0xFF && (buf[1] & 0xE0) == 0xE0) {
+        if (strstr(url, "aac") != NULL &&
+            (buf[0] & 0xFF) == 0xFF && (buf[1] & 0xF0) == 0xF0) {
+            OS_LOGV(TAG, "Found AAC media raw data");
+            codec = AUDIO_CODEC_AAC;
+        } else {
+            OS_LOGV(TAG, "Found MP3 media raw data");
+            codec = AUDIO_CODEC_MP3;
+        }
+    } else if (memcmp(&buf[0], "RIFF", 4) == 0) {
+        OS_LOGV(TAG, "Found wav media");
+        codec = AUDIO_CODEC_WAV;
+    }
+    // todo: support flac/opus
+    return codec;
+}
+
 static int media_header_parse(struct media_source_info *source, struct media_codec_info *codec)
 {
     source_handle_t source_handle = NULL;
@@ -141,36 +175,11 @@ static int media_header_parse(struct media_source_info *source, struct media_cod
         goto parse_done;
     }
 
-    if (memcmp(&buf[4], "ftyp", 4) == 0) {
-        OS_LOGV(TAG, "Found M4A media");
-        codec->codec_type = AUDIO_CODEC_M4A;
-    } else if (memcmp(&buf[0], "ID3", 3) == 0) {
-        if (codec->codec_type == AUDIO_CODEC_MP3) {
-            OS_LOGV(TAG, "Found MP3 media with ID3 tag");
-        } else if (codec->codec_type == AUDIO_CODEC_AAC) {
-            OS_LOGV(TAG, "Found AAC media with ID3 tag");
-        } else {
-            OS_LOGV(TAG, "Unknown type with ID3, assume codec is MP3");
-            codec->codec_type = AUDIO_CODEC_MP3;
-        }
-    } else if ((buf[0] & 0xFF) == 0xFF && (buf[1] & 0xE0) == 0xE0) {
-        if (codec->codec_type == AUDIO_CODEC_AAC &&
-            (buf[0] & 0xFF) == 0xFF && (buf[1] & 0xF0) == 0xF0) {
-            OS_LOGV(TAG, "Found AAC media raw data");
-            codec->codec_type = AUDIO_CODEC_AAC;
-        } else {
-            OS_LOGV(TAG, "Found MP3 media raw data");
-            codec->codec_type = AUDIO_CODEC_MP3;
-        }
-    } else if (memcmp(&buf[0], "RIFF", 4) == 0) {
-        OS_LOGV(TAG, "Found wav media");
-        codec->codec_type = AUDIO_CODEC_WAV;
-    }
-
     int frame_start_offset = 0, bytes_per_sec = 0;
     int sample_rate = 0, channels = 0, bits = 0;
     int duration_ms = 0;
 
+    codec->codec_type = get_codec_type(source->url, buf);
     switch (codec->codec_type) {
     case AUDIO_CODEC_MP3: {
         frame_start_offset = get_start_offset(buf);
@@ -287,7 +296,7 @@ static void media_parser_cleanup(struct media_parser_priv *priv)
 static void *media_parser_thread(void *arg)
 {
     struct media_parser_priv *priv = (struct media_parser_priv *)arg;
-    int ret = media_info_parse(&priv->source, &priv->codec);
+    int ret = media_parser_get_codec_info(&priv->source, &priv->codec);
 
     {
         os_mutex_lock(priv->lock);
@@ -311,7 +320,7 @@ static void *media_parser_thread(void *arg)
     return NULL;
 }
 
-int media_info_parse(struct media_source_info *source, struct media_codec_info *codec)
+int media_parser_get_codec_info(struct media_source_info *source, struct media_codec_info *codec)
 {
     if (source == NULL || source->url == NULL || codec == NULL)
         return ESP_FAIL;
@@ -334,18 +343,7 @@ int media_info_parse(struct media_source_info *source, struct media_codec_info *
         if (m4a_header_parse(source, codec) == ESP_OK)
             goto parse_succeed;
         // if failed, go ahead to check real codec type
-        codec->codec_type = AUDIO_CODEC_NONE;
     }
-    else if (strstr(source->url, "mp3") != NULL)
-        codec->codec_type = AUDIO_CODEC_MP3;
-    else if (strstr(source->url, "aac") != NULL)
-        codec->codec_type = AUDIO_CODEC_AAC;
-    else if (strstr(source->url, "wav") != NULL)
-        codec->codec_type = AUDIO_CODEC_WAV;
-    else if (strstr(source->url, "opus") != NULL)
-        codec->codec_type = AUDIO_CODEC_OPUS;
-    else if (strstr(source->url, "flac") != NULL)
-        codec->codec_type = AUDIO_CODEC_FLAC;
 
     if (media_header_parse(source, codec) != ESP_OK) {
         OS_LOGE(TAG, "Failed to parse url:[%s]", source->url);
@@ -358,6 +356,39 @@ parse_succeed:
              codec->codec_samplerate, codec->codec_channels, codec->codec_bits,
              codec->content_pos, codec->content_len);
     return ESP_OK;
+}
+
+long long media_parser_get_seek_offset(struct media_codec_info *codec, int seek_msec)
+{
+    if (codec == NULL || seek_msec < 0)
+        return -1;
+
+    long long offset = -1;
+    switch (codec->codec_type) {
+    case AUDIO_CODEC_WAV:
+    case AUDIO_CODEC_MP3: {
+        offset = (codec->bytes_per_sec*(seek_msec/1000));
+        break;
+    }
+    case AUDIO_CODEC_M4A: {
+        unsigned int sample_index = 0;
+        unsigned int sample_offset = 0;
+        if (m4a_get_seek_offset(seek_msec, &(codec->detail.m4a_info), &sample_index, &sample_offset) != 0) {
+            break;
+        }
+        offset = (long long)sample_offset - codec->content_pos;
+        codec->detail.m4a_info.stsz_samplesize_index = sample_index;
+        break;
+    }
+    default:
+        OS_LOGE(TAG, "Unsupported seek for codec: %d", codec->codec_type);
+        break;
+    }
+    if (codec->content_len > 0 && offset >= codec->content_len) {
+        OS_LOGE(TAG, "Invalid seek offset");
+        offset = -1;
+    }
+    return offset;
 }
 
 media_parser_handle_t media_parser_start_async(struct media_source_info *source,

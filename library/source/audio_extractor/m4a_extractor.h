@@ -98,8 +98,6 @@ int m4a_get_seek_offset(int seek_ms, struct m4a_info *info, uint32_t *sample_ind
 
 int m4a_extractor(m4a_fetch_cb fetch_cb, void *fetch_priv, struct m4a_info *info);
 
-int m4a_build_adts_header(uint8_t *adts_buf, uint32_t adts_size, uint8_t *asc_buf, uint32_t asc_size, uint32_t frame_size);
-
 #ifdef __cplusplus
 }
 #endif

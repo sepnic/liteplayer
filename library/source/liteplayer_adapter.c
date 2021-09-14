@@ -133,6 +133,7 @@ static void file_wrapper_close(source_handle_t handle)
 {
     struct file_wrapper_priv *priv = (struct file_wrapper_priv *)handle;
     if (priv->file) {
+        OS_LOGD(TAG, "Closing file:%p", priv->file);
         fclose(priv->file);
         priv->file = NULL;
     }

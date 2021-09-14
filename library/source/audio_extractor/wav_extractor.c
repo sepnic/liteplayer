@@ -204,23 +204,6 @@ parse_done:
     return 0;
 }
 
-void wav_build_header(wav_header_t *header, int samplerate, int bits, int channels, enum wav_format format, long datasize)
-{
-    header->riff.ChunkID = WAV_CHUNK_RIFF;
-    header->riff.Format = WAV_CHUNK_WAVE;
-    header->riff.ChunkSize = LE_INT(datasize+sizeof(wav_header_t)-8);
-    header->fmt.ChunkID = WAV_CHUNK_FMT;
-    header->fmt.ChunkSize = LE_INT(16);
-    header->fmt.AudioFormat = LE_SHORT(format);
-    header->fmt.NumOfChannels = LE_SHORT(channels);
-    header->fmt.SampleRate = LE_INT(samplerate);
-    header->fmt.BitsPerSample = LE_SHORT(bits);
-    header->fmt.BlockAlign = LE_SHORT(bits*channels/8);
-    header->fmt.ByteRate = LE_INT(header->fmt.BlockAlign*samplerate);
-    header->data.ChunkID = WAV_CHUNK_DATA;
-    header->data.ChunkSize = LE_INT(datasize);
-}
-
 int wav_extractor(wav_fetch_cb fetch_cb, void *fetch_priv, struct wav_info *info)
 {
     char buf[WAV_PARSE_BUFFER_SIZE];
