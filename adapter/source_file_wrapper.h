@@ -33,6 +33,8 @@ source_handle_t file_wrapper_open(const char *url, long long content_pos, void *
 
 int file_wrapper_read(source_handle_t handle, char *buffer, int size);
 
+long long file_wrapper_content_pos(source_handle_t handle);
+
 long long file_wrapper_content_len(source_handle_t handle);
 
 int file_wrapper_seek(source_handle_t handle, long offset);

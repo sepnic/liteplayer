@@ -109,6 +109,14 @@ static int file_wrapper_read(source_handle_t handle, char *buffer, int size)
     return -1;
 }
 
+static long long file_wrapper_content_pos(source_handle_t handle)
+{
+    struct file_wrapper_priv *priv = (struct file_wrapper_priv *)handle;
+    if (priv->file)
+        return priv->content_pos;
+    return 0;
+}
+
 static long long file_wrapper_content_len(source_handle_t handle)
 {
     struct file_wrapper_priv *priv = (struct file_wrapper_priv *)handle;
@@ -186,6 +194,7 @@ static int add_source_wrapper(liteplayer_adapter_handle_t self, struct source_wr
     node->wrapper.url_protocol = wrapper->url_protocol;
     node->wrapper.open = wrapper->open;
     node->wrapper.read = wrapper->read;
+    node->wrapper.content_pos = wrapper->content_pos;
     node->wrapper.content_len = wrapper->content_len;
     node->wrapper.seek = wrapper->seek;
     node->wrapper.close = wrapper->close;
@@ -343,6 +352,7 @@ liteplayer_adapter_handle_t liteplayer_adapter_init()
         .url_protocol = file_wrapper_url_protocol,
         .open = file_wrapper_open,
         .read = file_wrapper_read,
+        .content_pos = file_wrapper_content_pos,
         .content_len = file_wrapper_content_len,
         .seek = file_wrapper_seek,
         .close = file_wrapper_close,

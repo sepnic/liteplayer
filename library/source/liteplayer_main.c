@@ -466,8 +466,6 @@ static int main_pipeline_init(liteplayer_handle_t handle)
         audio_element_set_write_cb(handle->ael_decoder, &audio_sink);
     }
 
-    handle->media_source_info.out_ringbuf = rb_create(handle->source_ops->buffer_size);
-    AUDIO_MEM_CHECK(TAG, handle->media_source_info.out_ringbuf, goto pipeline_fail);
     if (handle->source_ops->async_mode) {
         OS_LOGD(TAG, "[1.2] Create source element, async mode, ringbuf size: %d", handle->source_ops->buffer_size);
         audio_element_set_input_ringbuf(handle->ael_decoder, handle->media_source_info.out_ringbuf);
@@ -617,6 +615,8 @@ int liteplayer_set_data_source(liteplayer_handle_t handle, const char *url)
 
     handle->media_source_info.url = handle->url;
     handle->media_source_info.source_ops = handle->source_ops;
+    handle->media_source_info.out_ringbuf = rb_create(handle->source_ops->buffer_size);
+    AUDIO_MEM_CHECK(TAG, handle->media_source_info.out_ringbuf, goto set_fail);
 
     {
         os_mutex_lock(handle->state_lock);
@@ -629,6 +629,10 @@ int liteplayer_set_data_source(liteplayer_handle_t handle, const char *url)
     return ESP_OK;
 
 set_fail:
+    if (handle->media_source_info.out_ringbuf != NULL) {
+        rb_destroy(handle->media_source_info.out_ringbuf);
+        handle->media_source_info.out_ringbuf = NULL;
+    }
     if (handle->url != NULL) {
         audio_free(handle->url);
         handle->url = NULL;

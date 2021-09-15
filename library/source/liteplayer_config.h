@@ -29,7 +29,7 @@ extern "C" {
 
 // media parser definations, core feature
 #define DEFAULT_MEDIA_PARSER_TASK_PRIO           ( OS_THREAD_PRIO_HIGH )
-#define DEFAULT_MEDIA_PARSER_TASK_STACKSIZE      ( 1024*12 )
+#define DEFAULT_MEDIA_PARSER_TASK_STACKSIZE      ( 1024*8 )
 
 // media decoder definations, core feature
 #define DEFAULT_MEDIA_DECODER_TASK_PRIO          ( OS_THREAD_PRIO_REALTIME )

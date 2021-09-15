@@ -37,6 +37,7 @@ struct source_wrapper {
     const char *    (*url_protocol)(); // "http", "tts", "rtsp", "rtmp", "file"
     source_handle_t (*open)(const char *url, long long content_pos, void *priv_data);
     int             (*read)(source_handle_t handle, char *buffer, int size);//note: 0<=ret<size means eof
+    long long       (*content_pos)(source_handle_t handle);
     long long       (*content_len)(source_handle_t handle);
     int             (*seek)(source_handle_t handle, long offset);
     void            (*close)(source_handle_t handle);

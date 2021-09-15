@@ -512,11 +512,13 @@ static void *media_source_thread(void *arg)
         goto thread_exit;
     }
 
-    priv->info.source_handle = priv->info.source_ops->open(priv->info.url,
-            priv->info.content_pos, priv->info.source_ops->priv_data);
     if (priv->info.source_handle == NULL) {
-        state = MEDIA_SOURCE_READ_FAILED;
-        goto thread_exit;
+        priv->info.source_handle = priv->info.source_ops->open(priv->info.url,
+                priv->info.content_pos, priv->info.source_ops->priv_data);
+        if (priv->info.source_handle == NULL) {
+            state = MEDIA_SOURCE_READ_FAILED;
+            goto thread_exit;
+        }
     }
 
     int bytes_read = 0, bytes_written = 0;
@@ -609,12 +611,6 @@ media_source_handle_t media_source_start_async(struct media_source_info *info,
     if (priv->lock == NULL || priv->cond == NULL || priv->info.url == NULL)
         goto start_failed;
 
-    if (priv->info.source_handle != NULL) {
-        priv->info.source_ops->close(priv->info.source_handle);
-        priv->info.source_handle = NULL;
-    }
-    rb_reset(priv->info.out_ringbuf);
-
     struct os_thread_attr attr = {
         .name = "ael-source",
         .priority = DEFAULT_MEDIA_SOURCE_TASK_PRIO,
@@ -624,8 +620,15 @@ media_source_handle_t media_source_start_async(struct media_source_info *info,
     os_thread id = NULL;
 
     if (strstr(priv->info.url, ".m3u") != NULL) {
+        if (priv->info.source_handle != NULL) {
+            priv->info.source_ops->close(priv->info.source_handle);
+            priv->info.source_handle = NULL;
+        }
+        rb_reset(priv->info.out_ringbuf);
         id = os_thread_create(&attr, m3u_source_thread, priv);
     } else {
+        if (priv->info.source_handle == NULL)
+            rb_reset(priv->info.out_ringbuf);
         id = os_thread_create(&attr, media_source_thread, priv);
     }
     if (id == NULL)

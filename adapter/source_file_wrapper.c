@@ -83,6 +83,14 @@ int file_wrapper_read(source_handle_t handle, char *buffer, int size)
     return -1;
 }
 
+long long file_wrapper_content_pos(source_handle_t handle)
+{
+    struct file_priv *priv = (struct file_priv *)handle;
+    if (priv->file)
+        return priv->content_pos;
+    return 0;
+}
+
 long long file_wrapper_content_len(source_handle_t handle)
 {
     struct file_priv *priv = (struct file_priv *)handle;
@@ -95,6 +103,7 @@ int file_wrapper_seek(source_handle_t handle, long offset)
 {
     struct file_priv *priv = (struct file_priv *)handle;
     if (priv->file) {
+        OS_LOGD(TAG, "Seeking file:%p, offset:%ld", priv->file, offset);
         int ret = fseek(priv->file, offset, SEEK_SET);
         if (ret == 0)
             priv->content_pos = offset;

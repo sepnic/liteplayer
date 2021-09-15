@@ -117,6 +117,7 @@ static int basic_demo(const char *url)
         .url_protocol = file_wrapper_url_protocol,
         .open = file_wrapper_open,
         .read = file_wrapper_read,
+        .content_pos = file_wrapper_content_pos,
         .content_len = file_wrapper_content_len,
         .seek = file_wrapper_seek,
         .close = file_wrapper_close,
@@ -130,6 +131,7 @@ static int basic_demo(const char *url)
         .url_protocol = httpclient_wrapper_url_protocol,
         .open = httpclient_wrapper_open,
         .read = httpclient_wrapper_read,
+        .content_pos = httpclient_wrapper_content_pos,
         .content_len = httpclient_wrapper_content_len,
         .seek = httpclient_wrapper_seek,
         .close = httpclient_wrapper_close,
@@ -178,6 +180,7 @@ test_done:
         os_thread_sleep_msec(100);
     }
 
+    os_thread_sleep_msec(1000);
     liteplayer_destroy(player);
 
     os_thread_sleep_msec(100);

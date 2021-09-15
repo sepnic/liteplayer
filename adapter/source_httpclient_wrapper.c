@@ -207,6 +207,12 @@ reconnect:
     return -1;
 }
 
+long long httpclient_wrapper_content_pos(source_handle_t handle)
+{
+    struct httpclient_priv *priv = (struct httpclient_priv *)handle;
+    return priv->content_pos;
+}
+
 long long httpclient_wrapper_content_len(source_handle_t handle)
 {
     struct httpclient_priv *priv = (struct httpclient_priv *)handle;
