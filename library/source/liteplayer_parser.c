@@ -120,13 +120,17 @@ static int media_parser_fetch(char *buf, int wanted_size, long offset, void *arg
                     bytes_read = bytes_discard;
                 bytes_read = priv->source.source_ops->read(priv->source.source_handle,
                         priv->header_buffer, bytes_read);
-                if (bytes_read > 0)
+                if (bytes_read > 0) {
                     bytes_discard -= bytes_read;
-                else
-                    return ESP_FAIL;
+                }
+                else {
+                    OS_LOGW(TAG, "failed to discard, now fallthrough to seek");
+                    goto fallthrough_seek;
+                }
             }
         } else {
-            OS_LOGW(TAG, "source position: %ld>>%ld, seek to %ld", content_pos, offset, offset);
+fallthrough_seek:
+            OS_LOGD(TAG, "source position: %ld>>%ld, seek to %ld", content_pos, offset, offset);
             if (priv->source.source_ops->seek(priv->source.source_handle, offset) != 0)
                 return ESP_FAIL;
         }
