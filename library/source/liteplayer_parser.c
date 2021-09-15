@@ -213,7 +213,7 @@ static int media_parser_extract(struct media_parser_priv *priv, struct media_cod
             codec->content_pos = codec->detail.wav_info.dataOffset;
             codec->content_len = priv->source.source_ops->content_len(priv->source.source_handle);
             codec->bytes_per_sec = codec->detail.wav_info.blockAlign*codec->detail.wav_info.sampleRate;
-            codec->duration_ms = (int)(codec->detail.wav_info.dataSize/codec->detail.wav_info.blockAlign*1000/codec->detail.wav_info.sampleRate);
+            codec->duration_ms = (int)(codec->detail.wav_info.dataSize/codec->detail.wav_info.blockAlign/codec->detail.wav_info.sampleRate*1000);
             ret = ESP_OK;
         }
         break;
@@ -226,10 +226,9 @@ static int media_parser_extract(struct media_parser_priv *priv, struct media_cod
 extract_out:
     priv->source.source_ops->close(priv->source.source_handle);
     if (ret == ESP_OK) {
-        OS_LOGI(TAG, "MediaInfo: codec_type[%d], samplerate[%d], channels[%d], bits[%d], offset[%ld], length[%ld]",
-                codec->codec_type,
-                codec->codec_samplerate, codec->codec_channels, codec->codec_bits,
-                codec->content_pos, codec->content_len);
+        OS_LOGI(TAG, "MediaInfo: codec_type[%d], samplerate[%d], channels[%d], bits[%d], pos[%ld], len[%ld], duration[%dms]",
+                codec->codec_type, codec->codec_samplerate, codec->codec_channels, codec->codec_bits,
+                codec->content_pos, codec->content_len, codec->duration_ms);
     } else {
         OS_LOGE(TAG, "Failed to parse url:[%s]", priv->source.url);
     }
