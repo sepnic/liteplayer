@@ -37,6 +37,7 @@
 
 struct media_parser_priv {
     struct media_source_info source;
+    struct media_codec_info codec;
     char header_buffer[DEFAULT_MEDIA_PARSER_BUFFER_SIZE];
     int header_size;
 
@@ -249,37 +250,26 @@ int media_parser_get_codec_info(struct media_source_info *source, struct media_c
     return ret;
 }
 
-long long media_parser_get_seek_offset(struct media_codec_info *codec, int seek_msec)
+static int media_parser_get_codec_info2(struct media_parser_priv *priv)
 {
-    if (codec == NULL || seek_msec < 0)
-        return -1;
+    if (priv == NULL)
+        return ESP_FAIL;
 
-    long long offset = -1;
-    switch (codec->codec_type) {
-    case AUDIO_CODEC_WAV:
-    case AUDIO_CODEC_MP3: {
-        offset = (codec->bytes_per_sec*(seek_msec/1000));
-        break;
-    }
-    case AUDIO_CODEC_M4A: {
-        unsigned int sample_index = 0;
-        unsigned int sample_offset = 0;
-        if (m4a_get_seek_offset(seek_msec, &(codec->detail.m4a_info), &sample_index, &sample_offset) != 0) {
-            break;
+    if (strstr(priv->source.url, ".m3u") != NULL) {
+        char temp[256];
+        int ret = m3u_get_first_url(&priv->source, temp, sizeof(temp));
+        if (ret == 0) {
+            const char *media_url = audio_strdup(&temp[0]);
+            if (media_url != NULL) {
+                audio_free(priv->source.url);
+                priv->source.url = media_url;
+                OS_LOGV(TAG, "M3U first url: %s", media_url);
+            }
         }
-        offset = (long long)sample_offset - codec->content_pos;
-        codec->detail.m4a_info.stsz_samplesize_index = sample_index;
-        break;
     }
-    default:
-        OS_LOGE(TAG, "Unsupported seek for codec: %d", codec->codec_type);
-        break;
-    }
-    if (codec->content_len > 0 && offset >= codec->content_len) {
-        OS_LOGE(TAG, "Invalid seek offset");
-        offset = -1;
-    }
-    return offset;
+
+    int ret = media_parser_extract(priv, &priv->codec);
+    return ret;
 }
 
 static void media_parser_cleanup(struct media_parser_priv *priv)
@@ -296,17 +286,16 @@ static void media_parser_cleanup(struct media_parser_priv *priv)
 static void *media_parser_thread(void *arg)
 {
     struct media_parser_priv *priv = (struct media_parser_priv *)arg;
-    struct media_codec_info codec;
-    int ret = media_parser_get_codec_info(&priv->source, &codec);
+    int ret = media_parser_get_codec_info2(priv);
 
     {
         os_mutex_lock(priv->lock);
 
         if (!priv->stop && priv->listener) {
             if (ret == ESP_OK)
-                priv->listener(MEDIA_PARSER_SUCCEED, &codec, priv->listener_priv);
+                priv->listener(MEDIA_PARSER_SUCCEED, &priv->codec, priv->listener_priv);
             else
-                priv->listener(MEDIA_PARSER_FAILED, &codec, priv->listener_priv);
+                priv->listener(MEDIA_PARSER_FAILED, &priv->codec, priv->listener_priv);
         }
 
         OS_LOGV(TAG, "Waiting stop command");
@@ -368,4 +357,37 @@ void media_parser_stop(media_parser_handle_t handle)
         os_cond_signal(priv->cond);
         os_mutex_unlock(priv->lock);
     }
+}
+
+long long media_parser_get_seek_offset(struct media_codec_info *codec, int seek_msec)
+{
+    if (codec == NULL || seek_msec < 0)
+        return -1;
+
+    long long offset = -1;
+    switch (codec->codec_type) {
+    case AUDIO_CODEC_WAV:
+    case AUDIO_CODEC_MP3: {
+        offset = (codec->bytes_per_sec*(seek_msec/1000));
+        break;
+    }
+    case AUDIO_CODEC_M4A: {
+        unsigned int sample_index = 0;
+        unsigned int sample_offset = 0;
+        if (m4a_get_seek_offset(seek_msec, &(codec->detail.m4a_info), &sample_index, &sample_offset) != 0) {
+            break;
+        }
+        offset = (long long)sample_offset - codec->content_pos;
+        codec->detail.m4a_info.stsz_samplesize_index = sample_index;
+        break;
+    }
+    default:
+        OS_LOGE(TAG, "Unsupported seek for codec: %d", codec->codec_type);
+        break;
+    }
+    if (codec->content_len > 0 && offset >= codec->content_len) {
+        OS_LOGE(TAG, "Invalid seek offset");
+        offset = -1;
+    }
+    return offset;
 }
