@@ -34,6 +34,7 @@
 #define TAG "[liteplayer]parser"
 
 #define DEFAULT_MEDIA_PARSER_BUFFER_SIZE    (2048+1)
+#define DEFAULT_MEDIA_PARSER_WRITE_TIMEOUT  (200)
 
 struct media_parser_priv {
     struct media_source_info source;
@@ -43,6 +44,7 @@ struct media_parser_priv {
 
     media_parser_state_cb listener;
     void *listener_priv;
+    struct media_source_info *listener_source;
 
     bool stop;
     os_mutex lock; // lock for listener
@@ -132,6 +134,7 @@ static int media_parser_extract(struct media_parser_priv *priv, struct media_cod
     if (priv->source.source_handle == NULL)
         return ESP_FAIL;
 
+    bool source_reuse = false;
     int ret = ESP_FAIL;
     priv->header_size = priv->source.source_ops->read(priv->source.source_handle,
             priv->header_buffer, sizeof(priv->header_buffer));
@@ -207,13 +210,47 @@ static int media_parser_extract(struct media_parser_priv *priv, struct media_cod
     }
 
 extract_out:
-    priv->source.source_ops->close(priv->source.source_handle);
     if (ret == ESP_OK) {
         OS_LOGI(TAG, "MediaInfo: codec_type[%d], samplerate[%d], channels[%d], bits[%d], pos[%ld], len[%ld], duration[%dms]",
                 codec->codec_type, codec->codec_samplerate, codec->codec_channels, codec->codec_bits,
                 codec->content_pos, codec->content_len, codec->duration_ms);
+        long content_pos = (long)priv->source.source_ops->content_pos(priv->source.source_handle);
+        if (content_pos == priv->header_size && priv->header_size >= codec->content_pos) {
+            OS_LOGV(TAG, "Reuse source handle: content_pos=%ld >= frame_start_offset=%ld", content_pos, codec->content_pos);
+            source_reuse = true;
+        }
     } else {
         OS_LOGE(TAG, "Failed to parse url:[%s]", priv->source.url);
+    }
+
+    if (source_reuse) {
+        if (priv->lock != NULL)
+            os_mutex_lock(priv->lock);
+
+        source_reuse = false;
+        if (!priv->stop && priv->source.out_ringbuf != NULL) {
+            int bytes_written = priv->header_size - codec->content_pos;
+            int bytes_available = rb_bytes_available(priv->source.out_ringbuf);
+            if (bytes_written > 0 && bytes_available >= bytes_written) {
+                OS_LOGD(TAG, "Mediasource will reuse source handle, save remaing %d bytes in ringbuf", bytes_written);
+                int ret = rb_write_chunk(priv->source.out_ringbuf,
+                                         &priv->header_buffer[codec->content_pos],
+                                         bytes_written,
+                                         DEFAULT_MEDIA_PARSER_WRITE_TIMEOUT);
+                if (ret == bytes_written)
+                    source_reuse = true;
+                else
+                    rb_reset(priv->source.out_ringbuf);
+            }
+        }
+
+        if (priv->lock != NULL)
+            os_mutex_unlock(priv->lock);
+    }
+
+    if (!source_reuse) {
+        priv->source.source_ops->close(priv->source.source_handle);
+        priv->source.source_handle = NULL;
     }
     return ret;
 }
@@ -243,6 +280,8 @@ int media_parser_get_codec_info(struct media_source_info *source, struct media_c
     }
 
     int ret = media_parser_extract(priv, codec);
+    // update source handle for media source, we will reuse this handle
+    source->source_handle = priv->source.source_handle;
 
     if (free_url)
         audio_free(priv->source.url);
@@ -291,11 +330,14 @@ static void *media_parser_thread(void *arg)
     {
         os_mutex_lock(priv->lock);
 
-        if (!priv->stop && priv->listener) {
-            if (ret == ESP_OK)
-                priv->listener(MEDIA_PARSER_SUCCEED, &priv->codec, priv->listener_priv);
-            else
-                priv->listener(MEDIA_PARSER_FAILED, &priv->codec, priv->listener_priv);
+        if (!priv->stop) {
+            if (priv->listener != NULL) {
+                enum media_parser_state state =
+                    (ret == ESP_OK) ? MEDIA_PARSER_SUCCEED : MEDIA_PARSER_FAILED;
+                priv->listener(state, &priv->codec, priv->listener_priv);
+            }
+            // update source handle for media source, we will reuse this handle
+            priv->listener_source->source_handle = priv->source.source_handle;
         }
 
         OS_LOGV(TAG, "Waiting stop command");
@@ -321,6 +363,7 @@ media_parser_handle_t media_parser_start_async(struct media_source_info *source,
     memcpy(&priv->source, source, sizeof(struct media_source_info));
     priv->listener = listener;
     priv->listener_priv = listener_priv;
+    priv->listener_source = source;
     priv->lock = os_mutex_create();
     priv->cond = os_cond_create();
     priv->source.url = audio_strdup(source->url);
