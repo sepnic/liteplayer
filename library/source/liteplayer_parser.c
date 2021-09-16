@@ -33,8 +33,7 @@
 
 #define TAG "[liteplayer]parser"
 
-#define DEFAULT_MEDIA_PARSER_BUFFER_SIZE    (4096)
-#define DEFAULT_MEDIA_PARSER_SEEK_THRESHOLD (DEFAULT_MEDIA_PARSER_BUFFER_SIZE*32)
+#define DEFAULT_MEDIA_PARSER_BUFFER_SIZE    (2048+1)
 
 struct media_parser_priv {
     struct media_source_info source;
@@ -99,41 +98,20 @@ static int media_parser_fetch(char *buf, int wanted_size, long offset, void *arg
             wanted_size -= bytes_remain;
             bytes_read = priv->source.source_ops->read(priv->source.source_handle,
                     &buf[bytes_remain], wanted_size);
-            if (bytes_read >= 0) {
+            if (bytes_read > 0) {
                 return bytes_read + bytes_remain;
             } else {
+                OS_LOGW(TAG, "Failed to read more bytes: %d/%d, return remaining %d bytes",
+                        bytes_read, wanted_size, bytes_remain);
                 return bytes_remain;
             }
         }
     }
 
     if (content_pos != offset) {
-        if (offset > content_pos &&
-            (offset - content_pos) <= DEFAULT_MEDIA_PARSER_SEEK_THRESHOLD) {
-            long bytes_discard = offset - content_pos;
-            OS_LOGD(TAG, "source position: %ld>>%ld, discard %ld bytes",
-                    content_pos, offset, bytes_discard);
-            while (bytes_discard > 0) {
-                if (bytes_discard > sizeof(priv->header_buffer))
-                    bytes_read = sizeof(priv->header_buffer);
-                else
-                    bytes_read = bytes_discard;
-                bytes_read = priv->source.source_ops->read(priv->source.source_handle,
-                        priv->header_buffer, bytes_read);
-                if (bytes_read > 0) {
-                    bytes_discard -= bytes_read;
-                }
-                else {
-                    OS_LOGW(TAG, "failed to discard, now fallthrough to seek");
-                    goto fallthrough_seek;
-                }
-            }
-        } else {
-fallthrough_seek:
-            OS_LOGD(TAG, "source position: %ld>>%ld, seek to %ld", content_pos, offset, offset);
-            if (priv->source.source_ops->seek(priv->source.source_handle, offset) != 0)
-                return ESP_FAIL;
-        }
+        OS_LOGD(TAG, "Seeking: %ld>>%ld", content_pos, offset);
+        if (priv->source.source_ops->seek(priv->source.source_handle, offset) != 0)
+            return ESP_FAIL;
         content_pos = (long)priv->source.source_ops->content_pos(priv->source.source_handle);
     }
 
