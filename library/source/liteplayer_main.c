@@ -277,7 +277,11 @@ static int audio_element_state_callback(audio_element_handle_t el, audio_event_i
                 if (msg->source == (void *)handle->ael_decoder) {
                     OS_LOGD(TAG, "[ %s-%s ] Receive finished event",
                             handle->source_ops->url_protocol(), audio_element_get_tag(el));
-                    if (handle->state != LITEPLAYER_ERROR && handle->state != LITEPLAYER_STOPPED) {
+                    if (handle->state < LITEPLAYER_STARTED) {
+                        OS_LOGE(TAG, "Receive finished event before starting player, it should not happen");
+                        handle->state = LITEPLAYER_ERROR;
+                        media_player_state_callback(handle, LITEPLAYER_ERROR, ESP_FAIL);
+                    } else if (handle->state != LITEPLAYER_ERROR && handle->state != LITEPLAYER_STOPPED) {
                         handle->state = LITEPLAYER_COMPLETED;
                         media_player_state_callback(handle, LITEPLAYER_COMPLETED, 0);
                     }
