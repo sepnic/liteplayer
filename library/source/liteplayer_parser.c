@@ -41,6 +41,7 @@ struct media_parser_priv {
     struct media_codec_info codec;
     char header_buffer[DEFAULT_MEDIA_PARSER_BUFFER_SIZE];
     int header_size;
+    int ringbuf_size;
 
     media_parser_state_cb listener;
     void *listener_priv;
@@ -127,20 +128,19 @@ static int media_parser_fetch(char *buf, int wanted_size, long offset, void *arg
     return bytes_read;
 }
 
-static int media_parser_extract(struct media_parser_priv *priv, struct media_codec_info *codec)
+static int media_parser_extract(struct media_parser_priv *priv)
 {
-    priv->source.source_handle =
-        priv->source.source_ops->open(priv->source.url, 0, priv->source.source_ops->priv_data);
-    if (priv->source.source_handle == NULL)
-        return ESP_FAIL;
-
-    bool source_reuse = false;
     int ret = ESP_FAIL;
-    priv->header_size = priv->source.source_ops->read(priv->source.source_handle,
-            priv->header_buffer, sizeof(priv->header_buffer));
+    struct media_codec_info *codec = &priv->codec;
+    int read_size = sizeof(priv->header_buffer);
+
+    if (read_size > priv->ringbuf_size)
+        read_size = priv->ringbuf_size;
+    priv->header_size =
+        priv->source.source_ops->read(priv->source.source_handle, priv->header_buffer, read_size);
     if (priv->header_size < 64) {
         OS_LOGE(TAG, "Insufficient bytes read: %d", priv->header_size);
-        goto extract_out;
+        return ESP_FAIL;
     }
 
     codec->codec_type = get_codec_type(priv->source.url, priv->header_buffer);
@@ -209,32 +209,50 @@ static int media_parser_extract(struct media_parser_priv *priv, struct media_cod
         break;
     }
 
-extract_out:
+    return ret;
+}
+
+static int media_parser_main(struct media_parser_priv *priv)
+{
+    priv->source.source_handle =
+        priv->source.source_ops->open(priv->source.url, 0, priv->source.source_ops->priv_data);
+    if (priv->source.source_handle == NULL)
+        return ESP_FAIL;
+
+    bool source_reuse = false;
+    int ret = media_parser_extract(priv);
+
     if (ret == ESP_OK) {
         OS_LOGI(TAG, "MediaInfo: codec_type[%d], samplerate[%d], channels[%d], bits[%d], pos[%ld], len[%ld], duration[%dms]",
-                codec->codec_type, codec->codec_samplerate, codec->codec_channels, codec->codec_bits,
-                codec->content_pos, codec->content_len, codec->duration_ms);
-        long content_pos = (long)priv->source.source_ops->content_pos(priv->source.source_handle);
-        if (content_pos == priv->header_size && priv->header_size >= codec->content_pos) {
-            OS_LOGV(TAG, "Reuse source handle: content_pos=%ld >= frame_start_offset=%ld", content_pos, codec->content_pos);
-            source_reuse = true;
-        }
+                priv->codec.codec_type, priv->codec.codec_samplerate, priv->codec.codec_channels, priv->codec.codec_bits,
+                priv->codec.content_pos, priv->codec.content_len, priv->codec.duration_ms);
     } else {
         OS_LOGE(TAG, "Failed to parse url:[%s]", priv->source.url);
     }
 
-    if (source_reuse) {
+    if (ret == ESP_OK) {
+        long content_pos = (long)priv->source.source_ops->content_pos(priv->source.source_handle);
+        OS_LOGV(TAG, "content_pos=%ld, frame_start_offset=%ld", content_pos, priv->codec.content_pos);
+        if ((content_pos != priv->codec.content_pos) &&
+            (content_pos != priv->header_size || priv->header_size < priv->codec.content_pos)) {
+            goto reuse_out;
+        }
+
         if (priv->lock != NULL)
             os_mutex_lock(priv->lock);
 
-        source_reuse = false;
-        if (!priv->stop && priv->source.out_ringbuf != NULL) {
-            int bytes_written = priv->header_size - codec->content_pos;
+        if (!priv->stop) {
+            int bytes_written = priv->header_size - priv->codec.content_pos;
             int bytes_available = rb_bytes_available(priv->source.out_ringbuf);
-            if (bytes_written > 0 && bytes_available >= bytes_written) {
+
+            if (bytes_written == 0 || content_pos == priv->codec.content_pos) {
+                OS_LOGD(TAG, "Mediasource will reuse source handle, content_pos: %ld", content_pos);
+                source_reuse = true;
+                rb_reset(priv->source.out_ringbuf);
+            } else if (bytes_available >= bytes_written) {
                 OS_LOGD(TAG, "Mediasource will reuse source handle, save remaing %d bytes in ringbuf", bytes_written);
                 int ret = rb_write_chunk(priv->source.out_ringbuf,
-                                         &priv->header_buffer[codec->content_pos],
+                                         &priv->header_buffer[priv->codec.content_pos],
                                          bytes_written,
                                          DEFAULT_MEDIA_PARSER_WRITE_TIMEOUT);
                 if (ret == bytes_written)
@@ -248,7 +266,8 @@ extract_out:
             os_mutex_unlock(priv->lock);
     }
 
-    if (!source_reuse) {
+reuse_out:
+    if (!source_reuse || priv->stop) {
         priv->source.source_ops->close(priv->source.source_handle);
         priv->source.source_handle = NULL;
     }
@@ -257,13 +276,14 @@ extract_out:
 
 int media_parser_get_codec_info(struct media_source_info *source, struct media_codec_info *codec)
 {
-    if (source == NULL || source->url == NULL || codec == NULL)
+    if (source == NULL || source->url == NULL || source->out_ringbuf == NULL || codec == NULL)
         return ESP_FAIL;
 
     struct media_parser_priv *priv = audio_calloc(1, sizeof(struct media_parser_priv));
     if (priv == NULL)
         return ESP_FAIL;
     memcpy(&priv->source, source, sizeof(struct media_source_info));
+    priv->ringbuf_size = rb_get_size(source->out_ringbuf);
 
     bool free_url = false;
     if (strstr(priv->source.url, ".m3u") != NULL) {
@@ -279,9 +299,11 @@ int media_parser_get_codec_info(struct media_source_info *source, struct media_c
         }
     }
 
-    int ret = media_parser_extract(priv, codec);
+    int ret = media_parser_main(priv);
     // update source handle for media source, we will reuse this handle
     source->source_handle = priv->source.source_handle;
+    if (ret == ESP_OK)
+        memcpy(codec, &priv->codec, sizeof(struct media_codec_info));
 
     if (free_url)
         audio_free(priv->source.url);
@@ -307,7 +329,7 @@ static int media_parser_get_codec_info2(struct media_parser_priv *priv)
         }
     }
 
-    int ret = media_parser_extract(priv, &priv->codec);
+    int ret = media_parser_main(priv);
     return ret;
 }
 
@@ -357,10 +379,11 @@ media_parser_handle_t media_parser_start_async(struct media_source_info *source,
                                                void *listener_priv)
 {
     struct media_parser_priv *priv = audio_calloc(1, sizeof(struct media_parser_priv));
-    if (priv == NULL || source == NULL || source->url == NULL)
+    if (priv == NULL || source == NULL || source->url == NULL || source->out_ringbuf == NULL)
         goto start_failed;
 
     memcpy(&priv->source, source, sizeof(struct media_source_info));
+    priv->ringbuf_size = rb_get_size(source->out_ringbuf);
     priv->listener = listener;
     priv->listener_priv = listener_priv;
     priv->listener_source = source;

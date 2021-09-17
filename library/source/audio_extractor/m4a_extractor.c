@@ -30,9 +30,10 @@
 
 #define TAG "[liteplayer]m4a_extractor"
 
-// FIXME: If low memory, please reduce STSZ_MAX_BUFFER, that will failed to parse for some m4a resource
-#define STSZ_MAX_BUFFER       (256*1024)
-#define STREAM_BUFFER_SIZE    (1024)
+// FIXME: If low memory, please reduce STSZ_MAX_BUFFER
+//#define STSZ_MAX_BUFFER       (256*1024)
+
+#define STREAM_BUFFER_SIZE    (2048)
 
 #define M4A_PARSER_TASK_PRIO  (OS_THREAD_PRIO_HIGH)
 #define M4A_PARSER_TASK_STACK (2048)
@@ -445,10 +446,12 @@ static AAC_ERR_T stszin(atom_parser_handle_t handle, uint32_t atom_size)
     * So the moment we got frame count(stszsize), we'll check how many memory is needed
     * to store stsz header. And return fail if bigger than default buffer.
     */
+#if defined(STSZ_MAX_BUFFER) && (STSZ_MAX_BUFFER > 0)
     if (m4a_info->stsz_samplesize_entries*sizeof(int16_t) > STSZ_MAX_BUFFER) {
         OS_LOGE(TAG, "Large STSZ(%u), out of memory", (uint32_t)(m4a_info->stsz_samplesize_entries*sizeof(int16_t)));
         return AAC_ERR_NOMEM;
     }
+#endif
     m4a_info->stsz_samplesize = audio_calloc(m4a_info->stsz_samplesize_entries, sizeof(uint16_t));
     if (m4a_info->stsz_samplesize == NULL) {
         return AAC_ERR_NOMEM;
