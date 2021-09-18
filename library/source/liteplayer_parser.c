@@ -34,6 +34,7 @@
 #define TAG "[liteplayer]parser"
 
 #define DEFAULT_MEDIA_PARSER_BUFFER_SIZE    (2048+1)
+#define DEFAULT_MEDIA_PARSER_DISCARD_MAX    (1024*512)
 #define DEFAULT_MEDIA_PARSER_WRITE_TIMEOUT  (200)
 
 struct media_parser_priv {
@@ -41,6 +42,8 @@ struct media_parser_priv {
     struct media_codec_info codec;
     char header_buffer[DEFAULT_MEDIA_PARSER_BUFFER_SIZE];
     int header_size;
+    char reuse_buffer[DEFAULT_MEDIA_PARSER_BUFFER_SIZE];
+    int reuse_size;
     int ringbuf_size;
 
     media_parser_state_cb listener;
@@ -92,9 +95,17 @@ static int media_parser_fetch(char *buf, int wanted_size, long offset, void *arg
     int bytes_read = ESP_FAIL;
     long content_pos = (long)priv->source.source_ops->content_pos(priv->source.source_handle);
 
+    if (wanted_size > sizeof(priv->reuse_buffer)) {
+        OS_LOGW(TAG, "Extractor wanted %d bytes, bigger than parser buffer size(%d), "
+                "media source will reopen file again",
+                wanted_size, (int)sizeof(priv->reuse_buffer));
+    }
+
     if (priv->header_size == content_pos && offset < priv->header_size) {
         int bytes_remain = priv->header_size - offset;
         if (bytes_remain >= wanted_size) {
+            memcpy(priv->reuse_buffer, priv->header_buffer, priv->header_size);
+            priv->reuse_size = priv->header_size;
             memcpy(buf, &priv->header_buffer[offset], wanted_size);
             return wanted_size;
         } else {
@@ -103,10 +114,21 @@ static int media_parser_fetch(char *buf, int wanted_size, long offset, void *arg
             bytes_read = priv->source.source_ops->read(priv->source.source_handle,
                     &buf[bytes_remain], wanted_size);
             if (bytes_read > 0) {
-                return bytes_read + bytes_remain;
+                bytes_read += bytes_remain;
+                if (bytes_read <= sizeof(priv->reuse_buffer)) {
+                    memcpy(priv->reuse_buffer, buf, bytes_read);
+                    priv->reuse_size = bytes_read;
+                } else {
+                    memcpy(priv->reuse_buffer, &buf[bytes_read-sizeof(priv->reuse_buffer)],
+                            sizeof(priv->reuse_buffer));
+                    priv->reuse_size = sizeof(priv->reuse_buffer);
+                }
+                return bytes_read;
             } else {
                 OS_LOGW(TAG, "Failed to read more bytes: %d/%d, return remaining %d bytes",
                         bytes_read, wanted_size, bytes_remain);
+                memcpy(priv->reuse_buffer, priv->header_buffer, priv->header_size);
+                priv->reuse_size = priv->header_size;
                 return bytes_remain;
             }
         }
@@ -116,15 +138,19 @@ static int media_parser_fetch(char *buf, int wanted_size, long offset, void *arg
         OS_LOGD(TAG, "Seeking: %ld>>%ld", content_pos, offset);
         if (priv->source.source_ops->seek(priv->source.source_handle, offset) != 0)
             return ESP_FAIL;
-        content_pos = (long)priv->source.source_ops->content_pos(priv->source.source_handle);
     }
 
-    if (content_pos != offset) {
-        OS_LOGW(TAG, "Unexpected offset, seeking: %ld>>%ld", content_pos, offset);
-        if (priv->source.source_ops->seek(priv->source.source_handle, offset) != 0)
-            return ESP_FAIL;
-    }
     bytes_read = priv->source.source_ops->read(priv->source.source_handle, buf, wanted_size);
+    if (bytes_read > 0) {
+        if (bytes_read <= sizeof(priv->reuse_buffer)) {
+            memcpy(priv->reuse_buffer, buf, bytes_read);
+            priv->reuse_size = bytes_read;
+        } else {
+            memcpy(priv->reuse_buffer, &buf[bytes_read-sizeof(priv->reuse_buffer)],
+                    sizeof(priv->reuse_buffer));
+            priv->reuse_size = sizeof(priv->reuse_buffer);
+        }
+    }
     return bytes_read;
 }
 
@@ -219,7 +245,7 @@ static int media_parser_main(struct media_parser_priv *priv)
     if (priv->source.source_handle == NULL)
         return ESP_FAIL;
 
-    bool source_reuse = false;
+    bool reuse_handle = false;
     int ret = media_parser_extract(priv);
 
     if (ret == ESP_OK) {
@@ -233,32 +259,44 @@ static int media_parser_main(struct media_parser_priv *priv)
     if (ret == ESP_OK) {
         long content_pos = (long)priv->source.source_ops->content_pos(priv->source.source_handle);
         OS_LOGV(TAG, "content_pos=%ld, frame_start_offset=%ld", content_pos, priv->codec.content_pos);
-        if ((content_pos != priv->codec.content_pos) &&
-            (content_pos != priv->header_size || priv->header_size < priv->codec.content_pos)) {
-            goto reuse_out;
+
+        if (priv->codec.content_pos > content_pos &&
+            (priv->codec.content_pos - content_pos) <= DEFAULT_MEDIA_PARSER_DISCARD_MAX) {
+            int bytes_discard = priv->codec.content_pos - content_pos;
+            OS_LOGD(TAG, "Try to discard %d bytes to reach frame_start_offset", bytes_discard);
+            while (bytes_discard > 0) {
+                priv->reuse_size = priv->source.source_ops->read(priv->source.source_handle,
+                        priv->reuse_buffer, sizeof(priv->reuse_buffer));
+                if (priv->reuse_size > 0)
+                    bytes_discard -= priv->reuse_size;
+                else
+                    goto reuse_out;
+            }
+            content_pos = (long)priv->source.source_ops->content_pos(priv->source.source_handle);
+            OS_LOGV(TAG, "content_pos=%ld, frame_start_offset=%ld", content_pos, priv->codec.content_pos);
         }
+
+        if (content_pos < priv->codec.content_pos ||
+            (content_pos - priv->codec.content_pos) > priv->reuse_size)
+            goto reuse_out;
 
         if (priv->lock != NULL)
             os_mutex_lock(priv->lock);
 
         if (!priv->stop) {
-            int bytes_written = priv->header_size - priv->codec.content_pos;
-            int bytes_available = rb_bytes_available(priv->source.out_ringbuf);
-
-            if (bytes_written == 0 || content_pos == priv->codec.content_pos) {
+            int bytes_written = content_pos - priv->codec.content_pos;
+            rb_reset(priv->source.out_ringbuf);
+            if (bytes_written == 0) {
                 OS_LOGD(TAG, "Mediasource will reuse source handle, content_pos: %ld", content_pos);
-                source_reuse = true;
-                rb_reset(priv->source.out_ringbuf);
-            } else if (bytes_available >= bytes_written) {
+                reuse_handle = true;
+            } else if (rb_get_size(priv->source.out_ringbuf) >= bytes_written) {
                 OS_LOGD(TAG, "Mediasource will reuse source handle, save remaing %d bytes in ringbuf", bytes_written);
                 int ret = rb_write_chunk(priv->source.out_ringbuf,
-                                         &priv->header_buffer[priv->codec.content_pos],
+                                         &priv->reuse_buffer[priv->reuse_size-bytes_written],
                                          bytes_written,
                                          DEFAULT_MEDIA_PARSER_WRITE_TIMEOUT);
                 if (ret == bytes_written)
-                    source_reuse = true;
-                else
-                    rb_reset(priv->source.out_ringbuf);
+                    reuse_handle = true;
             }
         }
 
@@ -267,7 +305,7 @@ static int media_parser_main(struct media_parser_priv *priv)
     }
 
 reuse_out:
-    if (!source_reuse || priv->stop) {
+    if (!reuse_handle || priv->stop) {
         priv->source.source_ops->close(priv->source.source_handle);
         priv->source.source_handle = NULL;
     }
