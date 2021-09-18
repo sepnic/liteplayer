@@ -134,42 +134,61 @@ static int media_parser_fetch(char *buf, int wanted_size, long offset, void *arg
         }
     }
 
-    //content_pos = (long)priv->source.source_ops->content_pos(priv->source.source_handle);
+    content_pos = (long)priv->source.source_ops->content_pos(priv->source.source_handle);
     if (content_pos != offset) {
         if ((offset > content_pos) &&
             (offset - content_pos) <= DEFAULT_MEDIA_PARSER_DISCARD_MAX) {
-            int bytes_discard = offset - content_pos;
-            OS_LOGD(TAG, "Discarding %d bytes to reach new offset", bytes_discard);
-            while (bytes_discard > 0) {
+            int total_discard = offset - content_pos;
+            bytes_read = 0;
+            OS_LOGD(TAG, "Discarding %d bytes to reach new offset", total_discard);
+            while (bytes_read < total_discard) {
+                int read_size = total_discard - bytes_read;
+                if (read_size > sizeof(priv->reuse_buffer))
+                    read_size = sizeof(priv->reuse_buffer);
                 priv->reuse_size = priv->source.source_ops->read(priv->source.source_handle,
-                        priv->reuse_buffer, sizeof(priv->reuse_buffer));
+                        priv->reuse_buffer, read_size);
                 if (priv->reuse_size > 0) {
-                    bytes_discard -= priv->reuse_size;
+                    bytes_read += priv->reuse_size;
+                } else if (priv->reuse_size == 0) {
+                    break;
                 } else {
-                    OS_LOGE(TAG, "Failed to read, bytes_read: %d", priv->reuse_size);
-                    return ESP_FAIL;
+                    OS_LOGW(TAG, "Failed to read: %d, fallthrough to seek", priv->reuse_size);
+                    goto fallthrough_seek;
                 }
             }
-            content_pos = (long)priv->source.source_ops->content_pos(priv->source.source_handle);
-            int bytes_remain = content_pos - offset;
-            if (bytes_remain >= wanted_size) {
-                memcpy(buf, &priv->reuse_buffer[priv->reuse_size - bytes_remain], wanted_size);
-                return wanted_size;
-            } else if (bytes_remain >= 256 && bytes_remain >= wanted_size/4) { // todo
-                OS_LOGW(TAG, "Extractor want %d bytes, but now we can only provide %d bytes",
-                        wanted_size, bytes_remain);
-                memcpy(buf, &priv->reuse_buffer[priv->reuse_size - bytes_remain], bytes_remain);
-                return bytes_remain;
-            } else {
-                OS_LOGW(TAG, "Remain %d bytes is too little, will fallthrough to seek", bytes_remain);
+
+            if (bytes_read == total_discard) {
+                goto read_want;
+            } else if (total_discard > bytes_read) {
+                int bytes_discard = total_discard - bytes_read;
+                priv->reuse_size = priv->source.source_ops->read(priv->source.source_handle,
+                        priv->reuse_buffer, sizeof(priv->reuse_buffer));
+                int bytes_remain = priv->reuse_size - bytes_discard;
+                if (bytes_remain >= wanted_size) {
+                    memcpy(buf, &priv->reuse_buffer[bytes_discard], wanted_size);
+                    return wanted_size;
+                } else if (bytes_remain >= 256 && bytes_remain >= wanted_size/2) {
+                    memcpy(buf, &priv->reuse_buffer[bytes_discard], bytes_remain);
+                    return bytes_remain;
+                } else {
+                    goto fallthrough_seek;
+                }
             }
         }
 
+fallthrough_seek:
         OS_LOGD(TAG, "Seeking %ld>>%ld", content_pos, offset);
         if (priv->source.source_ops->seek(priv->source.source_handle, offset) != 0)
             return ESP_FAIL;
     }
 
+read_want:
+    content_pos = (long)priv->source.source_ops->content_pos(priv->source.source_handle);
+    if (content_pos != offset) {
+        OS_LOGW(TAG, "Unexpected offset, seeking: %ld>>%ld", content_pos, offset);
+        if (priv->source.source_ops->seek(priv->source.source_handle, offset) != 0)
+            return ESP_FAIL;
+    }
     bytes_read = priv->source.source_ops->read(priv->source.source_handle, buf, wanted_size);
     if (bytes_read > 0) {
         if (bytes_read <= sizeof(priv->reuse_buffer)) {
