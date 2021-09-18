@@ -383,6 +383,9 @@ static void main_pipeline_deinit(liteplayer_handle_t handle)
     if (handle->media_source_handle != NULL) {
         media_source_stop(handle->media_source_handle);
         handle->media_source_handle = NULL;
+    } else if (handle->media_source_info.source_handle != NULL) {
+        handle->source_ops->close(handle->media_source_info.source_handle);
+        handle->media_source_info.source_handle = NULL;
     }
 
     if (handle->media_source_info.out_ringbuf != NULL) {
