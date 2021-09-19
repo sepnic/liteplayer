@@ -102,6 +102,7 @@ static int media_parser_fetch(char *buf, int wanted_size, long offset, void *arg
     }
 
     if (priv->header_size == content_pos && offset < priv->header_size) {
+        // requested offset is not reach content_pos, read data from header buffer
         int bytes_remain = priv->header_size - offset;
         if (bytes_remain >= wanted_size) {
             memcpy(priv->reuse_buffer, priv->header_buffer, priv->header_size);
@@ -109,12 +110,14 @@ static int media_parser_fetch(char *buf, int wanted_size, long offset, void *arg
             memcpy(buf, &priv->header_buffer[offset], wanted_size);
             return wanted_size;
         } else {
+            // wanted bytes bigger than remaining, need read more data from source
             memcpy(buf, &priv->header_buffer[offset], bytes_remain);
             wanted_size -= bytes_remain;
             bytes_read = priv->source.source_ops->read(priv->source.source_handle,
                     &buf[bytes_remain], wanted_size);
             if (bytes_read > 0) {
                 bytes_read += bytes_remain;
+                // update reuse buffer, because content_pos has been changed
                 if (bytes_read <= sizeof(priv->reuse_buffer)) {
                     memcpy(priv->reuse_buffer, buf, bytes_read);
                     priv->reuse_size = bytes_read;
@@ -158,16 +161,21 @@ static int media_parser_fetch(char *buf, int wanted_size, long offset, void *arg
             }
 
             if (bytes_read == total_discard) {
+                // now we reach the new offset, go ahead to read what you want
                 goto read_want;
             } else if (total_discard > bytes_read) {
+                // left some bytes need to be discarded, read more data
                 int bytes_discard = total_discard - bytes_read;
                 priv->reuse_size = priv->source.source_ops->read(priv->source.source_handle,
                         priv->reuse_buffer, sizeof(priv->reuse_buffer));
                 int bytes_remain = priv->reuse_size - bytes_discard;
                 if (bytes_remain >= wanted_size) {
+                    // update reuse buffer, because content_pos has been changed
                     memcpy(buf, &priv->reuse_buffer[bytes_discard], wanted_size);
                     return wanted_size;
-                } else if (bytes_remain >= 256 && bytes_remain >= wanted_size/2) {
+                } else if (bytes_remain >= sizeof(priv->reuse_buffer)/2 && bytes_remain >= wanted_size/2) {
+                    // insufficient bytes, now we can only provide remaining bytes
+                    // FIXME: fix it if it causes extractor fail, but generally this will not happen
                     memcpy(buf, &priv->reuse_buffer[bytes_discard], bytes_remain);
                     return bytes_remain;
                 } else {
@@ -191,6 +199,7 @@ read_want:
     }
     bytes_read = priv->source.source_ops->read(priv->source.source_handle, buf, wanted_size);
     if (bytes_read > 0) {
+        // update reuse buffer, because content_pos has been changed
         if (bytes_read <= sizeof(priv->reuse_buffer)) {
             memcpy(priv->reuse_buffer, buf, bytes_read);
             priv->reuse_size = bytes_read;
@@ -326,6 +335,8 @@ static int media_parser_main(struct media_parser_priv *priv)
             OS_LOGV(TAG, "content_pos=%ld, frame_start_offset=%ld", content_pos, priv->codec.content_pos);
         }
 
+        // We can reuse the source handle, if:
+        //   content_pos >= frame_start_offset, and valid data in reuse buffer is sufficient
         if (content_pos < priv->codec.content_pos ||
             (content_pos - priv->codec.content_pos) > priv->reuse_size)
             goto reuse_out;
@@ -334,18 +345,20 @@ static int media_parser_main(struct media_parser_priv *priv)
             os_mutex_lock(priv->lock);
 
         if (!priv->stop) {
-            int bytes_written = content_pos - priv->codec.content_pos;
+            int bytes_remain = content_pos - priv->codec.content_pos;
             rb_reset(priv->source.out_ringbuf);
-            if (bytes_written == 0) {
+            if (bytes_remain == 0) {
+                // content_pos == frame_start_offset
                 OS_LOGD(TAG, "Mediasource will reuse source handle, content_pos: %ld", content_pos);
                 reuse_handle = true;
-            } else if (rb_get_size(priv->source.out_ringbuf) >= bytes_written) {
-                OS_LOGD(TAG, "Mediasource will reuse source handle, save remaing %d bytes in ringbuf", bytes_written);
+            } else if (rb_get_size(priv->source.out_ringbuf) >= bytes_remain) {
+                // frame_start_offset + bytes_remain == content_pos
+                OS_LOGD(TAG, "Mediasource will reuse source handle, save remaing %d bytes in ringbuf", bytes_remain);
                 int ret = rb_write_chunk(priv->source.out_ringbuf,
-                                         &priv->reuse_buffer[priv->reuse_size-bytes_written],
-                                         bytes_written,
+                                         &priv->reuse_buffer[priv->reuse_size-bytes_remain],
+                                         bytes_remain,
                                          DEFAULT_MEDIA_PARSER_WRITE_TIMEOUT);
-                if (ret == bytes_written)
+                if (ret == bytes_remain)
                     reuse_handle = true;
             }
         }
@@ -441,13 +454,13 @@ static void *media_parser_thread(void *arg)
         os_mutex_lock(priv->lock);
 
         if (!priv->stop) {
+            // update source handle for media source, we will reuse this handle
+            priv->listener_source->source_handle = priv->source.source_handle;
             if (priv->listener != NULL) {
                 enum media_parser_state state =
                     (ret == ESP_OK) ? MEDIA_PARSER_SUCCEED : MEDIA_PARSER_FAILED;
                 priv->listener(state, &priv->codec, priv->listener_priv);
             }
-            // update source handle for media source, we will reuse this handle
-            priv->listener_source->source_handle = priv->source.source_handle;
         }
 
         OS_LOGV(TAG, "Waiting stop command");
