@@ -268,29 +268,28 @@ static int listplayer_state_callback(enum liteplayer_state state, int errcode, v
         }
         break;
 
-    case LITEPLAYER_ERROR:
-        {
-            struct listnode *curr = handle->url_curr;
-            if (curr == list_head(&handle->url_list))
-                handle->url_curr = list_tail(&handle->url_list);
-            else
-                handle->url_curr = curr->prev;
-            list_remove(curr);
-            handle->url_count--;
+    case LITEPLAYER_ERROR: {
+        struct listnode *curr = handle->url_curr;
+        if (curr == list_head(&handle->url_list))
+            handle->url_curr = list_tail(&handle->url_list);
+        else
+            handle->url_curr = curr->prev;
+        list_remove(curr);
+        handle->url_count--;
 
-            struct url_node *node = listnode_to_item(curr, struct url_node, listnode);
-            OS_LOGW(TAG, "Failed to play url: %s, remove this url from list", node->url);
-            audio_free(node->url);
-            audio_free(node);
+        struct url_node *node = listnode_to_item(curr, struct url_node, listnode);
+        OS_LOGW(TAG, "Failed to play url: %s, remove this url from list", node->url);
+        audio_free(node->url);
+        audio_free(node);
 
-            if ((handle->is_list || handle->is_looping) && handle->url_count > 0) {
-                struct message *msg = message_obtain(PLAYER_DO_STOP, 0, 0, handle);
-                if (msg != NULL) {
-                    state_sync = false;
-                    mlooper_post_message(handle->looper, msg);
-                }
+        if ((handle->is_list || handle->is_looping) && handle->url_count > 0) {
+            struct message *msg = message_obtain(PLAYER_DO_STOP, 0, 0, handle);
+            if (msg != NULL) {
+                state_sync = false;
+                mlooper_post_message(handle->looper, msg);
             }
         }
+    }
         break;
 
     case LITEPLAYER_STOPPED:

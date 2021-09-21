@@ -53,7 +53,8 @@ LOCAL_SRC_FILES := \
     ${TOP_DIR}/library/source/liteplayer_source.c \
     ${TOP_DIR}/library/source/liteplayer_parser.c \
     ${TOP_DIR}/library/source/liteplayer_main.c \
-    ${TOP_DIR}/library/source/liteplayer_listplayer.c
+    ${TOP_DIR}/library/source/liteplayer_listplayer.c \
+    ${TOP_DIR}/library/source/liteplayer_ttsplayer.c
 LOCAL_C_INCLUDES += \
     ${TOP_DIR}/library/include \
     ${TOP_DIR}/library/source \

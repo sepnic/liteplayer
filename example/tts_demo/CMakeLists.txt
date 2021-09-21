@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
-project(basic_demo)
+project(tts_demo)
 
 MESSAGE(STATUS "Platform: ${CMAKE_SYSTEM_NAME}")
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
@@ -12,14 +12,16 @@ set(TOP_DIR "${CMAKE_SOURCE_DIR}/../..")
 # cflags: OS_LINUX, OS_ANDROID, OS_APPLE, OS_RTOS
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DOS_APPLE")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D__amd64__")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -Wall -Werror -Wno-error=unused-function")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -Wall -Werror")
+# cflag: libmad: CONFIG_MAD_FPM_64BIT/CONFIG_MAD_FPM_ARM/CONFIG_MAD_FPM_DEFAULT
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCONFIG_MAD_FPM_DEFAULT")
 # cflag: libspeexdsp: CONFIG_SPEEXDSP_FIXED_POINT/CONFIG_SPEEXDSP_FLOATING_POINT
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCONFIG_SPEEXDSP_FIXED_POINT")
 # cflags: if socketlen_t defined
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_SOCKLEN_T")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_HTTPCLIENT_MBEDTLS")
 # cflag: decoder: ENABLE_DECODER_AAC_SBR
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_DECODER_AAC_SBR")
+#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_DECODER_AAC_SBR")
 # cflags: sink: CONFIG_SINK_FIXED_S16LE. Don't config it if sink support S24LE/S32LE
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCONFIG_SINK_FIXED_S16LE")
 
@@ -35,35 +37,14 @@ include_directories(${TOP_DIR}/library/source)
 include_directories(${TOP_DIR}/adapter/external/mbedtls/include)
 include_directories(${TOP_DIR}/adapter)
 
-# include files
-include_directories(${TOP_DIR}/thirdparty/codecs/mp3-pvmp3/include)
-include_directories(${TOP_DIR}/thirdparty/codecs/mp3-pvmp3/src)
-include_directories(${TOP_DIR}/thirdparty/codecs/aac-fdk/libAACdec/include)
-include_directories(${TOP_DIR}/thirdparty/codecs/aac-fdk/libPCMutils/include)
-include_directories(${TOP_DIR}/thirdparty/codecs/aac-fdk/libFDK/include)
-include_directories(${TOP_DIR}/thirdparty/codecs/aac-fdk/libSYS/include)
-include_directories(${TOP_DIR}/thirdparty/codecs/aac-fdk/libMpegTPDec/include)
-include_directories(${TOP_DIR}/thirdparty/codecs/aac-fdk/libSBRdec/include)
-include_directories(${TOP_DIR}/thirdparty/codecs/aac-fdk/libArithCoding/include)
-include_directories(${TOP_DIR}/thirdparty/codecs/aac-fdk/libDRCdec/include)
-include_directories(${TOP_DIR}/thirdparty/codecs/aac-fdk/libSACdec/include)
-
 # source files
 file(GLOB THIRDPARTY_SRC src
     ${TOP_DIR}/thirdparty/sysutils/osal/unix/*.c
     ${TOP_DIR}/thirdparty/sysutils/source/cutils/*.c
     ${TOP_DIR}/thirdparty/sysutils/source/httpclient/*.c
-    ${TOP_DIR}/thirdparty/codecs/mp3-pvmp3/src/*.cpp
-    ${TOP_DIR}/thirdparty/codecs/aac-fdk/libAACdec/src/*.cpp
-    ${TOP_DIR}/thirdparty/codecs/aac-fdk/libPCMutils/src/*.cpp
-    ${TOP_DIR}/thirdparty/codecs/aac-fdk/libFDK/src/*.cpp
-    ${TOP_DIR}/thirdparty/codecs/aac-fdk/libSYS/src/*.cpp
-    ${TOP_DIR}/thirdparty/codecs/aac-fdk/libMpegTPDec/src/*.cpp
-    ${TOP_DIR}/thirdparty/codecs/aac-fdk/libSBRdec/src/*.cpp
-    ${TOP_DIR}/thirdparty/codecs/aac-fdk/libArithCoding/src/*.cpp
-    ${TOP_DIR}/thirdparty/codecs/aac-fdk/libDRCdec/src/*.cpp
-    ${TOP_DIR}/thirdparty/codecs/aac-fdk/libSACdec/src/*.cpp
-    ${TOP_DIR}/thirdparty/speexdsp/resample.c
+    ${TOP_DIR}/thirdparty/speexdsp/resample.c   
+    ${TOP_DIR}/thirdparty/codecs/mp3-mad/*.c
+    ${TOP_DIR}/thirdparty/codecs/aac-helix/*.c
 )
 set (ADAPTER_SRC
     ${TOP_DIR}/adapter/external/mbedtls/library/aes.c
@@ -162,9 +143,9 @@ endif()
 set (LITEPLAYER_SRC
     ${TOP_DIR}/library/source/esp_adf/audio_element.c
     ${TOP_DIR}/library/source/esp_adf/audio_event_iface.c
-    ${TOP_DIR}/library/source/audio_decoder/mp3_pvmp3_wrapper.c
+    ${TOP_DIR}/library/source/audio_decoder/mp3_mad_wrapper.c
     ${TOP_DIR}/library/source/audio_decoder/mp3_decoder.c
-    ${TOP_DIR}/library/source/audio_decoder/aac_fdk_wrapper.c
+    ${TOP_DIR}/library/source/audio_decoder/aac_helix_wrapper.c
     ${TOP_DIR}/library/source/audio_decoder/aac_decoder.c
     ${TOP_DIR}/library/source/audio_decoder/m4a_decoder.c
     ${TOP_DIR}/library/source/audio_decoder/wav_decoder.c
@@ -182,9 +163,9 @@ set (LITEPLAYER_SRC
     ${TOP_DIR}/library/source/liteplayer_resampler.c
 )
 
-# basic_demo
-add_executable(basic_demo basic_demo.c ${THIRDPARTY_SRC} ${LITEPLAYER_SRC} ${ADAPTER_SRC})
-target_link_libraries(basic_demo pthread m)
+# tts_demo
+add_executable(tts_demo tts_demo.c ${THIRDPARTY_SRC} ${LITEPLAYER_SRC} ${ADAPTER_SRC})
+target_link_libraries(tts_demo pthread m)
 if (ENABLE_LINUX_ALSA)
-target_link_libraries(basic_demo asound)
+target_link_libraries(tts_demo asound)
 endif()

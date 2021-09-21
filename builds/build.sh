@@ -28,6 +28,13 @@ cd ${OUTPUT_DIR}/playlist_demo
 cmake ${TOP_DIR}/example/playlist_demo
 make
 
+# build basic_demo bin
+echo "Building tts_demo"
+mkdir -p ${OUTPUT_DIR}/tts_demo
+cd ${OUTPUT_DIR}/tts_demo
+cmake ${TOP_DIR}/example/tts_demo
+make
+
 # build android jni
 cd ${CUR_DIR}
 ndk-build -C android/jni

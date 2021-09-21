@@ -48,6 +48,7 @@ set (LITEPLAYER_SRC
     ${TOP_DIR}/library/source/liteplayer_debug.c
     ${TOP_DIR}/library/source/liteplayer_main.c
     ${TOP_DIR}/library/source/liteplayer_listplayer.c
+    ${TOP_DIR}/library/source/liteplayer_ttsplayer.c
     ${TOP_DIR}/library/source/liteplayer_resampler.c
 )
 # codecs files

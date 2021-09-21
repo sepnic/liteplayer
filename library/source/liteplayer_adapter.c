@@ -32,6 +32,9 @@
 
 #define TAG "[liteplayer]adapter"
 
+// Buffer size must be larger than decoder input buffer:
+//  #define MP3_DECODER_INPUT_BUFFER_SIZE   (1940)
+//  #define AAC_DECODER_INPUT_BUFFER_SIZE   (1536)
 #define MIN_SOURCE_ASYNC_BUFFER_SIZE  ( 1024*32 )
 #define MAX_SOURCE_ASYNC_BUFFER_SIZE  ( 1024*1024 )
 #define MIN_SOURCE_SYNC_BUFFER_SIZE   ( 1024*2 )
