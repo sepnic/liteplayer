@@ -911,6 +911,24 @@ m4a_writen:
     }
 
 m4a_finish:
+    if (priv.ret != AAC_ERR_NONE) {
+        if (info->stsz_samplesize != NULL) {
+            audio_free(info->stsz_samplesize);
+            info->stsz_samplesize = NULL;
+        }
+        if (info->stts_time2sample != NULL) {
+            audio_free(info->stts_time2sample);
+            info->stts_time2sample = NULL;
+        }
+        if (info->stsc_sample2chunk != NULL) {
+            audio_free(info->stsc_sample2chunk);
+            info->stsc_sample2chunk = NULL;
+        }
+        if (info->stco_chunk2offset != NULL) {
+            audio_free(info->stco_chunk2offset);
+            info->stco_chunk2offset = NULL;
+        }
+    }
     rb_destroy(rb_atom);
     return priv.ret;
 }
