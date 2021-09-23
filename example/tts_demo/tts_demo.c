@@ -97,7 +97,7 @@ static void *tts_source_thread(void *arg)
     }
 
     char buffer[2048];
-    while (1) {
+    while (*(priv->state) < LITEPLAYER_COMPLETED) {
         size_t bytes_read = fread(buffer, 1, sizeof(buffer), file);
         if (bytes_read > 0) {
             ttsplayer_write(priv->player, buffer, bytes_read, false);
@@ -144,11 +144,6 @@ static int tts_demo(const char *url)
     };
 #endif
     ttsplayer_register_sink_wrapper(player, &sink_ops);
-
-    if (ttsplayer_set_data_source(player) != 0) {
-        OS_LOGE(TAG, "Failed to set data source");
-        goto test_done;
-    }
 
     if (ttsplayer_prepare_async(player) != 0) {
         OS_LOGE(TAG, "Failed to prepare player");

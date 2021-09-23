@@ -41,13 +41,9 @@ struct ttsplayer {
     liteplayer_handle_t    player;
     ringbuf_handle         ringbuf;
     bool                   force_stop;
-    bool                   prepare_done;
-    bool                   prepare_request;
-    bool                   tts_final;
+    bool                   waiting_data;
+    bool                   has_prepared;
     long                   tts_offset;
-    enum liteplayer_state  state;
-    liteplayer_state_cb    listener;
-    void                   *listener_priv;
 };
 
 static const char *tts_source_url_protocol();
@@ -111,41 +107,25 @@ int ttsplayer_register_state_listener(ttsplayer_handle_t handle, liteplayer_stat
     return liteplayer_register_state_listener(handle->player, listener, listener_priv);
 }
 
-int ttsplayer_set_data_source(ttsplayer_handle_t handle)
+int ttsplayer_prepare_async(ttsplayer_handle_t handle)
 {
 #define TTS_SOURCE_URL_NAME DEFAULT_TTS_URL_PREFIX ".rawdata"
     if (handle == NULL)
         return -1;
-
     rb_reset(handle->ringbuf);
     handle->force_stop = false;
-    handle->prepare_done = false;
-    handle->prepare_request = false;
-    handle->tts_final = false;
+    handle->waiting_data = true;
+    handle->has_prepared = false;
     handle->tts_offset = 0;
     return liteplayer_set_data_source(handle->player, TTS_SOURCE_URL_NAME);
 }
 
-int ttsplayer_prepare_async(ttsplayer_handle_t handle)
-{
-    if (handle == NULL)
-        return -1;
-
-    int ret = 0;
-    handle->prepare_request = true;
-    if (!handle->prepare_done) {
-        if (rb_bytes_filled(handle->ringbuf) >= DEFAULT_TTS_HEADER_SIZE || handle->tts_final) {
-            ret = liteplayer_prepare_async(handle->player);
-            handle->prepare_done = true;
-        }
-    }
-    return ret;
-}
-
 int ttsplayer_write(ttsplayer_handle_t handle, char *buffer, int size, bool final)
 {
-    if (handle == NULL)
+    if (handle == NULL || !handle->waiting_data) {
+        OS_LOGE(TAG, "Can't write before player is ready");
         return -1;
+    }
 
     int bytes_written = 0;
     int ret = 0;
@@ -168,14 +148,13 @@ int ttsplayer_write(ttsplayer_handle_t handle, char *buffer, int size, bool fina
 
     if (handle->force_stop || final) {
         rb_done_write(handle->ringbuf);
-        handle->tts_final = true;
         ret = 0;
     }
 
-    if (!handle->force_stop && handle->prepare_request && !handle->prepare_done) {
+    if (!handle->has_prepared && !handle->force_stop) {
         if (rb_bytes_filled(handle->ringbuf) >= DEFAULT_TTS_HEADER_SIZE || final) {
             ret = liteplayer_prepare_async(handle->player);
-            handle->prepare_done = true;
+            handle->has_prepared = true;
         }
     }
     return ret;
@@ -193,6 +172,7 @@ int ttsplayer_stop(ttsplayer_handle_t handle)
     if (handle == NULL)
         return -1;
     handle->force_stop = true;
+    handle->waiting_data = false;
     rb_done_write(handle->ringbuf);
     return liteplayer_stop(handle->player);
 }
@@ -202,6 +182,7 @@ int ttsplayer_reset(ttsplayer_handle_t handle)
     if (handle == NULL)
         return -1;
     handle->force_stop = true;
+    handle->waiting_data = false;
     rb_done_write(handle->ringbuf);
     return liteplayer_reset(handle->player);
 }
@@ -237,7 +218,7 @@ static source_handle_t tts_source_open(const char *url, long long content_pos, v
 static int tts_source_read(source_handle_t handle, char *buffer, int size)
 {
     ttsplayer_handle_t priv = (ttsplayer_handle_t)handle;
-    if (!priv->prepare_done) {
+    if (!priv->has_prepared) {
         if (size > DEFAULT_TTS_HEADER_SIZE)
             size = DEFAULT_TTS_HEADER_SIZE;
         if (size > rb_bytes_filled(priv->ringbuf)) {
@@ -273,7 +254,7 @@ static int tts_source_seek(source_handle_t handle, long offset)
         OS_LOGE(TAG, "Unsupported seek backward for tts source");
         return -1;
     }
-    if (!priv->prepare_done && (offset - priv->tts_offset) > rb_bytes_filled(priv->ringbuf)) {
+    if (!priv->has_prepared && (offset - priv->tts_offset) > rb_bytes_filled(priv->ringbuf)) {
         OS_LOGE(TAG, "Insufficient data to prepare player, recommend mp3/aac without id3v2 for tts source");
         return -1;
     }

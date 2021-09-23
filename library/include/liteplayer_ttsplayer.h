@@ -47,8 +47,6 @@ int ttsplayer_register_sink_wrapper(ttsplayer_handle_t handle, struct sink_wrapp
 
 int ttsplayer_register_state_listener(ttsplayer_handle_t handle, liteplayer_state_cb listener, void *listener_priv);
 
-int ttsplayer_set_data_source(ttsplayer_handle_t handle);
-
 int ttsplayer_prepare_async(ttsplayer_handle_t handle);
 
 int ttsplayer_write(ttsplayer_handle_t handle, char *buffer, int size, bool final);
