@@ -7,7 +7,7 @@
 #include "liteplayer_main.h"
 
 #include "source_httpclient_wrapper.h"
-#include "sink_esp8266_i2s_wrapper.h"
+#include "sink_ESP32-LyraT-Mini_wrapper.h"
 
 #include "nvs_flash.h"
 #include "esp_event.h"
@@ -16,8 +16,8 @@
 
 #define TAG "liteplayer_demo"
 
-//#define HTTP_URL "https://dl.espressif.com/dl/audio/ff-16b-2c-44100hz.mp3"
-#define HTTP_URL "http://ailabsaicloudservice.alicdn.com/player/resources/23a2d715f019c0e345235f379fa26a30.mp3"
+#define HTTP_URL1 "http://ailabsaicloudservice.alicdn.com/player/resources/23a2d715f019c0e345235f379fa26a30.mp3"
+#define HTTP_URL2 "https://dl.espressif.com/dl/audio/ff-16b-2c-44100hz.mp3"
 
 static int liteplayer_demo_state_listener(enum liteplayer_state state, int errcode, void *priv)
 {
@@ -67,6 +67,7 @@ static int liteplayer_demo_state_listener(enum liteplayer_state state, int errco
 static void *liteplayer_demo(void *arg)
 {
     OS_LOGI(TAG, "liteplayer_demo thread enter");
+    const char *url = (const char *)arg;
 
     liteplayer_handle_t player = liteplayer_create();
     if (player == NULL)
@@ -77,16 +78,16 @@ static void *liteplayer_demo(void *arg)
 
     struct sink_wrapper sink_ops = {
         .priv_data = NULL,
-        .name = esp8266_i2s_wrapper_name,
-        .open = esp8266_i2s_wrapper_open,
-        .write = esp8266_i2s_wrapper_write,
-        .close = esp8266_i2s_wrapper_close,
+        .name = esp32_lyrat_mini_wrapper_name,
+        .open = esp32_lyrat_mini_wrapper_open,
+        .write = esp32_lyrat_mini_wrapper_write,
+        .close = esp32_lyrat_mini_wrapper_close,
     };
     liteplayer_register_sink_wrapper(player, &sink_ops);
 
     struct source_wrapper http_ops = {
-        .async_mode = false,
-        .buffer_size = 2*1024,
+        .async_mode = true,
+        .buffer_size = 32*1024,
         .priv_data = NULL,
         .url_protocol = httpclient_wrapper_url_protocol,
         .open = httpclient_wrapper_open,
@@ -98,7 +99,7 @@ static void *liteplayer_demo(void *arg)
     };
     liteplayer_register_source_wrapper(player, &http_ops);
 
-    if (liteplayer_set_data_source(player, HTTP_URL) != 0) {
+    if (liteplayer_set_data_source(player, url) != 0) {
         OS_LOGE(TAG, "Failed to set data source");
         goto test_done;
     }
@@ -168,10 +169,19 @@ void app_main()
         .name = "liteplayer_demo",
         .priority = OS_THREAD_PRIO_NORMAL,
         .stacksize = 8192,
-        .joinable = false,
+        .joinable = true,
     };
-    os_thread_create(&attr, liteplayer_demo, NULL);
+    os_thread tid = NULL;
 
+    OS_LOGI(TAG, "Play first http url: %s", HTTP_URL1);
+    tid = os_thread_create(&attr, liteplayer_demo, HTTP_URL1);
+    os_thread_join(tid, NULL);
+
+    OS_LOGI(TAG, "Play second http url: %s", HTTP_URL2);
+    tid = os_thread_create(&attr, liteplayer_demo, HTTP_URL2);
+    os_thread_join(tid, NULL);
+
+    OS_LOGI(TAG, "Play end");
     while (1)
         os_thread_sleep_msec(100);
 }

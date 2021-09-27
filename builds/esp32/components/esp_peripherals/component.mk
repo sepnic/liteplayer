@@ -7,24 +7,15 @@
 # please read the SDK documents if you need to do this.
 #
 
-TOP_DIR := ../../../..
-LITEPLAYER_DIR := ${TOP_DIR}/library
-THIRDPARTY_DIR := ${TOP_DIR}/thirdparty
-ADAPTER_DIR := ${TOP_DIR}/adapter
-
 COMPONENT_ADD_INCLUDEDIRS := \
-    ${ADAPTER_DIR} \
-    .
+    ./i2c_bus \
+    ./audio_codec
+
 COMPONENT_PRIV_INCLUDEDIRS := \
-    ${THIRDPARTY_DIR}/sysutils/include \
-    ${LITEPLAYER_DIR}/include
+    ./audio_codec/driver/include
 
 COMPONENT_SRCDIRS := \
-    ${ADAPTER_DIR} \
-    .
-
-COMPONENT_OBJS := \
-    ${ADAPTER_DIR}/source_httpclient_wrapper.o \
-    sink_esp8266_i2s_wrapper.o
-
-#CFLAGS += -DOS_RTOS -DOS_FREERTOS_ESP8266
+    ./i2c_bus \
+    ./audio_codec \
+    ./audio_codec/driver/es7243 \
+    ./audio_codec/driver/es8311

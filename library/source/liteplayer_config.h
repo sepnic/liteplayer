@@ -33,7 +33,7 @@ extern "C" {
 
 // media decoder definations, core feature
 #define DEFAULT_MEDIA_DECODER_TASK_PRIO          ( OS_THREAD_PRIO_REALTIME )
-#define DEFAULT_MEDIA_DECODER_TASK_STACKSIZE     ( 1024*48 )
+#define DEFAULT_MEDIA_DECODER_TASK_STACKSIZE     ( 1024*16 )
 
 // media source definations, core feature
 #define DEFAULT_MEDIA_SOURCE_TASK_PRIO           ( OS_THREAD_PRIO_HIGH )

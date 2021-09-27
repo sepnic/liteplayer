@@ -36,7 +36,7 @@
 #define STREAM_BUFFER_SIZE    (2048)
 
 #define M4A_PARSER_TASK_PRIO  (OS_THREAD_PRIO_HIGH)
-#define M4A_PARSER_TASK_STACK (2048)
+#define M4A_PARSER_TASK_STACK (6144)
 
 typedef enum aac_error {
     AAC_ERR_NONE          = -0x00,    /* no error */
