@@ -17,7 +17,6 @@ COMPONENT_PRIV_INCLUDEDIRS := ${THIRDPARTY_DIR}/sysutils/include ${LITEPLAYER_DI
 COMPONENT_SRCDIRS := ${ADAPTER_DIR} .
 
 COMPONENT_OBJS := ${ADAPTER_DIR}/source_httpclient_wrapper.o \
-                  source_esp8266_builtin_wrapper.o \
                   sink_esp8266_i2s_wrapper.o
 
 #CFLAGS += -DOS_RTOS -DOS_FREERTOS_ESP8266

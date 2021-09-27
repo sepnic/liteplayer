@@ -7,7 +7,6 @@
 #include "liteplayer_main.h"
 
 #include "source_httpclient_wrapper.h"
-#include "source_esp8266_builtin_wrapper.h"
 #include "sink_esp8266_i2s_wrapper.h"
 
 #include "nvs_flash.h"
@@ -85,23 +84,9 @@ static void *liteplayer_demo(void *arg)
     };
     liteplayer_register_sink_wrapper(player, &sink_ops);
 
-    struct source_wrapper file_ops = {
+    struct source_wrapper http_ops = {
         .async_mode = false,
         .buffer_size = 2*1024,
-        .priv_data = NULL,
-        .url_protocol = esp8266_builtin_wrapper_url_protocol,
-        .open = esp8266_builtin_wrapper_open,
-        .read = esp8266_builtin_wrapper_read,
-        .content_pos = esp8266_builtin_wrapper_content_pos,
-        .content_len = esp8266_builtin_wrapper_content_len,
-        .seek = esp8266_builtin_wrapper_seek,
-        .close = esp8266_builtin_wrapper_close,
-    };
-    liteplayer_register_source_wrapper(player, &file_ops);
-
-    struct source_wrapper http_ops = {
-        .async_mode = true,
-        .buffer_size = 32*1024,
         .priv_data = NULL,
         .url_protocol = httpclient_wrapper_url_protocol,
         .open = httpclient_wrapper_open,

@@ -3,7 +3,7 @@ set(LITEPLAYER_DIR ${TOP_DIR}/library)
 set(ADAPTER_DIR ${TOP_DIR}/adapter)
 
 set(COMPONENT_REQUIRES)
-set(COMPONENT_PRIV_REQUIRES sysutils)
+set(COMPONENT_PRIV_REQUIRES sysutils esp8266)
 
 set(COMPONENT_ADD_INCLUDEDIRS
     ${ADAPTER_DIR}
@@ -17,7 +17,6 @@ set (COMPONENT_PRIV_INCLUDEDIRS
 
 set(COMPONENT_SRCS
     ${ADAPTER_DIR}/source_httpclient_wrapper.c
-    source_esp8266_builtin_wrapper.c
     sink_esp8266_i2s_wrapper.c
 )
 

@@ -1,3 +1,3 @@
-idf_component_register(SRCS "liteplayer_main.c"
+idf_component_register(SRCS "liteplayer_demo.c"
                        INCLUDE_DIRS ""
 )
