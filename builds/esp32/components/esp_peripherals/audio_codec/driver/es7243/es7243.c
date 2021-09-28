@@ -25,15 +25,13 @@
  /** Copyright (c) 2019-2021 Qinglong <sysu.zqlong@gmail.com> */
 
 #include <string.h>
-#include "es7243.h"
+#include "cutils/log_helper.h"
 #include "i2c_bus.h"
-#include "board.h"
-#include "esp_log.h"
+#include "es7243.h"
 
-#define MCLK_PULSES_NUMBER    (20)
 #define ES_ASSERT(a, format, b, ...) \
     if ((a) != 0) { \
-        ESP_LOGE(TAG, format, ##__VA_ARGS__); \
+        OS_LOGE(TAG, format, ##__VA_ARGS__); \
         return b;\
     }
 
@@ -53,55 +51,25 @@ audio_hal_func_t AUDIO_CODEC_ES7243_DEFAULT_HANDLE = {
     .handle = NULL,
 };
 
-static esp_err_t es7243_write_reg(uint8_t reg_add, uint8_t data)
+static int es7243_write_reg(uint8_t reg_add, uint8_t data)
 {
     return i2c_bus_write_bytes(i2c_handle, es7243_addr, &reg_add, sizeof(reg_add), &data, sizeof(data));
 }
 
-static int i2c_init()
-{
-    int res = 0;
-    i2c_config_t es_i2c_cfg = {
-        .mode = I2C_MODE_MASTER,
-        .sda_pullup_en = GPIO_PULLUP_ENABLE,
-        .scl_pullup_en = GPIO_PULLUP_ENABLE,
-        .master.clk_speed = 100000,
-    };
-    res = get_i2c_pins(I2C_NUM_0, &es_i2c_cfg);
-    ES_ASSERT(res, "getting i2c pins error", -1);
-    i2c_handle = i2c_bus_create(I2C_NUM_0, &es_i2c_cfg);
-    return res;
-}
-
-esp_err_t es7243_adc_set_addr(int addr)
+int es7243_adc_set_addr(int addr)
 {
     es7243_addr = addr;
-    return ESP_OK;
+    return 0;
 }
 
-static esp_err_t es7243_mclk_active(uint8_t mclk_gpio)
+int es7243_adc_init(audio_hal_codec_config_t *codec_cfg)
 {
-    gpio_pad_select_gpio(mclk_gpio);
-    gpio_set_direction(mclk_gpio, GPIO_MODE_OUTPUT);
-    /*
-        Before initializing es7243, it is necessary to output
-        mclk to es7243 to activate the I2C configuration.
-        So give some clocks to active es7243.
-    */
-    for (int i = 0; i < MCLK_PULSES_NUMBER; ++i) {
-        gpio_set_level(mclk_gpio, 0);
-        vTaskDelay(1 / portTICK_PERIOD_MS);
-        gpio_set_level(mclk_gpio, 1);
-        vTaskDelay(1 / portTICK_PERIOD_MS);
+    int ret = 0;
+    if (codec_cfg == NULL || codec_cfg->i2c_handle == NULL) {
+        OS_LOGE(TAG, "I2C isn't ready");
+        return -1;
     }
-    return ESP_OK;
-}
-
-esp_err_t es7243_adc_init(audio_hal_codec_config_t *codec_cfg)
-{
-    esp_err_t ret = ESP_OK;
-    es7243_mclk_active(get_es7243_mclk_gpio());
-    i2c_init();
+    i2c_handle = codec_cfg->i2c_handle;
     ret |= es7243_write_reg(0x00, 0x01);
     ret |= es7243_write_reg(0x06, 0x00);
     ret |= es7243_write_reg(0x05, 0x1B);
@@ -109,41 +77,41 @@ esp_err_t es7243_adc_init(audio_hal_codec_config_t *codec_cfg)
     ret |= es7243_write_reg(0x08, 0x43);
     ret |= es7243_write_reg(0x05, 0x13);
     if (ret) {
-        ESP_LOGE(TAG, "Es7243 initialize failed!");
-        return ESP_FAIL;
+        OS_LOGE(TAG, "Es7243 initialize failed!");
+        return -1;
     }
     return ret;
 }
 
-esp_err_t es7243_adc_deinit(void)
+int es7243_adc_deinit(void)
 {
-    return ESP_OK;
+    return 0;
 }
 
-esp_err_t es7243_adc_ctrl_state(audio_hal_codec_mode_t mode, audio_hal_ctrl_t ctrl_state)
+int es7243_adc_ctrl_state(audio_hal_codec_mode_t mode, audio_hal_ctrl_t ctrl_state)
 {
-    return ESP_OK;
+    return 0;
 }
 
-esp_err_t es7243_adc_config_i2s(audio_hal_codec_mode_t mode, audio_hal_codec_i2s_iface_t *iface)
+int es7243_adc_config_i2s(audio_hal_codec_mode_t mode, audio_hal_codec_i2s_iface_t *iface)
 {
-    return ESP_OK;
+    return 0;
 }
 
-esp_err_t es7243_adc_set_voice_mute(bool mute)
+int es7243_adc_set_voice_mute(bool mute)
 {
-    ESP_LOGI(TAG, "Enter into es7243_mute(), mute = %d\n", mute);
+    OS_LOGI(TAG, "Enter into es7243_mute(), mute = %d\n", mute);
     if (mute) {
         es7243_write_reg(0x05, 0x1B);
     } else {
         es7243_write_reg(0x05, 0x13);
     }
-    return ESP_OK;
+    return 0;
 }
 
-esp_err_t es7243_adc_set_voice_volume(int volume)
+int es7243_adc_set_voice_volume(int volume)
 {
-    esp_err_t ret = ESP_OK;
+    int ret = 0;
     if (volume > 100) {
         volume = 100;
     }
@@ -178,10 +146,10 @@ esp_err_t es7243_adc_set_voice_volume(int volume)
         default:
             break;
     }
-    return ESP_OK;
+    return 0;
 }
 
-esp_err_t es7243_adc_get_voice_volume(int *volume)
+int es7243_adc_get_voice_volume(int *volume)
 {
-    return ESP_OK;
+    return 0;
 }

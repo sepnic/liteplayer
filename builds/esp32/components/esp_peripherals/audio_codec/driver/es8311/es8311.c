@@ -683,6 +683,6 @@ void es8311_read_all()
 {
     for (int i = 0; i < 0x4A; i++) {
         uint8_t reg = es8311_read_reg(i);
-        ets_printf("REG:%02x, %02x\n", reg, i);
+        OS_LOGI(TAG, "ES8311-REG:%02x, %02x\n", reg, i);
     }
 }

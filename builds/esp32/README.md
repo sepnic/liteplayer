@@ -4,6 +4,11 @@
 
 See https://docs.espressif.com/projects/esp-idf/zh_CN/latest/esp32/get-started/index.html 
 
+My esp-idf info:
+ - REPO: https://github.com/espressif/esp-idf.git
+ - BRANCH: master
+ - HEAD: 3e370c4296247b349aa3b9a0076c05b9946d47dc
+
 ### Setup the environment variables
 
 I suppose you have a installtion directory named 'espressif'.

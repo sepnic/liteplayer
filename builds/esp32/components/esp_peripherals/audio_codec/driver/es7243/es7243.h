@@ -27,7 +27,6 @@
 #ifndef _ES7243_H_
 #define _ES7243_H_
 
-#include "esp_err.h"
 #include "audio_hal.h"
 
 #ifdef __cplusplus
@@ -43,7 +42,7 @@ extern "C" {
  *     - ESP_OK
  *     - ESP_FAIL
  */
-esp_err_t es7243_adc_init(audio_hal_codec_config_t *codec_cfg);
+int es7243_adc_init(audio_hal_codec_config_t *codec_cfg);
 
 /**
  * @brief Deinitialize ES7243 adc chip
@@ -52,7 +51,7 @@ esp_err_t es7243_adc_init(audio_hal_codec_config_t *codec_cfg);
  *     - ESP_OK
  *     - ESP_FAIL
  */
-esp_err_t es7243_adc_deinit(void);
+int es7243_adc_deinit(void);
 
 /**
  * @brief Control ES7243 adc chip
@@ -64,7 +63,7 @@ esp_err_t es7243_adc_deinit(void);
  *     - ESP_FAIL Parameter error
  *     - ESP_OK   Success
  */
-esp_err_t es7243_adc_ctrl_state(audio_hal_codec_mode_t mode, audio_hal_ctrl_t ctrl_state);
+int es7243_adc_ctrl_state(audio_hal_codec_mode_t mode, audio_hal_ctrl_t ctrl_state);
 
 /**
  * @brief Configure ES7243 adc mode and I2S interface
@@ -76,7 +75,7 @@ esp_err_t es7243_adc_ctrl_state(audio_hal_codec_mode_t mode, audio_hal_ctrl_t ct
  *     - ESP_FAIL Parameter error
  *     - ESP_OK   Success
  */
-esp_err_t es7243_adc_config_i2s(audio_hal_codec_mode_t mode, audio_hal_codec_i2s_iface_t *iface);
+int es7243_adc_config_i2s(audio_hal_codec_mode_t mode, audio_hal_codec_i2s_iface_t *iface);
 
 /**
  * @brief  Set mute
@@ -87,7 +86,7 @@ esp_err_t es7243_adc_config_i2s(audio_hal_codec_mode_t mode, audio_hal_codec_i2s
  *     - ESP_OK
  *     - ESP_FAIL
  */
-esp_err_t es7243_adc_set_voice_mute(bool mute);
+int es7243_adc_set_voice_mute(bool mute);
 
 /**
  * @brief  Set adc gain
@@ -98,7 +97,7 @@ esp_err_t es7243_adc_set_voice_mute(bool mute);
  *     - ESP_OK
  *     - ESP_FAIL
  */
-esp_err_t es7243_adc_set_voice_volume(int volume);
+int es7243_adc_set_voice_volume(int volume);
 
 /**
  * @brief Get adc gain
@@ -109,7 +108,7 @@ esp_err_t es7243_adc_set_voice_volume(int volume);
  *     - ESP_OK
  *     - ESP_FAIL
  */
-esp_err_t es7243_adc_get_voice_volume(int *volume);
+int es7243_adc_get_voice_volume(int *volume);
 
 /**
  * @brief Set adc I2C address
@@ -120,7 +119,7 @@ esp_err_t es7243_adc_get_voice_volume(int *volume);
  *     - ESP_OK
  *     - ESP_FAIL
  */
-esp_err_t es7243_adc_set_addr(int addr);
+int es7243_adc_set_addr(int addr);
 
 #ifdef __cplusplus
 }
