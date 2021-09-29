@@ -4,7 +4,7 @@ set(THIRDPARTY_DIR ${TOP_DIR}/thirdparty)
 set(ADAPTER_DIR ${TOP_DIR}/adapter)
 
 set(COMPONENT_REQUIRES)
-set(COMPONENT_PRIV_REQUIRES sysutils driver esp_peripherals)
+set(COMPONENT_PRIV_REQUIRES sysutils driver audio_board)
 
 set(COMPONENT_ADD_INCLUDEDIRS
     ${ADAPTER_DIR}
@@ -18,9 +18,9 @@ set (COMPONENT_PRIV_INCLUDEDIRS
 
 set(COMPONENT_SRCS
     ${ADAPTER_DIR}/source_httpclient_wrapper.c
-    sink_ESP32-LyraT-Mini_wrapper.c
+    sink_esp32_i2s_wrapper.c
 )
 
 register_component()
 
-#target_compile_options(${COMPONENT_LIB} PRIVATE -DOS_RTOS -DOS_FREERTOS_ESP8266)
+#target_compile_options(${COMPONENT_TARGET} PRIVATE -DOS_RTOS -DOS_FREERTOS_ESP8266)

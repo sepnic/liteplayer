@@ -1,21 +1,21 @@
 ## How to build liteplayer for esp32
 
-### Setup ESP-IDF
+### Setup ESP-ADF
 
-See https://docs.espressif.com/projects/esp-idf/zh_CN/latest/esp32/get-started/index.html 
+See https://docs.espressif.com/projects/esp-adf/zh_CN/latest/get-started/index.html
 
-My esp-idf info:
- - REPO: https://github.com/espressif/esp-idf.git
+My esp-adf info:
+ - REPO: https://github.com/espressif/esp-adf.git
  - BRANCH: master
- - HEAD: 3e370c4296247b349aa3b9a0076c05b9946d47dc
+ - HEAD: 6fa029230263cec69f13167b1810c06d37cbc20c
 
 ### Setup the environment variables
 
 I suppose you have a installtion directory named 'espressif'.
 
 ``` bash
-export IDF_PATH="$espressif/esp-idf"                   # idf source path
-export IDF_TOOLS_PATH="$espressif/tools/esp-idf-tools" # idf tools path, see https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/index.html#customizing-the-tools-installation-path
+export ADF_PATH="$espressif/esp-adf"
+export IDF_PATH="$ADF_PATH/esp-idf"
 . $IDF_PATH/export.sh
 ```
 
@@ -23,7 +23,6 @@ export IDF_TOOLS_PATH="$espressif/tools/esp-idf-tools" # idf tools path, see htt
 
 ``` bash
 cd builds/esp32
-idf.py set-target esp32
 idf.py menuconfig
 idf.py build                     # build
 idf.py -p <PORT> flash monitor   # flash image and output serial message to monitor

@@ -18,8 +18,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef _LITEPLAYER_ADAPTER_ESP32_WRAPPER_H_
-#define _LITEPLAYER_ADAPTER_ESP32_WRAPPER_H_
+#ifndef _LITEPLAYER_ADAPTER_ESP32_I2S_SINK_WRAPPER_H_
+#define _LITEPLAYER_ADAPTER_ESP32_I2S_SINK_WRAPPER_H_
 
 #include "liteplayer_adapter.h"
 
@@ -27,16 +27,16 @@
 extern "C" {
 #endif
 
-const char *esp32_lyrat_mini_wrapper_name();
+const char *esp32_i2s_out_wrapper_name();
 
-sink_handle_t esp32_lyrat_mini_wrapper_open(int samplerate, int channels, int bits, void *priv_data);
+sink_handle_t esp32_i2s_out_wrapper_open(int samplerate, int channels, int bits, void *priv_data);
 
-int esp32_lyrat_mini_wrapper_write(sink_handle_t handle, char *buffer, int size);
+int esp32_i2s_out_wrapper_write(sink_handle_t handle, char *buffer, int size);
 
-void esp32_lyrat_mini_wrapper_close(sink_handle_t handle);
+void esp32_i2s_out_wrapper_close(sink_handle_t handle);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // _LITEPLAYER_ADAPTER_ESP32_WRAPPER_H_
+#endif // _LITEPLAYER_ADAPTER_ESP32_I2S_SINK_WRAPPER_H_

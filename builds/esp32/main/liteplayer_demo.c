@@ -1,20 +1,34 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
+#include "osal/os_misc.h"
 #include "osal/os_thread.h"
 #include "cutils/log_helper.h"
 #include "cutils/memory_helper.h"
 #include "liteplayer_main.h"
 
 #include "source_httpclient_wrapper.h"
-#include "sink_ESP32-LyraT-Mini_wrapper.h"
+#include "sink_esp32_i2s_wrapper.h"
 
+#include "esp_peripherals.h"
+#include "esp_wifi.h"
+#include "periph_wifi.h"
 #include "nvs_flash.h"
-#include "esp_event.h"
+#include "board.h"
+#if __has_include("esp_idf_version.h")
+#include "esp_idf_version.h"
+#else
+#define ESP_IDF_VERSION_VAL(major, minor, patch) 1
+#endif
+#if (ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 1, 0))
 #include "esp_netif.h"
-#include "protocol_examples_common.h"
+#else
+#include "tcpip_adapter.h"
+#endif
 
 #define TAG "liteplayer_demo"
+
+#define DEFAULT_VOLUME 50
 
 #define HTTP_URL1 "http://ailabsaicloudservice.alicdn.com/player/resources/23a2d715f019c0e345235f379fa26a30.mp3"
 #define HTTP_URL2 "https://dl.espressif.com/dl/audio/ff-16b-2c-44100hz.mp3"
@@ -78,10 +92,10 @@ static void *liteplayer_demo(void *arg)
 
     struct sink_wrapper sink_ops = {
         .priv_data = NULL,
-        .name = esp32_lyrat_mini_wrapper_name,
-        .open = esp32_lyrat_mini_wrapper_open,
-        .write = esp32_lyrat_mini_wrapper_write,
-        .close = esp32_lyrat_mini_wrapper_close,
+        .name = esp32_i2s_out_wrapper_name,
+        .open = esp32_i2s_out_wrapper_open,
+        .write = esp32_i2s_out_wrapper_write,
+        .close = esp32_i2s_out_wrapper_close,
     };
     liteplayer_register_sink_wrapper(player, &sink_ops);
 
@@ -150,20 +164,42 @@ void app_main()
 {
     printf("Hello liteplayer!\n");
 
-    esp_err_t ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES) {
-      ESP_ERROR_CHECK(nvs_flash_erase());
-      ret = nvs_flash_init();
+    {
+        unsigned long buffer[4];
+        for (int i = 0; i < 3; i++) {
+            os_random(buffer, sizeof(buffer));
+            OS_LOGI(TAG, "os_random[%d]: %08x %08x %08x %08x", i, buffer[0], buffer[1], buffer[2], buffer[3]);
+        }
     }
-    ESP_ERROR_CHECK(ret);
+
+    esp_err_t err = nvs_flash_init();
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES) {
+        // NVS partition was truncated and needs to be erased
+        // Retry nvs_flash_init
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        err = nvs_flash_init();
+    }
+#if (ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 1, 0))
     ESP_ERROR_CHECK(esp_netif_init());
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
-    /* This helper function configures Wi-Fi or Ethernet, as selected in menuconfig.
-     * Read "Establishing Wi-Fi or Ethernet Connection" section in
-     * examples/protocols/README.md for more information about this function.
-     */
-    ESP_ERROR_CHECK(example_connect());
+#else
+    tcpip_adapter_init();
+#endif
+    OS_LOGI(TAG, "Start and wait for Wi-Fi network");
+    esp_periph_config_t periph_cfg = DEFAULT_ESP_PERIPH_SET_CONFIG();
+    esp_periph_set_handle_t set = esp_periph_set_init(&periph_cfg);
+    periph_wifi_cfg_t wifi_cfg = {
+        .ssid = CONFIG_WIFI_SSID,
+        .password = CONFIG_WIFI_PASSWORD,
+    };
+    esp_periph_handle_t wifi_handle = periph_wifi_init(&wifi_cfg);
+    esp_periph_start(set, wifi_handle);
+    periph_wifi_wait_for_connected(wifi_handle, portMAX_DELAY);
     OS_LOGI(TAG, "Connected to AP");
+
+    OS_LOGI(TAG, "Start audio codec chip");
+    audio_board_handle_t board_handle = audio_board_init();
+    audio_hal_ctrl_codec(board_handle->audio_hal, AUDIO_HAL_CODEC_MODE_DECODE, AUDIO_HAL_CTRL_START);
+    audio_hal_set_volume(board_handle->audio_hal, DEFAULT_VOLUME);
 
     struct os_thread_attr attr = {
         .name = "liteplayer_demo",

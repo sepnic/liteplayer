@@ -25,6 +25,6 @@ COMPONENT_SRCDIRS := \
 
 COMPONENT_OBJS := \
     ${ADAPTER_DIR}/source_httpclient_wrapper.o \
-    sink_ESP32-LyraT-Mini_wrapper.o
+    sink_esp32_i2s_wrapper.o
 
 #CFLAGS += -DOS_RTOS -DOS_FREERTOS_ESP8266

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
+#include "osal/os_misc.h"
 #include "osal/os_thread.h"
 #include "cutils/log_helper.h"
 #include "cutils/memory_helper.h"
@@ -148,6 +149,14 @@ test_done:
 void app_main()
 {
     printf("Hello liteplayer!\n");
+
+    {
+        unsigned long buffer[4];
+        for (int i = 0; i < 3; i++) {
+            os_random(buffer, sizeof(buffer));
+            OS_LOGI(TAG, "os_random[%d]: %08x %08x %08x %08x", i, buffer[0], buffer[1], buffer[2], buffer[3]);
+        }
+    }
 
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES) {
