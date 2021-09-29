@@ -61,15 +61,19 @@ sink_handle_t esp32_i2s_out_wrapper_open(int samplerate, int channels, int bits,
         OS_LOGE(TAG, "i2s_set_clk failed");
         return NULL;
     }
+    i2s_pin_config_t i2s_pin_cfg = {0};
+    get_i2s_pins(I2S_PORT, &i2s_pin_cfg);
+    if (i2s_set_pin(I2S_PORT, &i2s_pin_cfg) != 0) {
+        OS_LOGE(TAG, "i2s_set_pin failed");
+        i2s_driver_uninstall(I2S_PORT);
+        return NULL;
+    }
+    i2s_mclk_gpio_select(I2S_PORT, MCLK_GPIO);
     if (i2s_set_clk(I2S_PORT, samplerate, bits, channels) != 0) {
         OS_LOGE(TAG, "i2s_set_clk failed");
         i2s_driver_uninstall(I2S_PORT);
         return NULL;
     }
-    i2s_pin_config_t i2s_pin_cfg = {0};
-    get_i2s_pins(I2S_PORT, &i2s_pin_cfg);
-    i2s_set_pin(I2S_PORT, &i2s_pin_cfg);
-    i2s_mclk_gpio_select(I2S_PORT, MCLK_GPIO);
     return (sink_handle_t)0xffff;
 }
 
