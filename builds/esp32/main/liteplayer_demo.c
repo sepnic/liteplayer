@@ -34,7 +34,7 @@
 #define DEFAULT_VOLUME 50
 
 #define HTTP_URL1 "http://ailabsaicloudservice.alicdn.com/player/resources/23a2d715f019c0e345235f379fa26a30.mp3"
-#define HTTP_URL2 "https://dl.espressif.com/dl/audio/ff-16b-2c-44100hz.mp3"
+#define HTTP_URL2 "https://dl.espressif.com/dl/audio/ff-16b-2c-44100hz.m4a"
 
 static int liteplayer_demo_state_listener(enum liteplayer_state state, int errcode, void *priv)
 {
