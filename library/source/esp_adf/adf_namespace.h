@@ -18,11 +18,11 @@
 #define __LITEPLAYER_ESP_ADF_NAMESPACE_H__
 
 #define ADF_PREFIX                     liteplayer
-
-#define ADF_STATCC(x,y,z)              x##y##z  
+#define ADF_STATCC1(x,y,z)             ADF_STATCC2(x,y,z)
+#define ADF_STATCC2(x,y,z)             x##y##z
 
 #ifdef ADF_PREFIX
-#define ADF_NAMESPACE(func)            ADF_STATCC(ADF_PREFIX, _, func)
+#define ADF_NAMESPACE(func)            ADF_STATCC1(ADF_PREFIX, _, func)
 #else
 #define ADF_NAMESPACE(func)            func
 #endif
