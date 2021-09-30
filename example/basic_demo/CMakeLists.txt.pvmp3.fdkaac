@@ -12,18 +12,14 @@ set(TOP_DIR "${CMAKE_SOURCE_DIR}/../..")
 # cflags: OS_LINUX, OS_ANDROID, OS_APPLE, OS_RTOS
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DOS_APPLE")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D__amd64__")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -Wall -Werror")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -Wall -Werror -Wno-error=unused-function")
 # cflag: libspeexdsp: CONFIG_SPEEXDSP_FIXED_POINT/CONFIG_SPEEXDSP_FLOATING_POINT
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCONFIG_SPEEXDSP_FIXED_POINT")
 # cflags: if socketlen_t defined
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_SOCKLEN_T")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_HTTPCLIENT_MBEDTLS")
-# cflags: pv-aac & pv-mp3
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DOSCL_IMPORT_REF= -DOSCL_EXPORT_REF= -DOSCL_UNUSED_ARG=")
-#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DAAC_PLUS -DHQ_SBR -DPARAMETRICSTEREO")
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DAAC_PLUS -DHQ_SBR -DPARAMETRICSTEREO")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -Wno-error=unused-value -Wno-error=unused-function -Wno-error=narrowing")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DOSCL_IMPORT_REF= -DOSCL_EXPORT_REF= -DOSCL_UNUSED_ARG=")
+# cflag: decoder: ENABLE_DECODER_AAC_SBR
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_DECODER_AAC_SBR")
 # cflags: sink: CONFIG_SINK_FIXED_S16LE. Don't config it if sink support S24LE/S32LE
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCONFIG_SINK_FIXED_S16LE")
 
@@ -42,7 +38,15 @@ include_directories(${TOP_DIR}/adapter)
 # include files
 include_directories(${TOP_DIR}/thirdparty/codecs/mp3-pvmp3/include)
 include_directories(${TOP_DIR}/thirdparty/codecs/mp3-pvmp3/src)
-include_directories(${TOP_DIR}/thirdparty/codecs/aac-pvaac)
+include_directories(${TOP_DIR}/thirdparty/codecs/aac-fdk/libAACdec/include)
+include_directories(${TOP_DIR}/thirdparty/codecs/aac-fdk/libPCMutils/include)
+include_directories(${TOP_DIR}/thirdparty/codecs/aac-fdk/libFDK/include)
+include_directories(${TOP_DIR}/thirdparty/codecs/aac-fdk/libSYS/include)
+include_directories(${TOP_DIR}/thirdparty/codecs/aac-fdk/libMpegTPDec/include)
+include_directories(${TOP_DIR}/thirdparty/codecs/aac-fdk/libSBRdec/include)
+include_directories(${TOP_DIR}/thirdparty/codecs/aac-fdk/libArithCoding/include)
+include_directories(${TOP_DIR}/thirdparty/codecs/aac-fdk/libDRCdec/include)
+include_directories(${TOP_DIR}/thirdparty/codecs/aac-fdk/libSACdec/include)
 
 # source files
 file(GLOB THIRDPARTY_SRC src
@@ -50,34 +54,17 @@ file(GLOB THIRDPARTY_SRC src
     ${TOP_DIR}/thirdparty/sysutils/source/cutils/*.c
     ${TOP_DIR}/thirdparty/sysutils/source/httpclient/*.c
     ${TOP_DIR}/thirdparty/codecs/mp3-pvmp3/src/*.cpp
-    ${TOP_DIR}/thirdparty/codecs/aac-pvaac/*.cpp
+    ${TOP_DIR}/thirdparty/codecs/aac-fdk/libAACdec/src/*.cpp
+    ${TOP_DIR}/thirdparty/codecs/aac-fdk/libPCMutils/src/*.cpp
+    ${TOP_DIR}/thirdparty/codecs/aac-fdk/libFDK/src/*.cpp
+    ${TOP_DIR}/thirdparty/codecs/aac-fdk/libSYS/src/*.cpp
+    ${TOP_DIR}/thirdparty/codecs/aac-fdk/libMpegTPDec/src/*.cpp
+    ${TOP_DIR}/thirdparty/codecs/aac-fdk/libSBRdec/src/*.cpp
+    ${TOP_DIR}/thirdparty/codecs/aac-fdk/libArithCoding/src/*.cpp
+    ${TOP_DIR}/thirdparty/codecs/aac-fdk/libDRCdec/src/*.cpp
+    ${TOP_DIR}/thirdparty/codecs/aac-fdk/libSACdec/src/*.cpp
     ${TOP_DIR}/thirdparty/speexdsp/resample.c
 )
-
-# source files
-set (LITEPLAYER_SRC
-    ${TOP_DIR}/library/source/esp_adf/audio_element.c
-    ${TOP_DIR}/library/source/esp_adf/audio_event_iface.c
-    ${TOP_DIR}/library/source/audio_decoder/mp3_pvmp3_wrapper.c
-    ${TOP_DIR}/library/source/audio_decoder/mp3_decoder.c
-    ${TOP_DIR}/library/source/audio_decoder/aac_pvaac_wrapper.c
-    ${TOP_DIR}/library/source/audio_decoder/aac_decoder.c
-    ${TOP_DIR}/library/source/audio_decoder/m4a_decoder.c
-    ${TOP_DIR}/library/source/audio_decoder/wav_decoder.c
-    ${TOP_DIR}/library/source/audio_extractor/mp3_extractor.c
-    ${TOP_DIR}/library/source/audio_extractor/aac_extractor.c
-    ${TOP_DIR}/library/source/audio_extractor/m4a_extractor.c
-    ${TOP_DIR}/library/source/audio_extractor/wav_extractor.c
-    ${TOP_DIR}/library/source/liteplayer_adapter.c
-    ${TOP_DIR}/library/source/liteplayer_source.c
-    ${TOP_DIR}/library/source/liteplayer_parser.c
-    ${TOP_DIR}/library/source/liteplayer_debug.c
-    ${TOP_DIR}/library/source/liteplayer_main.c
-    ${TOP_DIR}/library/source/liteplayer_listplayer.c
-    ${TOP_DIR}/library/source/liteplayer_ttsplayer.c
-    ${TOP_DIR}/library/source/liteplayer_resampler.c
-)
-
 set (ADAPTER_SRC
     ${TOP_DIR}/adapter/external/mbedtls/library/aes.c
     ${TOP_DIR}/adapter/external/mbedtls/library/aesni.c
@@ -170,6 +157,30 @@ if (ENABLE_LINUX_ALSA)
         ${TOP_DIR}/adapter/sink_alsa_wrapper.c
     )
 endif()
+
+# source files
+set (LITEPLAYER_SRC
+    ${TOP_DIR}/library/source/esp_adf/audio_element.c
+    ${TOP_DIR}/library/source/esp_adf/audio_event_iface.c
+    ${TOP_DIR}/library/source/audio_decoder/mp3_pvmp3_wrapper.c
+    ${TOP_DIR}/library/source/audio_decoder/mp3_decoder.c
+    ${TOP_DIR}/library/source/audio_decoder/aac_fdk_wrapper.c
+    ${TOP_DIR}/library/source/audio_decoder/aac_decoder.c
+    ${TOP_DIR}/library/source/audio_decoder/m4a_decoder.c
+    ${TOP_DIR}/library/source/audio_decoder/wav_decoder.c
+    ${TOP_DIR}/library/source/audio_extractor/mp3_extractor.c
+    ${TOP_DIR}/library/source/audio_extractor/aac_extractor.c
+    ${TOP_DIR}/library/source/audio_extractor/m4a_extractor.c
+    ${TOP_DIR}/library/source/audio_extractor/wav_extractor.c
+    ${TOP_DIR}/library/source/liteplayer_adapter.c
+    ${TOP_DIR}/library/source/liteplayer_source.c
+    ${TOP_DIR}/library/source/liteplayer_parser.c
+    ${TOP_DIR}/library/source/liteplayer_debug.c
+    ${TOP_DIR}/library/source/liteplayer_main.c
+    ${TOP_DIR}/library/source/liteplayer_listplayer.c
+    ${TOP_DIR}/library/source/liteplayer_ttsplayer.c
+    ${TOP_DIR}/library/source/liteplayer_resampler.c
+)
 
 # basic_demo
 add_executable(basic_demo basic_demo.c ${THIRDPARTY_SRC} ${LITEPLAYER_SRC} ${ADAPTER_SRC})
