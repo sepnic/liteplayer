@@ -14,6 +14,8 @@
 #include "periph_wifi.h"
 #include "nvs_flash.h"
 #include "board.h"
+#include "driver/i2s.h"
+#include "board_pins_config.h"
 #if __has_include("esp_idf_version.h")
 #include "esp_idf_version.h"
 #else
@@ -27,6 +29,8 @@
 
 #define TAG "liteplayer_demo"
 
+#define I2S_PORT  ( I2S_NUM_0 )
+#define MCLK_GPIO ( GPIO_NUM_0 )
 #define DEFAULT_VOLUME 50
 
 #define HTTP_URL1 "http://ailabsaicloudservice.alicdn.com/player/resources/23a2d715f019c0e345235f379fa26a30.mp3"
@@ -185,12 +189,38 @@ void app_main()
     esp_periph_handle_t wifi_handle = periph_wifi_init(&wifi_cfg);
     esp_periph_start(set, wifi_handle);
     periph_wifi_wait_for_connected(wifi_handle, portMAX_DELAY);
-    OS_LOGI(TAG, "Connected to AP");
 
     OS_LOGI(TAG, "Start audio codec chip");
     audio_board_handle_t board_handle = audio_board_init();
     audio_hal_ctrl_codec(board_handle->audio_hal, AUDIO_HAL_CODEC_MODE_DECODE, AUDIO_HAL_CTRL_START);
     audio_hal_set_volume(board_handle->audio_hal, DEFAULT_VOLUME);
+
+    OS_LOGI(TAG, "Start i2s driver");
+    i2s_config_t i2s_config = {
+        .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_RX),
+        .sample_rate = 44100,
+        .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
+        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
+        .communication_format = I2S_COMM_FORMAT_I2S,
+        .intr_alloc_flags = ESP_INTR_FLAG_LEVEL2 | ESP_INTR_FLAG_IRAM,
+        .dma_buf_count = 3,
+        .dma_buf_len = 300,
+        .use_apll = true,
+        .tx_desc_auto_clear = true,
+        .fixed_mclk = 0,
+    };
+    if (i2s_driver_install(I2S_PORT, &i2s_config, 0, NULL) != 0) {
+        OS_LOGE(TAG, "i2s_set_clk failed");
+        return;
+    }
+    i2s_pin_config_t i2s_pin_cfg = {0};
+    get_i2s_pins(I2S_PORT, &i2s_pin_cfg);
+    if (i2s_set_pin(I2S_PORT, &i2s_pin_cfg) != 0) {
+        OS_LOGE(TAG, "i2s_set_pin failed");
+        i2s_driver_uninstall(I2S_PORT);
+        return;
+    }
+    i2s_mclk_gpio_select(I2S_PORT, MCLK_GPIO);
 
     struct os_thread_attr attr = {
         .name = "liteplayer_demo",
