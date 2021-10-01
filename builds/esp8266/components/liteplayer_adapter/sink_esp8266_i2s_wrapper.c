@@ -33,9 +33,6 @@
 
 #define TAG "[liteplayer]esp8266-i2s"
 
-#define I2S_DMA_BUF_LEN 256
-#define I2S_DMA_BUF_CNT 4
-
 const char *esp8266_i2s_wrapper_name()
 {
     return "esp8266_i2s";
@@ -51,8 +48,8 @@ sink_handle_t esp8266_i2s_wrapper_open(int samplerate, int channels, int bits, v
         .bits_per_sample = bits,
         .channel_format = (channels == 1) ? I2S_CHANNEL_FMT_ONLY_LEFT : I2S_CHANNEL_FMT_RIGHT_LEFT,
         .communication_format = I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB,
-        .dma_buf_count = I2S_DMA_BUF_CNT,
-        .dma_buf_len = I2S_DMA_BUF_LEN,
+        .dma_buf_count = 3,
+        .dma_buf_len = 300,
         .tx_desc_auto_clear = true,
     };
     i2s_pin_config_t pin_config = {

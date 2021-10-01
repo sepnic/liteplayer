@@ -19,6 +19,7 @@ COMPONENT_PRIV_INCLUDEDIRS := \
     ${THIRDPARTY_DIR}/codecs \
     ${THIRDPARTY_DIR}/codecs/mp3-pvmp3/include \
     ${THIRDPARTY_DIR}/codecs/mp3-pvmp3/src \
+    ${THIRDPARTY_DIR}/codecs/aac-pvaac \
     ${LITEPLAYER_DIR}/source
 
 COMPONENT_SRCDIRS := \
@@ -27,12 +28,33 @@ COMPONENT_SRCDIRS := \
     ${LITEPLAYER_DIR}/source/audio_extractor \
     ${LITEPLAYER_DIR}/source \
     ${THIRDPARTY_DIR}/codecs/mp3-pvmp3/src \
-    ${THIRDPARTY_DIR}/codecs/aac-helix
+    ${THIRDPARTY_DIR}/codecs/aac-pvaac
 
 COMPONENT_OBJEXCLUDE := \
     ${LITEPLAYER_DIR}/source/esp_adf/audio_pipeline.o \
     ${LITEPLAYER_DIR}/source/audio_decoder/aac_fdk_wrapper.o \
+    ${LITEPLAYER_DIR}/source/audio_decoder/aac_helix_wrapper.o \
     ${LITEPLAYER_DIR}/source/audio_decoder/mp3_mad_wrapper.o \
     ${LITEPLAYER_DIR}/source/liteplayer_resampler.o
 
-CFLAGS += -DOS_RTOS -DOS_FREERTOS_ESP8266 -DARDUINO -DCONFIG_SINK_FIXED_S16LE
+CFLAGS += \
+    -DOS_RTOS \
+    -DOS_FREERTOS_ESP8266 \
+    -DCONFIG_SINK_FIXED_S16LE \
+    -DOSCL_IMPORT_REF= \
+    -DOSCL_EXPORT_REF= \
+    -DOSCL_UNUSED_ARG= \
+    -Wno-error=unused-value \
+    -Wno-error=unused-function \
+    -Wno-error=narrowing
+
+CPPFLAGS += \
+    -DOS_RTOS \
+    -DOS_FREERTOS_ESP8266 \
+    -DCONFIG_SINK_FIXED_S16LE \
+    -DOSCL_IMPORT_REF= \
+    -DOSCL_EXPORT_REF= \
+    -DOSCL_UNUSED_ARG= \
+    -Wno-error=unused-value \
+    -Wno-error=unused-function \
+    -Wno-error=narrowing
