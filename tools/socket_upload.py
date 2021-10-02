@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
-# Author: Qinglong <sysu.zqlong@gmail.com>
+# Author: Qinglong<sysu.zqlong@gmail.com>
 
 import socket, threading, sys
 import datetime, time

@@ -22,7 +22,7 @@
  *
  */
 
-/** Copyright (c) 2019-2021 Qinglong <sysu.zqlong@gmail.com> */
+// Copyright (c) 2019-2021 Qinglong<sysu.zqlong@gmail.com>
 
 #ifndef _AUDIO_COMMON_H_
 #define _AUDIO_COMMON_H_
