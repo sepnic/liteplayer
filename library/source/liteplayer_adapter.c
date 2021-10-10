@@ -93,55 +93,42 @@ static source_handle_t file_wrapper_open(const char *url, long long content_pos,
 static int file_wrapper_read(source_handle_t handle, char *buffer, int size)
 {
     struct file_wrapper_priv *priv = (struct file_wrapper_priv *)handle;
-    if (priv->file) {
-        if (priv->content_len > 0 && priv->content_pos >= priv->content_len) {
-            OS_LOGD(TAG, "File read done: %d/%d", (int)priv->content_pos, (int)priv->content_len);
-            return 0;
-        }
-        size_t bytes_read = fread(buffer, 1, size, priv->file);
-        if (bytes_read > 0)
-            priv->content_pos += bytes_read;
-        return bytes_read;
+    if (priv->content_len > 0 && priv->content_pos >= priv->content_len) {
+        OS_LOGD(TAG, "File read done: %d/%d", (int)priv->content_pos, (int)priv->content_len);
+        return 0;
     }
-    return -1;
+    size_t bytes_read = fread(buffer, 1, size, priv->file);
+    if (bytes_read > 0)
+        priv->content_pos += bytes_read;
+    return bytes_read;
 }
 
 static long long file_wrapper_content_pos(source_handle_t handle)
 {
     struct file_wrapper_priv *priv = (struct file_wrapper_priv *)handle;
-    if (priv->file)
-        return priv->content_pos;
-    return 0;
+    return priv->content_pos;
 }
 
 static long long file_wrapper_content_len(source_handle_t handle)
 {
     struct file_wrapper_priv *priv = (struct file_wrapper_priv *)handle;
-    if (priv->file)
-        return priv->content_len;
-    return 0;
+    return priv->content_len;
 }
 
 static int file_wrapper_seek(source_handle_t handle, long offset)
 {
     struct file_wrapper_priv *priv = (struct file_wrapper_priv *)handle;
-    if (priv->file) {
-        int ret = fseek(priv->file, offset, SEEK_SET);
-        if (ret == 0)
-            priv->content_pos = offset;
-        return ret;
-    }
-    return -1;
+    int ret = fseek(priv->file, offset, SEEK_SET);
+    if (ret == 0)
+        priv->content_pos = offset;
+    return ret;
 }
 
 static void file_wrapper_close(source_handle_t handle)
 {
     struct file_wrapper_priv *priv = (struct file_wrapper_priv *)handle;
-    if (priv->file) {
-        OS_LOGD(TAG, "Closing file:%p", priv->file);
-        fclose(priv->file);
-        priv->file = NULL;
-    }
+    OS_LOGD(TAG, "Closing file:%p", priv->file);
+    fclose(priv->file);
     audio_free(priv);
 }
 
@@ -164,7 +151,6 @@ static int add_source_wrapper(liteplayer_adapter_handle_t self, struct source_wr
             break;
         }
     }
-
     if (!found) {
         node = audio_calloc(1, sizeof(struct source_wrapper_node));
         if (node == NULL) {
@@ -173,7 +159,6 @@ static int add_source_wrapper(liteplayer_adapter_handle_t self, struct source_wr
         }
         list_add_head(&priv->source_list, &node->listnode);
     }
-
     node->wrapper.buffer_size = (wrapper->buffer_size/1024)*1024;
     if (wrapper->async_mode) {
         if (wrapper->buffer_size < MIN_SOURCE_ASYNC_BUFFER_SIZE)
@@ -186,15 +171,7 @@ static int add_source_wrapper(liteplayer_adapter_handle_t self, struct source_wr
         else if (wrapper->buffer_size > MAX_SOURCE_SYNC_BUFFER_SIZE)
             node->wrapper.buffer_size = MAX_SOURCE_SYNC_BUFFER_SIZE;
     }
-    node->wrapper.async_mode = wrapper->async_mode;
-    node->wrapper.priv_data = wrapper->priv_data;
-    node->wrapper.url_protocol = wrapper->url_protocol;
-    node->wrapper.open = wrapper->open;
-    node->wrapper.read = wrapper->read;
-    node->wrapper.content_pos = wrapper->content_pos;
-    node->wrapper.content_len = wrapper->content_len;
-    node->wrapper.seek = wrapper->seek;
-    node->wrapper.close = wrapper->close;
+    memcpy(&node->wrapper, wrapper, sizeof(struct source_wrapper));
 
     os_mutex_unlock(priv->lock);
     return ESP_OK;
@@ -250,7 +227,6 @@ int add_sink_wrapper(liteplayer_adapter_handle_t self, struct sink_wrapper *wrap
             break;
         }
     }
-
     if (!found) {
         node = audio_calloc(1, sizeof(struct sink_wrapper_node));
         if (node == NULL) {
@@ -259,12 +235,7 @@ int add_sink_wrapper(liteplayer_adapter_handle_t self, struct sink_wrapper *wrap
         }
         list_add_head(&priv->sink_list, &node->listnode);
     }
-
-    node->wrapper.priv_data = wrapper->priv_data;
-    node->wrapper.name = wrapper->name;
-    node->wrapper.open = wrapper->open;
-    node->wrapper.write = wrapper->write;
-    node->wrapper.close = wrapper->close;
+    memcpy(&node->wrapper, wrapper, sizeof(struct sink_wrapper));
 
     os_mutex_unlock(priv->lock);
     return ESP_OK;
