@@ -23,8 +23,8 @@ export IDF_PATH="$ADF_PATH/esp-idf"
 
 ``` bash
 cd builds/esp32
-idf.py menuconfig
+idf.py menuconfig                # config your wifi ssid and password, audio board
 idf.py build                     # build
-idf.py -p <PORT> flash monitor   # flash image and output serial message to monitor
+idf.py -p <PORT> flash monitor   # flash image and monitor serial message
 ```
 
