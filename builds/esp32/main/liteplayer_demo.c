@@ -47,8 +47,8 @@
 #define MCLK_GPIO ( GPIO_NUM_0 )
 #define DEFAULT_VOLUME 50
 
-#define HTTP_URL1 "http://ailabsaicloudservice.alicdn.com/player/resources/23a2d715f019c0e345235f379fa26a30.mp3"
-#define HTTP_URL2 "https://dl.espressif.com/dl/audio/ff-16b-2c-44100hz.m4a"
+#define HTTP_URL "https://dl.espressif.com/dl/audio/ff-16b-2c-44100hz.mp3"
+//#define HTTP_URL "https://dl.espressif.com/dl/audio/ff-16b-2c-44100hz.m4a"
 
 static int liteplayer_demo_state_listener(enum liteplayer_state state, int errcode, void *priv)
 {
@@ -240,19 +240,10 @@ void app_main()
         .name = "liteplayer_demo",
         .priority = OS_THREAD_PRIO_NORMAL,
         .stacksize = 8192,
-        .joinable = true,
+        .joinable = false,
     };
-    os_thread tid = NULL;
+    os_thread_create(&attr, liteplayer_demo, HTTP_URL);
 
-    OS_LOGI(TAG, "Play first http url: %s", HTTP_URL1);
-    tid = os_thread_create(&attr, liteplayer_demo, HTTP_URL1);
-    os_thread_join(tid, NULL);
-
-    OS_LOGI(TAG, "Play second http url: %s", HTTP_URL2);
-    tid = os_thread_create(&attr, liteplayer_demo, HTTP_URL2);
-    os_thread_join(tid, NULL);
-
-    OS_LOGI(TAG, "Play end");
     while (1)
         os_thread_sleep_msec(100);
 }

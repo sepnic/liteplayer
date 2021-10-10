@@ -28,4 +28,3 @@ idf.py build                     # build
 idf.py -p <PORT> flash monitor   # flash image and output serial message to monitor
 ```
 
-Note: 'componments/liteplayer_adapter/sink_ESP32-LyraT-Mini_wrapper.*' is just for ESP32-LyraT-Mini board
