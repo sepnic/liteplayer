@@ -955,6 +955,11 @@ int liteplayer_reset(liteplayer_handle_t handle)
 
     os_mutex_lock(handle->io_lock);
 
+    if (handle->state == LITEPLAYER_IDLE) {
+        os_mutex_unlock(handle->io_lock);
+        return ESP_OK;
+    }
+
     main_pipeline_deinit(handle);
 
     if (handle->url != NULL) {
