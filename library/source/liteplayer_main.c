@@ -951,14 +951,14 @@ int liteplayer_reset(liteplayer_handle_t handle)
     if (handle == NULL)
         return ESP_FAIL;
 
-    OS_LOGI(TAG, "Resetting player[%s]", handle->source_ops->url_protocol());
-
     os_mutex_lock(handle->io_lock);
 
     if (handle->state == LITEPLAYER_IDLE) {
         os_mutex_unlock(handle->io_lock);
         return ESP_OK;
     }
+
+    OS_LOGI(TAG, "Resetting player[%s]", handle->source_ops->url_protocol());
 
     main_pipeline_deinit(handle);
 
