@@ -49,8 +49,6 @@ set(COMPONENT_SRCS
 register_component()
 
 target_compile_options(${COMPONENT_TARGET} PRIVATE
-    -DOS_RTOS
-    -DOS_FREERTOS_ESP8266
     -DCONFIG_SINK_FIXED_S16LE
     -DOSCL_IMPORT_REF=
     -DOSCL_EXPORT_REF=
