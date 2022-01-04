@@ -449,7 +449,7 @@ static int main_pipeline_init(liteplayer_handle_t handle)
         default:
             break;
         }
-        AUDIO_MEM_CHECK(TAG, handle->ael_decoder, goto pipeline_fail);
+        AUDIO_MEM_CHECK(TAG, handle->ael_decoder, return ESP_FAIL);
     }
 
     {
@@ -473,12 +473,12 @@ static int main_pipeline_init(liteplayer_handle_t handle)
         handle->media_source_info.content_pos = handle->media_codec_info.content_pos + handle->seek_offset;
         handle->media_source_handle =
             media_source_start_async(&handle->media_source_info, media_source_state_callback, handle);
-        AUDIO_MEM_CHECK(TAG, handle->media_source_handle, goto pipeline_fail);
+        AUDIO_MEM_CHECK(TAG, handle->media_source_handle, return ESP_FAIL);
     } else {
         OS_LOGD(TAG, "[1.2] Create source element, sync mode, ringbuf size: %d", handle->source_ops->buffer_size);
         handle->source_buffer_size = handle->source_ops->buffer_size;
         handle->source_buffer_addr = audio_malloc(handle->source_buffer_size);
-        AUDIO_MEM_CHECK(TAG, handle->source_buffer_addr, goto pipeline_fail);
+        AUDIO_MEM_CHECK(TAG, handle->source_buffer_addr, return ESP_FAIL);
         stream_callback_t audio_source = {
             .open = audio_source_open,
             .read = audio_source_read,
@@ -496,14 +496,10 @@ static int main_pipeline_init(liteplayer_handle_t handle)
     {
         OS_LOGD(TAG, "[3.0] Run decoder element");
         if (audio_element_run(handle->ael_decoder) != 0)
-            goto pipeline_fail;
+            return ESP_FAIL;
     }
 
     return ESP_OK;
-
-pipeline_fail:
-    main_pipeline_deinit(handle);
-    return ESP_FAIL;
 }
 
 liteplayer_handle_t liteplayer_create()
