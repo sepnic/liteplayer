@@ -589,7 +589,7 @@ int audio_element_output_chunk(audio_element_handle_t el, char *buffer, int writ
     return output_len;
 }
 
-void *audio_element_task(void *pv)
+static void *audio_element_task(void *pv)
 {
     audio_element_handle_t el = (audio_element_handle_t)pv;
     el->task_run = true;

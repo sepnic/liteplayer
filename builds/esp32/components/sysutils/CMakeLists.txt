@@ -1,7 +1,7 @@
 set(TOP_DIR ../../../../thirdparty/sysutils)
 
 set(COMPONENT_REQUIRES)
-set(COMPONENT_PRIV_REQUIRES mbedtls)
+set(COMPONENT_PRIV_REQUIRES pthread mbedtls)
 
 set(COMPONENT_ADD_INCLUDEDIRS ${TOP_DIR}/include)
 
@@ -26,4 +26,4 @@ set(COMPONENT_SRCS
 
 register_component()
 
-target_compile_options(${COMPONENT_TARGET} PRIVATE -DOS_RTOS -DOS_FREERTOS_ESP8266 -DENABLE_HTTPCLIENT_MBEDTLS)
+target_compile_options(${COMPONENT_TARGET} PRIVATE -DOS_RTOS -DOS_FREERTOS_ESP32 -DENABLE_HTTPCLIENT_MBEDTLS)
