@@ -356,7 +356,7 @@ static esp_err_t audio_element_on_cmd(audio_event_iface_msg_t *msg, void *contex
 static esp_err_t audio_element_process_running(audio_element_handle_t el)
 {
     int process_len = -1;
-    if (el->state < AEL_STATE_RUNNING || !el->is_running) {
+    if (el->state < AEL_STATE_RUNNING || !el->is_running || !el->is_open) {
         return ESP_ERR_INVALID_STATE;
     }
     process_len = el->process(el, el->buf, el->buf_size);
