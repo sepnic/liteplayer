@@ -57,7 +57,10 @@ LOCAL_C_INCLUDES += \
     ${TOP_DIR}/thirdparty/codecs/aac-pvaac
 LOCAL_CFLAGS += -DOS_ANDROID
 LOCAL_CFLAGS += -DCONFIG_SINK_FIXED_S16LE
-LOCAL_CFLAGS += -Wall -Werror -Wno-error=unused-value -Wno-error=narrowing
+LOCAL_CFLAGS += -Wall -Werror
+LOCAL_CFLAGS += -Wno-error=unused-value -Wno-error=narrowing
+LOCAL_CFLAGS += -Wno-error=implicit-const-int-float-conversion
+LOCAL_CFLAGS += -Wno-error=void-pointer-to-enum-cast
 LOCAL_CFLAGS += -DOSCL_IMPORT_REF= -DOSCL_EXPORT_REF= -DOSCL_UNUSED_ARG=
 LOCAL_LDLIBS := -llog
 LOCAL_SHARED_LIBRARIES += sysutils
@@ -67,7 +70,7 @@ include $(BUILD_SHARED_LIBRARY)
 ## liteplayeradapter
 include $(CLEAR_VARS)
 TOP_DIR := ${LOCAL_PATH}/../../..
-THIRDPARTY_FILES := $(wildcard  ${TOP_DIR}/adapter/external/mbedtls/library/*.c \
+THIRDPARTY_FILES := $(wildcard  ${TOP_DIR}/thirdparty/mbedtls/library/*.c \
                                 ${TOP_DIR}/thirdparty/sysutils/source/httpclient/*.c)
 THIRDPARTY_FILES := $(THIRDPARTY_FILES:$(LOCAL_PATH)/%=%)
 LOCAL_SRC_FILES := \
@@ -79,9 +82,11 @@ LOCAL_C_INCLUDES += \
     ${TOP_DIR}/library/include \
     ${TOP_DIR}/adapter \
     ${TOP_DIR}/thirdparty/sysutils/include \
-    ${TOP_DIR}/adapter/external/mbedtls/include
+    ${TOP_DIR}/thirdparty/mbedtls/include
 LOCAL_CFLAGS += -DOS_ANDROID -D_SOCKLEN_T -DENABLE_HTTPCLIENT_MBEDTLS
-LOCAL_CFLAGS += -Wall -Werror -Wno-error=inline-asm
+LOCAL_CFLAGS += -Wall -Werror
+LOCAL_CFLAGS += -Wno-error=inline-asm
+LOCAL_CFLAGS += -Wno-error=implicit-const-int-float-conversion
 LOCAL_LDLIBS := -llog -lOpenSLES
 LOCAL_SHARED_LIBRARIES += sysutils
 LOCAL_MODULE := liteplayer_adapter

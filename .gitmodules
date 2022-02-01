@@ -4,6 +4,3 @@
 [submodule "example/liteplayer_android"]
 	path = example/liteplayer_android
 	url = https://github.com/sepnic/liteplayer_android.git
-[submodule "adapter/external/mbedtls"]
-	path = adapter/external/mbedtls
-	url = https://github.com/sepnic/mbedtls.git
