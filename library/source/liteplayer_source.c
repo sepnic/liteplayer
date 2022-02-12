@@ -216,12 +216,14 @@ static int m3u_parser_resolve(struct media_source_priv *priv)
     if (!list_empty(&priv->m3u_list))
         ret = 0;
 
+#if defined(ENABLE_SYSUTILS_VERBOSE_LOG)
     struct listnode *item;
     int i = 0;
     list_for_each(item, &priv->m3u_list) {
         struct m3u_node *node = listnode_to_item(item, struct m3u_node, listnode);
         OS_LOGV(TAG, "-->m3ulist: url[%d]=[%s]", i++, node->url);
     }
+#endif
 
 resolve_done:
     if (http != NULL)
