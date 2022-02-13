@@ -83,11 +83,11 @@ Copyright (c) ISO/IEC 2003.
 ; INCLUDES
 ----------------------------------------------------------------------------*/
 
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
 
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
 
-#ifdef PARAMETRICSTEREO
+#ifdef LITEPLAYER_CONFIG_PARAMETRICSTEREO
 
 #include    "s_sbr_channel.h"
 #include    "aac_mem_funcs.h"
@@ -154,7 +154,7 @@ Int32 ps_allocate_decoder(SBRDECODER_DATA *self,
                                         HYBRID_2_REAL
                                       };
 
-    STRUCT_PS_DEC *h_ps_dec = self->hParametricStereoDec;
+    STRUCT_PS_DEC *h_ps_dec = self->hLITEPLAYER_CONFIG_PARAMETRICSTEREODec;
 
     /* initialisation */
     h_ps_dec->noSubSamples = noSubSamples;

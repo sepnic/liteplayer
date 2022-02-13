@@ -77,7 +77,7 @@ HAACDecoder AACInitDecoder(void)
     if (!aacDecInfo)
         return NULL;
 
-#ifdef ENABLE_DECODER_AAC_SBR
+#ifdef LITEPLAYER_CONFIG_AAC_SBR
     if (InitSBR(aacDecInfo)) {
         AACFreeDecoder(aacDecInfo);
         return NULL;
@@ -95,7 +95,7 @@ HAACDecoder AACInitDecoderPre(void *ptr, int sz)
     if (!aacDecInfo)
         return 0;
 
-#ifdef ENABLE_DECODER_AAC_SBR
+#ifdef LITEPLAYER_CONFIG_AAC_SBR
     if (InitSBRPre(aacDecInfo, &ptr, &sz)) {
         return 0;
     }
@@ -123,7 +123,7 @@ void AACFreeDecoder(HAACDecoder hAACDecoder)
     if (!aacDecInfo)
         return;
 
-#ifdef ENABLE_DECODER_AAC_SBR
+#ifdef LITEPLAYER_CONFIG_AAC_SBR
     FreeSBR(aacDecInfo);
 #endif
     FreeBuffers(aacDecInfo);
@@ -265,7 +265,7 @@ int AACFlushCodec(HAACDecoder hAACDecoder)
 
     /* reset internal codec state (flush overlap buffers, etc.) */
     FlushCodec(aacDecInfo);
-#ifdef ENABLE_DECODER_AAC_SBR
+#ifdef LITEPLAYER_CONFIG_AAC_SBR
     FlushCodecSBR(aacDecInfo);
 #endif
 
@@ -300,7 +300,7 @@ int AACDecode(HAACDecoder hAACDecoder, unsigned char **inbuf, int *bytesLeft, sh
     int ch, baseChan, elementChans;
     unsigned char *inptr;
     AACDecInfo *aacDecInfo = (AACDecInfo *)hAACDecoder;
-#ifdef ENABLE_DECODER_AAC_SBR
+#ifdef LITEPLAYER_CONFIG_AAC_SBR
     int baseChanSBR, elementChansSBR;
 #endif
 
@@ -367,7 +367,7 @@ int AACDecode(HAACDecoder hAACDecoder, unsigned char **inbuf, int *bytesLeft, sh
 
     bitOffset = 0;
     baseChan = 0;
-#ifdef ENABLE_DECODER_AAC_SBR
+#ifdef LITEPLAYER_CONFIG_AAC_SBR
     baseChanSBR = 0;
 #endif
 
@@ -436,7 +436,7 @@ PROFILE_START("IMDCT")
 PROFILE_END()
         }
 
-#ifdef ENABLE_DECODER_AAC_SBR
+#ifdef LITEPLAYER_CONFIG_AAC_SBR
         if (aacDecInfo->sbrEnabled && (aacDecInfo->currBlockID == AAC_ID_FIL || aacDecInfo->currBlockID == AAC_ID_LFE)) {
             if (aacDecInfo->currBlockID == AAC_ID_LFE)
                 elementChansSBR = elementNumChans[AAC_ID_LFE];

@@ -413,7 +413,7 @@ Int get_adif_header(
                     pVars,
                     pScratchPCE);
 
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
 
             /*
              *  For implicit signalling, no hint that sbr or ps is used, so we need to

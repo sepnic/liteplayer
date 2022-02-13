@@ -82,7 +82,7 @@ Copyright (c) ISO/IEC 2002.
 ; INCLUDES
 ----------------------------------------------------------------------------*/
 
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
 
 
 #include    "init_sbr_dec.h"
@@ -134,7 +134,7 @@ Int32 init_sbr_dec(Int32 codecSampleRate,
 {
     Int32 outFrameSize;
     Int32 coreCodecFrameSize = 1024;
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
     Int32 i;
 #endif
 
@@ -155,7 +155,7 @@ Int32 init_sbr_dec(Int32 codecSampleRate,
     hFrameData->prevEnvIsShort = -1;
 
     /* Initializes pointers */
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
     for (i = 0; i < 5; i++)
     {
         hFrameData->fBuf_man[i]  = hFrameData->fBuffer_man[i];

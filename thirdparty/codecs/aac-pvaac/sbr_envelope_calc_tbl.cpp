@@ -82,7 +82,7 @@ Copyright (c) ISO/IEC 2002.
 ; INCLUDES
 ----------------------------------------------------------------------------*/
 
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
 
 
 #include    "sbr_envelope_calc_tbl.h"
@@ -265,7 +265,7 @@ const Int16 rP_LCx[512] =
 };
 
 
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
 
 
 const Int32 fir_table[5][5] =

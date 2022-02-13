@@ -526,7 +526,7 @@ OSCL_EXPORT_REF Int PVMP4AudioDecodeFrame(
 
     Bool empty_frame;
 
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
 
     SBRDECODER_DATA *sbrDecoderData;
     SBR_DEC         *sbrDec;
@@ -547,14 +547,14 @@ OSCL_EXPORT_REF Int PVMP4AudioDecodeFrame(
     pChRightShare = pChVars[RIGHT]->pShareWfxpCoef;
 
 
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
 
     sbrDecoderData = (SBRDECODER_DATA *) & pVars->sbrDecoderData;
     sbrDec         = (SBR_DEC *) & pVars->sbrDec;
     sbrBitStream   = (SBRBITSTREAM *) & pVars->sbrBitStr;
 
-#ifdef PARAMETRICSTEREO
-    sbrDecoderData->hParametricStereoDec = (HANDLE_PS_DEC) & pVars->sbrDecoderData.ParametricStereoDec;
+#ifdef LITEPLAYER_CONFIG_PARAMETRICSTEREO
+    sbrDecoderData->hLITEPLAYER_CONFIG_PARAMETRICSTEREODec = (HANDLE_PS_DEC) & pVars->sbrDecoderData.LITEPLAYER_CONFIG_PARAMETRICSTEREODec;
 #endif
 
 #endif
@@ -665,7 +665,7 @@ OSCL_EXPORT_REF Int PVMP4AudioDecodeFrame(
         byte_align(&pVars->inputStream);
     }
 
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
     sbrBitStream->NrElements = 0;
     sbrBitStream->NrElementsCore = 0;
 
@@ -710,7 +710,7 @@ OSCL_EXPORT_REF Int PVMP4AudioDecodeFrame(
                         pVars,
                         pChVars);
 
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
                 if (id_syn_ele == ID_SCE)
                 {
                     sbrBitStream->sbrElement[sbrBitStream->NrElements].ElementID = SBR_ID_SCE;
@@ -748,7 +748,7 @@ OSCL_EXPORT_REF Int PVMP4AudioDecodeFrame(
                 break;
 
             case ID_FIL:        /* fill element */
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
                 get_sbr_bitstream(sbrBitStream, &pVars->inputStream);
 
 #else
@@ -778,7 +778,7 @@ OSCL_EXPORT_REF Int PVMP4AudioDecodeFrame(
      *   no AAC+/eAAC+ content. If so, disable upsampling
      */
 
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
     if (pVars->bno <= 1)
     {
         if ((pVars->mc_info.ExtendedAudioObjectType == MP4AUDIO_AAC_LC) &&
@@ -809,7 +809,7 @@ OSCL_EXPORT_REF Int PVMP4AudioDecodeFrame(
 
     }
 
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
 
     if (sbrBitStream->NrElements)
     {
@@ -1038,7 +1038,7 @@ OSCL_EXPORT_REF Int PVMP4AudioDecodeFrame(
              *  filterbank - converts frequency coeficients to time domain.
              */
 
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
             if (sbrBitStream->NrElements == 0 && pMC_Info->upsamplingFactor == 1)
             {
                 trans4m_freq_2_time_fxp_2(
@@ -1148,7 +1148,7 @@ OSCL_EXPORT_REF Int PVMP4AudioDecodeFrame(
          */
 
 
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
 
         if (sbrBitStream->NrElements || pMC_Info->upsamplingFactor == 2)
         {
@@ -1198,8 +1198,8 @@ OSCL_EXPORT_REF Int PVMP4AudioDecodeFrame(
         if (pExt->desiredChannels == 2)
         {
 
-#if defined(AAC_PLUS)
-#if defined(PARAMETRICSTEREO)&&defined(HQ_SBR)
+#if defined(LITEPLAYER_CONFIG_AAC_PLUS)
+#if defined(LITEPLAYER_CONFIG_PARAMETRICSTEREO)&&defined(LITEPLAYER_CONFIG_HQ_SBR)
             if (pMC_Info->nch != 2 && pMC_Info->psPresentFlag != 1)
 #else
             if (pMC_Info->nch != 2)
@@ -1244,8 +1244,8 @@ OSCL_EXPORT_REF Int PVMP4AudioDecodeFrame(
 
             }
 
-#if defined(AAC_PLUS)
-#if defined(PARAMETRICSTEREO)&&defined(HQ_SBR)
+#if defined(LITEPLAYER_CONFIG_AAC_PLUS)
+#if defined(LITEPLAYER_CONFIG_PARAMETRICSTEREO)&&defined(LITEPLAYER_CONFIG_HQ_SBR)
 
             else if (pMC_Info->psPresentFlag == 1)
             {
@@ -1282,8 +1282,8 @@ OSCL_EXPORT_REF Int PVMP4AudioDecodeFrame(
         else
         {
 
-#if defined(AAC_PLUS)
-#if defined(PARAMETRICSTEREO)&&defined(HQ_SBR)
+#if defined(LITEPLAYER_CONFIG_AAC_PLUS)
+#if defined(LITEPLAYER_CONFIG_PARAMETRICSTEREO)&&defined(LITEPLAYER_CONFIG_HQ_SBR)
             if (pMC_Info->nch != 2 && pMC_Info->psPresentFlag != 1)
 #else
             if (pMC_Info->nch != 2)
@@ -1339,7 +1339,7 @@ OSCL_EXPORT_REF Int PVMP4AudioDecodeFrame(
          *
          */
 
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
         if (sbrBitStream->NrElements == 0 && pMC_Info->upsamplingFactor == 1)
         {
             pVars->ltp_buffer_state ^= frameLength;
@@ -1367,7 +1367,7 @@ OSCL_EXPORT_REF Int PVMP4AudioDecodeFrame(
                                                       */
 
 
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
 
             if (pMC_Info->upsamplingFactor == 2)
             {

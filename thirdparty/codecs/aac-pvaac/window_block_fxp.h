@@ -171,7 +171,7 @@ extern "C"
     void trans4m_freq_2_time_fxp(
         Int32   Frequency_data[],
         Int32   Time_data[],
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
         Int32   Output_buffer[],
 #else
         Int16   Output_buffer[],

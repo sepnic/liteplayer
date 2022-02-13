@@ -61,7 +61,7 @@ extern const Int32 smoothLengths[2];
 
 extern const Int16 rP_LCx[512];
 
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
 
 
 extern const Int32 fir_table[5][5];

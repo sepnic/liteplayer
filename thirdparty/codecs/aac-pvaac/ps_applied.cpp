@@ -100,9 +100,9 @@ Copyright (c) ISO/IEC 2003.
 ; INCLUDES
 ----------------------------------------------------------------------------*/
 
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
 
-#ifdef PARAMETRICSTEREO
+#ifdef LITEPLAYER_CONFIG_PARAMETRICSTEREO
 #include    "aac_mem_funcs.h"
 #include    "ps_stereo_processing.h"
 #include    "ps_decorrelate.h"

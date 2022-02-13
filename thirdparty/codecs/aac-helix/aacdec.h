@@ -97,7 +97,7 @@ extern "C" {
 
 /* define these to enable decoder features */
 #if defined(HELIX_FEATURE_AUDIO_CODEC_AAC_SBR)
-#define ENABLE_DECODER_AAC_SBR
+#define LITEPLAYER_CONFIG_AAC_SBR
 #endif
 
 #define AAC_ENABLE_MPEG4

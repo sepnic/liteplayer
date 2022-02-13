@@ -72,7 +72,7 @@ extern "C"
     Int16   V[1280],
     bool bDownSampleSBR);
 
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
 
 
     void calc_sbr_synfilterbank(Int32 * Sr,

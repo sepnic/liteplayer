@@ -82,7 +82,7 @@ Copyright (c) ISO/IEC 2002.
 /*----------------------------------------------------------------------------
 ; INCLUDES
 ----------------------------------------------------------------------------*/
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
 
 
 
@@ -138,7 +138,7 @@ extern "C"
                                  Int32 sbrStartFreqOffset);
 
 
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
 
     void high_freq_coeff(Int32 sourceBufferReal[][32],
                          Int32 sourceBufferImag[][32],
@@ -266,7 +266,7 @@ void sbr_generate_high_freq(Int32 sourceBufferReal[][32],
                            v_k_master,
                            scratch_mem[4]);
     }
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
     else
     {
         /* Set subbands to zero  */
@@ -285,7 +285,7 @@ void sbr_generate_high_freq(Int32 sourceBufferReal[][32],
                         v_k_master);
 
     }
-#endif     /*  #ifdef HQ_SBR */
+#endif     /*  #ifdef LITEPLAYER_CONFIG_HQ_SBR */
 
 
 
@@ -432,7 +432,7 @@ void sbr_generate_high_freq(Int32 sourceBufferReal[][32],
                                     sbrStartFreqOffset);
 
         }
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
         else
         {
 
@@ -785,7 +785,7 @@ void high_freq_generation_LC(Int32 sourceBufferReal[][32],
 }
 
 
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
 
 /*----------------------------------------------------------------------------
 ; FUNCTION CODE

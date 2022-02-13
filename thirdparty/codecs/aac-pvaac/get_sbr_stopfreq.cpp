@@ -100,7 +100,7 @@ Copyright (c) ISO/IEC 2002.
 ; INCLUDES
 ----------------------------------------------------------------------------*/
 
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
 
 #include    "get_sbr_stopfreq.h"
 /*----------------------------------------------------------------------------

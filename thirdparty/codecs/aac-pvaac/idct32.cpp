@@ -55,7 +55,7 @@
 ; INCLUDES
 ----------------------------------------------------------------------------*/
 
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
 
 #include "idct32.h"
 #include "dst32.h"

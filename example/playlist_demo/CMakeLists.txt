@@ -16,7 +16,7 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D__amd64__")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -Wall -Werror")
 # cflags: if socketlen_t defined
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_SOCKLEN_T")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_HTTPCLIENT_MBEDTLS")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DSYSUTILS_HAVE_MBEDTLS_ENABLED")
 
 # include files
 include_directories(${TOP_DIR}/thirdparty/sysutils/include)

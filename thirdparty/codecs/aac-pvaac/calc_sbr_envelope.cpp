@@ -81,7 +81,7 @@ Copyright (c) ISO/IEC 2002.
 ; INCLUDES
 ----------------------------------------------------------------------------*/
 
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
 
 
 #include    "calc_sbr_envelope.h"
@@ -151,7 +151,7 @@ extern "C"
                               Int32 c,
                               Int32 ui2);
 
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
 
 
     void envelope_application(Int32  *aBufR,
@@ -228,7 +228,7 @@ void calc_sbr_envelope(SBR_FRAME_DATA *frameData,
                        Int32 *sUp,
                        Int32 limSbc[][13],
                        Int32 *gateMode,
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
                        Int32 *fBuf_man[64],
                        Int32 *fBuf_exp[64],
                        Int32 *fBufN_man[64],
@@ -313,7 +313,7 @@ void calc_sbr_envelope(SBR_FRAME_DATA *frameData,
 
     Int32 dontUseTheseGainValues[64];
 
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
 
     Int32 n;
     Int32 smooth_length;
@@ -376,7 +376,7 @@ void calc_sbr_envelope(SBR_FRAME_DATA *frameData,
 
         noNoiseFlag = (i == sEnv || i == frameData->prevEnvIsShort) ? 1 : 0;
 
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
         smooth_length = (noNoiseFlag ? 0 : smoothLengths[smoothingLength]);
 #endif
 
@@ -410,7 +410,7 @@ void calc_sbr_envelope(SBR_FRAME_DATA *frameData,
                                          c,
                                          ui2);
                 }
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
                 else
                 {
 
@@ -979,7 +979,7 @@ void calc_sbr_envelope(SBR_FRAME_DATA *frameData,
                                     noSubbands,
                                     noNoiseFlag);
         }
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
         else
         {
 
@@ -1569,7 +1569,7 @@ void energy_estimation_LC(Int32 *aBufR,
 
 
 
-#if HQ_SBR
+#if LITEPLAYER_CONFIG_HQ_SBR
 
 /*----------------------------------------------------------------------------
 ; FUNCTION CODE

@@ -56,7 +56,7 @@ LOCAL_C_INCLUDES += \
     ${TOP_DIR}/thirdparty/codecs/mp3-pvmp3/src \
     ${TOP_DIR}/thirdparty/codecs/aac-pvaac
 LOCAL_CFLAGS += -DOS_ANDROID
-LOCAL_CFLAGS += -DCONFIG_SINK_FIXED_S16LE
+LOCAL_CFLAGS += -DLITEPLAYER_CONFIG_SINK_FIXED_S16LE
 LOCAL_CFLAGS += -Wall -Werror
 LOCAL_CFLAGS += -Wno-error=unused-value -Wno-error=narrowing
 LOCAL_CFLAGS += -Wno-error=implicit-const-int-float-conversion
@@ -83,7 +83,7 @@ LOCAL_C_INCLUDES += \
     ${TOP_DIR}/adapter \
     ${TOP_DIR}/thirdparty/sysutils/include \
     ${TOP_DIR}/thirdparty/mbedtls/include
-LOCAL_CFLAGS += -DOS_ANDROID -D_SOCKLEN_T -DENABLE_HTTPCLIENT_MBEDTLS
+LOCAL_CFLAGS += -DOS_ANDROID -D_SOCKLEN_T -DSYSUTILS_HAVE_MBEDTLS_ENABLED
 LOCAL_CFLAGS += -Wall -Werror
 LOCAL_CFLAGS += -Wno-error=inline-asm
 LOCAL_CFLAGS += -Wno-error=implicit-const-int-float-conversion

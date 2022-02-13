@@ -197,7 +197,7 @@ static int drwav_run(wav_decoder_handle_t decoder)
             audio_element_info_t info = {0};
             info.samplerate = decoder->drwav.sampleRate;
             info.channels   = decoder->drwav.channels;
-#if defined(CONFIG_SINK_FIXED_S16LE)
+#if defined(LITEPLAYER_CONFIG_SINK_FIXED_S16LE)
             info.bits       = 16;
 #else
             switch (decoder->drwav.bitsPerSample) {
@@ -240,7 +240,7 @@ static int drwav_run(wav_decoder_handle_t decoder)
     drwav_uint64 in_frames = (decoder->prefered_frames > in->bytes_read/decoder->block_align) ?
                              in->bytes_read/decoder->block_align : decoder->prefered_frames;
     drwav_uint64 out_frames;
-#if defined(CONFIG_SINK_FIXED_S16LE)
+#if defined(LITEPLAYER_CONFIG_SINK_FIXED_S16LE)
     drwav_int16 *out = (drwav_int16 *)(decoder->buf_out.data);
     out_frames = drwav_read_pcm_frames_s16le(&decoder->drwav, in_frames, out);
 #else

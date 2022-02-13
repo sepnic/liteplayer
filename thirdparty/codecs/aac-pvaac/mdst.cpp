@@ -55,7 +55,7 @@
 ; INCLUDES
 ----------------------------------------------------------------------------*/
 
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
 
 #include "pv_audio_type_defs.h"
 #include "synthesis_sub_band.h"
@@ -63,7 +63,7 @@
 #include "dct64.h"
 #include "mdst.h"
 
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
 
 
 /*----------------------------------------------------------------------------
@@ -270,7 +270,7 @@ void mdct_32(Int32 vec[])
 
 }
 
-#endif /*  HQ_SBR  */
+#endif /*  LITEPLAYER_CONFIG_HQ_SBR  */
 
 
 /*----------------------------------------------------------------------------
@@ -289,6 +289,6 @@ void dct_32(Int32 vec[])
     pv_merge_in_place_N32(vec);
 }
 
-#endif  /* AAC_PLUS */
+#endif  /* LITEPLAYER_CONFIG_AAC_PLUS */
 
 

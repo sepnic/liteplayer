@@ -303,7 +303,7 @@ typedef struct _PSInfoBase {
 
     int                   gbCurrent[MAX_NCHANS_ELEM];
     int                   coef[MAX_NCHANS_ELEM][AAC_MAX_NSAMPS];
-#ifdef ENABLE_DECODER_AAC_SBR
+#ifdef LITEPLAYER_CONFIG_AAC_SBR
     int                   sbrWorkBuf[MAX_NCHANS_ELEM][AAC_MAX_NSAMPS];
 #endif
     /* state information which must be saved for each element and used in next frame */

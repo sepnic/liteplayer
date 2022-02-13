@@ -75,7 +75,7 @@ struct ACORR_COEFS
     Int32  r02r;
     Int32  r12r;
     Int32  r22r;
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
     Int32  r01i;
     Int32  r02i;
     Int32  r12i;
@@ -99,7 +99,7 @@ extern "C"
     Int32  len);
 
 
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
 
     void calc_auto_corr(struct ACORR_COEFS *ac,
                         Int32  realBuf[][32],

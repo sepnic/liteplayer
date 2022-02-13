@@ -36,7 +36,7 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifdef CONFIG_SPEEXDSP_FIXED_POINT
+#ifdef LITEPLAYER_CONFIG_SPEEXDSP_FIXED_POINT
 #if defined(__aarch64__)
 static inline int32_t saturate_32bit_to_16bit(int32_t a) {
     int32_t ret;
@@ -188,7 +188,7 @@ static inline int32_t inner_product_single(const int16_t *a, const int16_t *b, u
 }
 #endif  // !defined(__aarch64__)
 
-#elif defined(CONFIG_SPEEXDSP_FLOATING_POINT)
+#elif defined(LITEPLAYER_CONFIG_SPEEXDSP_FLOATING_POINT)
 #if defined(__aarch64__)
 static inline int32_t saturate_float_to_16bit(float a) {
     int32_t ret;

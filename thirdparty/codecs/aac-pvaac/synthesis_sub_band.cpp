@@ -57,7 +57,7 @@
 ; INCLUDES
 ----------------------------------------------------------------------------*/
 
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
 
 
 #include "pv_audio_type_defs.h"
@@ -338,7 +338,7 @@ void synthesis_sub_band_LC_down_sampled(Int32 Sr[], Int16 data[])
 }
 
 
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
 
 void synthesis_sub_band(Int32 Sr[], Int32 Si[], Int16 data[])
 {
@@ -476,8 +476,8 @@ void synthesis_sub_band_down_sampled(Int32 Sr[], Int32 Si[], Int16 data[])
 }
 
 
-#endif      /* HQ_SBR */
+#endif      /* LITEPLAYER_CONFIG_HQ_SBR */
 
-#endif      /*  AAC_PLUS */
+#endif      /*  LITEPLAYER_CONFIG_AAC_PLUS */
 
 

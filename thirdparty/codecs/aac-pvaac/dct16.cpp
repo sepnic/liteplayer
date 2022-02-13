@@ -55,7 +55,7 @@
 ; INCLUDES
 ----------------------------------------------------------------------------*/
 
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
 
 #include "dct16.h"
 #include "fxp_mul32.h"

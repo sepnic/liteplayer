@@ -71,7 +71,7 @@ static inline float interpolate_product_single(const float *a, const float *b, u
    return ret;
 }
 
-#ifdef CONFIG_SPEEXDSP_USE_SSE2
+#ifdef LITEPLAYER_CONFIG_SPEEXDSP_USE_SSE2
 #include <emmintrin.h>
 #define OVERRIDE_INNER_PRODUCT_DOUBLE
 

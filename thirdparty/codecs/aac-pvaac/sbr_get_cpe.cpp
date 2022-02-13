@@ -87,7 +87,7 @@ Copyright (c) ISO/IEC 2002.
 ; INCLUDES
 ----------------------------------------------------------------------------*/
 
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
 
 
 #include    "sbr_get_cpe.h"
@@ -252,7 +252,7 @@ SBR_ERROR sbr_get_cpe(SBR_FRAME_DATA * hFrameDataLeft,
     sbr_get_additional_data(hFrameDataRight, hBitBuf);
 
     sbr_extract_extended_data(hBitBuf
-#ifdef PARAMETRICSTEREO
+#ifdef LITEPLAYER_CONFIG_PARAMETRICSTEREO
                               , NULL
 #endif
                              );

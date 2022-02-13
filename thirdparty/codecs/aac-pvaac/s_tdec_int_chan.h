@@ -147,7 +147,7 @@ extern "C"
      */
     typedef struct
     {
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
         Int16                ltp_buffer[LT_BLEN + 2*288]; /* LT_BLEN  = 2048 + 2*288 */
 #else
         Int16                ltp_buffer[LT_BLEN]; /* LT_BLEN  = 2048 */

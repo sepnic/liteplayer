@@ -62,7 +62,7 @@ extern "C"
                      Int32 *temp_o);
 
 
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
 
     void dct_64(Int32 vec[], Int32 *scratch_mem);
 

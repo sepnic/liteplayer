@@ -117,7 +117,7 @@ Copyright (c) ISO/IEC 2002.
 ; INCLUDES
 ----------------------------------------------------------------------------*/
 
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
 
 
 #include    "qmf_filterbank_coeff.h"
@@ -273,7 +273,7 @@ const Int32 sbrDecoderFilterbankCoefficients_an_filt_LC[155] =
 
 
 
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
 
 
 const Int32 sbrDecoderFilterbankCoefficients_an_filt[155] =
@@ -313,7 +313,7 @@ const Int32 sbrDecoderFilterbankCoefficients_an_filt[155] =
 
 
 
-#endif  /* HQ_SBR */
+#endif  /* LITEPLAYER_CONFIG_HQ_SBR */
 
 
-#endif  /* AAC_PLUS */
+#endif  /* LITEPLAYER_CONFIG_AAC_PLUS */

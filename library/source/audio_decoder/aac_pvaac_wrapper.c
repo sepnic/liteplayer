@@ -119,7 +119,7 @@ int aac_wrapper_init(aac_decoder_handle_t decoder)
     }
 
     wrap->pvaac_config.outputFormat = OUTPUTFORMAT_16PCM_INTERLEAVED;
-#if defined(AAC_PLUS)
+#if defined(LITEPLAYER_CONFIG_AAC_PLUS)
     wrap->pvaac_config.aacPlusEnabled = 1;
 #endif
     // The software decoder doesn't properly support mono output on
@@ -242,7 +242,7 @@ int m4a_wrapper_init(m4a_decoder_handle_t decoder)
     }
 
     wrap->pvaac_config.outputFormat = OUTPUTFORMAT_16PCM_INTERLEAVED;
-#if defined(AAC_PLUS)
+#if defined(LITEPLAYER_CONFIG_AAC_PLUS)
     wrap->pvaac_config.aacPlusEnabled = 1;
 #endif
     // The software decoder doesn't properly support mono output on

@@ -89,13 +89,13 @@ Copyright (c) ISO/IEC 2002.
 ; INCLUDES
 ----------------------------------------------------------------------------*/
 
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
 
 
 #include    "sbr_extract_extended_data.h"
 #include    "buf_getbits.h"
 
-#ifdef PARAMETRICSTEREO
+#ifdef LITEPLAYER_CONFIG_PARAMETRICSTEREO
 #include    "ps_read_data.h"
 #endif
 
@@ -136,8 +136,8 @@ Copyright (c) ISO/IEC 2002.
 ----------------------------------------------------------------------------*/
 
 void sbr_extract_extended_data(BIT_BUFFER * hBitBuf
-#ifdef PARAMETRICSTEREO         /* Parametric Stereo Decoder */
-                               , HANDLE_PS_DEC hParametricStereoDec
+#ifdef LITEPLAYER_CONFIG_PARAMETRICSTEREO         /* Parametric Stereo Decoder */
+                               , HANDLE_PS_DEC hLITEPLAYER_CONFIG_PARAMETRICSTEREODec
 #endif
                               )
 {
@@ -166,8 +166,8 @@ void sbr_extract_extended_data(BIT_BUFFER * hBitBuf
 
             switch (extension_id)
             {
-#ifdef HQ_SBR
-#ifdef PARAMETRICSTEREO
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
+#ifdef LITEPLAYER_CONFIG_PARAMETRICSTEREO
 
                     /*
                      *  Parametric Coding supports the Transient, Sinusoidal, Noise, and
@@ -178,15 +178,15 @@ void sbr_extract_extended_data(BIT_BUFFER * hBitBuf
                      */
                 case EXTENSION_ID_PS_CODING:
 
-                    if (hParametricStereoDec != NULL)
+                    if (hLITEPLAYER_CONFIG_PARAMETRICSTEREODec != NULL)
                     {
-                        if (!hParametricStereoDec->psDetected)
+                        if (!hLITEPLAYER_CONFIG_PARAMETRICSTEREODec->psDetected)
                         {
                             /* parametric stereo detected */
-                            hParametricStereoDec->psDetected = 1;
+                            hLITEPLAYER_CONFIG_PARAMETRICSTEREODec->psDetected = 1;
                         }
 
-                        nBitsLeft -= ps_read_data(hParametricStereoDec,
+                        nBitsLeft -= ps_read_data(hLITEPLAYER_CONFIG_PARAMETRICSTEREODec,
                                                   hBitBuf,
                                                   nBitsLeft);
 

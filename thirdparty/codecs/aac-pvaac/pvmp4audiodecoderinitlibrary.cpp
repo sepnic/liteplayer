@@ -321,7 +321,7 @@ OSCL_EXPORT_REF Int PVMP4AudioDecoderInitLibrary(
     pVars->aacPlusEnabled = pExt->aacPlusEnabled;
 
 
-#if defined(AAC_PLUS)
+#if defined(LITEPLAYER_CONFIG_AAC_PLUS)
     pVars->sbrDecoderData.setStreamType = 1;        /* Enable Lock for AAC stream type setting  */
 #endif
 
@@ -399,7 +399,7 @@ OSCL_EXPORT_REF void PVMP4AudioDecoderDisableAacPlus(
         pVars->aacPlusEnabled = false;
         pExt->aacPlusEnabled = false;
 
-#if defined(AAC_PLUS)
+#if defined(LITEPLAYER_CONFIG_AAC_PLUS)
         pVars->mc_info.upsamplingFactor = 1;
         pVars->mc_info.psPresentFlag  = 0;
         pVars->mc_info.sbrPresentFlag = 0;

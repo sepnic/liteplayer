@@ -83,9 +83,9 @@ Copyright (c) ISO/IEC 2003.
 ; INCLUDES
 ----------------------------------------------------------------------------*/
 
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
 
-#ifdef PARAMETRICSTEREO
+#ifdef LITEPLAYER_CONFIG_PARAMETRICSTEREO
 #include    "aac_mem_funcs.h"
 #include    "ps_hybrid_filter_bank_allocation.h"
 #include    "ps_all_pass_filter_coeff.h"

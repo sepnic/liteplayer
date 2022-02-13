@@ -92,7 +92,7 @@ Copyright (c) ISO/IEC 2002.
 /*----------------------------------------------------------------------------
 ; INCLUDES
 ----------------------------------------------------------------------------*/
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
 
 
 #include    "sbr_applied.h"
@@ -106,7 +106,7 @@ Copyright (c) ISO/IEC 2002.
 #include    "e_sbr_element_id.h"
 #include    "aac_mem_funcs.h"
 
-#ifdef PARAMETRICSTEREO
+#ifdef LITEPLAYER_CONFIG_PARAMETRICSTEREO
 #include    "ps_bstr_decoding.h"
 #include    "ps_allocate_decoder.h"
 
@@ -196,10 +196,10 @@ SBR_ERROR  sbr_applied(SBRDECODER_DATA * self,
         {
             self->setStreamType = 0;  /* Disable Lock for AAC stream type setting  */
 
-#ifdef HQ_SBR
-#ifdef PARAMETRICSTEREO
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
+#ifdef LITEPLAYER_CONFIG_PARAMETRICSTEREO
 
-            Int sbrEnablePS = self->hParametricStereoDec->psDetected;
+            Int sbrEnablePS = self->hLITEPLAYER_CONFIG_PARAMETRICSTEREODec->psDetected;
 
             pVars->mc_info.psPresentFlag  = sbrEnablePS;
 
@@ -271,7 +271,7 @@ SBR_ERROR  sbr_applied(SBRDECODER_DATA * self,
                 pVars->mc_info.ExtendedAudioObjectType = MP4AUDIO_SBR;
             }
 
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
             if (pVars->mc_info.nch > 1)
             {
                 sbrDec->LC_aacP_DecoderFlag = ON;    /* Enable LC for stereo */
@@ -348,14 +348,14 @@ SBR_ERROR  sbr_applied(SBRDECODER_DATA * self,
     }
 
 
-#ifdef HQ_SBR
-#ifdef PARAMETRICSTEREO
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
+#ifdef LITEPLAYER_CONFIG_PARAMETRICSTEREO
     if (pVars->mc_info.ExtendedAudioObjectType == MP4AUDIO_PS)
     {
-        ps_bstr_decoding(self->hParametricStereoDec);
+        ps_bstr_decoding(self->hLITEPLAYER_CONFIG_PARAMETRICSTEREODec);
         /* allocate pointer for rigth channel qmf filter history  */
         Int16 *tempInt16Ptr = (Int16 *)SbrChannel[RIGHT].frameData.V;
-        self->hParametricStereoDec->R_ch_qmf_filter_history = (Int32 *)tempInt16Ptr;
+        self->hLITEPLAYER_CONFIG_PARAMETRICSTEREODec->R_ch_qmf_filter_history = (Int32 *)tempInt16Ptr;
 
 
         /*
@@ -372,7 +372,7 @@ SBR_ERROR  sbr_applied(SBRDECODER_DATA * self,
                 (SbrChannel[LEFT].syncState == SBR_ACTIVE),
                 sbrDec,
                 &timeData[RIGHT],
-                self->hParametricStereoDec,
+                self->hLITEPLAYER_CONFIG_PARAMETRICSTEREODec,
                 pVars);
     }
     else
@@ -381,7 +381,7 @@ SBR_ERROR  sbr_applied(SBRDECODER_DATA * self,
 #endif
 
         SbrChannel[LEFT].frameData.sbrQmfBufferReal = pVars->fxpCoef[LEFT];
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
         SbrChannel[LEFT].frameData.sbrQmfBufferImag = pVars->fxpCoef[RIGHT];
 #endif
 
@@ -390,8 +390,8 @@ SBR_ERROR  sbr_applied(SBRDECODER_DATA * self,
                 &(SbrChannel[LEFT].frameData),
                 (SbrChannel[LEFT].syncState == SBR_ACTIVE),
                 sbrDec,
-#ifdef HQ_SBR
-#ifdef PARAMETRICSTEREO
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
+#ifdef LITEPLAYER_CONFIG_PARAMETRICSTEREO
                 NULL,
                 NULL,
 #endif
@@ -401,7 +401,7 @@ SBR_ERROR  sbr_applied(SBRDECODER_DATA * self,
         if (numChannels == 2)
         {
             SbrChannel[RIGHT].frameData.sbrQmfBufferReal = pVars->fxpCoef[LEFT];
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
             SbrChannel[RIGHT].frameData.sbrQmfBufferImag = pVars->fxpCoef[RIGHT];
 #endif
 
@@ -410,8 +410,8 @@ SBR_ERROR  sbr_applied(SBRDECODER_DATA * self,
                     &(SbrChannel[RIGHT].frameData),
                     (SbrChannel[RIGHT].syncState == SBR_ACTIVE),
                     sbrDec,
-#ifdef HQ_SBR
-#ifdef PARAMETRICSTEREO
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
+#ifdef LITEPLAYER_CONFIG_PARAMETRICSTEREO
                     NULL,
                     NULL,
 #endif
@@ -421,8 +421,8 @@ SBR_ERROR  sbr_applied(SBRDECODER_DATA * self,
         }
 
 
-#ifdef HQ_SBR
-#ifdef PARAMETRICSTEREO
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
+#ifdef LITEPLAYER_CONFIG_PARAMETRICSTEREO
     }
 #endif
 #endif

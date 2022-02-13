@@ -42,7 +42,7 @@
 #include    "s_sbr_frame_data.h"
 #include    "e_sbr_error.h"
 
-#ifdef PARAMETRICSTEREO
+#ifdef LITEPLAYER_CONFIG_PARAMETRICSTEREO
 #include    "s_ps_dec.h"
 #endif
 
@@ -85,8 +85,8 @@ extern "C"
 
     SBR_ERROR sbr_get_sce(SBR_FRAME_DATA * hFrameData,
     BIT_BUFFER * hBitBuf
-#ifdef PARAMETRICSTEREO
-    , HANDLE_PS_DEC hParametricStereoDec
+#ifdef LITEPLAYER_CONFIG_PARAMETRICSTEREO
+    , HANDLE_PS_DEC hLITEPLAYER_CONFIG_PARAMETRICSTEREODec
 #endif
                          );
 

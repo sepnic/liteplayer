@@ -461,7 +461,7 @@ Int get_audio_specific_config(tDec_Int_File   * const pVars)
                             pInputStream);
                     if (pVars->aacPlusEnabled == true)
                     {
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
                         pVars->mc_info.upsamplingFactor = (samp_rate_info[extensionSamplingFrequencyIndex].samp_rate >> 1) ==
                                                           samp_rate_info[pVars->prog_config.sampling_rate_idx].samp_rate ? 2 : 1;
 
@@ -524,7 +524,7 @@ Int get_audio_specific_config(tDec_Int_File   * const pVars)
              */
             pVars->inputStream.usedBits -= LEN_SYNC_EXTENSION_TYPE;
 
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
 
             /*
              *  For implicit signalling, no hint that sbr or ps is used, so we need to
@@ -552,7 +552,7 @@ Int get_audio_specific_config(tDec_Int_File   * const pVars)
          */
         if (pVars->aacPlusEnabled == true)
         {
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
             pVars->mc_info.upsamplingFactor = (samp_rate_info[extensionSamplingFrequencyIndex].samp_rate >> 1) ==
                                               samp_rate_info[pVars->prog_config.sampling_rate_idx].samp_rate ? 2 : 1;
 

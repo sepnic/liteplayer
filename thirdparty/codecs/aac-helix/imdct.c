@@ -48,7 +48,7 @@
 
 #define RND_VAL     (1 << (FBITS_OUT_IMDCT-1))
 
-#ifndef ENABLE_DECODER_AAC_SBR
+#ifndef LITEPLAYER_CONFIG_AAC_SBR
 
 /**************************************************************************************
  * Function:    DecWindowOverlap
@@ -495,7 +495,7 @@
     } while (i);
 }
 
-#endif  /* !ENABLE_DECODER_AAC_SBR */
+#endif  /* !LITEPLAYER_CONFIG_AAC_SBR */
 
 /**************************************************************************************
  * Function:    IMDCT
@@ -510,9 +510,9 @@
  *
  * Return:      0 if successful, -1 if error
  *
- * Notes:       If ENABLE_DECODER_AAC_SBR is defined at compile time then window + overlap 
+ * Notes:       If LITEPLAYER_CONFIG_AAC_SBR is defined at compile time then window + overlap 
  *                does NOT clip to 16-bit PCM and does NOT interleave channels
- *              If ENABLE_DECODER_AAC_SBR is NOT defined at compile time, then window + overlap 
+ *              If LITEPLAYER_CONFIG_AAC_SBR is NOT defined at compile time, then window + overlap 
  *                does clip to 16-bit PCM and interleaves channels
  *              If SBR is enabled at compile time, but we don't know whether it is
  *                actually used for this frame (e.g. the first frame of a stream),
@@ -544,7 +544,7 @@ int IMDCT(AACDecInfo *aacDecInfo, int ch, int chOut, short *outbuf)
         DCT4(1, psi->coef[ch], psi->gbCurrent[ch]);
     }
 
-#ifdef ENABLE_DECODER_AAC_SBR
+#ifdef LITEPLAYER_CONFIG_AAC_SBR
     /* window, overlap-add, don't clip to short (send to SBR decoder) 
      * store the decoded 32-bit samples in top half (second AAC_MAX_NSAMPS samples) of coef buffer
      */

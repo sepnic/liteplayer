@@ -55,7 +55,7 @@
 ; INCLUDES
 ----------------------------------------------------------------------------*/
 
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
 
 #include "dst16.h"
 #include "dst8.h"

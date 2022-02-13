@@ -90,7 +90,7 @@ typedef struct
 
     Int implicit_channeling;
     Int  upsamplingFactor;
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
     bool bDownSampledSbr;
     Int HE_AAC_level;
 #endif

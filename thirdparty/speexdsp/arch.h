@@ -36,12 +36,12 @@
 #define ARCH_H
 
 /* A couple test to catch stupid option combinations */
-#ifdef CONFIG_SPEEXDSP_FIXED_POINT
+#ifdef LITEPLAYER_CONFIG_SPEEXDSP_FIXED_POINT
 
-#ifdef CONFIG_SPEEXDSP_FLOATING_POINT
+#ifdef LITEPLAYER_CONFIG_SPEEXDSP_FLOATING_POINT
 #error You cannot compile as floating point and fixed point at the same time
 #endif
-#ifdef CONFIG_SPEEXDSP_USE_SSE
+#ifdef LITEPLAYER_CONFIG_SPEEXDSP_USE_SSE
 #error SSE is only for floating-point
 #endif
 #if ((defined (ARM4_ASM)||defined (ARM4_ASM)) && defined(BFIN_ASM)) || (defined (ARM4_ASM)&&defined(ARM5E_ASM))
@@ -53,8 +53,8 @@
 
 #else
 
-#ifndef CONFIG_SPEEXDSP_FLOATING_POINT
-#error You now need to define either CONFIG_SPEEXDSP_FIXED_POINT or CONFIG_SPEEXDSP_FLOATING_POINT
+#ifndef LITEPLAYER_CONFIG_SPEEXDSP_FLOATING_POINT
+#error You now need to define either LITEPLAYER_CONFIG_SPEEXDSP_FIXED_POINT or LITEPLAYER_CONFIG_SPEEXDSP_FLOATING_POINT
 #endif
 #if defined (ARM4_ASM) || defined(ARM5E_ASM) || defined(BFIN_ASM)
 #error I suppose you can have a [ARM4/ARM5E/Blackfin] that has float instructions?
@@ -78,7 +78,7 @@
 #define MIN32(a,b) ((a) < (b) ? (a) : (b))   /**< Maximum 32-bit value.   */
 #define MAX32(a,b) ((a) > (b) ? (a) : (b))   /**< Maximum 32-bit value.   */
 
-#ifdef CONFIG_SPEEXDSP_FIXED_POINT
+#ifdef LITEPLAYER_CONFIG_SPEEXDSP_FIXED_POINT
 
 typedef spx_int16_t spx_word16_t;
 typedef spx_int32_t spx_word32_t;

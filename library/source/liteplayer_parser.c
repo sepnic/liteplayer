@@ -257,7 +257,7 @@ static int media_parser_extract(struct media_parser_priv *priv)
         if (m4a_extractor(media_parser_fetch, priv, &(codec->detail.m4a_info)) == 0) {
             codec->content_pos = codec->detail.m4a_info.mdat_offset;
             codec->content_len = priv->source.source_ops->content_len(priv->source.source_handle);
-        #if defined(ENABLE_DECODER_AAC_SBR)
+        #if defined(LITEPLAYER_CONFIG_AAC_SBR)
             codec->codec_samplerate = codec->detail.m4a_info.samplerate;
             codec->codec_channels = codec->detail.m4a_info.channels;
         #else

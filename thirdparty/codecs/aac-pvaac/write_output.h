@@ -87,7 +87,7 @@ extern "C"
     ; Function Prototype declaration
     ----------------------------------------------------------------------------*/
 
-#ifndef AAC_PLUS
+#ifndef LITEPLAYER_CONFIG_AAC_PLUS
 
     Int write_output(
         const Int16   sourceLeft[],
@@ -107,7 +107,7 @@ extern "C"
         const Int     sourcePointsPerChannel,
         const Int     sourceChannels,
         const Int     requestedChannels,
-#ifdef PARAMETRICSTEREO
+#ifdef LITEPLAYER_CONFIG_PARAMETRICSTEREO
         Int32 sbrEnablePS,
 #endif
         const tPVMP4AudioDecoderOutputFormat  outputFormat);

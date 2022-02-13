@@ -83,7 +83,7 @@ Copyright (c) ISO/IEC 2002.
 ; INCLUDES
 ----------------------------------------------------------------------------*/
 
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
 
 
 #include    "calc_sbr_anafilterbank.h"
@@ -265,7 +265,7 @@ void calc_sbr_anafilterbank_LC(Int32 * Sr,
 
 
 
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
 
 void calc_sbr_anafilterbank(Int32 * Sr,
                             Int32 * Si,
@@ -356,5 +356,5 @@ void calc_sbr_anafilterbank(Int32 * Sr,
 
 
 
-#endif   /*  AAC_PLUS */
+#endif   /*  LITEPLAYER_CONFIG_AAC_PLUS */
 

@@ -82,7 +82,7 @@ Copyright (c) ISO/IEC 2002.
 /*----------------------------------------------------------------------------
 ; INCLUDES
 ----------------------------------------------------------------------------*/
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
 
 
 #include    "s_sbr_frame_data.h"
@@ -123,7 +123,7 @@ Copyright (c) ISO/IEC 2002.
 ----------------------------------------------------------------------------*/
 #include "pv_audio_type_defs.h"
 
-#ifdef PARAMETRICSTEREO
+#ifdef LITEPLAYER_CONFIG_PARAMETRICSTEREO
 
 #include   "ps_applied.h"
 #include   "ps_init_stereo_mixing.h"
@@ -144,10 +144,10 @@ void sbr_dec(Int16 *inPcmData,
              SBR_FRAME_DATA * hFrameData,
              int32_t applyProcessing,
              SBR_DEC *sbrDec,
-#ifdef HQ_SBR
-#ifdef PARAMETRICSTEREO
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
+#ifdef LITEPLAYER_CONFIG_PARAMETRICSTEREO
              Int16 * ftimeOutPtrPS,
-             HANDLE_PS_DEC hParametricStereoDec,
+             HANDLE_PS_DEC hLITEPLAYER_CONFIG_PARAMETRICSTEREODec,
 #endif
 #endif
              tDec_Int_File  *pVars)
@@ -159,8 +159,8 @@ void sbr_dec(Int16 *inPcmData,
     int32_t  *frameInfo = hFrameData->frameInfo;
     Int  num_qmf_bands;
 
-#ifdef HQ_SBR
-#ifdef PARAMETRICSTEREO
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
+#ifdef LITEPLAYER_CONFIG_PARAMETRICSTEREO
 
     int32_t env;
 
@@ -201,7 +201,7 @@ void sbr_dec(Int16 *inPcmData,
     pv_memmove(&hFrameData->sbrQmfBufferReal[0],
                &hFrameData->HistsbrQmfBufferReal[0],
                6*SBR_NUM_BANDS*sizeof(*hFrameData->sbrQmfBufferReal));
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
 
 
     if (sbrDec->LC_aacP_DecoderFlag == OFF)
@@ -230,7 +230,7 @@ void sbr_dec(Int16 *inPcmData,
                                       num_qmf_bands);
 
         }
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
         else
         {
 
@@ -305,7 +305,7 @@ void sbr_dec(Int16 *inPcmData,
                               &(hFrameData->sUp),
                               sbrDec->limSbc,
                               sbrDec->gateMode,
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
                               NULL,
                               NULL,
                               NULL,
@@ -316,7 +316,7 @@ void sbr_dec(Int16 *inPcmData,
                               sbrDec->sqrt_cache,
                               sbrDec->LC_aacP_DecoderFlag);
         }
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
         else
         {
 
@@ -384,7 +384,7 @@ void sbr_dec(Int16 *inPcmData,
                       0,
                       SBR_NUM_BANDS*sizeof(*hFrameData->sbrQmfBufferReal));
 
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
             pv_memset((void *)&hFrameData->sbrQmfBufferImag[i*SBR_NUM_BANDS],
                       0,
                       SBR_NUM_BANDS*sizeof(*hFrameData->sbrQmfBufferImag));
@@ -399,17 +399,17 @@ void sbr_dec(Int16 *inPcmData,
      *  Synthesis subband filtering.
      */
 
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
 
-#ifdef PARAMETRICSTEREO
+#ifdef LITEPLAYER_CONFIG_PARAMETRICSTEREO
 
 
     /*
-     * psPresentFlag set implies hParametricStereoDec !=NULL, second condition is
+     * psPresentFlag set implies hLITEPLAYER_CONFIG_PARAMETRICSTEREODec !=NULL, second condition is
      * is just here to prevent CodeSonar warnings.
      */
     if ((pVars->mc_info.psPresentFlag) && (applyProcessing) &&
-            (hParametricStereoDec != NULL))
+            (hLITEPLAYER_CONFIG_PARAMETRICSTEREODec != NULL))
     {
 
         /*
@@ -427,10 +427,10 @@ void sbr_dec(Int16 *inPcmData,
          *  breaking strict-aliasing rules
          */
         int32_t *tmp = (int32_t *)tmpx;
-        hParametricStereoDec->qmfBufferReal = (int32_t(*)[64]) tmp;
+        hLITEPLAYER_CONFIG_PARAMETRICSTEREODec->qmfBufferReal = (int32_t(*)[64]) tmp;
 
-        tmp = (int32_t *) & hParametricStereoDec->qmfBufferReal[38][0];
-        hParametricStereoDec->qmfBufferImag = (int32_t(*)[64]) tmp;
+        tmp = (int32_t *) & hLITEPLAYER_CONFIG_PARAMETRICSTEREODec->qmfBufferReal[38][0];
+        hLITEPLAYER_CONFIG_PARAMETRICSTEREODec->qmfBufferImag = (int32_t(*)[64]) tmp;
 
         for (i = 0; i < 32; i++)
         {
@@ -452,8 +452,8 @@ void sbr_dec(Int16 *inPcmData,
 
             m = sbrDec->bufReadOffs + i;    /*  2 + i */
 
-            Sr_x = hParametricStereoDec->qmfBufferReal[i];
-            Si_x = hParametricStereoDec->qmfBufferImag[i];
+            Sr_x = hLITEPLAYER_CONFIG_PARAMETRICSTEREODec->qmfBufferReal[i];
+            Si_x = hLITEPLAYER_CONFIG_PARAMETRICSTEREODec->qmfBufferImag[i];
 
 
 
@@ -491,8 +491,8 @@ void sbr_dec(Int16 *inPcmData,
 
             for (int32_t j = 0; j < 5; j++)
             {
-                hParametricStereoDec->qmfBufferReal[i][j] = shft_lft_1(hFrameData->codecQmfBufferReal[m][j]);
-                hParametricStereoDec->qmfBufferImag[i][j] = shft_lft_1(hFrameData->codecQmfBufferImag[m][j]);
+                hLITEPLAYER_CONFIG_PARAMETRICSTEREODec->qmfBufferReal[i][j] = shft_lft_1(hFrameData->codecQmfBufferReal[m][j]);
+                hLITEPLAYER_CONFIG_PARAMETRICSTEREODec->qmfBufferImag[i][j] = shft_lft_1(hFrameData->codecQmfBufferImag[m][j]);
             }
 
         }
@@ -562,35 +562,35 @@ void sbr_dec(Int16 *inPcmData,
         {
 
             pv_memmove(&scratch_mem[2][32 + j     ],
-                       hParametricStereoDec->hHybrid->mQmfBufferReal[i],
-                       HYBRID_FILTER_LENGTH_m_1*sizeof(*hParametricStereoDec->hHybrid->mQmfBufferReal));
+                       hLITEPLAYER_CONFIG_PARAMETRICSTEREODec->hHybrid->mQmfBufferReal[i],
+                       HYBRID_FILTER_LENGTH_m_1*sizeof(*hLITEPLAYER_CONFIG_PARAMETRICSTEREODec->hHybrid->mQmfBufferReal));
             pv_memmove(&scratch_mem[2][32 + j + 44],
-                       hParametricStereoDec->hHybrid->mQmfBufferImag[i],
-                       HYBRID_FILTER_LENGTH_m_1*sizeof(*hParametricStereoDec->hHybrid->mQmfBufferImag));
+                       hLITEPLAYER_CONFIG_PARAMETRICSTEREODec->hHybrid->mQmfBufferImag[i],
+                       HYBRID_FILTER_LENGTH_m_1*sizeof(*hLITEPLAYER_CONFIG_PARAMETRICSTEREODec->hHybrid->mQmfBufferImag));
             j += 88;
         }
 
-        pv_memset((void *)&qmf_PS_generated_Real[hParametricStereoDec->usb],
+        pv_memset((void *)&qmf_PS_generated_Real[hLITEPLAYER_CONFIG_PARAMETRICSTEREODec->usb],
                   0,
-                  (64 - hParametricStereoDec->usb)*sizeof(*qmf_PS_generated_Real));
+                  (64 - hLITEPLAYER_CONFIG_PARAMETRICSTEREODec->usb)*sizeof(*qmf_PS_generated_Real));
 
-        pv_memset((void *)&qmf_PS_generated_Imag[hParametricStereoDec->usb],
+        pv_memset((void *)&qmf_PS_generated_Imag[hLITEPLAYER_CONFIG_PARAMETRICSTEREODec->usb],
                   0,
-                  (64 - hParametricStereoDec->usb)*sizeof(*qmf_PS_generated_Imag));
+                  (64 - hLITEPLAYER_CONFIG_PARAMETRICSTEREODec->usb)*sizeof(*qmf_PS_generated_Imag));
 
 
         for (i = 0; i < 32; i++)
         {
-            if (i == (Int)hParametricStereoDec-> aEnvStartStop[env])
+            if (i == (Int)hLITEPLAYER_CONFIG_PARAMETRICSTEREODec-> aEnvStartStop[env])
             {
-                ps_init_stereo_mixing(hParametricStereoDec, env, sbrDec->highSubband);
+                ps_init_stereo_mixing(hLITEPLAYER_CONFIG_PARAMETRICSTEREODec, env, sbrDec->highSubband);
                 env++;
             }
 
 
-            ps_applied(hParametricStereoDec,
-                       &hParametricStereoDec->qmfBufferReal[i],
-                       &hParametricStereoDec->qmfBufferImag[i],
+            ps_applied(hLITEPLAYER_CONFIG_PARAMETRICSTEREODec,
+                       &hLITEPLAYER_CONFIG_PARAMETRICSTEREODec->qmfBufferReal[i],
+                       &hLITEPLAYER_CONFIG_PARAMETRICSTEREODec->qmfBufferImag[i],
                        qmf_PS_generated_Real,
                        qmf_PS_generated_Imag,
                        scratch_mem[2],
@@ -600,24 +600,24 @@ void sbr_dec(Int16 *inPcmData,
 
             if (pVars->mc_info.bDownSampledSbr)
             {
-                calc_sbr_synfilterbank(hParametricStereoDec->qmfBufferReal[i],  /* realSamples  */
-                                       hParametricStereoDec->qmfBufferImag[i], /* imagSamples  */
+                calc_sbr_synfilterbank(hLITEPLAYER_CONFIG_PARAMETRICSTEREODec->qmfBufferReal[i],  /* realSamples  */
+                                       hLITEPLAYER_CONFIG_PARAMETRICSTEREODec->qmfBufferImag[i], /* imagSamples  */
                                        ftimeOutPtr + (i << 6),
                                        &circular_buffer_s[1984 - (i<<6)],
                                        pVars->mc_info.bDownSampledSbr);
             }
             else
             {
-                calc_sbr_synfilterbank(hParametricStereoDec->qmfBufferReal[i],  /* realSamples  */
-                                       hParametricStereoDec->qmfBufferImag[i], /* imagSamples  */
+                calc_sbr_synfilterbank(hLITEPLAYER_CONFIG_PARAMETRICSTEREODec->qmfBufferReal[i],  /* realSamples  */
+                                       hLITEPLAYER_CONFIG_PARAMETRICSTEREODec->qmfBufferImag[i], /* imagSamples  */
                                        ftimeOutPtr + (i << 7),
                                        &circular_buffer_s[3968 - (i<<7)],
                                        pVars->mc_info.bDownSampledSbr);
 
             }
 
-            pv_memmove(hParametricStereoDec->qmfBufferReal[i], qmf_PS_generated_Real, 64*sizeof(*qmf_PS_generated_Real));
-            pv_memmove(hParametricStereoDec->qmfBufferImag[i], qmf_PS_generated_Imag, 64*sizeof(*qmf_PS_generated_Real));
+            pv_memmove(hLITEPLAYER_CONFIG_PARAMETRICSTEREODec->qmfBufferReal[i], qmf_PS_generated_Real, 64*sizeof(*qmf_PS_generated_Real));
+            pv_memmove(hLITEPLAYER_CONFIG_PARAMETRICSTEREODec->qmfBufferImag[i], qmf_PS_generated_Imag, 64*sizeof(*qmf_PS_generated_Real));
 
         }
 
@@ -628,13 +628,13 @@ void sbr_dec(Int16 *inPcmData,
 
         for (i = 0, j = 0; i < 3; i++)
         {
-            pv_memmove(hParametricStereoDec->hHybrid->mQmfBufferReal[i],
+            pv_memmove(hLITEPLAYER_CONFIG_PARAMETRICSTEREODec->hHybrid->mQmfBufferReal[i],
                        &scratch_mem[2][ 64 + j     ],
-                       HYBRID_FILTER_LENGTH_m_1*sizeof(*hParametricStereoDec->hHybrid->mQmfBufferReal));
+                       HYBRID_FILTER_LENGTH_m_1*sizeof(*hLITEPLAYER_CONFIG_PARAMETRICSTEREODec->hHybrid->mQmfBufferReal));
 
-            pv_memmove(hParametricStereoDec->hHybrid->mQmfBufferImag[i],
+            pv_memmove(hLITEPLAYER_CONFIG_PARAMETRICSTEREODec->hHybrid->mQmfBufferImag[i],
                        &scratch_mem[2][ 64 + j + 44],
-                       HYBRID_FILTER_LENGTH_m_1*sizeof(*hParametricStereoDec->hHybrid->mQmfBufferImag));
+                       HYBRID_FILTER_LENGTH_m_1*sizeof(*hLITEPLAYER_CONFIG_PARAMETRICSTEREODec->hHybrid->mQmfBufferImag));
 
             j += 88;
         }
@@ -650,13 +650,13 @@ void sbr_dec(Int16 *inPcmData,
         if (pVars->mc_info.bDownSampledSbr)
         {
             pv_memmove(&circular_buffer_s[2048],
-                       (int32_t *)hParametricStereoDec->R_ch_qmf_filter_history,
+                       (int32_t *)hLITEPLAYER_CONFIG_PARAMETRICSTEREODec->R_ch_qmf_filter_history,
                        640*sizeof(*circular_buffer_s));
         }
         else
         {
             pv_memmove(&circular_buffer_s[4096],
-                       (int32_t *)hParametricStereoDec->R_ch_qmf_filter_history,
+                       (int32_t *)hLITEPLAYER_CONFIG_PARAMETRICSTEREODec->R_ch_qmf_filter_history,
                        1152*sizeof(*circular_buffer_s));
 
         }
@@ -667,16 +667,16 @@ void sbr_dec(Int16 *inPcmData,
             if (pVars->mc_info.bDownSampledSbr)
             {
 
-                calc_sbr_synfilterbank(hParametricStereoDec->qmfBufferReal[i],  /* realSamples  */
-                                       hParametricStereoDec->qmfBufferImag[i], /* imagSamples  */
+                calc_sbr_synfilterbank(hLITEPLAYER_CONFIG_PARAMETRICSTEREODec->qmfBufferReal[i],  /* realSamples  */
+                                       hLITEPLAYER_CONFIG_PARAMETRICSTEREODec->qmfBufferImag[i], /* imagSamples  */
                                        ftimeOutPtrPS + (i << 6),
                                        &circular_buffer_s[1984 - (i<<6)],
                                        pVars->mc_info.bDownSampledSbr);
             }
             else
             {
-                calc_sbr_synfilterbank(hParametricStereoDec->qmfBufferReal[i],  /* realSamples  */
-                                       hParametricStereoDec->qmfBufferImag[i], /* imagSamples  */
+                calc_sbr_synfilterbank(hLITEPLAYER_CONFIG_PARAMETRICSTEREODec->qmfBufferReal[i],  /* realSamples  */
+                                       hLITEPLAYER_CONFIG_PARAMETRICSTEREODec->qmfBufferImag[i], /* imagSamples  */
                                        ftimeOutPtrPS + (i << 7),
                                        &circular_buffer_s[3968 - (i<<7)],
                                        pVars->mc_info.bDownSampledSbr);
@@ -686,11 +686,11 @@ void sbr_dec(Int16 *inPcmData,
 
         if (pVars->mc_info.bDownSampledSbr)
         {
-            pv_memmove((int32_t *)hParametricStereoDec->R_ch_qmf_filter_history, &circular_buffer_s[0], 640*sizeof(*circular_buffer_s));
+            pv_memmove((int32_t *)hLITEPLAYER_CONFIG_PARAMETRICSTEREODec->R_ch_qmf_filter_history, &circular_buffer_s[0], 640*sizeof(*circular_buffer_s));
         }
         else
         {
-            pv_memmove((int32_t *)hParametricStereoDec->R_ch_qmf_filter_history, &circular_buffer_s[0], 1152*sizeof(*circular_buffer_s));
+            pv_memmove((int32_t *)hLITEPLAYER_CONFIG_PARAMETRICSTEREODec->R_ch_qmf_filter_history, &circular_buffer_s[0], 1152*sizeof(*circular_buffer_s));
         }
 
 
@@ -701,8 +701,8 @@ void sbr_dec(Int16 *inPcmData,
     else    /*  else -- sbrEnablePS  */
     {
 
-#endif      /*   PARAMETRICSTEREO */
-#endif      /*   HQ_SBR */
+#endif      /*   LITEPLAYER_CONFIG_PARAMETRICSTEREO */
+#endif      /*   LITEPLAYER_CONFIG_HQ_SBR */
 
         /*
          *  Use shared aac memory as continuous buffer
@@ -803,7 +803,7 @@ void sbr_dec(Int16 *inPcmData,
                                               pVars->mc_info.bDownSampledSbr);
                 }
             }
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
             else
             {
 
@@ -902,7 +902,7 @@ void sbr_dec(Int16 *inPcmData,
                    &hFrameData->sbrQmfBufferReal[32*SBR_NUM_BANDS],
                    6*SBR_NUM_BANDS*sizeof(*hFrameData->sbrQmfBufferReal));
 
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
         if (sbrDec->LC_aacP_DecoderFlag == OFF)
         {
             for (i = 0; i < sbrDec->bufWriteOffs; i++)     /* sbrDec->bufWriteOffs set to 6 and unchanged */
@@ -923,8 +923,8 @@ void sbr_dec(Int16 *inPcmData,
 #endif
 
 
-#ifdef HQ_SBR
-#ifdef PARAMETRICSTEREO
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
+#ifdef LITEPLAYER_CONFIG_PARAMETRICSTEREO
     }
 #endif
 #endif
@@ -939,4 +939,4 @@ void sbr_dec(Int16 *inPcmData,
 }
 
 
-#endif      /*  AAC_PLUS */
+#endif      /*  LITEPLAYER_CONFIG_AAC_PLUS */

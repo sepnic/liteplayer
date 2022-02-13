@@ -108,10 +108,10 @@
 ; INCLUDES
 ----------------------------------------------------------------------------*/
 
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
 
 
-#ifdef PARAMETRICSTEREO
+#ifdef LITEPLAYER_CONFIG_PARAMETRICSTEREO
 
 
 #include "pv_audio_type_defs.h"
@@ -312,7 +312,7 @@ void ps_fft_rx8(Int32 Re[], Int32 Im[], Int32 scratch_mem[])
 
 }
 
-#endif  /* PARAMETRICSTEREO */
+#endif  /* LITEPLAYER_CONFIG_PARAMETRICSTEREO */
 
 
-#endif  /* AAC_PLUS */
+#endif  /* LITEPLAYER_CONFIG_AAC_PLUS */

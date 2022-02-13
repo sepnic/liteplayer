@@ -92,7 +92,7 @@ extern "C"
     Int32 maxBand);
 
 
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
 
     void calc_sbr_anafilterbank(Int32 * Sr,
                                 Int32 * Si,

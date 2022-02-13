@@ -58,7 +58,7 @@
 ; INCLUDES
 ----------------------------------------------------------------------------*/
 
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
 
 
 #include "analysis_sub_band.h"
@@ -94,7 +94,7 @@
 ----------------------------------------------------------------------------*/
 
 
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
 
 
 const Int32 exp_1_5_phi[32] =
@@ -194,7 +194,7 @@ void analysis_sub_band_LC(Int32 vec[64],
 }
 
 
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
 
 
 void analysis_sub_band(Int32 vec[64],

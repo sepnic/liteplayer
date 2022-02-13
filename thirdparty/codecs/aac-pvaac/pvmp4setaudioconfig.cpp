@@ -249,7 +249,7 @@ Int PVMP4SetAudioConfig(
 
     pVars->mc_info.sbrPresentFlag = 0;
     pVars->mc_info.psPresentFlag = 0;
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
     pVars->mc_info.bDownSampledSbr = 0;
 #endif
     pVars->mc_info.implicit_channeling = 0;
@@ -316,7 +316,7 @@ Int PVMP4SetAudioConfig(
 
         if (upsamplingFactor == 1)
         {
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
             pVars->mc_info.bDownSampledSbr = 1;
 #endif
 
@@ -357,7 +357,7 @@ Int PVMP4SetAudioConfig(
     pExt->encodedChannels = 2;
 
     pExt->frameLength = 1024;
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
     pExt->aacPlusUpsamplingFactor = upsamplingFactor;
 #endif
 

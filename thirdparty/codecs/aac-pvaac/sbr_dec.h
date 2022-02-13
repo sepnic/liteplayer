@@ -76,7 +76,7 @@ Copyright (c) ISO/IEC 2002.
 #include    "e_blockswitching.h"
 #include    "s_sbr_dec.h"
 #include    "s_tdec_int_file.h"
-#ifdef PARAMETRICSTEREO
+#ifdef LITEPLAYER_CONFIG_PARAMETRICSTEREO
 #include    "s_ps_dec.h"
 #endif
 
@@ -124,10 +124,10 @@ extern "C"
     SBR_FRAME_DATA * hFrameData,
     Int32 applyProcessing,
     SBR_DEC *sbrDec,
-#ifdef HQ_SBR
-#ifdef PARAMETRICSTEREO
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
+#ifdef LITEPLAYER_CONFIG_PARAMETRICSTEREO
     Int16 * ftimeOutPtrPS,
-    HANDLE_PS_DEC hParametricStereoDec,
+    HANDLE_PS_DEC hLITEPLAYER_CONFIG_PARAMETRICSTEREODec,
 #endif
 #endif
     tDec_Int_File  *pVars);

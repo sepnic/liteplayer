@@ -70,7 +70,7 @@ extern const Int32 sbrDecoderFilterbankCoefficients[155];
 extern const Int32 sbrDecoderFilterbankCoefficients_down_smpl[160];
 extern const Int32 sbrDecoderFilterbankCoefficients_an_filt_LC[155];
 
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
 extern const Int32 sbrDecoderFilterbankCoefficients_an_filt[155];
 #endif
 

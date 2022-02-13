@@ -558,7 +558,7 @@ __inline Int16 sat(Int32 y)
 ; FUNCTION CODE
 ----------------------------------------------------------------------------*/
 
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
 
 
 void trans4m_freq_2_time_fxp_1(

@@ -122,7 +122,7 @@ extern "C"
     Int32 *sUp,
     Int32 limSbc[][13],
     Int32 *gateMode,
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
     Int32 *fBuf_man[64],
     Int32 *fBuf_exp[64],
     Int32 *fBufN_man[64],

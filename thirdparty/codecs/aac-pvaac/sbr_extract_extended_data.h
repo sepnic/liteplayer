@@ -42,7 +42,7 @@
 #include    "s_bit_buffer.h"
 #include    "s_sbr_frame_data.h"
 
-#ifdef PARAMETRICSTEREO
+#ifdef LITEPLAYER_CONFIG_PARAMETRICSTEREO
 #include    "s_ps_dec.h"
 #endif
 
@@ -79,8 +79,8 @@
 ----------------------------------------------------------------------------*/
 
 void sbr_extract_extended_data(BIT_BUFFER * hBitBuf
-#ifdef PARAMETRICSTEREO         /* Parametric Stereo Decoder */
-                               , HANDLE_PS_DEC hParametricStereoDec
+#ifdef LITEPLAYER_CONFIG_PARAMETRICSTEREO         /* Parametric Stereo Decoder */
+                               , HANDLE_PS_DEC hLITEPLAYER_CONFIG_PARAMETRICSTEREODec
 #endif
                               );
 

@@ -246,7 +246,7 @@ OSCL_EXPORT_REF Int PVMP4AudioDecoderConfig(
         pExt->encodedChannels = 2;
 
         pExt->frameLength = pVars->frameLength;
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
         pExt->aacPlusUpsamplingFactor = pVars->mc_info.upsamplingFactor;
 #endif
 

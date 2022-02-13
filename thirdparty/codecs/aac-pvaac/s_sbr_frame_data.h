@@ -137,7 +137,7 @@ typedef struct
     Int32 codecQmfBufferReal[40][32];
     Int32 *sbrQmfBufferReal;
     Int32 HistsbrQmfBufferReal[6*SBR_NUM_BANDS];
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
     Int32 codecQmfBufferImag[40][32];
     Int32 *sbrQmfBufferImag;
     Int32 HistsbrQmfBufferImag[6*SBR_NUM_BANDS];
@@ -148,7 +148,7 @@ typedef struct
     Int32 degreeAlias[64];
 
 
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
 
     Int32 fBuffer_man[5][64];        /* smoothing history buffers */
     Int32 fBufferN_man[5][64];

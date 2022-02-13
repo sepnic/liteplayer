@@ -63,7 +63,7 @@ extern "C"
     Int32 maxBand,
     Int32 scratch_mem[][64]);
 
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
 
 
     void analysis_sub_band(Int32 vec[64],

@@ -93,7 +93,7 @@ Copyright (c) ISO/IEC 2002.
 ; INCLUDES
 ----------------------------------------------------------------------------*/
 
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
 
 
 #include    "sbr_read_data.h"
@@ -244,8 +244,8 @@ SBR_ERROR sbr_read_data(SBRDECODER_DATA * self,
                 {
                     sbr_err = sbr_get_sce(&(SbrChannel[0].frameData),
                                           &bitBuf
-#ifdef PARAMETRICSTEREO
-                                          , self->hParametricStereoDec
+#ifdef LITEPLAYER_CONFIG_PARAMETRICSTEREO
+                                          , self->hLITEPLAYER_CONFIG_PARAMETRICSTEREODec
 #endif
                                          );
 

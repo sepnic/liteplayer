@@ -321,7 +321,7 @@ static int DecodeFillElement(AACDecInfo *aacDecInfo, BitStreamInfo *bsi)
     aacDecInfo->currInstTag = -1;   /* fill elements don't have instance tag */
     aacDecInfo->fillExtType = 0;
 
-#ifdef ENABLE_DECODER_AAC_SBR
+#ifdef LITEPLAYER_CONFIG_AAC_SBR
     /* check for SBR 
      * aacDecInfo->sbrEnabled is sticky (reset each raw_data_block), so for multichannel 
      *    need to verify that all SCE/CPE/ICCE have valid SBR fill element following, and 

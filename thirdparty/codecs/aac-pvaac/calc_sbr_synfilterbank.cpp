@@ -78,7 +78,7 @@ Copyright (c) ISO/IEC 2002.
 ------------------------------------------------------------------------------
 */
 
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
 
 /*----------------------------------------------------------------------------
 ; INCLUDES
@@ -434,7 +434,7 @@ void calc_sbr_synfilterbank_LC(Int32 * Sr,
 
 
 
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
 
 void calc_sbr_synfilterbank(Int32 * Sr,
                             Int32 * Si,
@@ -630,10 +630,10 @@ void calc_sbr_synfilterbank(Int32 * Sr,
 }
 
 
-#endif      /* --- HQ_SBR --- */
+#endif      /* --- LITEPLAYER_CONFIG_HQ_SBR --- */
 
 
-#endif      /* --- AAC_PLUS --- */
+#endif      /* --- LITEPLAYER_CONFIG_AAC_PLUS --- */
 
 
 

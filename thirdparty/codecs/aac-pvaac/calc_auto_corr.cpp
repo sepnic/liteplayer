@@ -82,7 +82,7 @@ Copyright (c) ISO/IEC 2002.
 /*----------------------------------------------------------------------------
 ; INCLUDES
 ----------------------------------------------------------------------------*/
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
 
 
 #include    "calc_auto_corr.h"
@@ -244,7 +244,7 @@ void calc_auto_corr_LC(struct ACORR_COEFS *ac,
 }
 
 
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
 
 
 void calc_auto_corr(struct ACORR_COEFS *ac,

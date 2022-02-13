@@ -116,7 +116,7 @@
 #include "pvmp4audiodecoder_api.h"   /* Where this function is declared */
 #include "aac_mem_funcs.h"
 
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
 #include    "s_sbr_frame_data.h"
 #endif
 
@@ -162,11 +162,11 @@ OSCL_EXPORT_REF void PVMP4AudioDecoderResetBuffer(void  *pMem)
 
     tDec_Int_File *pVars;           /* Helper pointer */
 
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
     SBR_FRAME_DATA * hFrameData_1;
     SBR_FRAME_DATA * hFrameData_2;
-#ifdef HQ_SBR
-#ifdef PARAMETRICSTEREO
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
+#ifdef LITEPLAYER_CONFIG_PARAMETRICSTEREO
     SBRDECODER_DATA *sbrDecoderData;
 #endif
 #endif
@@ -190,7 +190,7 @@ OSCL_EXPORT_REF void PVMP4AudioDecoderResetBuffer(void  *pMem)
               LONG_WINDOW*sizeof(pVars->perChan[RIGHT].time_quant[0]));
 
 
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
 
     if (!pVars->sbrDecoderData.setStreamType)  /* reset only when stream type is defined */
     {
@@ -199,10 +199,10 @@ OSCL_EXPORT_REF void PVMP4AudioDecoderResetBuffer(void  *pMem)
 
             hFrameData_1   = (SBR_FRAME_DATA *) & pVars->sbrDecoderData.SbrChannel[LEFT].frameData;
             hFrameData_2   = (SBR_FRAME_DATA *) & pVars->sbrDecoderData.SbrChannel[RIGHT].frameData;
-#ifdef HQ_SBR
-#ifdef PARAMETRICSTEREO
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
+#ifdef LITEPLAYER_CONFIG_PARAMETRICSTEREO
             sbrDecoderData = (SBRDECODER_DATA *) & pVars->sbrDecoderData;
-            sbrDecoderData->hParametricStereoDec = (HANDLE_PS_DEC) & pVars->sbrDecoderData.ParametricStereoDec;
+            sbrDecoderData->hLITEPLAYER_CONFIG_PARAMETRICSTEREODec = (HANDLE_PS_DEC) & pVars->sbrDecoderData.LITEPLAYER_CONFIG_PARAMETRICSTEREODec;
 #endif
 #endif
 
@@ -250,7 +250,7 @@ OSCL_EXPORT_REF void PVMP4AudioDecoderResetBuffer(void  *pMem)
                       0,
                       sizeof(*hFrameData_1->BwVectorOld)*MAX_NUM_PATCHES);
 
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
 
             for (i = 0; i < 5; i++)
             {
@@ -272,7 +272,7 @@ OSCL_EXPORT_REF void PVMP4AudioDecoderResetBuffer(void  *pMem)
                       0,
                       sizeof(*hFrameData_1->HistsbrQmfBufferReal)*6*SBR_NUM_BANDS);
 
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
             pv_memset((void *)hFrameData_1->HistsbrQmfBufferImag,
                       0,
                       sizeof(*hFrameData_1->HistsbrQmfBufferImag)*6*SBR_NUM_BANDS);
@@ -297,7 +297,7 @@ OSCL_EXPORT_REF void PVMP4AudioDecoderResetBuffer(void  *pMem)
                           0,
                           sizeof(*hFrameData_2->BwVectorOld)*MAX_NUM_PATCHES);
 
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
 
                 for (i = 0; i < 5; i++)
                 {
@@ -312,18 +312,18 @@ OSCL_EXPORT_REF void PVMP4AudioDecoderResetBuffer(void  *pMem)
 
             }
 
-#ifdef HQ_SBR
-#ifdef PARAMETRICSTEREO
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
+#ifdef LITEPLAYER_CONFIG_PARAMETRICSTEREO
             else if (pVars->mc_info.psPresentFlag == 1)
             {
                 for (i = 0; i < 3; i++)
                 {
-                    pv_memset(sbrDecoderData->hParametricStereoDec->hHybrid->mQmfBufferReal[i],
+                    pv_memset(sbrDecoderData->hLITEPLAYER_CONFIG_PARAMETRICSTEREODec->hHybrid->mQmfBufferReal[i],
                               0,
-                              HYBRID_FILTER_LENGTH_m_1*sizeof(*sbrDecoderData->hParametricStereoDec->hHybrid->mQmfBufferReal));
-                    pv_memset(sbrDecoderData->hParametricStereoDec->hHybrid->mQmfBufferImag[i],
+                              HYBRID_FILTER_LENGTH_m_1*sizeof(*sbrDecoderData->hLITEPLAYER_CONFIG_PARAMETRICSTEREODec->hHybrid->mQmfBufferReal));
+                    pv_memset(sbrDecoderData->hLITEPLAYER_CONFIG_PARAMETRICSTEREODec->hHybrid->mQmfBufferImag[i],
                               0,
-                              HYBRID_FILTER_LENGTH_m_1*sizeof(*sbrDecoderData->hParametricStereoDec->hHybrid->mQmfBufferImag));
+                              HYBRID_FILTER_LENGTH_m_1*sizeof(*sbrDecoderData->hLITEPLAYER_CONFIG_PARAMETRICSTEREODec->hHybrid->mQmfBufferImag));
                 }
             }
 #endif
@@ -343,7 +343,7 @@ OSCL_EXPORT_REF void PVMP4AudioDecoderResetBuffer(void  *pMem)
 
         }
     }
-#endif      /*  #ifdef AAC_PLUS */
+#endif      /*  #ifdef LITEPLAYER_CONFIG_AAC_PLUS */
 
     /* reset frame count to 1 */
     pVars->bno = 1;

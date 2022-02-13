@@ -55,7 +55,7 @@
 ; INCLUDES
 ----------------------------------------------------------------------------*/
 
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
 
 
 #include "dct16.h"
@@ -169,7 +169,7 @@ void pv_split_LC(Int32 *vector,
 }
 
 
-#ifdef HQ_SBR
+#ifdef LITEPLAYER_CONFIG_HQ_SBR
 
 
 void dct_64(Int32 vec[], Int32 *scratch_mem)

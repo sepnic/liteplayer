@@ -523,7 +523,7 @@ Int get_adts_header(
         } /* if (status == SUCCESS) */
 
 
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
 
         /*
          *  For implicit signalling, no hint that sbr or ps is used, so we need to

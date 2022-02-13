@@ -77,7 +77,7 @@ typedef unsigned long mad_fixed64lo_t;
 #  define mad_fixed64_t  signed long long
 # endif
 
-# if defined(CONFIG_MAD_FPM_FLOAT)
+# if defined(LITEPLAYER_CONFIG_MAD_FPM_FLOAT)
 typedef double mad_sample_t;
 # else
 typedef mad_fixed_t mad_sample_t;
@@ -143,8 +143,8 @@ typedef mad_fixed_t mad_sample_t;
 # define mad_f_add(x, y)    ((x) + (y))
 # define mad_f_sub(x, y)    ((x) - (y))
 
-# if defined(CONFIG_MAD_FPM_FLOAT)
-#  error "CONFIG_MAD_FPM_FLOAT not yet supported"
+# if defined(LITEPLAYER_CONFIG_MAD_FPM_FLOAT)
+#  error "LITEPLAYER_CONFIG_MAD_FPM_FLOAT not yet supported"
 
 #  undef MAD_F
 #  define MAD_F(x)          mad_f_todouble(x)
@@ -154,7 +154,7 @@ typedef mad_fixed_t mad_sample_t;
 
 #  undef ASO_ZEROCHECK
 
-# elif defined(CONFIG_MAD_FPM_64BIT)
+# elif defined(LITEPLAYER_CONFIG_MAD_FPM_64BIT)
 
 /*
  * This version should be the most accurate if 64-bit types are supported by
@@ -174,7 +174,7 @@ typedef mad_fixed_t mad_sample_t;
 
 /* --- Intel --------------------------------------------------------------- */
 
-# elif defined(CONFIG_MAD_FPM_INTEL)
+# elif defined(LITEPLAYER_CONFIG_MAD_FPM_INTEL)
 
 #  if defined(_MSC_VER)
 #   pragma warning(push)
@@ -276,10 +276,10 @@ mad_fixed_t mad_f_mul_inline(mad_fixed_t x, mad_fixed_t y)
 
 /* --- ARM ----------------------------------------------------------------- */
 
-# elif defined(CONFIG_MAD_FPM_ARM)
+# elif defined(LITEPLAYER_CONFIG_MAD_FPM_ARM)
 
 /* 
- * This ARM V4 version is as accurate as CONFIG_MAD_FPM_64BIT but much faster. The
+ * This ARM V4 version is as accurate as LITEPLAYER_CONFIG_MAD_FPM_64BIT but much faster. The
  * least significant bit is properly rounded at no CPU cycle cost!
  */
 # if 1
@@ -334,7 +334,7 @@ mad_fixed_t mad_f_mul_inline(mad_fixed_t x, mad_fixed_t y)
 
 /* --- MIPS ---------------------------------------------------------------- */
 
-# elif defined(CONFIG_MAD_FPM_MIPS)
+# elif defined(LITEPLAYER_CONFIG_MAD_FPM_MIPS)
 
 /*
  * This MIPS version is fast and accurate; the disposition of the least
@@ -374,7 +374,7 @@ mad_fixed_t mad_f_mul_inline(mad_fixed_t x, mad_fixed_t y)
 
 /* --- SPARC --------------------------------------------------------------- */
 
-# elif defined(CONFIG_MAD_FPM_SPARC)
+# elif defined(LITEPLAYER_CONFIG_MAD_FPM_SPARC)
 
 /*
  * This SPARC V8 version is fast and accurate; the disposition of the least
@@ -388,7 +388,7 @@ mad_fixed_t mad_f_mul_inline(mad_fixed_t x, mad_fixed_t y)
 
 /* --- PowerPC ------------------------------------------------------------- */
 
-# elif defined(CONFIG_MAD_FPM_PPC)
+# elif defined(LITEPLAYER_CONFIG_MAD_FPM_PPC)
 
 /*
  * This PowerPC version is fast and accurate; the disposition of the least
@@ -459,7 +459,7 @@ mad_fixed_t mad_f_mul_inline(mad_fixed_t x, mad_fixed_t y)
 
 /* --- Default ------------------------------------------------------------- */
 
-# elif defined(CONFIG_MAD_FPM_DEFAULT)
+# elif defined(LITEPLAYER_CONFIG_MAD_FPM_DEFAULT)
 
 /*
  * This version is the most portable but it loses significant accuracy.

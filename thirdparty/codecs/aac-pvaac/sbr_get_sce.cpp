@@ -86,7 +86,7 @@ Copyright (c) ISO/IEC 2002.
 ; INCLUDES
 ----------------------------------------------------------------------------*/
 
-#ifdef AAC_PLUS
+#ifdef LITEPLAYER_CONFIG_AAC_PLUS
 
 
 
@@ -139,8 +139,8 @@ Copyright (c) ISO/IEC 2002.
 
 SBR_ERROR sbr_get_sce(SBR_FRAME_DATA * hFrameData,
                       BIT_BUFFER * hBitBuf
-#ifdef PARAMETRICSTEREO
-                      , HANDLE_PS_DEC hParametricStereoDec
+#ifdef LITEPLAYER_CONFIG_PARAMETRICSTEREO
+                      , HANDLE_PS_DEC hLITEPLAYER_CONFIG_PARAMETRICSTEREODec
 #endif
                      )
 {
@@ -187,8 +187,8 @@ SBR_ERROR sbr_get_sce(SBR_FRAME_DATA * hFrameData,
     sbr_get_additional_data(hFrameData, hBitBuf);
 
     sbr_extract_extended_data(hBitBuf
-#ifdef PARAMETRICSTEREO
-                              , hParametricStereoDec
+#ifdef LITEPLAYER_CONFIG_PARAMETRICSTEREO
+                              , hLITEPLAYER_CONFIG_PARAMETRICSTEREODec
 #endif
                              );
 
