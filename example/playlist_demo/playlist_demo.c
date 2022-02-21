@@ -26,8 +26,10 @@
 #include "liteplayer_listplayer.h"
 #include "source_httpclient_wrapper.h"
 #include "source_file_wrapper.h"
-#if defined(ENABLE_LINUX_ALSA)
+#if defined(HAVE_LINUX_ALSA_ENABLED)
 #include "sink_alsa_wrapper.h"
+#elif defined(HAVE_PORT_AUDIO_ENABLED)
+#include "sink_portaudio_wrapper.h"
 #else
 #include "sink_wave_wrapper.h"
 #endif
@@ -145,13 +147,21 @@ static void *playlist_demo_thread(void *arg)
 
     listplayer_register_state_listener(demo->player_handle, playlist_demo_state_callback, (void *)demo);
 
-#if defined(ENABLE_LINUX_ALSA)
+#if defined(HAVE_LINUX_ALSA_ENABLED)
     struct sink_wrapper sink_ops = {
         .priv_data = NULL,
         .name = alsa_wrapper_name,
         .open = alsa_wrapper_open,
         .write = alsa_wrapper_write,
         .close = alsa_wrapper_close,
+    };
+#elif defined(HAVE_PORT_AUDIO_ENABLED)
+    struct sink_wrapper sink_ops = {
+        .priv_data = NULL,
+        .name = portaudio_wrapper_name,
+        .open = portaudio_wrapper_open,
+        .write = portaudio_wrapper_write,
+        .close = portaudio_wrapper_close,
     };
 #else
     struct sink_wrapper sink_ops = {

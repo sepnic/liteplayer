@@ -2,9 +2,8 @@ cmake_minimum_required(VERSION 2.8)
 project(basic_demo)
 
 MESSAGE(STATUS "Platform: ${CMAKE_SYSTEM_NAME}")
-if (CMAKE_SYSTEM_NAME MATCHES "Linux")
-    # Support alsa?
-    set (ENABLE_LINUX_ALSA "YES")
+if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+    option(HAVE_LINUX_ALSA_ENABLED "HAVE LINUX ALSA ENABLED" "ON")
 endif()
 
 set(TOP_DIR "${CMAKE_SOURCE_DIR}/../..")
@@ -65,7 +64,7 @@ file(GLOB THIRDPARTY_SRC src
     ${TOP_DIR}/thirdparty/codecs/aac-fdk/libSACdec/src/*.cpp
     ${TOP_DIR}/thirdparty/speexdsp/resample.c
 )
-set (ADAPTER_SRC
+set(ADAPTER_SRC
     ${TOP_DIR}/thirdparty/mbedtls/library/aes.c
     ${TOP_DIR}/thirdparty/mbedtls/library/aesni.c
     ${TOP_DIR}/thirdparty/mbedtls/library/arc4.c
@@ -150,16 +149,13 @@ set (ADAPTER_SRC
     ${TOP_DIR}/adapter/sink_wave_wrapper.c
 )
 
-if (ENABLE_LINUX_ALSA)
-    # Force SRC to 48KHz/Stereo for tinyalsa device
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_LINUX_ALSA")
-    list(APPEND ADAPTER_SRC
-        ${TOP_DIR}/adapter/sink_alsa_wrapper.c
-    )
+if(HAVE_LINUX_ALSA_ENABLED)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DHAVE_LINUX_ALSA_ENABLED")
+    list(APPEND ADAPTER_SRC ${TOP_DIR}/adapter/sink_alsa_wrapper.c)
 endif()
 
 # source files
-set (LITEPLAYER_SRC
+set(LITEPLAYER_SRC
     ${TOP_DIR}/library/source/esp_adf/audio_element.c
     ${TOP_DIR}/library/source/esp_adf/audio_event_iface.c
     ${TOP_DIR}/library/source/audio_decoder/mp3_pvmp3_wrapper.c
@@ -185,6 +181,6 @@ set (LITEPLAYER_SRC
 # basic_demo
 add_executable(basic_demo basic_demo.c ${THIRDPARTY_SRC} ${LITEPLAYER_SRC} ${ADAPTER_SRC})
 target_link_libraries(basic_demo pthread m)
-if (ENABLE_LINUX_ALSA)
-target_link_libraries(basic_demo asound)
+if(HAVE_LINUX_ALSA_ENABLED)
+    target_link_libraries(basic_demo asound)
 endif()

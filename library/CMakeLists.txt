@@ -29,7 +29,7 @@ include_directories(${THIRDPARTY_DIR}/speexdsp)
 include_directories(${TOP_DIR}/library/include)
 include_directories(${TOP_DIR}/library/source)
 # liteplayer files
-set (LITEPLAYER_SRC
+set(LITEPLAYER_SRC
     ${TOP_DIR}/library/source/esp_adf/audio_element.c
     ${TOP_DIR}/library/source/esp_adf/audio_event_iface.c
     ${TOP_DIR}/library/source/audio_decoder/mp3_mad_wrapper.c
@@ -52,7 +52,7 @@ set (LITEPLAYER_SRC
     ${TOP_DIR}/library/source/liteplayer_resampler.c
 )
 # codecs files
-set (CODECS_SRC
+set(CODECS_SRC
     ${THIRDPARTY_DIR}/speexdsp/resample.c   
     ${THIRDPARTY_DIR}/codecs/mp3-mad/bit.c
     ${THIRDPARTY_DIR}/codecs/mp3-mad/decoder.c
@@ -95,7 +95,7 @@ set (CODECS_SRC
     ${THIRDPARTY_DIR}/codecs/aac-helix/trigtabs.c
 )
 # sysutils files
-set (SYSUTILS_SRC
+set(SYSUTILS_SRC
     ${THIRDPARTY_DIR}/sysutils/osal/unix/os_log.c
     ${THIRDPARTY_DIR}/sysutils/osal/unix/os_memory.c
     ${THIRDPARTY_DIR}/sysutils/osal/unix/os_thread.c
@@ -107,10 +107,7 @@ set (SYSUTILS_SRC
 )
 
 # liteplayer_core lib
-add_library(liteplayer_core   SHARED ${CODECS_SRC} ${LITEPLAYER_SRC})
-add_library(liteplayer_core_s STATIC ${CODECS_SRC} ${LITEPLAYER_SRC})
-target_link_libraries(liteplayer_core sysutils)
+add_library(liteplayer_core STATIC ${CODECS_SRC} ${LITEPLAYER_SRC})
 
 # sysutils lib
-add_library(sysutils   SHARED ${SYSUTILS_SRC})
-add_library(sysutils_s STATIC ${SYSUTILS_SRC})
+add_library(sysutils STATIC ${SYSUTILS_SRC})

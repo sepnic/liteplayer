@@ -2,9 +2,10 @@ cmake_minimum_required(VERSION 2.8)
 project(basic_demo)
 
 MESSAGE(STATUS "Platform: ${CMAKE_SYSTEM_NAME}")
-if (CMAKE_SYSTEM_NAME MATCHES "Linux")
-    # Support alsa?
-    set (ENABLE_LINUX_ALSA "YES")
+if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+    option(HAVE_LINUX_ALSA_ENABLED "HAVE LINUX ALSA ENABLED" "ON")
+elseif(CMAKE_SYSTEM_NAME MATCHES "Darwin")
+    option(HAVE_PORT_AUDIO_ENABLED "HAVE PORT AUDIO ENABLED" "ON")
 endif()
 
 set(TOP_DIR "${CMAKE_SOURCE_DIR}/../..")
@@ -55,7 +56,7 @@ file(GLOB THIRDPARTY_SRC src
 )
 
 # source files
-set (LITEPLAYER_SRC
+set(LITEPLAYER_SRC
     ${TOP_DIR}/library/source/esp_adf/audio_element.c
     ${TOP_DIR}/library/source/esp_adf/audio_event_iface.c
     ${TOP_DIR}/library/source/audio_decoder/mp3_pvmp3_wrapper.c
@@ -78,7 +79,7 @@ set (LITEPLAYER_SRC
     ${TOP_DIR}/library/source/liteplayer_resampler.c
 )
 
-set (ADAPTER_SRC
+set(ADAPTER_SRC
     ${TOP_DIR}/thirdparty/mbedtls/library/aes.c
     ${TOP_DIR}/thirdparty/mbedtls/library/aesni.c
     ${TOP_DIR}/thirdparty/mbedtls/library/arc4.c
@@ -163,17 +164,62 @@ set (ADAPTER_SRC
     ${TOP_DIR}/adapter/sink_wave_wrapper.c
 )
 
-if (ENABLE_LINUX_ALSA)
-    # Force SRC to 48KHz/Stereo for tinyalsa device
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_LINUX_ALSA")
+if(HAVE_LINUX_ALSA_ENABLED)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DHAVE_LINUX_ALSA_ENABLED")
+    list(APPEND ADAPTER_SRC ${TOP_DIR}/adapter/sink_alsa_wrapper.c)
+elseif(HAVE_PORT_AUDIO_ENABLED)
+    set(PORTAUDIO_DIR "${TOP_DIR}/thirdparty/portaudio")
+    include_directories(${PORTAUDIO_DIR}/include)
+    include_directories(${PORTAUDIO_DIR}/src/common)
+    include_directories(${PORTAUDIO_DIR}/src/os/unix)
+    include(TestBigEndian)
+    TEST_BIG_ENDIAN(IS_BIG_ENDIAN)
+    if(IS_BIG_ENDIAN)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DPA_BIG_ENDIAN")
+    else()
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DPA_LITTLE_ENDIAN")
+    endif()
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-error=deprecated-declarations")
+    set(PORTAUDIO_SRC
+        ${PORTAUDIO_DIR}/src/common/pa_allocation.c
+        ${PORTAUDIO_DIR}/src/common/pa_converters.c
+        ${PORTAUDIO_DIR}/src/common/pa_cpuload.c
+        ${PORTAUDIO_DIR}/src/common/pa_debugprint.c
+        ${PORTAUDIO_DIR}/src/common/pa_dither.c
+        ${PORTAUDIO_DIR}/src/common/pa_front.c
+        ${PORTAUDIO_DIR}/src/common/pa_process.c
+        ${PORTAUDIO_DIR}/src/common/pa_ringbuffer.c
+        ${PORTAUDIO_DIR}/src/common/pa_stream.c
+        ${PORTAUDIO_DIR}/src/common/pa_trace.c
+        ${PORTAUDIO_DIR}/src/hostapi/skeleton/pa_hostapi_skeleton.c
+        ${PORTAUDIO_DIR}/src/os/unix/pa_unix_hostapis.c
+        ${PORTAUDIO_DIR}/src/os/unix/pa_unix_util.c)
+    if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DPA_USE_ALSA=1")
+        set(PORTAUDIO_SRC ${PORTAUDIO_SRC}
+            ${PORTAUDIO_DIR}/src/hostapi/alsa/pa_linux_alsa.c)
+    elseif(CMAKE_SYSTEM_NAME MATCHES "Darwin")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DPA_USE_COREAUDIO=1")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -framework Accelerate")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -framework CoreAudio")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -framework AudioToolbox")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -framework AudioUnit")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -framework CoreServices")
+        set(PORTAUDIO_SRC ${PORTAUDIO_SRC}
+            ${PORTAUDIO_DIR}/src/hostapi/coreaudio/pa_mac_core.c
+            ${PORTAUDIO_DIR}/src/hostapi/coreaudio/pa_mac_core_blocking.c
+            ${PORTAUDIO_DIR}/src/hostapi/coreaudio/pa_mac_core_utilities.c)
+    endif()
+
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DHAVE_PORT_AUDIO_ENABLED")
     list(APPEND ADAPTER_SRC
-        ${TOP_DIR}/adapter/sink_alsa_wrapper.c
-    )
+        ${PORTAUDIO_SRC}
+        ${TOP_DIR}/adapter/sink_portaudio_wrapper.c)
 endif()
 
 # basic_demo
 add_executable(basic_demo basic_demo.c ${THIRDPARTY_SRC} ${LITEPLAYER_SRC} ${ADAPTER_SRC})
 target_link_libraries(basic_demo pthread m)
-if (ENABLE_LINUX_ALSA)
-target_link_libraries(basic_demo asound)
+if(HAVE_LINUX_ALSA_ENABLED)
+    target_link_libraries(basic_demo asound)
 endif()
