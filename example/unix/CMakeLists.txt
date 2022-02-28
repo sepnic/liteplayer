@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
-project(basic_demo)
+project(liteplayer_demo)
 
 MESSAGE(STATUS "Platform: ${CMAKE_SYSTEM_NAME}")
 if(CMAKE_SYSTEM_NAME MATCHES "Linux")
@@ -11,52 +11,46 @@ endif()
 set(TOP_DIR "${CMAKE_SOURCE_DIR}/../..")
 
 # cflags: OS_LINUX, OS_ANDROID, OS_APPLE, OS_RTOS
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DOS_APPLE")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D__amd64__")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -Wall -Werror")
-# cflag: libspeexdsp: LITEPLAYER_CONFIG_SPEEXDSP_FIXED_POINT/LITEPLAYER_CONFIG_SPEEXDSP_FLOATING_POINT
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DLITEPLAYER_CONFIG_SPEEXDSP_FIXED_POINT")
-# cflags: if socketlen_t defined
-#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_SOCKLEN_T")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DSYSUTILS_HAVE_MBEDTLS_ENABLED")
-# cflags: pv-aac & pv-mp3
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DOSCL_IMPORT_REF= -DOSCL_EXPORT_REF= -DOSCL_UNUSED_ARG=")
-#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DLITEPLAYER_CONFIG_AAC_PLUS -DLITEPLAYER_CONFIG_HQ_SBR -DLITEPLAYER_CONFIG_PARAMETRICSTEREO")
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DLITEPLAYER_CONFIG_AAC_PLUS -DLITEPLAYER_CONFIG_HQ_SBR -DLITEPLAYER_CONFIG_PARAMETRICSTEREO")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -Wno-error=unused-value -Wno-error=unused-function -Wno-error=narrowing")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DOSCL_IMPORT_REF= -DOSCL_EXPORT_REF= -DOSCL_UNUSED_ARG=")
-# cflags: sink: LITEPLAYER_CONFIG_SINK_FIXED_S16LE. Don't config it if sink support S24LE/S32LE
-#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DLITEPLAYER_CONFIG_SINK_FIXED_S16LE")
+set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -DOS_APPLE")
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DSYSUTILS_HAVE_MEMORY_LEAK_DETECT_ENABLED")
+set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -std=gnu99 -Wall -Werror")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Werror")
+
+set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -DSYSUTILS_HAVE_MEMORY_LEAK_DETECT_ENABLED")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSYSUTILS_HAVE_MEMORY_LEAK_DETECT_ENABLED")
 
 # include files
 include_directories(${TOP_DIR}/thirdparty/sysutils/include)
-include_directories(${TOP_DIR}/thirdparty/codecs)
-include_directories(${TOP_DIR}/thirdparty/speexdsp)
-include_directories(${TOP_DIR}/thirdparty/mbedtls/include)
 include_directories(${TOP_DIR}/library/include)
-include_directories(${TOP_DIR}/library/source)
 include_directories(${TOP_DIR}/adapter)
 
-# include files
-include_directories(${TOP_DIR}/thirdparty/codecs/mp3-pvmp3/include)
-include_directories(${TOP_DIR}/thirdparty/codecs/mp3-pvmp3/src)
-include_directories(${TOP_DIR}/thirdparty/codecs/aac-pvaac)
+# sysutils files
+set(SYSUTILS_SRC
+    ${TOP_DIR}/thirdparty/sysutils/osal/unix/os_log.c
+    ${TOP_DIR}/thirdparty/sysutils/osal/unix/os_memory.c
+    ${TOP_DIR}/thirdparty/sysutils/osal/unix/os_thread.c
+    ${TOP_DIR}/thirdparty/sysutils/osal/unix/os_time.c
+    ${TOP_DIR}/thirdparty/sysutils/osal/unix/os_timer.c
+    ${TOP_DIR}/thirdparty/sysutils/osal/unix/os_misc.c
+    ${TOP_DIR}/thirdparty/sysutils/source/cutils/memdbg.c
+    ${TOP_DIR}/thirdparty/sysutils/source/cutils/mlooper.c
+    ${TOP_DIR}/thirdparty/sysutils/source/cutils/mqueue.c
+    ${TOP_DIR}/thirdparty/sysutils/source/cutils/ringbuf.c
+    ${TOP_DIR}/thirdparty/sysutils/source/cutils/swtimer.c
+    ${TOP_DIR}/thirdparty/sysutils/source/httpclient/httpclient.c
+)
+add_library(sysutils STATIC ${SYSUTILS_SRC})
+target_compile_options(sysutils PRIVATE -DSYSUTILS_HAVE_MBEDTLS_ENABLED)
+target_include_directories(sysutils PRIVATE ${TOP_DIR}/thirdparty/mbedtls/include)
 
 # source files
-file(GLOB THIRDPARTY_SRC src
-    ${TOP_DIR}/thirdparty/sysutils/osal/unix/*.c
-    ${TOP_DIR}/thirdparty/sysutils/source/cutils/*.c
-    ${TOP_DIR}/thirdparty/sysutils/source/httpclient/*.c
+file(GLOB LITEPLAYER_CODEC_SRC src
     ${TOP_DIR}/thirdparty/codecs/mp3-pvmp3/src/*.cpp
     ${TOP_DIR}/thirdparty/codecs/aac-pvaac/*.cpp
     ${TOP_DIR}/thirdparty/speexdsp/resample.c
 )
-
-# source files
-set(LITEPLAYER_SRC
+set(LITEPLAYER_CORE_SRC
+    ${LITEPLAYER_CODEC_SRC}
     ${TOP_DIR}/library/source/esp_adf/audio_element.c
     ${TOP_DIR}/library/source/esp_adf/audio_event_iface.c
     ${TOP_DIR}/library/source/audio_decoder/mp3_pvmp3_wrapper.c
@@ -78,8 +72,24 @@ set(LITEPLAYER_SRC
     ${TOP_DIR}/library/source/liteplayer_ttsplayer.c
     ${TOP_DIR}/library/source/liteplayer_resampler.c
 )
+add_library(liteplayer_core STATIC ${LITEPLAYER_CORE_SRC})
+target_compile_options(liteplayer_core PRIVATE
+    -D__amd64__
+    -DLITEPLAYER_CONFIG_SPEEXDSP_FIXED_POINT
+    -DLITEPLAYER_CONFIG_SINK_FIXED_S16LE
+    -DOSCL_IMPORT_REF= -DOSCL_EXPORT_REF= -DOSCL_UNUSED_ARG=\(void\)
+    -Wno-error=unused-value -Wno-error=unused-function -Wno-error=narrowing
+)
+target_include_directories(liteplayer_core PRIVATE
+    ${TOP_DIR}/thirdparty/codecs
+    ${TOP_DIR}/thirdparty/speexdsp
+    ${TOP_DIR}/thirdparty/codecs/mp3-pvmp3/include
+    ${TOP_DIR}/thirdparty/codecs/mp3-pvmp3/src
+    ${TOP_DIR}/thirdparty/codecs/aac-pvaac
+    ${TOP_DIR}/library/source
+)
 
-set(ADAPTER_SRC
+set(MBEDTLS_SRC
     ${TOP_DIR}/thirdparty/mbedtls/library/aes.c
     ${TOP_DIR}/thirdparty/mbedtls/library/aesni.c
     ${TOP_DIR}/thirdparty/mbedtls/library/arc4.c
@@ -159,14 +169,18 @@ set(ADAPTER_SRC
     ${TOP_DIR}/thirdparty/mbedtls/library/x509write_crt.c
     ${TOP_DIR}/thirdparty/mbedtls/library/x509write_csr.c
     ${TOP_DIR}/thirdparty/mbedtls/library/xtea.c
+)
+add_library(mbedtls STATIC ${MBEDTLS_SRC})
+target_include_directories(mbedtls PRIVATE ${TOP_DIR}/thirdparty/mbedtls/include)
+
+set(LITEPLAYER_ADAPTER_SRC
     ${TOP_DIR}/adapter/source_httpclient_wrapper.c
     ${TOP_DIR}/adapter/source_file_wrapper.c
     ${TOP_DIR}/adapter/sink_wave_wrapper.c
 )
-
 if(HAVE_LINUX_ALSA_ENABLED)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DHAVE_LINUX_ALSA_ENABLED")
-    list(APPEND ADAPTER_SRC ${TOP_DIR}/adapter/sink_alsa_wrapper.c)
+    list(APPEND LITEPLAYER_ADAPTER_SRC ${TOP_DIR}/adapter/sink_alsa_wrapper.c)
 elseif(HAVE_PORT_AUDIO_ENABLED)
     set(PORTAUDIO_DIR "${TOP_DIR}/thirdparty/portaudio")
     include_directories(${PORTAUDIO_DIR}/include)
@@ -212,14 +226,32 @@ elseif(HAVE_PORT_AUDIO_ENABLED)
     endif()
 
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DHAVE_PORT_AUDIO_ENABLED")
-    list(APPEND ADAPTER_SRC
+    list(APPEND LITEPLAYER_ADAPTER_SRC
         ${PORTAUDIO_SRC}
         ${TOP_DIR}/adapter/sink_portaudio_wrapper.c)
 endif()
+add_library(liteplayer_adapter STATIC ${LITEPLAYER_ADAPTER_SRC})
 
 # basic_demo
-add_executable(basic_demo basic_demo.c ${THIRDPARTY_SRC} ${LITEPLAYER_SRC} ${ADAPTER_SRC})
-target_link_libraries(basic_demo pthread m)
-if(HAVE_LINUX_ALSA_ENABLED)
+add_executable(basic_demo basic_demo.c)
+target_link_libraries(basic_demo liteplayer_core liteplayer_adapter sysutils mbedtls pthread m)
+
+# playlist_demo
+add_executable(playlist_demo playlist_demo.c)
+target_link_libraries(playlist_demo liteplayer_core liteplayer_adapter sysutils mbedtls pthread m)
+
+# tts_demo
+add_executable(tts_demo tts_demo.c)
+target_link_libraries(tts_demo liteplayer_core liteplayer_adapter sysutils mbedtls pthread m)
+
+if(CMAKE_SYSTEM_NAME MATCHES "Linux")
     target_link_libraries(basic_demo asound)
+    target_link_libraries(playlist_demo asound)
+    target_link_libraries(tts_demo asound)
 endif()
+
+file(COPY
+    ${CMAKE_SOURCE_DIR}/test.mp3
+    ${CMAKE_SOURCE_DIR}/test.m4a
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+)
