@@ -2,34 +2,58 @@ cmake_minimum_required(VERSION 2.8)
 project(liteplayer_core)
 
 set(TOP_DIR "${CMAKE_SOURCE_DIR}/..")
-set(THIRDPARTY_DIR "${TOP_DIR}/thirdparty")
 
 # cflags: OS_LINUX, OS_ANDROID, OS_APPLE, OS_RTOS
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -Wall -Werror -DOS_APPLE")
 
-# cflag: platform&compiler: __arm__/__amd64__, __GNUC__
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D__amd64__")
-
-# cflag: libmad: LITEPLAYER_CONFIG_MAD_FPM_64BIT/LITEPLAYER_CONFIG_MAD_FPM_ARM/LITEPLAYER_CONFIG_MAD_FPM_DEFAULT
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DLITEPLAYER_CONFIG_MAD_FPM_DEFAULT")
-
-# cflag: libspeexdsp: LITEPLAYER_CONFIG_SPEEXDSP_FIXED_POINT/LITEPLAYER_CONFIG_SPEEXDSP_FLOATING_POINT
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DLITEPLAYER_CONFIG_SPEEXDSP_FIXED_POINT")
-
-# cflag: decoder: LITEPLAYER_CONFIG_AAC_SBR. It's better to enable it if using fdk-aac
-#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DLITEPLAYER_CONFIG_AAC_SBR")
-
-# cflags: sink: LITEPLAYER_CONFIG_SINK_FIXED_S16LE. Don't config it if sink support S24LE/S32LE
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DLITEPLAYER_CONFIG_SINK_FIXED_S16LE")
-
 # include files
-include_directories(${THIRDPARTY_DIR}/sysutils/include)
-include_directories(${THIRDPARTY_DIR}/codecs)
-include_directories(${THIRDPARTY_DIR}/speexdsp)
+include_directories(${TOP_DIR}/thirdparty/sysutils/include)
 include_directories(${TOP_DIR}/library/include)
-include_directories(${TOP_DIR}/library/source)
+
 # liteplayer files
+set(CODECS_SRC
+    ${TOP_DIR}/thirdparty/speexdsp/resample.c
+    ${TOP_DIR}/thirdparty/codecs/mp3-mad/bit.c
+    ${TOP_DIR}/thirdparty/codecs/mp3-mad/decoder.c
+    ${TOP_DIR}/thirdparty/codecs/mp3-mad/fixed.c
+    ${TOP_DIR}/thirdparty/codecs/mp3-mad/frame.c
+    ${TOP_DIR}/thirdparty/codecs/mp3-mad/huffman.c
+    ${TOP_DIR}/thirdparty/codecs/mp3-mad/layer12.c
+    ${TOP_DIR}/thirdparty/codecs/mp3-mad/layer3.c
+    ${TOP_DIR}/thirdparty/codecs/mp3-mad/stream.c
+    ${TOP_DIR}/thirdparty/codecs/mp3-mad/synth.c
+    ${TOP_DIR}/thirdparty/codecs/mp3-mad/timer.c
+    ${TOP_DIR}/thirdparty/codecs/mp3-mad/version.c
+    ${TOP_DIR}/thirdparty/codecs/aac-helix/aacdec.c
+    ${TOP_DIR}/thirdparty/codecs/aac-helix/aactabs.c
+    ${TOP_DIR}/thirdparty/codecs/aac-helix/bitstream.c
+    ${TOP_DIR}/thirdparty/codecs/aac-helix/buffers.c
+    ${TOP_DIR}/thirdparty/codecs/aac-helix/dct4.c
+    ${TOP_DIR}/thirdparty/codecs/aac-helix/decelmnt.c
+    ${TOP_DIR}/thirdparty/codecs/aac-helix/dequant.c
+    ${TOP_DIR}/thirdparty/codecs/aac-helix/fft.c
+    ${TOP_DIR}/thirdparty/codecs/aac-helix/filefmt.c
+    ${TOP_DIR}/thirdparty/codecs/aac-helix/huffman.c
+    ${TOP_DIR}/thirdparty/codecs/aac-helix/hufftabs.c
+    ${TOP_DIR}/thirdparty/codecs/aac-helix/imdct.c
+    ${TOP_DIR}/thirdparty/codecs/aac-helix/noiseless.c
+    ${TOP_DIR}/thirdparty/codecs/aac-helix/pns.c
+    ${TOP_DIR}/thirdparty/codecs/aac-helix/sbr.c
+    ${TOP_DIR}/thirdparty/codecs/aac-helix/sbrfft.c
+    ${TOP_DIR}/thirdparty/codecs/aac-helix/sbrfreq.c
+    ${TOP_DIR}/thirdparty/codecs/aac-helix/sbrhfadj.c
+    ${TOP_DIR}/thirdparty/codecs/aac-helix/sbrhfgen.c
+    ${TOP_DIR}/thirdparty/codecs/aac-helix/sbrhuff.c
+    ${TOP_DIR}/thirdparty/codecs/aac-helix/sbrimdct.c
+    ${TOP_DIR}/thirdparty/codecs/aac-helix/sbrmath.c
+    ${TOP_DIR}/thirdparty/codecs/aac-helix/sbrqmf.c
+    ${TOP_DIR}/thirdparty/codecs/aac-helix/sbrside.c
+    ${TOP_DIR}/thirdparty/codecs/aac-helix/sbrtabs.c
+    ${TOP_DIR}/thirdparty/codecs/aac-helix/stproc.c
+    ${TOP_DIR}/thirdparty/codecs/aac-helix/tns.c
+    ${TOP_DIR}/thirdparty/codecs/aac-helix/trigtabs.c)
 set(LITEPLAYER_SRC
+    ${CODECS_SRC}
     ${TOP_DIR}/library/source/esp_adf/audio_element.c
     ${TOP_DIR}/library/source/esp_adf/audio_event_iface.c
     ${TOP_DIR}/library/source/audio_decoder/mp3_mad_wrapper.c
@@ -49,65 +73,30 @@ set(LITEPLAYER_SRC
     ${TOP_DIR}/library/source/liteplayer_main.c
     ${TOP_DIR}/library/source/liteplayer_listplayer.c
     ${TOP_DIR}/library/source/liteplayer_ttsplayer.c
-    ${TOP_DIR}/library/source/liteplayer_resampler.c
-)
-# codecs files
-set(CODECS_SRC
-    ${THIRDPARTY_DIR}/speexdsp/resample.c   
-    ${THIRDPARTY_DIR}/codecs/mp3-mad/bit.c
-    ${THIRDPARTY_DIR}/codecs/mp3-mad/decoder.c
-    ${THIRDPARTY_DIR}/codecs/mp3-mad/fixed.c
-    ${THIRDPARTY_DIR}/codecs/mp3-mad/frame.c
-    ${THIRDPARTY_DIR}/codecs/mp3-mad/huffman.c
-    ${THIRDPARTY_DIR}/codecs/mp3-mad/layer12.c
-    ${THIRDPARTY_DIR}/codecs/mp3-mad/layer3.c
-    ${THIRDPARTY_DIR}/codecs/mp3-mad/stream.c
-    ${THIRDPARTY_DIR}/codecs/mp3-mad/synth.c
-    ${THIRDPARTY_DIR}/codecs/mp3-mad/timer.c
-    ${THIRDPARTY_DIR}/codecs/mp3-mad/version.c
-    ${THIRDPARTY_DIR}/codecs/aac-helix/aacdec.c
-    ${THIRDPARTY_DIR}/codecs/aac-helix/aactabs.c
-    ${THIRDPARTY_DIR}/codecs/aac-helix/bitstream.c
-    ${THIRDPARTY_DIR}/codecs/aac-helix/buffers.c
-    ${THIRDPARTY_DIR}/codecs/aac-helix/dct4.c
-    ${THIRDPARTY_DIR}/codecs/aac-helix/decelmnt.c
-    ${THIRDPARTY_DIR}/codecs/aac-helix/dequant.c
-    ${THIRDPARTY_DIR}/codecs/aac-helix/fft.c
-    ${THIRDPARTY_DIR}/codecs/aac-helix/filefmt.c
-    ${THIRDPARTY_DIR}/codecs/aac-helix/huffman.c
-    ${THIRDPARTY_DIR}/codecs/aac-helix/hufftabs.c
-    ${THIRDPARTY_DIR}/codecs/aac-helix/imdct.c
-    ${THIRDPARTY_DIR}/codecs/aac-helix/noiseless.c
-    ${THIRDPARTY_DIR}/codecs/aac-helix/pns.c
-    ${THIRDPARTY_DIR}/codecs/aac-helix/sbr.c
-    ${THIRDPARTY_DIR}/codecs/aac-helix/sbrfft.c
-    ${THIRDPARTY_DIR}/codecs/aac-helix/sbrfreq.c
-    ${THIRDPARTY_DIR}/codecs/aac-helix/sbrhfadj.c
-    ${THIRDPARTY_DIR}/codecs/aac-helix/sbrhfgen.c
-    ${THIRDPARTY_DIR}/codecs/aac-helix/sbrhuff.c
-    ${THIRDPARTY_DIR}/codecs/aac-helix/sbrimdct.c
-    ${THIRDPARTY_DIR}/codecs/aac-helix/sbrmath.c
-    ${THIRDPARTY_DIR}/codecs/aac-helix/sbrqmf.c
-    ${THIRDPARTY_DIR}/codecs/aac-helix/sbrside.c
-    ${THIRDPARTY_DIR}/codecs/aac-helix/sbrtabs.c
-    ${THIRDPARTY_DIR}/codecs/aac-helix/stproc.c
-    ${THIRDPARTY_DIR}/codecs/aac-helix/tns.c
-    ${THIRDPARTY_DIR}/codecs/aac-helix/trigtabs.c
-)
+    ${TOP_DIR}/library/source/liteplayer_resampler.c)
+add_library(liteplayer_core STATIC ${LITEPLAYER_SRC})
+target_compile_options(liteplayer_core PRIVATE
+    #platform: __arm__/__amd64__, __GNUC__
+    -D__amd64__
+    #libmad: LITEPLAYER_CONFIG_MAD_FPM_64BIT/LITEPLAYER_CONFIG_MAD_FPM_ARM/LITEPLAYER_CONFIG_MAD_FPM_DEFAULT
+    -DLITEPLAYER_CONFIG_MAD_FPM_DEFAULT
+    #helix-aac: don't config it if sbr isn't needed for rtos devices
+    -DLITEPLAYER_CONFIG_AAC_SBR
+    #speexdsp: LITEPLAYER_CONFIG_SPEEXDSP_FIXED_POINT/LITEPLAYER_CONFIG_SPEEXDSP_FLOATING_POINT
+    -DLITEPLAYER_CONFIG_SPEEXDSP_FIXED_POINT
+    #sink: don't config it if sink support S24LE/S32LE
+    -DLITEPLAYER_CONFIG_SINK_FIXED_S16LE)
+target_include_directories(liteplayer_core PRIVATE
+    ${TOP_DIR}/thirdparty/codecs ${TOP_DIR}/thirdparty/speexdsp ${TOP_DIR}/library/source)
+
 # sysutils files
 set(SYSUTILS_SRC
-    ${THIRDPARTY_DIR}/sysutils/osal/unix/os_log.c
-    ${THIRDPARTY_DIR}/sysutils/osal/unix/os_memory.c
-    ${THIRDPARTY_DIR}/sysutils/osal/unix/os_thread.c
-    ${THIRDPARTY_DIR}/sysutils/osal/unix/os_time.c
-    ${THIRDPARTY_DIR}/sysutils/source/cutils/memdbg.c
-    ${THIRDPARTY_DIR}/sysutils/source/cutils/mlooper.c
-    ${THIRDPARTY_DIR}/sysutils/source/cutils/mqueue.c
-    ${THIRDPARTY_DIR}/sysutils/source/cutils/ringbuf.c
-)
-
-# liteplayer_core lib
-add_library(liteplayer_core STATIC ${CODECS_SRC} ${LITEPLAYER_SRC})
-
-# sysutils lib
+    ${TOP_DIR}/thirdparty/sysutils/osal/unix/os_log.c
+    ${TOP_DIR}/thirdparty/sysutils/osal/unix/os_memory.c
+    ${TOP_DIR}/thirdparty/sysutils/osal/unix/os_thread.c
+    ${TOP_DIR}/thirdparty/sysutils/osal/unix/os_time.c
+    ${TOP_DIR}/thirdparty/sysutils/source/cutils/memdbg.c
+    ${TOP_DIR}/thirdparty/sysutils/source/cutils/mlooper.c
+    ${TOP_DIR}/thirdparty/sysutils/source/cutils/mqueue.c
+    ${TOP_DIR}/thirdparty/sysutils/source/cutils/ringbuf.c)
 add_library(sysutils STATIC ${SYSUTILS_SRC})

@@ -77,6 +77,7 @@ target_compile_options(liteplayer_core PRIVATE
     -D__amd64__
     -DLITEPLAYER_CONFIG_SPEEXDSP_FIXED_POINT
     -DLITEPLAYER_CONFIG_SINK_FIXED_S16LE
+    -DLITEPLAYER_CONFIG_AAC_SBR
     -DOSCL_IMPORT_REF= -DOSCL_EXPORT_REF= -DOSCL_UNUSED_ARG=\(void\)
     -Wno-error=unused-value -Wno-error=unused-function -Wno-error=narrowing
 )
