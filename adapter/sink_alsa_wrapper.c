@@ -22,20 +22,11 @@
 #include "cutils/memory_helper.h"
 #include "cutils/log_helper.h"
 #include "liteplayer_debug.h"
-#include "liteplayer_resampler.h"
 #include "sink_alsa_wrapper.h"
 
 #define TAG "[liteplayer]alsa"
 
-//#define ENABLE_RESAMPLER
-
 //#define ENABLE_SOCKETUPLOAD
-
-#if defined(ENABLE_RESAMPLER)
-    #define RESAMPLER_QUALITY      8
-    #define RESAMPLER_OUT_RATE     48000
-    #define RESAMPLER_OUT_CHANNELS 2
-#endif
 
 #if defined(ENABLE_SOCKETUPLOAD)
     // see tools/socket_upload.py
@@ -52,10 +43,6 @@ struct alsa_wrapper {
     snd_pcm_format_t format;
     size_t bits_per_sample;
     size_t bits_per_frame;
-
-#if defined(ENABLE_RESAMPLER)
-    resampler_handle_t resampler;
-#endif
 
 #if defined(ENABLE_SOCKETUPLOAD)
     socketupload_handle_t uploader;
@@ -74,25 +61,6 @@ sink_handle_t alsa_wrapper_open(int samplerate, int channels, int bits, void *pr
         (struct alsa_wrapper *)OS_CALLOC(1, sizeof(struct alsa_wrapper));
     if (alsa == NULL)
         return NULL;
-
-#if defined(ENABLE_RESAMPLER)
-    if (samplerate != RESAMPLER_OUT_RATE || channels != RESAMPLER_OUT_CHANNELS) {
-        alsa->resampler = resampler_init();
-        if (alsa->resampler == NULL) goto fail_open;
-        struct resampler_cfg cfg = {
-            .in_channels = channels,
-            .in_rate = samplerate,
-            .out_channels = RESAMPLER_OUT_CHANNELS,
-            .out_rate = RESAMPLER_OUT_RATE,
-            .bits = bits,
-            .quality = RESAMPLER_QUALITY,
-        };
-        if (alsa->resampler->open(alsa->resampler, &cfg) != 0)
-            goto fail_open;
-        samplerate = RESAMPLER_OUT_RATE;
-        channels = RESAMPLER_OUT_CHANNELS;
-    }
-#endif
 
 #if defined(ENABLE_SOCKETUPLOAD)
     alsa->uploader = socketupload_init(SOCKETUPLOAD_RINGBUF_SIZE);
@@ -199,13 +167,6 @@ fail_open:
     }
 #endif
 
-#if defined(ENABLE_RESAMPLER)
-    if (alsa->resampler != NULL) {
-        alsa->resampler->destroy(alsa->resampler);
-        alsa->resampler = NULL;
-    }
-#endif
-
     OS_FREE(alsa);
     return NULL;
 }
@@ -213,18 +174,6 @@ fail_open:
 int alsa_wrapper_write(sink_handle_t handle, char *buffer, int size)
 {
     struct alsa_wrapper *alsa = (struct alsa_wrapper *)handle;
-
-#if defined(ENABLE_RESAMPLER)
-    if (alsa->resampler != NULL) {
-        if (alsa->resampler->process(alsa->resampler, (const short *)buffer, size) == 0) {
-            buffer = (char *)alsa->resampler->out_buf;
-            size = alsa->resampler->out_bytes;
-        } else {
-            OS_LOGE(TAG, "Failed to process resampler");
-            return -1;
-        }
-    }
-#endif
 
 #if defined(ENABLE_SOCKETUPLOAD)
     if (alsa->uploader != NULL)
@@ -269,13 +218,6 @@ void alsa_wrapper_close(sink_handle_t handle)
     if (alsa->uploader != NULL) {
         alsa->uploader->stop(alsa->uploader);
         alsa->uploader->destroy(alsa->uploader);
-    }
-#endif
-
-#if defined(ENABLE_RESAMPLER)
-    if (alsa->resampler != NULL) {
-        alsa->resampler->close(alsa->resampler);
-        alsa->resampler->destroy(alsa->resampler);
     }
 #endif
 

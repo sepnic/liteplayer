@@ -12,7 +12,6 @@ include_directories(${TOP_DIR}/library/include)
 
 # liteplayer files
 set(CODECS_SRC
-    ${TOP_DIR}/thirdparty/speexdsp/resample.c
     ${TOP_DIR}/thirdparty/codecs/mp3-mad/bit.c
     ${TOP_DIR}/thirdparty/codecs/mp3-mad/decoder.c
     ${TOP_DIR}/thirdparty/codecs/mp3-mad/fixed.c
@@ -72,8 +71,7 @@ set(LITEPLAYER_SRC
     ${TOP_DIR}/library/source/liteplayer_debug.c
     ${TOP_DIR}/library/source/liteplayer_main.c
     ${TOP_DIR}/library/source/liteplayer_listplayer.c
-    ${TOP_DIR}/library/source/liteplayer_ttsplayer.c
-    ${TOP_DIR}/library/source/liteplayer_resampler.c)
+    ${TOP_DIR}/library/source/liteplayer_ttsplayer.c)
 add_library(liteplayer_core STATIC ${LITEPLAYER_SRC})
 target_compile_options(liteplayer_core PRIVATE
     #platform: __arm__/__amd64__, __GNUC__
@@ -82,12 +80,9 @@ target_compile_options(liteplayer_core PRIVATE
     -DLITEPLAYER_CONFIG_MAD_FPM_DEFAULT
     #helix-aac: don't config it if sbr isn't needed for rtos devices
     -DLITEPLAYER_CONFIG_AAC_SBR
-    #speexdsp: LITEPLAYER_CONFIG_SPEEXDSP_FIXED_POINT/LITEPLAYER_CONFIG_SPEEXDSP_FLOATING_POINT
-    -DLITEPLAYER_CONFIG_SPEEXDSP_FIXED_POINT
     #sink: don't config it if sink support S24LE/S32LE
     -DLITEPLAYER_CONFIG_SINK_FIXED_S16LE)
-target_include_directories(liteplayer_core PRIVATE
-    ${TOP_DIR}/thirdparty/codecs ${TOP_DIR}/thirdparty/speexdsp ${TOP_DIR}/library/source)
+target_include_directories(liteplayer_core PRIVATE ${TOP_DIR}/thirdparty/codecs ${TOP_DIR}/library/source)
 
 # sysutils files
 set(SYSUTILS_SRC
