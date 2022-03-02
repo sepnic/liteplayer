@@ -43,7 +43,7 @@ add_library(sysutils STATIC ${SYSUTILS_SRC})
 target_compile_options(sysutils PRIVATE -DSYSUTILS_HAVE_MBEDTLS_ENABLED)
 target_include_directories(sysutils PRIVATE ${TOP_DIR}/thirdparty/mbedtls/include)
 
-# source files
+# liteplayer files
 file(GLOB LITEPLAYER_CODEC_SRC src
     ${TOP_DIR}/thirdparty/codecs/mp3-pvmp3/src/*.cpp
     ${TOP_DIR}/thirdparty/codecs/aac-pvaac/*.cpp
@@ -86,10 +86,12 @@ target_include_directories(liteplayer_core PRIVATE
     ${TOP_DIR}/library/source
 )
 
+# mbedtls files
 file(GLOB MBEDTLS_SRC src ${TOP_DIR}/thirdparty/mbedtls/library/*.c)
 add_library(mbedtls STATIC ${MBEDTLS_SRC})
 target_include_directories(mbedtls PRIVATE ${TOP_DIR}/thirdparty/mbedtls/include)
 
+# adapter files
 set(LITEPLAYER_ADAPTER_SRC
     ${TOP_DIR}/adapter/source_httpclient_wrapper.c
     ${TOP_DIR}/adapter/source_file_wrapper.c

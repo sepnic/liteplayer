@@ -1,6 +1,0 @@
-[submodule "thirdparty/sysutils"]
-	path = thirdparty/sysutils
-	url = https://github.com/sepnic/sysutils.git
-[submodule "example/liteplayer_android"]
-	path = example/liteplayer_android
-	url = https://github.com/sepnic/liteplayer_android.git

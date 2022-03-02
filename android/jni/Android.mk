@@ -56,7 +56,7 @@ LOCAL_C_INCLUDES += \
     ${TOP_DIR}/thirdparty/codecs/aac-pvaac
 LOCAL_CFLAGS += -Wall -Werror -DOS_ANDROID
 LOCAL_CFLAGS += -DLITEPLAYER_CONFIG_SINK_FIXED_S16LE
-LOCAL_CFLAGS += -Wno-error=unused-value -Wno-error=narrowing
+LOCAL_CFLAGS += -Wno-error=narrowing
 LOCAL_CFLAGS += -Wno-error=implicit-const-int-float-conversion
 LOCAL_CFLAGS += -Wno-error=void-pointer-to-enum-cast
 LOCAL_CFLAGS += -DOSCL_IMPORT_REF= -DOSCL_EXPORT_REF= -DOSCL_UNUSED_ARG=\(void\)
@@ -84,7 +84,6 @@ LOCAL_C_INCLUDES += \
     ${TOP_DIR}/thirdparty/mbedtls/include
 LOCAL_CFLAGS += -Wall -Werror -DOS_ANDROID
 LOCAL_CFLAGS += -D_SOCKLEN_T -DSYSUTILS_HAVE_MBEDTLS_ENABLED
-LOCAL_CFLAGS += -Wno-error=inline-asm -Wno-error=implicit-const-int-float-conversion
 LOCAL_LDLIBS := -llog -lOpenSLES
 LOCAL_SHARED_LIBRARIES += sysutils
 LOCAL_MODULE := liteplayer_adapter
