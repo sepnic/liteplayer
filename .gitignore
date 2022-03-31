@@ -17,8 +17,8 @@
 *.pch
 
 # Libraries
-*.lib
-*.a
+#*.lib
+#*.a
 *.la
 *.lo
 
@@ -51,15 +51,20 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
+*.playlist
 *.patch
 *.diff
 *.bak
 *.DS_Store
-*.playlist
-out/
-libs/
-obj/
 
+# CMake generated files
 CMakeCache.txt
 CMakeFiles
 cmake_install.cmake
+
+# Output files
+obj/
+libs/
+bin/
+gen/
+out/
