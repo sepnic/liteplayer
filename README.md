@@ -1,8 +1,5 @@
 Liteplayer 是一个为嵌入式平台设计的低开销低延时的音频播放器，已运行在千万级别的设备上，包括 Android、iOS、Linux、RTOS 多种终端平台
 
-Android demo: https://github.com/sepnic/liteplayer_android
-ESP32 demo: https://github.com/sepnic/liteplayer_esp32
-
 Liteplayer 具有如下特点：
 1. 支持 MP3、AAC、M4A、WAV、FLAC、OPUS 格式，支持本地文件、本地播放列表、HTTP/HTTPS/HLS 和 TTS 数据流，接口和状态机与 Android MediaPlayer 一致
 2. 极低的系统开销，1-2 个线程（建议网络流使用双线程模式，文件流使用单线程模式），最低至 48KB 堆内存占用，已集成在 主频192MHz + 内存448KB 的系统上并产品量产；高配置平台上可配置更大的缓冲区以取得更好的播放体验
