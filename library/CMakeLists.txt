@@ -4,7 +4,7 @@ project(liteplayer_core)
 set(TOP_DIR "${CMAKE_SOURCE_DIR}/..")
 
 # cflags: OS_LINUX, OS_ANDROID, OS_APPLE, OS_RTOS
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -Wall -Werror -DOS_APPLE")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -std=gnu99 -Wall -Werror -DOS_APPLE")
 
 # include files
 include_directories(${TOP_DIR}/thirdparty/sysutils/include)
