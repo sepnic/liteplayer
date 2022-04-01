@@ -55,7 +55,7 @@ LOCAL_C_INCLUDES += \
     ${TOP_DIR}/thirdparty/codecs/mp3-pvmp3/src \
     ${TOP_DIR}/thirdparty/codecs/aac-pvaac
 LOCAL_CFLAGS += -Wall -Werror -DOS_ANDROID
-LOCAL_CFLAGS += -DLITEPLAYER_CONFIG_SINK_FIXED_S16LE
+LOCAL_CFLAGS += -DLITEPLAYER_CONFIG_SINK_FIXED_S16LE -DLITEPLAYER_CONFIG_AAC_SBR
 LOCAL_CFLAGS += -Wno-error=narrowing
 LOCAL_CFLAGS += -Wno-error=implicit-const-int-float-conversion
 LOCAL_CFLAGS += -Wno-error=void-pointer-to-enum-cast

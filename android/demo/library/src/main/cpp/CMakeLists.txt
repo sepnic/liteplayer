@@ -64,6 +64,7 @@ target_compile_options(liteplayer_core PRIVATE
     -DLITEPLAYER_CONFIG_SINK_FIXED_S16LE -DLITEPLAYER_CONFIG_AAC_SBR
     -DOSCL_IMPORT_REF= -DOSCL_EXPORT_REF= -DOSCL_UNUSED_ARG=\(void\)
     -Wno-error=unused-value -Wno-error=unused-function -Wno-error=narrowing
+    -Wno-error=implicit-const-int-float-conversion
 )
 target_include_directories(liteplayer_core PRIVATE
     ${TOP_DIR}/thirdparty/sysutils/include
