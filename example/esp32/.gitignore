@@ -1,3 +1,4 @@
-/build
-/sdkconfig
-/sdkconfig.old
+# esp32
+build/
+sdkconfig
+sdkconfig.old

@@ -5,24 +5,23 @@
 See https://docs.espressif.com/projects/esp-adf/zh_CN/latest/get-started/index.html
 
 My esp-adf info:
- - REPO: https://github.com/espressif/esp-adf.git
- - BRANCH: master
- - HEAD: 6fa029230263cec69f13167b1810c06d37cbc20c
+ - repo: https://github.com/espressif/esp-adf.git
+ - branch: master
+ - head: fde2bb04a9e5873cd0a1657529b14c719c03466e
+ - idf_ver: v3.3
 
-### Setup the environment variables
-
-I suppose you have a installtion directory named 'espressif'.
+### Setup the environment variants
 
 ``` bash
-export ADF_PATH="$espressif/esp-adf"
+export ADF_PATH="<YOUR ADF PATH>"
 export IDF_PATH="$ADF_PATH/esp-idf"
+export IDF_TOOLS_PATH="<YOUR IDF TOOLS PATH>"
 . $IDF_PATH/export.sh
 ```
 
 ### Build the project
 
 ``` bash
-cd builds/esp32
 idf.py menuconfig                # config your wifi ssid and password, audio board
 idf.py build                     # build
 idf.py -p <PORT> flash monitor   # flash image and monitor serial message

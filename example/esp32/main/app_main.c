@@ -19,7 +19,6 @@
 #include "cutils/log_helper.h"
 #include "cutils/memory_helper.h"
 #include "liteplayer_main.h"
-
 #include "source_httpclient_wrapper.h"
 #include "sink_esp32_i2s_wrapper.h"
 
@@ -43,9 +42,9 @@
 
 #define TAG "liteplayer_demo"
 
-#define I2S_PORT  ( I2S_NUM_0 )
-#define MCLK_GPIO ( GPIO_NUM_0 )
-#define DEFAULT_VOLUME 50
+#define I2S_PORT        I2S_NUM_0
+#define MCLK_GPIO       GPIO_NUM_0
+#define DEFAULT_VOLUME  50
 
 #define HTTP_URL "http://ailabsaicloudservice.alicdn.com/player/resources/23a2d715f019c0e345235f379fa26a30.mp3"
 
@@ -94,9 +93,9 @@ static int liteplayer_demo_state_listener(enum liteplayer_state state, int errco
     return 0;
 }
 
-static void *liteplayer_demo(void *arg)
+static void *liteplayer_demo_thread(void *arg)
 {
-    OS_LOGI(TAG, "liteplayer_demo thread enter");
+    OS_LOGI(TAG, "liteplayer_demo_thread enter");
     const char *url = (const char *)arg;
 
     liteplayer_handle_t player = liteplayer_create();
@@ -150,7 +149,6 @@ static void *liteplayer_demo(void *arg)
         OS_LOGE(TAG, "Failed to start player");
         goto test_done;
     }
-    OS_MEMORY_DUMP();
     while (player_state != LITEPLAYER_COMPLETED && player_state != LITEPLAYER_ERROR) {
         os_thread_sleep_msec(100);
     }
@@ -172,27 +170,28 @@ test_done:
     liteplayer_destroy(player);
     os_thread_sleep_msec(100);
 
-    OS_LOGI(TAG, "liteplayer_demo thread leave");
+    OS_LOGI(TAG, "liteplayer_demo_thread leave");
     return NULL;
 }
 
 void app_main()
 {
-    printf("Hello liteplayer!\n");
+    OS_LOGI(TAG, "Hello liteplayer\n");
 
+    OS_LOGI(TAG, "Init nvs flash");
     esp_err_t err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES) {
         // NVS partition was truncated and needs to be erased
-        // Retry nvs_flash_init
         ESP_ERROR_CHECK(nvs_flash_erase());
         err = nvs_flash_init();
     }
+
+    OS_LOGI(TAG, "Start and wait for Wi-Fi network");
 #if (ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 1, 0))
     ESP_ERROR_CHECK(esp_netif_init());
 #else
     tcpip_adapter_init();
 #endif
-    OS_LOGI(TAG, "Start and wait for Wi-Fi network");
     esp_periph_config_t periph_cfg = DEFAULT_ESP_PERIPH_SET_CONFIG();
     esp_periph_set_handle_t set = esp_periph_set_init(&periph_cfg);
     periph_wifi_cfg_t wifi_cfg = {
@@ -235,14 +234,12 @@ void app_main()
     }
     i2s_mclk_gpio_select(I2S_PORT, MCLK_GPIO);
 
+    OS_LOGI(TAG, "Start liteplayer demo thread");
     struct os_thread_attr attr = {
         .name = "liteplayer_demo",
         .priority = OS_THREAD_PRIO_NORMAL,
         .stacksize = 8192,
         .joinable = false,
     };
-    os_thread_create(&attr, liteplayer_demo, HTTP_URL);
-
-    while (1)
-        os_thread_sleep_msec(100);
+    os_thread_create(&attr, liteplayer_demo_thread, HTTP_URL);
 }

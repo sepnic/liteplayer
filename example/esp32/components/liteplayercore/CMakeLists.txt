@@ -1,15 +1,13 @@
-set(TOP_DIR ../../../..)
+set(TOP_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../..)
 set(LITEPLAYER_DIR ${TOP_DIR}/library)
 set(THIRDPARTY_DIR ${TOP_DIR}/thirdparty)
 
 set(COMPONENT_REQUIRES)
 set(COMPONENT_PRIV_REQUIRES sysutils)
 
-set(COMPONENT_ADD_INCLUDEDIRS
-    ${LITEPLAYER_DIR}/include
-)
+set(COMPONENT_ADD_INCLUDEDIRS ${LITEPLAYER_DIR}/include)
 
-set (COMPONENT_PRIV_INCLUDEDIRS
+set(COMPONENT_PRIV_INCLUDEDIRS
     ${THIRDPARTY_DIR}/sysutils/include
     ${THIRDPARTY_DIR}/codecs
     ${THIRDPARTY_DIR}/codecs/mp3-pvmp3/include
@@ -39,7 +37,6 @@ set(COMPONENT_SRCS
     ${LITEPLAYER_DIR}/source/liteplayer_adapter.c
     ${LITEPLAYER_DIR}/source/liteplayer_source.c
     ${LITEPLAYER_DIR}/source/liteplayer_parser.c
-    ${LITEPLAYER_DIR}/source/liteplayer_debug.c
     ${LITEPLAYER_DIR}/source/liteplayer_main.c
     ${LITEPLAYER_DIR}/source/liteplayer_listplayer.c
     ${LITEPLAYER_DIR}/source/liteplayer_ttsplayer.c
