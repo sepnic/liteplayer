@@ -6,10 +6,10 @@ TOP_DIR := ${LOCAL_PATH}/../..
 MBEDTLS_FILES := $(wildcard  ${TOP_DIR}/thirdparty/mbedtls/library/*.c)
 LOCAL_SRC_FILES := $(MBEDTLS_FILES:$(LOCAL_PATH)/%=%)
 LOCAL_C_INCLUDES += ${TOP_DIR}/thirdparty/mbedtls/include
-LOCAL_CFLAGS += -Wall -Werror
+LOCAL_CFLAGS += -Wall -Werror -fPIC
 LOCAL_CFLAGS += -D_SOCKLEN_T
 LOCAL_MODULE := libmbedtls
-include $(BUILD_SHARED_LIBRARY)
+include $(BUILD_STATIC_LIBRARY)
 
 ## sysutils
 include $(CLEAR_VARS)
@@ -27,12 +27,12 @@ LOCAL_SRC_FILES := \
 LOCAL_C_INCLUDES += \
     ${TOP_DIR}/thirdparty/mbedtls/include \
     ${TOP_DIR}/thirdparty/sysutils/include
-LOCAL_CFLAGS += -Wall -Werror -DOS_ANDROID
+LOCAL_CFLAGS += -Wall -Werror -fPIC -DOS_ANDROID
 LOCAL_CFLAGS += -DSYSUTILS_HAVE_MBEDTLS_ENABLED
 LOCAL_LDLIBS := -llog
 LOCAL_SHARED_LIBRARIES += mbedtls
 LOCAL_MODULE := libsysutils
-include $(BUILD_SHARED_LIBRARY)
+include $(BUILD_STATIC_LIBRARY)
 
 ## liteplayercore
 include $(CLEAR_VARS)
@@ -70,17 +70,17 @@ LOCAL_C_INCLUDES += \
     ${TOP_DIR}/thirdparty/codecs/mp3-pvmp3/include \
     ${TOP_DIR}/thirdparty/codecs/mp3-pvmp3/src \
     ${TOP_DIR}/thirdparty/codecs/aac-pvaac
-LOCAL_CFLAGS += -Wall -Werror
+LOCAL_CFLAGS += -Wall -Werror -fPIC
 LOCAL_CFLAGS += -DLITEPLAYER_CONFIG_SINK_FIXED_S16LE -DLITEPLAYER_CONFIG_AAC_SBR
 LOCAL_CFLAGS += -Wno-error=narrowing
 LOCAL_CFLAGS += -Wno-error=implicit-const-int-float-conversion
 LOCAL_CFLAGS += -Wno-error=void-pointer-to-enum-cast
 LOCAL_CFLAGS += -DOSCL_IMPORT_REF= -DOSCL_EXPORT_REF= -DOSCL_UNUSED_ARG=\(void\)
-LOCAL_CPPFLAGS += -Wall -Werror -std=c++11
+LOCAL_CPPFLAGS += -Wall -Werror -fPIC -std=c++11
 LOCAL_LDLIBS := -llog
 LOCAL_SHARED_LIBRARIES += sysutils
 LOCAL_MODULE := libliteplayer_core
-include $(BUILD_SHARED_LIBRARY)
+include $(BUILD_STATIC_LIBRARY)
 
 ## liteplayeradapter
 include $(CLEAR_VARS)
@@ -93,8 +93,9 @@ LOCAL_C_INCLUDES += \
     ${TOP_DIR}/library/include \
     ${TOP_DIR}/adapter \
     ${TOP_DIR}/thirdparty/sysutils/include
-LOCAL_CFLAGS += -Wall -Werror
+LOCAL_CFLAGS += -Wall -Werror -fPIC
+LOCAL_CPPFLAGS += -Wall -Werror -fPIC -std=c++11
 LOCAL_LDLIBS := -llog -lOpenSLES
 LOCAL_SHARED_LIBRARIES += sysutils
 LOCAL_MODULE := liteplayer_adapter
-include $(BUILD_SHARED_LIBRARY)
+include $(BUILD_STATIC_LIBRARY)

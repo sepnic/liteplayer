@@ -3,8 +3,8 @@ cmake_minimum_required(VERSION 3.4.1)
 set(TOP_DIR "${CMAKE_SOURCE_DIR}/../../../../../..")
 
 # cflags: compile paramters
-set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -std=gnu99 -Wall -Werror -DOS_ANDROID")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Werror -DOS_ANDROID")
+set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -std=gnu99 -Wall -Werror")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Werror")
 
 # mbedtls
 file(GLOB MBEDTLS_SRC src ${TOP_DIR}/thirdparty/mbedtls/library/*.c)
@@ -24,11 +24,10 @@ set(SYSUTILS_SRC
     ${TOP_DIR}/thirdparty/sysutils/source/cutils/ringbuf.c
     ${TOP_DIR}/thirdparty/sysutils/source/httpclient/httpclient.c)
 add_library(sysutils STATIC ${SYSUTILS_SRC})
-target_compile_options(sysutils PRIVATE -DSYSUTILS_HAVE_MBEDTLS_ENABLED)
+target_compile_options(sysutils PRIVATE -DOS_ANDROID -DSYSUTILS_HAVE_MBEDTLS_ENABLED)
 target_include_directories(sysutils PRIVATE
     ${TOP_DIR}/thirdparty/sysutils/include
     ${TOP_DIR}/thirdparty/mbedtls/include)
-target_link_libraries(sysutils mbedtls)
 
 # liteplayer_core
 file(GLOB CODEC_SRC src
@@ -51,7 +50,6 @@ set(LITEPLAYER_CORE_SRC
     ${TOP_DIR}/library/source/liteplayer_adapter.c
     ${TOP_DIR}/library/source/liteplayer_source.c
     ${TOP_DIR}/library/source/liteplayer_parser.c
-    ${TOP_DIR}/library/source/liteplayer_debug.c
     ${TOP_DIR}/library/source/liteplayer_main.c
     ${TOP_DIR}/library/source/liteplayer_listplayer.c
     ${TOP_DIR}/library/source/liteplayer_ttsplayer.c)
@@ -69,7 +67,6 @@ target_include_directories(liteplayer_core PRIVATE
     ${TOP_DIR}/library/include
     ${TOP_DIR}/library/source
     ${TOP_DIR}/adapter)
-target_link_libraries(liteplayer_core sysutils)
 
 # liteplayer_adapter
 set(LITEPLAYER_ADAPTER_SRC
@@ -79,9 +76,9 @@ set(LITEPLAYER_ADAPTER_SRC
 add_library(liteplayer_adapter STATIC ${LITEPLAYER_ADAPTER_SRC})
 target_include_directories(liteplayer_adapter PRIVATE
     ${TOP_DIR}/thirdparty/sysutils/include ${TOP_DIR}/library/include)
-target_link_libraries(liteplayer_adapter sysutils OpenSLES)
 
 # liteplayer-jni
 add_library(liteplayer-jni SHARED liteplayer-jni.cpp)
 target_include_directories(liteplayer-jni PRIVATE ${TOP_DIR}/library/include ${TOP_DIR}/adapter)
-target_link_libraries(liteplayer-jni sysutils liteplayer_core liteplayer_adapter android log)
+target_link_libraries(liteplayer-jni
+    liteplayer_core liteplayer_adapter sysutils mbedtls OpenSLES android log)
