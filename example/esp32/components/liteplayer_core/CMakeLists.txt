@@ -46,6 +46,7 @@ set(COMPONENT_SRCS
 register_component()
 
 target_compile_options(${COMPONENT_TARGET} PRIVATE
+    -O3 -Wall -Werror
     -DLITEPLAYER_CONFIG_SINK_FIXED_S16LE
     -DOSCL_IMPORT_REF=
     -DOSCL_EXPORT_REF=
@@ -53,4 +54,5 @@ target_compile_options(${COMPONENT_TARGET} PRIVATE
     -Wno-error=unused-value
     -Wno-error=unused-function
     -Wno-error=narrowing
+    -Wno-error=int-to-pointer-cast
 )
