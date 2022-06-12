@@ -95,6 +95,7 @@ target_include_directories(mbedtls PRIVATE ${TOP_DIR}/thirdparty/mbedtls/include
 set(LITEPLAYER_ADAPTER_SRC
     ${TOP_DIR}/adapter/source_httpclient_wrapper.c
     ${TOP_DIR}/adapter/source_file_wrapper.c
+    ${TOP_DIR}/adapter/source_static_wrapper.c
     ${TOP_DIR}/adapter/sink_wave_wrapper.c
 )
 if(HAVE_LINUX_ALSA_ENABLED)
@@ -150,10 +151,15 @@ elseif(HAVE_PORT_AUDIO_ENABLED)
         ${TOP_DIR}/adapter/sink_portaudio_wrapper.c)
 endif()
 add_library(liteplayer_adapter STATIC ${LITEPLAYER_ADAPTER_SRC})
+target_compile_options(liteplayer_adapter PRIVATE -Wno-error=int-to-pointer-cast)
 
 # basic_demo
 add_executable(basic_demo basic_demo.c)
 target_link_libraries(basic_demo liteplayer_core liteplayer_adapter sysutils mbedtls pthread m)
+
+# static_demo
+add_executable(static_demo static_demo.c)
+target_link_libraries(static_demo liteplayer_core liteplayer_adapter sysutils mbedtls pthread m)
 
 # playlist_demo
 add_executable(playlist_demo playlist_demo.c)
@@ -165,6 +171,7 @@ target_link_libraries(tts_demo liteplayer_core liteplayer_adapter sysutils mbedt
 
 if(CMAKE_SYSTEM_NAME MATCHES "Linux")
     target_link_libraries(basic_demo asound)
+    target_link_libraries(static_demo asound)
     target_link_libraries(playlist_demo asound)
     target_link_libraries(tts_demo asound)
 endif()
