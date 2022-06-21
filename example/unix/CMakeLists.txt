@@ -77,6 +77,7 @@ target_compile_options(liteplayer_core PRIVATE
     -DLITEPLAYER_CONFIG_AAC_SBR
     -DOSCL_IMPORT_REF= -DOSCL_EXPORT_REF= -DOSCL_UNUSED_ARG=\(void\)
     -Wno-error=unused-value -Wno-error=unused-function -Wno-error=narrowing
+    -Wno-error=int-to-pointer-cast
 )
 target_include_directories(liteplayer_core PRIVATE
     ${TOP_DIR}/thirdparty/codecs
@@ -160,6 +161,7 @@ target_link_libraries(basic_demo liteplayer_core liteplayer_adapter sysutils mbe
 # static_demo
 add_executable(static_demo static_demo.c)
 target_link_libraries(static_demo liteplayer_core liteplayer_adapter sysutils mbedtls pthread m)
+target_compile_options(static_demo PRIVATE -Wno-error=pointer-to-int-cast)
 
 # playlist_demo
 add_executable(playlist_demo playlist_demo.c)

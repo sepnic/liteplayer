@@ -74,6 +74,7 @@ set(LITEPLAYER_SRC
     ${TOP_DIR}/library/source/liteplayer_ttsplayer.c)
 add_library(liteplayer_core STATIC ${LITEPLAYER_SRC})
 target_compile_options(liteplayer_core PRIVATE
+    -Wno-error=int-to-pointer-cast
     #platform: __arm__/__amd64__, __GNUC__
     -D__amd64__
     #libmad: LITEPLAYER_CONFIG_MAD_FPM_64BIT/LITEPLAYER_CONFIG_MAD_FPM_ARM/LITEPLAYER_CONFIG_MAD_FPM_DEFAULT
