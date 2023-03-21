@@ -27,6 +27,7 @@ set(SYSUTILS_SRC
     ${TOP_DIR}/thirdparty/sysutils/source/cutils/mlooper.c
     ${TOP_DIR}/thirdparty/sysutils/source/cutils/mqueue.c
     ${TOP_DIR}/thirdparty/sysutils/source/cutils/ringbuf.c
+    ${TOP_DIR}/thirdparty/sysutils/source/cutils/lockfree_ringbuf.c
     ${TOP_DIR}/thirdparty/sysutils/source/httpclient/httpclient.c)
 add_library(sysutils STATIC ${SYSUTILS_SRC})
 target_compile_options(sysutils PRIVATE -DOS_ANDROID -DSYSUTILS_HAVE_MBEDTLS_ENABLED)
@@ -63,7 +64,7 @@ target_compile_options(liteplayer_core PRIVATE
     -DLITEPLAYER_CONFIG_SINK_FIXED_S16LE -DLITEPLAYER_CONFIG_AAC_SBR
     -DOSCL_IMPORT_REF= -DOSCL_EXPORT_REF= -DOSCL_UNUSED_ARG=\(void\)
     -Wno-error=unused-value -Wno-error=unused-function -Wno-error=narrowing
-    -Wno-error=implicit-const-int-float-conversion)
+    -Wno-error=implicit-const-int-float-conversion -Wno-error=void-pointer-to-enum-cast)
 target_include_directories(liteplayer_core PRIVATE
     ${TOP_DIR}/thirdparty/sysutils/include
     ${TOP_DIR}/thirdparty/codecs

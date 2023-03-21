@@ -77,4 +77,14 @@
 #define sha512_final                   SYSUTILS_CIPHER_NAMESPACE(sha512_final)
 #define sha512                         SYSUTILS_CIPHER_NAMESPACE(sha512)
 
+// aes.h
+#define AES_init_ctx                   SYSUTILS_CIPHER_NAMESPACE(AES_init_ctx)
+#define AES_init_ctx_iv                SYSUTILS_CIPHER_NAMESPACE(AES_init_ctx_iv)
+#define AES_ctx_set_iv                 SYSUTILS_CIPHER_NAMESPACE(AES_ctx_set_iv)
+#define AES_ECB_encrypt                SYSUTILS_CIPHER_NAMESPACE(AES_ECB_encrypt)
+#define AES_ECB_decrypt                SYSUTILS_CIPHER_NAMESPACE(AES_ECB_decrypt)
+#define AES_CBC_encrypt_buffer         SYSUTILS_CIPHER_NAMESPACE(AES_CBC_encrypt_buffer)
+#define AES_CBC_decrypt_buffer         SYSUTILS_CIPHER_NAMESPACE(AES_CBC_decrypt_buffer)
+#define AES_CTR_xcrypt_buffer          SYSUTILS_CIPHER_NAMESPACE(AES_CTR_xcrypt_buffer)
+
 #endif /* __SYSUTILS_CIPHER_NAMESPACE_H__ */
