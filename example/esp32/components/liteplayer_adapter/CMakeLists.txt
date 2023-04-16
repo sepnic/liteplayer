@@ -1,5 +1,4 @@
 set(TOP_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../..)
-set(LITEPLAYER_DIR ${TOP_DIR}/library)
 set(THIRDPARTY_DIR ${TOP_DIR}/thirdparty)
 set(ADAPTER_DIR ${TOP_DIR}/adapter)
 
@@ -8,7 +7,7 @@ set(COMPONENT_PRIV_REQUIRES sysutils driver)
 
 set(COMPONENT_ADD_INCLUDEDIRS ${ADAPTER_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 
-set(COMPONENT_PRIV_INCLUDEDIRS ${LITEPLAYER_DIR}/include)
+set(COMPONENT_PRIV_INCLUDEDIRS ${TOP_DIR}/include)
 
 set(COMPONENT_SRCS
     ${ADAPTER_DIR}/source_httpclient_wrapper.c

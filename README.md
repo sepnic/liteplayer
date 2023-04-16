@@ -10,19 +10,19 @@ Liteplayer 具有如下特点：
 
 **核心播放接口**：
 - 提供播放器基本服务，包括 set_data_source、prepare、start、pause、resume、seek、stop、reset 等操作
-- https://github.com/sepnic/liteplayer_priv/blob/master/library/include/liteplayer_main.h
+- https://github.com/sepnic/liteplayer_priv/blob/master/include/liteplayer_main.h
 
 **列表播放接口**：
 - 除了播放器基本功能外，还支持 m3u8 协议列表、本地播放列表、切换上下首、单曲循环等操作
-- https://github.com/sepnic/liteplayer_priv/blob/master/library/include/liteplayer_listplayer.h
+- https://github.com/sepnic/liteplayer_priv/blob/master/include/liteplayer_listplayer.h
 
 **TTS播放接口**：
 - 提供 TTS 流播放功能，支持 prepare、start、stop、reset 等操作
-- https://github.com/sepnic/liteplayer_priv/blob/master/library/include/liteplayer_ttsplayer.h
+- https://github.com/sepnic/liteplayer_priv/blob/master/include/liteplayer_ttsplayer.h
 
 **播放器适配层**：
 - 数据源输入、音频设备输出的抽象接口，默认适配了 "文件流-标准文件系统"、 "网络流-httpclient"、"音频设备输出-alsa/OpenSLES/AudioTrack"
-- https://github.com/sepnic/liteplayer_priv/blob/master/library/include/liteplayer_adapter.h
+- https://github.com/sepnic/liteplayer_priv/blob/master/include/liteplayer_adapter.h
 
 **OSAL 适配层**：
 - Thread、Memory、Time 等操作系统相关的抽象接口，如果系统已支持 POSIX 接口规范，则不用修改直接使用即可

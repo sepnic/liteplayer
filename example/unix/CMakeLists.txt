@@ -21,7 +21,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -fPIC -std=c++11 -Wall -Werror")
 
 # include files
 include_directories(${TOP_DIR}/thirdparty/sysutils/include)
-include_directories(${TOP_DIR}/library/include)
+include_directories(${TOP_DIR}/include)
 include_directories(${TOP_DIR}/adapter)
 
 # sysutils files
@@ -50,25 +50,25 @@ file(GLOB LITEPLAYER_CODEC_SRC src
 )
 set(LITEPLAYER_CORE_SRC
     ${LITEPLAYER_CODEC_SRC}
-    ${TOP_DIR}/library/source/esp_adf/audio_element.c
-    ${TOP_DIR}/library/source/esp_adf/audio_event_iface.c
-    ${TOP_DIR}/library/source/audio_decoder/mp3_pvmp3_wrapper.c
-    ${TOP_DIR}/library/source/audio_decoder/mp3_decoder.c
-    ${TOP_DIR}/library/source/audio_decoder/aac_pvaac_wrapper.c
-    ${TOP_DIR}/library/source/audio_decoder/aac_decoder.c
-    ${TOP_DIR}/library/source/audio_decoder/m4a_decoder.c
-    ${TOP_DIR}/library/source/audio_decoder/wav_decoder.c
-    ${TOP_DIR}/library/source/audio_extractor/mp3_extractor.c
-    ${TOP_DIR}/library/source/audio_extractor/aac_extractor.c
-    ${TOP_DIR}/library/source/audio_extractor/m4a_extractor.c
-    ${TOP_DIR}/library/source/audio_extractor/wav_extractor.c
-    ${TOP_DIR}/library/source/liteplayer_adapter.c
-    ${TOP_DIR}/library/source/liteplayer_source.c
-    ${TOP_DIR}/library/source/liteplayer_parser.c
-    ${TOP_DIR}/library/source/liteplayer_debug.c
-    ${TOP_DIR}/library/source/liteplayer_main.c
-    ${TOP_DIR}/library/source/liteplayer_listplayer.c
-    ${TOP_DIR}/library/source/liteplayer_ttsplayer.c
+    ${TOP_DIR}/src/esp_adf/audio_element.c
+    ${TOP_DIR}/src/esp_adf/audio_event_iface.c
+    ${TOP_DIR}/src/audio_decoder/mp3_pvmp3_wrapper.c
+    ${TOP_DIR}/src/audio_decoder/mp3_decoder.c
+    ${TOP_DIR}/src/audio_decoder/aac_pvaac_wrapper.c
+    ${TOP_DIR}/src/audio_decoder/aac_decoder.c
+    ${TOP_DIR}/src/audio_decoder/m4a_decoder.c
+    ${TOP_DIR}/src/audio_decoder/wav_decoder.c
+    ${TOP_DIR}/src/audio_extractor/mp3_extractor.c
+    ${TOP_DIR}/src/audio_extractor/aac_extractor.c
+    ${TOP_DIR}/src/audio_extractor/m4a_extractor.c
+    ${TOP_DIR}/src/audio_extractor/wav_extractor.c
+    ${TOP_DIR}/src/liteplayer_adapter.c
+    ${TOP_DIR}/src/liteplayer_source.c
+    ${TOP_DIR}/src/liteplayer_parser.c
+    ${TOP_DIR}/src/liteplayer_debug.c
+    ${TOP_DIR}/src/liteplayer_main.c
+    ${TOP_DIR}/src/liteplayer_listplayer.c
+    ${TOP_DIR}/src/liteplayer_ttsplayer.c
 )
 add_library(liteplayer_core STATIC ${LITEPLAYER_CORE_SRC})
 target_compile_options(liteplayer_core PRIVATE
@@ -84,7 +84,7 @@ target_include_directories(liteplayer_core PRIVATE
     ${TOP_DIR}/thirdparty/codecs/mp3-pvmp3/include
     ${TOP_DIR}/thirdparty/codecs/mp3-pvmp3/src
     ${TOP_DIR}/thirdparty/codecs/aac-pvaac
-    ${TOP_DIR}/library/source
+    ${TOP_DIR}/src
 )
 
 # mbedtls files

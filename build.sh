@@ -4,14 +4,13 @@ set -x
 set -e
 
 TOP_DIR=${PWD}
-CUR_DIR=${PWD}
 OUTPUT_DIR=${PWD}/out
 
 # build libs
-echo "Building libs"
-mkdir -p ${OUTPUT_DIR}/libs
-cd ${OUTPUT_DIR}/libs
-cmake ${TOP_DIR}/library
+echo "Building library"
+mkdir -p ${OUTPUT_DIR}/library
+cd ${OUTPUT_DIR}/library
+cmake ${TOP_DIR}/src
 make
 
 # build example
@@ -21,6 +20,3 @@ cd ${OUTPUT_DIR}/example
 cmake ${TOP_DIR}/example/unix
 make
 
-# build android jni
-cd ${CUR_DIR}
-ndk-build -C android/jni
