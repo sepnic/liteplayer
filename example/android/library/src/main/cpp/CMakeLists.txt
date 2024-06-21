@@ -37,8 +37,8 @@ target_include_directories(sysutils PRIVATE
 
 # liteplayer_core
 file(GLOB CODEC_SRC src
-    ${TOP_DIR}/thirdparty/codecs/mp3-pvmp3/src/*.cpp
-    ${TOP_DIR}/thirdparty/codecs/aac-pvaac/*.cpp)
+    ${TOP_DIR}/thirdparty/codecs/pvmp3/src/*.cpp
+    ${TOP_DIR}/thirdparty/codecs/pvaac/*.cpp)
 set(LITEPLAYER_CORE_SRC
     ${CODEC_SRC}
     ${TOP_DIR}/src/esp_adf/audio_element.c
@@ -68,9 +68,9 @@ target_compile_options(liteplayer_core PRIVATE
 target_include_directories(liteplayer_core PRIVATE
     ${TOP_DIR}/thirdparty/sysutils/include
     ${TOP_DIR}/thirdparty/codecs
-    ${TOP_DIR}/thirdparty/codecs/mp3-pvmp3/include
-    ${TOP_DIR}/thirdparty/codecs/mp3-pvmp3/src
-    ${TOP_DIR}/thirdparty/codecs/aac-pvaac
+    ${TOP_DIR}/thirdparty/codecs/pvmp3/include
+    ${TOP_DIR}/thirdparty/codecs/pvmp3/src
+    ${TOP_DIR}/thirdparty/codecs/pvaac
     ${TOP_DIR}/src
     ${TOP_DIR}/adapter)
 

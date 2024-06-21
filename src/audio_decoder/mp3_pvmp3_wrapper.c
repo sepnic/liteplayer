@@ -16,7 +16,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "mp3-pvmp3/include/pvmp3decoder_api.h"
+#include "pvmp3/include/pvmp3decoder_api.h"
 #include "cutils/log_helper.h"
 #include "esp_adf/audio_common.h"
 #include "esp_adf/audio_element.h"

@@ -45,8 +45,8 @@ target_include_directories(sysutils PRIVATE ${TOP_DIR}/thirdparty/mbedtls/includ
 
 # liteplayer files
 file(GLOB LITEPLAYER_CODEC_SRC src
-    ${TOP_DIR}/thirdparty/codecs/mp3-pvmp3/src/*.cpp
-    ${TOP_DIR}/thirdparty/codecs/aac-pvaac/*.cpp
+    ${TOP_DIR}/thirdparty/codecs/pvmp3/src/*.cpp
+    ${TOP_DIR}/thirdparty/codecs/pvaac/*.cpp
 )
 set(LITEPLAYER_CORE_SRC
     ${LITEPLAYER_CODEC_SRC}
@@ -81,9 +81,9 @@ target_compile_options(liteplayer_core PRIVATE
 )
 target_include_directories(liteplayer_core PRIVATE
     ${TOP_DIR}/thirdparty/codecs
-    ${TOP_DIR}/thirdparty/codecs/mp3-pvmp3/include
-    ${TOP_DIR}/thirdparty/codecs/mp3-pvmp3/src
-    ${TOP_DIR}/thirdparty/codecs/aac-pvaac
+    ${TOP_DIR}/thirdparty/codecs/pvmp3/include
+    ${TOP_DIR}/thirdparty/codecs/pvmp3/src
+    ${TOP_DIR}/thirdparty/codecs/pvaac
     ${TOP_DIR}/src
 )
 

@@ -10,15 +10,15 @@ set(COMPONENT_ADD_INCLUDEDIRS ${TOP_DIR}/include)
 set(COMPONENT_PRIV_INCLUDEDIRS
     ${THIRDPARTY_DIR}/sysutils/include
     ${THIRDPARTY_DIR}/codecs
-    ${THIRDPARTY_DIR}/codecs/mp3-pvmp3/include
-    ${THIRDPARTY_DIR}/codecs/mp3-pvmp3/src
-    ${THIRDPARTY_DIR}/codecs/aac-pvaac
+    ${THIRDPARTY_DIR}/codecs/pvmp3/include
+    ${THIRDPARTY_DIR}/codecs/pvmp3/src
+    ${THIRDPARTY_DIR}/codecs/pvaac
     ${LITEPLAYER_DIR}
 )
 
 file(GLOB CODECS_SRCS src
-    ${THIRDPARTY_DIR}/codecs/mp3-pvmp3/src/*.cpp
-    ${THIRDPARTY_DIR}/codecs/aac-pvaac/*.cpp
+    ${THIRDPARTY_DIR}/codecs/pvmp3/src/*.cpp
+    ${THIRDPARTY_DIR}/codecs/pvaac/*.cpp
 )
 
 set(COMPONENT_SRCS

@@ -21,7 +21,7 @@
 #include "esp_adf/audio_element.h"
 #include "audio_decoder/aac_decoder.h"
 #include "audio_decoder/m4a_decoder.h"
-#include "aac-pvaac/pvmp4audiodecoder_api.h"
+#include "pvaac/pvmp4audiodecoder_api.h"
 
 #define TAG "[liteplayer]aac_decoder"
 
