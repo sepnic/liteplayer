@@ -33,7 +33,6 @@ set(LITEPLAYER_SRC
     ${TOP_DIR}/src/liteplayer_adapter.c
     ${TOP_DIR}/src/liteplayer_source.c
     ${TOP_DIR}/src/liteplayer_parser.c
-    ${TOP_DIR}/src/liteplayer_debug.c
     ${TOP_DIR}/src/liteplayer_main.c
     ${TOP_DIR}/src/liteplayer_listplayer.c
     ${TOP_DIR}/src/liteplayer_ttsplayer.c

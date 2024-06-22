@@ -37,12 +37,6 @@ extern "C" {
 #define DEFAULT_LISTPLAYER_TASK_PRIO             ( OS_THREAD_PRIO_HIGH )
 #define DEFAULT_LISTPLAYER_TASK_STACKSIZE        ( 1024*4 )
 
-// socket upload definations, for data dump, see tools/README.md
-#define DEFAULT_SOCKET_UPLOAD_START              "GENIE_SOCKET_UPLOAD_START"
-#define DEFAULT_SOCKET_UPLOAD_END                "GENIE_SOCKET_UPLOAD_END"
-#define DEFAULT_SOCKET_UPLOAD_TASK_PRIO          ( OS_THREAD_PRIO_NORMAL )
-#define DEFAULT_SOCKET_UPLOAD_TASK_STACKSIZE     ( 1024*2 )
-
 #ifdef __cplusplus
 }
 #endif
