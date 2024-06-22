@@ -13,8 +13,8 @@ set(TOP_DIR "${CMAKE_SOURCE_DIR}/../..")
 # cflags: OS_LINUX, OS_ANDROID, OS_APPLE, OS_RTOS
 set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -DOS_APPLE")
 
-set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -O3 -fPIC -std=gnu99 -Wall -Werror")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -fPIC -std=c++11 -Wall -Werror")
+set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -O3 -fPIC -std=gnu99 -Wall")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -fPIC -std=c++11 -Wall")
 
 #set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -DSYSUTILS_HAVE_MEMORY_LEAK_DETECT_ENABLED")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSYSUTILS_HAVE_MEMORY_LEAK_DETECT_ENABLED")
@@ -72,12 +72,11 @@ set(LITEPLAYER_CORE_SRC
 )
 add_library(liteplayer_core STATIC ${LITEPLAYER_CORE_SRC})
 target_compile_options(liteplayer_core PRIVATE
+    -Wno-error=narrowing
     -D__amd64__
     -DLITEPLAYER_CONFIG_SINK_FIXED_S16LE
     -DLITEPLAYER_CONFIG_AAC_SBR
     -DOSCL_IMPORT_REF= -DOSCL_EXPORT_REF= -DOSCL_UNUSED_ARG=\(void\)
-    -Wno-error=unused-value -Wno-error=unused-function -Wno-error=narrowing
-    -Wno-error=int-to-pointer-cast
 )
 target_include_directories(liteplayer_core PRIVATE
     ${TOP_DIR}/thirdparty/codecs
@@ -114,7 +113,6 @@ elseif(HAVE_PORT_AUDIO_ENABLED)
     else()
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DPA_LITTLE_ENDIAN")
     endif()
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-error=deprecated-declarations")
     set(PORTAUDIO_SRC
         ${PORTAUDIO_DIR}/src/common/pa_allocation.c
         ${PORTAUDIO_DIR}/src/common/pa_converters.c
@@ -152,7 +150,6 @@ elseif(HAVE_PORT_AUDIO_ENABLED)
         ${TOP_DIR}/adapter/sink_portaudio_wrapper.c)
 endif()
 add_library(liteplayer_adapter STATIC ${LITEPLAYER_ADAPTER_SRC})
-target_compile_options(liteplayer_adapter PRIVATE -Wno-error=int-to-pointer-cast)
 
 # basic_demo
 add_executable(basic_demo basic_demo.c)
@@ -161,7 +158,6 @@ target_link_libraries(basic_demo liteplayer_core liteplayer_adapter sysutils mbe
 # static_demo
 add_executable(static_demo static_demo.c)
 target_link_libraries(static_demo liteplayer_core liteplayer_adapter sysutils mbedtls pthread m)
-target_compile_options(static_demo PRIVATE -Wno-error=pointer-to-int-cast)
 
 # playlist_demo
 add_executable(playlist_demo playlist_demo.c)

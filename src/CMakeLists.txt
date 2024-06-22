@@ -4,8 +4,8 @@ project(liteplayer_core)
 set(TOP_DIR "${CMAKE_SOURCE_DIR}/..")
 
 # cflags: OS_LINUX, OS_ANDROID, OS_APPLE, OS_RTOS
-set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -O2 -fPIC -std=gnu99 -Wall -Werror -DOS_APPLE")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -fPIC -std=c++11 -Wall -Werror -DOS_APPLE")
+set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -O2 -fPIC -std=gnu99 -Wall -DOS_APPLE")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -fPIC -std=c++11 -Wall -DOS_APPLE")
 
 # include files
 include_directories(${TOP_DIR}/thirdparty/sysutils/include)
@@ -40,11 +40,11 @@ set(LITEPLAYER_SRC
 )
 add_library(liteplayer_core STATIC ${LITEPLAYER_SRC})
 target_compile_options(liteplayer_core PRIVATE
+    -Wno-error=narrowing
     -D__amd64__
     -DLITEPLAYER_CONFIG_SINK_FIXED_S16LE
     -DLITEPLAYER_CONFIG_AAC_SBR
     -DOSCL_IMPORT_REF= -DOSCL_EXPORT_REF= -DOSCL_UNUSED_ARG=\(void\)
-    -Wno-error=unused-value -Wno-error=unused-function -Wno-error=narrowing
 )
 target_include_directories(liteplayer_core PRIVATE
     ${TOP_DIR}/thirdparty/codecs

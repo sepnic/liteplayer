@@ -8,8 +8,8 @@ include_directories(${TOP_DIR}/include)
 include_directories(${TOP_DIR}/adapter)
 
 # cflags: compile paramters
-set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -std=gnu99 -Wall -Werror")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Werror")
+set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -std=gnu99 -Wall")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
 
 # mbedtls
 file(GLOB MBEDTLS_SRC src ${TOP_DIR}/thirdparty/mbedtls/library/*.c)
@@ -61,10 +61,9 @@ set(LITEPLAYER_CORE_SRC
     ${TOP_DIR}/src/liteplayer_ttsplayer.c)
 add_library(liteplayer_core STATIC ${LITEPLAYER_CORE_SRC})
 target_compile_options(liteplayer_core PRIVATE
+    -Wno-error=narrowing
     -DLITEPLAYER_CONFIG_SINK_FIXED_S16LE -DLITEPLAYER_CONFIG_AAC_SBR
-    -DOSCL_IMPORT_REF= -DOSCL_EXPORT_REF= -DOSCL_UNUSED_ARG=\(void\)
-    -Wno-error=unused-value -Wno-error=unused-function -Wno-error=narrowing
-    -Wno-error=implicit-const-int-float-conversion -Wno-error=void-pointer-to-enum-cast)
+    -DOSCL_IMPORT_REF= -DOSCL_EXPORT_REF= -DOSCL_UNUSED_ARG=\(void\))
 target_include_directories(liteplayer_core PRIVATE
     ${TOP_DIR}/thirdparty/sysutils/include
     ${TOP_DIR}/thirdparty/codecs

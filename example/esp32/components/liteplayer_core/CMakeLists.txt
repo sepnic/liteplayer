@@ -46,17 +46,9 @@ set(COMPONENT_SRCS
 register_component()
 
 target_compile_options(${COMPONENT_TARGET} PRIVATE
-    -O3 -Wall -Werror
+    -O3 -Wall -Wno-error=narrowing
     -DLITEPLAYER_CONFIG_SINK_FIXED_S16LE
     -DOSCL_IMPORT_REF=
     -DOSCL_EXPORT_REF=
     -DOSCL_UNUSED_ARG=
-    -Wno-error=unused-value
-    -Wno-error=unused-function
-    -Wno-error=narrowing
-    -Wno-error=int-to-pointer-cast
 )
-
-IF(IDF_VERSION_MAJOR GREATER 3)
-    target_compile_options(${COMPONENT_TARGET} PRIVATE -Wno-error=implicit-fallthrough)
-ENDIF()

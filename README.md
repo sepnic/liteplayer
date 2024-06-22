@@ -7,4 +7,9 @@ Liteplayer 具有如下特点：
 4. 抽象流数据输入、音频设备输出的接口，使用者可自由添加各种流协议如 rtsp、rtmp、sdcardfs、flash 等等
 5. 适配多个解码器，包括 pv-mp3、pv-aac、wave 等等，也可适配芯片原厂提供的解码器
 
-![LiteplayerArchitecture](https://github.com/sepnic/liteplayer_priv/blob/master/Liteplayer.png)
+编译运行：
+- MacOSX/Ubuntu：[How to build liteplayer for macosx/ubuntu](https://github.com/sepnic/liteplayer/blob/main/example/unix/README.md)
+- ESP32：[How to build liteplayer for esp32](https://github.com/sepnic/liteplayer/blob/main/example/esp32/README.md)
+- Android：Android Studio 打开 [example/android](https://github.com/sepnic/liteplayer/blob/main/example/android)，编译运行
+
+![LiteplayerArchitecture](https://github.com/sepnic/liteplayer/blob/main/Liteplayer.png)
